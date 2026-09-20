@@ -1,5 +1,6 @@
-// 面试领域模型（与后端契约对齐，可后续替换实现）
+// 面试领域模型（与后端契约对齐）
 // 来源文档 02 / 04
+// UTS 约束：对象类型必须用 type 命名（不支持 interface）；不支持 undefined
 
 export type InterviewMode = 'quick' | 'standard' | 'deep' // 快练5min / 标准20 / 深度40
 export type Difficulty = 'junior' | 'mid' | 'senior'
@@ -18,7 +19,7 @@ export type InterviewStatus =
   | 'REPORT_GENERATING'
   | 'COMPLETED'
 
-export interface PositionBlueprint {
+export type PositionBlueprint = {
   position: string
   experienceRange: string
   companyType: string
@@ -26,17 +27,17 @@ export interface PositionBlueprint {
   target: string
 }
 
-export interface QuestionItem {
+export type QuestionItem = {
   id: string
-  abilityDomain: string       // 能力域
+  abilityDomain: string // 能力域
   subAbility: string
   content: string
-  purpose: string             // 提问目的
+  purpose: string // 提问目的
   difficulty: Difficulty
-  expectedEvidence: string    // 期望证据
+  expectedEvidence: string // 期望证据
 }
 
-export interface TranscriptEntry {
+export type TranscriptEntry = {
   questionId: string
   speaker: 'interviewer' | 'user'
   text: string
@@ -44,11 +45,20 @@ export interface TranscriptEntry {
 }
 
 // 关键事件：带会话ID/题目ID/事件序号/幂等键（文档 04）
-export interface InterviewEvent {
+export type InterviewEvent = {
   sessionId: string
   questionId: string
   eventSeq: number
   status: InterviewStatus
   idempotencyKey: string
   at: number
+}
+
+// 接口返回体（UTS 不支持匿名对象字面量作为返回类型，需命名）
+export type SessionRef = {
+  sessionId: string
+}
+
+export type AnswerAck = {
+  ok: boolean
 }

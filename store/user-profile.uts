@@ -1,11 +1,21 @@
 // 用户 / 登录态（轻量单例，零依赖）
 // 与文档 01 商业模式（free / single / member）对齐
 
-interface UserProfile {
+export type UserPlan = 'free' | 'single' | 'member'
+
+export type UserProfile = {
   uid: string
   nickname: string
-  plan: 'free' | 'single' | 'member'
+  plan: UserPlan
   currentPosition: string
+}
+
+// UTS 不支持 undefined，可选字段用 null 表达
+export type UserProfilePatch = {
+  uid: string | null
+  nickname: string | null
+  plan: UserPlan | null
+  currentPosition: string | null
 }
 
 class UserStore {
@@ -16,8 +26,11 @@ class UserStore {
     currentPosition: 'Java 后端'
   }
 
-  setProfile(p: Partial<UserProfile>) {
-    this.profile = { ...this.profile, ...p }
+  setProfile(p: UserProfilePatch) {
+    if (p.uid != null) this.profile.uid = p.uid
+    if (p.nickname != null) this.profile.nickname = p.nickname
+    if (p.plan != null) this.profile.plan = p.plan
+    if (p.currentPosition != null) this.profile.currentPosition = p.currentPosition
   }
 
   isMember(): boolean {

@@ -1,19 +1,39 @@
 // 面试会话编排接口（来源文档 04 服务端：会话编排 / 题目与追问）
-import { request, useMock } from './client.uts'
+import { request, useMock, makeOptions } from './client.uts'
 import { mockCreateSession, mockNextQuestion, mockSubmitAnswer } from './mock/interview.mock.uts'
-import { QuestionItem, InterviewMode, PositionBlueprint } from '../types/interview.uts'
+import {
+  QuestionItem,
+  InterviewMode,
+  PositionBlueprint,
+  SessionRef,
+  AnswerAck
+} from '../types/interview.uts'
 
-export function createSession(position: string): Promise<{ sessionId: string }> {
-  if (useMock()) return mockCreateSession(position)
-  return request<{ sessionId: string }>('/interview/session', { method: 'POST', data: { position } })
+export async function createSession(position: string): Promise<SessionRef> {
+  if (useMock()) return await mockCreateSession(position)
+  const r = await request('/interview/session', makeOptions('POST', { position: position }))
+  return r.data as SessionRef
 }
 
-export function nextQuestion(sessionId: string, mode: InterviewMode, blueprint: PositionBlueprint): Promise<QuestionItem> {
-  if (useMock()) return mockNextQuestion(sessionId, mode)
-  return request<QuestionItem>('/interview/next?sessionId=' + sessionId)
+export async function nextQuestion(
+  sessionId: string,
+  mode: InterviewMode,
+  blueprint: PositionBlueprint
+): Promise<QuestionItem> {
+  if (useMock()) return await mockNextQuestion(sessionId, mode)
+  const r = await request('/interview/next?sessionId=' + sessionId, makeOptions('GET', null))
+  return r.data as QuestionItem
 }
 
-export function submitAnswer(sessionId: string, questionId: string, text: string): Promise<{ ok: boolean }> {
-  if (useMock()) return mockSubmitAnswer(sessionId, questionId, text)
-  return request<{ ok: boolean }>('/interview/answer', { method: 'POST', data: { sessionId, questionId, text } })
+export async function submitAnswer(
+  sessionId: string,
+  questionId: string,
+  text: string
+): Promise<AnswerAck> {
+  if (useMock()) return await mockSubmitAnswer(sessionId, questionId, text)
+  const r = await request(
+    '/interview/answer',
+    makeOptions('POST', { sessionId: sessionId, questionId: questionId, text: text })
+  )
+  return r.data as AnswerAck
 }

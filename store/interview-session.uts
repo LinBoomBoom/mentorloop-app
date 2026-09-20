@@ -8,8 +8,10 @@ import {
   TranscriptEntry
 } from '../types/interview.uts'
 
+export type TransitionMap = { [key: string]: string[] }
+
 // 合法状态迁移表
-const TRANSITIONS: Record<InterviewStatus, InterviewStatus[]> = {
+const TRANSITIONS: TransitionMap = {
   CREATED: ['DEVICE_CHECK'],
   DEVICE_CHECK: ['READY'],
   READY: ['ASKING'],
@@ -39,7 +41,8 @@ class InterviewSession {
   }
 
   canTransition(to: InterviewStatus): boolean {
-    return TRANSITIONS[this.status].includes(to)
+    const allowed: string[] = TRANSITIONS[this.status]
+    return allowed.includes(to)
   }
 
   // 返回事件（含幂等键）；非法迁移返回 null 并告警
@@ -50,9 +53,11 @@ class InterviewSession {
     }
     this.status = to
     this.eventSeq += 1
+    const lastQuestion: QuestionItem | null =
+      this.questions.length > 0 ? this.questions[this.questions.length - 1] : null
     const ev: InterviewEvent = {
       sessionId: this.sessionId,
-      questionId: this.questions[this.questions.length - 1]?.id || '',
+      questionId: lastQuestion != null ? lastQuestion.id : '',
       eventSeq: this.eventSeq,
       status: to,
       idempotencyKey: `${this.sessionId}-${this.eventSeq}`,

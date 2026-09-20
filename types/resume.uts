@@ -1,6 +1,6 @@
 // 简历领域模型（来源文档 02 §2.4）
 
-export interface ResumeParseResult {
+export type ResumeParseResult = {
   contact: boolean
   projects: number
   techStack: string[]
@@ -9,9 +9,9 @@ export interface ResumeParseResult {
   formatRisks: string[]
 }
 
-export interface ResumeSuggestion {
+export type ResumeSuggestion = {
   original: string
   suggested: string
   reason: string
-  needsUserEvidence: boolean  // 可能虚构数据，提示用户补充真实证据
+  needsUserEvidence: boolean // 可能虚构数据，提示用户补充真实证据
 }

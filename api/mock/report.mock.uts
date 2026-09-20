@@ -1,5 +1,5 @@
 // 报告 mock 数据（来源文档 02 §2.5 / §3.4）
-import { InterviewReport } from '../../types/scoring.uts'
+import { InterviewReport, DimensionScore, TrainingTask } from '../../types/scoring.uts'
 
 export function mockGetReport(sessionId: string): Promise<InterviewReport> {
   return Promise.resolve({
@@ -7,18 +7,60 @@ export function mockGetReport(sessionId: string): Promise<InterviewReport> {
     strongest: '基础知识扎实，概念描述准确。',
     topPriority: '项目经历缺少个人贡献与量化证据，建议优先补强。',
     dimensions: [
-      { dimension: 'knowledge', level: 'B', confidence: 0.8, evidence: '并发概念表述正确', missingEvidence: '边界条件未说明', suggestQuestions: ['q1'] },
-      { dimension: 'engineering', level: 'C', confidence: 0.6, evidence: '提到重构但无指标', missingEvidence: '缺少量化结果', suggestQuestions: ['q3'] },
-      { dimension: 'analysis', level: 'B', confidence: 0.7, evidence: '能给出备选方案', missingEvidence: '未比较取舍', suggestQuestions: ['q2'] },
-      { dimension: 'communication', level: 'B', confidence: 0.75, evidence: '结构清晰', missingEvidence: '结论不够先行', suggestQuestions: ['q4'] },
-      { dimension: 'learning', level: 'C', confidence: 0.5, evidence: '有复盘意识', missingEvidence: '缺失败案例', suggestQuestions: [] },
-      { dimension: 'motivation', level: 'B', confidence: 0.7, evidence: '目标一致', missingEvidence: '', suggestQuestions: [] }
+      {
+        dimension: 'knowledge',
+        level: 'B',
+        confidence: 0.8,
+        evidence: '并发概念表述正确',
+        missingEvidence: '边界条件未说明',
+        suggestQuestions: ['q1']
+      } as DimensionScore,
+      {
+        dimension: 'engineering',
+        level: 'C',
+        confidence: 0.6,
+        evidence: '提到重构但无指标',
+        missingEvidence: '缺少量化结果',
+        suggestQuestions: ['q3']
+      } as DimensionScore,
+      {
+        dimension: 'analysis',
+        level: 'B',
+        confidence: 0.7,
+        evidence: '能给出备选方案',
+        missingEvidence: '未比较取舍',
+        suggestQuestions: ['q2']
+      } as DimensionScore,
+      {
+        dimension: 'communication',
+        level: 'B',
+        confidence: 0.75,
+        evidence: '结构清晰',
+        missingEvidence: '结论不够先行',
+        suggestQuestions: ['q4']
+      } as DimensionScore,
+      {
+        dimension: 'learning',
+        level: 'C',
+        confidence: 0.5,
+        evidence: '有复盘意识',
+        missingEvidence: '缺失败案例',
+        suggestQuestions: []
+      } as DimensionScore,
+      {
+        dimension: 'motivation',
+        level: 'B',
+        confidence: 0.7,
+        evidence: '目标一致',
+        missingEvidence: '',
+        suggestQuestions: []
+      } as DimensionScore
     ],
     riskQuestions: ['项目贡献是否真实可验证？', '空档期原因未说明。'],
     trainingPlan: [
-      { id: 't1', title: '用 STAR 重构一段项目经历', durationMin: 10, priority: 1 },
-      { id: 't2', title: '练习一次容量估算题', durationMin: 5, priority: 2 },
-      { id: 't3', title: '补充一个失败与纠偏案例', durationMin: 5, priority: 3 }
+      { id: 't1', title: '用 STAR 重构一段项目经历', durationMin: 10, priority: 1 } as TrainingTask,
+      { id: 't2', title: '练习一次容量估算题', durationMin: 5, priority: 2 } as TrainingTask,
+      { id: 't3', title: '补充一个失败与纠偏案例', durationMin: 5, priority: 3 } as TrainingTask
     ]
-  })
+  } as InterviewReport)
 }

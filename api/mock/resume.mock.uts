@@ -9,7 +9,7 @@ export function mockParseResume(fileUrl: string): Promise<ResumeParseResult> {
     quantified: false,
     gaps: ['缺少量化成果', '空档期未说明'],
     formatRisks: ['一页超过 2 屏']
-  })
+  } as ResumeParseResult)
 }
 
 export function mockOptimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {
@@ -19,6 +19,6 @@ export function mockOptimizeResume(text: string, position: string): Promise<Resu
       suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（需补充真实数据）',
       reason: '突出行动与量化结果，便于面试官快速判断价值',
       needsUserEvidence: true
-    }
+    } as ResumeSuggestion
   ])
 }
