@@ -48,7 +48,7 @@
 
 | 组件 | 版本 | 要点 |
 |---|---|---|
-| Vue | **3.6**（2026-07-18 正式发布） | Vapor Mode 生产可用，按组件 opt-in（`<script setup vapor>`）；响应式引擎换为 alien-signals；通过 `vaporInteropPlugin` 与 VDOM 组件同树共存 |
+| Vue | **3.5.43（npm `latest`）** ⚠️ | **更正**：Vue 3.6 尚未 GA，npm 官方 `latest` 仍为 3.5.43，3.6 只有 alpha/beta/rc 渠道。uni-app x 的 Vue（含蒸汽模式实现）由 DCloud 编译器内置，与 npm 上的 `vue` 版本**解耦**；仓库里的 `vue` 依赖仅供 vue-tsc / Vitest 解析 |
 | Vite | **8**（2026 已落地） | engines 要求 `^20.19.0 \|\| >=22.12.0`；Rolldown 1.0 已稳定 |
 | Tailwind CSS | **4.3.x**（4.3.0 于 2026-05-08 发布） | CSS-first 配置：`@import "tailwindcss"` + `@theme` 块；**不再默认生成 `tailwind.config.js`**；`@tailwindcss/vite` peer: vite `^5.2 \|\| ^6 \|\| ^7 \|\| ^8` |
 | Node.js | **24 LTS**（Active LTS 至 2028-04-30） | 需满足 weapp-tailwindcss 的 `^22.18.0 \|\| >=24.11.0` |

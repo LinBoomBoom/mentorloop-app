@@ -1,51 +1,134 @@
-# MentorLoop 小程序 & App 基础框架（uni-app x）
+# MentorLoop · 学面一体智能导师
 
-学面一体·智能导师 — AI 数字人面试训练产品客户端基础框架。
-同一套 uni-app x 代码库，编译到 **微信小程序 + Android + iOS**。
+uni-app x 单代码库（微信小程序 / Android / iOS / 鸿蒙 / Web），**蒸汽模式（Vapor）** + **Tailwind CSS 4 原子化**。
 
-## 文档来源
-依据工作台 `MentorLoop_0x_*.md` 系列（项目定位 / 功能 / UI-UX / 技术架构 / 研发运营 / 预算合规）搭建。
+---
 
-## 技术结论
-- 框架：uni-app x（uvue 页面 + UTS 原生插件隔离平台差异）。
-- 数据：Mock 优先。`api/BASE_URL` 留空即走 `api/mock/*` 假数据，本地即可跑通全流程；接真后端只改 `BASE_URL`。
-- 状态机：`store/interview-session.uts` 实现文档 04 的 `CREATED→…→COMPLETED` 状态枚举与迁移，事件带幂等键。
-- 数字人：`components/interviewer-avatar.vue` 为状态驱动 2.5D 占位，真实 UTS 渲染由 `utssdk/interviewer-avatar` 后续替换。
+## 1. 技术栈
 
-## 目录结构
+| 类别 | 选型 | 版本 |
+|---|---|---|
+| 框架 | uni-app x（uvue + UTS） | 蒸汽模式 `manifest.uni-app-x.vapor = true` |
+| Vue | 组合式 `<script setup lang="uts">`（蒸汽模式强制） | 由 HBuilderX 编译器内置提供 |
+| CSS | Tailwind CSS 4 + weapp-tailwindcss v5 `uniAppX()` preset | `^4.3` / `^5.3.3` |
+| 构建 | Vite（`@dcloudio/vite-plugin-uni`）+ HBuilderX 编译打包 | Node `^22.18 \|\| >=24.11` |
+| 包管理 | pnpm | `11.x` |
+| Lint | ESLint 9 flat config + eslint-plugin-vue | |
+| 格式化 | Prettier | |
+| 测试 | Vitest（纯逻辑）+ Playwright（E2E） | |
+| 提交 | husky + lint-staged + commitlint | |
+
+> **关于 Vue 版本**：npm 上 `vue` 的最新稳定版是 **3.5.43**，3.6 目前只有 alpha/beta/rc。
+> uni-app x 的 Vue（含蒸汽模式实现）由 DCloud 编译器内置，**与 npm 上的 `vue` 版本解耦**，
+> 仓库里的 `vue` 依赖仅供 vue-tsc / Vitest 等本地工具链解析使用。
+
+### 蒸汽模式支持矩阵（HBuilderX 门槛）
+
+| 平台 | 最低 HBuilderX |
+|---|---|
+| 鸿蒙 HarmonyOS | 5.0+ |
+| iOS | 5.11+ |
+| Android | 5.21+ |
+| 小程序 / Web | 当前降级 VDOM 运行，官方称后续升级 |
+
+---
+
+## 2. 目录结构
+
 ```text
-manifest.json / pages.json / App.vue / uni.scss   工程配置 + 主题
-pages/          9 个页面（首页/准备/房间/总结/报告/训练/简历/成长/我的）
-components/     公共组件 + 数字人占位
-store/          面试状态机单例 + 用户态
-types/          领域模型（interview/scoring/resume）
-api/            请求客户端 + interview/resume/report + mock 假数据
-utssdk/         四个 UTS 原生插件接口占位（audio/realtime/avatar/device）
-styles/theme.uts 设计系统 Token（与 App.vue CSS 变量对齐）
-docs/framework-plan.md  开工前技术方案与工作流
+Mentorloop-app/
+├── App.uvue            # 应用入口（uni-app x 约定后缀是 .uvue，不是 .vue）
+├── main.uts            # 应用初始化入口（不是 main.js）
+├── main.css            # Tailwind 4 入口：@import "tailwindcss" + @source + @theme
+├── manifest.json       # uni-app-x.vapor = true
+├── pages.json
+├── vite.config.ts      # uni() + WeappTailwindcss(uniAppX(...))
+├── index.html          # H5 模板
+├── components/         # ml-button / ml-card / ml-tag / ml-nav-bar / interviewer-avatar（.uvue）
+├── pages/              # 9 个页面（.uvue）
+├── store/              # interview-session.uts（状态机） / user-profile.uts
+├── types/              # interview / scoring / resume（UTS 类型，必须用 type）
+├── api/                # client / interview / resume / report + mock/
+├── utssdk/             # 原生插件接口占位（audio / realtime / avatar / device）
+├── scripts/            # check-uvue-css.mjs（受限原子类守卫）
+└── tests/              # Vitest 纯逻辑测试
 ```
 
-## 运行方式（需在 HBuilderX 中）
-1. 用 HBuilderX 打开本目录（识别为 uni-app x 工程）。
-2. 微信小程序：右上「运行 → 运行到小程序模拟器 → 微信开发者工具」。
-3. App：连接真机或模拟器，「运行 → 运行到手机或模拟器」。
-4. 真机音频/数字人/弱网 POC 见文档 04 §6，须经真机验收。
+---
 
-## 设计系统
-| Token | 值 | 用途 |
-|---|---|---|
-| navy `#0F2C4C` | 面试房间深色背景 |
-| smart `#5B6CFF` | 智能/进行中状态色 |
-| reliable `#1FB6A6` | 完成/可靠 |
-| bg-light `#F7F9FC` | 学习页浅背景 |
+## 3. 快速开始
 
-CSS 变量在 `App.vue` 的 `page` 中定义，页面通过 `var(--color-*)` 引用。
+```bash
+# 1) 环境
+node -v        # >= 24.11（或 22.18+）
+pnpm -v        # >= 10
 
-## 已知占位 / 待补项
-- **tabBar 图标**：当前为纯文字 tab，需在 `static/` 补充 5 组 PNG 图标并在 `pages.json` 配置。
-- **UTS 原生插件**：`utssdk/*` 仅方法签名与降级实现，真实录音/ASR/TTS/渲染需原生层（`app-android`/`app-ios`）补充。
-- **后端服务**：当前全 Mock；正式的会话编排、评分、简历解析需对接文档 04 服务端。
-- **数字人美术**：占位为 SVG/CSS 半身，真实 2.5D 角色/动作/口型资源需美术产出并接入 `avatar` 插件。
+# 2) 安装依赖
+pnpm install
 
-## 本环境说明
-当前开发环境无 HBuilderX，无法编译/真机验证，文件严格按 uni-app x（uvue）官方约定编写；请在 HBuilderX 中打开运行，并对 uvue 受限 CSS（复杂定位/阴影）做真机核对。
+# 3) 用 HBuilderX 打开本目录运行
+#    运行 > 运行到小程序模拟器 > 微信开发者工具
+#    运行 > 运行到手机或模拟器 > Android / iOS
+#    编译产物在 unpackage/
+
+# 4) 命令行构建（需 HBuilderX 已安装对应编译器插件）
+pnpm build:mp-weixin
+pnpm build:app-android
+pnpm build:app-ios
+pnpm build:h5
+```
+
+> **注意**：小程序与原生 App 的编译/打包只能在 HBuilderX 中进行，VS Code 仅用于写代码。
+> 性能验证请用 **release 包**，不要用 debug 模式（debug 包性能不代表真实表现）。
+
+---
+
+## 4. 质量门禁
+
+```bash
+pnpm lint           # ESLint 9（含 .uvue / .uts 规则）
+pnpm format:check   # Prettier
+pnpm test           # Vitest 单测（状态机）
+pnpm typecheck      # vue-tsc
+node scripts/check-uvue-css.mjs   # 拦截 gap / space-x-* 等原生端不支持的原子类
+pnpm check          # 以上 lint + typecheck + test 串联
+```
+
+提交前由 husky 自动执行：`lint-staged` → `check-uvue-css`。提交信息遵循 Conventional Commits。
+
+CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS guard → test → typecheck → audit。
+
+---
+
+## 5. 必须遵守的编码约束
+
+### UTS（`*.uts` 与 `<script setup lang="uts">`）
+- **不支持 `interface`** 声明对象类型 → 必须用 `type X = { ... }` 命名。
+- **不支持 `undefined`** → 空值用 `null`。
+- 对象字面量必须 `as NamedType` 才能与类型关联。
+- 不支持匿名对象字面量作参数/返回类型 → 先命名（如 `SessionRef`、`AnswerAck`）。
+- 强类型：变量、参数、返回值都要有类型。
+
+### uvue（页面 / 组件）
+- 必须 `<script setup lang="uts">` 组合式；**不支持选项式 API、不支持 mixin**（蒸汽模式硬性要求）。
+- `view` 默认 `flex-direction: column`，横向布局要显式写 `flex-row`。
+- **样式不继承**：文字必须用 `<text>` 包裹，并在 `<text>` 上写 `text-*` / `font-*`。
+- **原生端不支持** `gap` / `gap-x-*` / `gap-y-*` / `space-x-*` / `space-y-*` → 用 `mt-*` / `ml-*`。
+- 避免复杂后代选择器（`.a .b`），全部用扁平原子类（与蒸汽模式要求同向）。
+- 单位用 rpx（已开启 `rem2rpx`，直接写 Tailwind 的 rem 间距即可自动换算）。
+
+### Tailwind
+- 生成由 weapp-tailwindcss 接管，**不要**再注册 `tailwindcss()` / `@tailwindcss/postcss` / `@tailwindcss/vite`。
+- 新增页面后确认 `main.css` 的 `@source` 已覆盖（当前：`App.uvue`、`pages/**`、`components/**`）。
+- 设计 token 写在 `main.css` 的 `@theme` 块（单一事实来源，与 `styles/theme.uts` 同步）。
+- **不要用** `bg-white/5` 这类透明度修饰符（Tailwind 4 会输出 `color-mix()`，原生端不支持）→ 用内联 `rgba()`。
+
+---
+
+## 6. 当前状态与待补项
+
+- ✅ 工程基座、蒸汽模式开关、Tailwind 接入、15 个 `.uvue`（5 组件 + 9 页面 + App）、状态机、Mock API、质量门禁。
+- ⚠️ 本仓库未在本地编译/真机验证（无 HBuilderX 构建环境）。请在 HBuilderX 打开运行核对。
+- ⚠️ `utssdk/` 下 4 个插件为接口占位（方法签名 + 降级实现），录音/ASR/TTS/数字人渲染需补原生层。
+- ⚠️ tabBar 当前纯文字，需在 `static/` 补 5 组 PNG 并在 `pages.json` 配置 `iconPath`。
+- ⚠️ `@dcloudio/vite-plugin-uni` 版本需与 HBuilderX 自带编译器版本对齐；若报版本不匹配，请按 HBuilderX 版本调整该依赖后重装。
