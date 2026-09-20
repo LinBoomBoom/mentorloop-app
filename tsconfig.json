@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "types": ["@dcloudio/types"],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "*.ts",
+    "**/*.uts",
+    "**/*.uvue",
+    "**/*.vue",
+    "env.d.ts"
+  ],
+  "exclude": ["node_modules", "unpackage", "dist"]
+}
