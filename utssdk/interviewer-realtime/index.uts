@@ -1,0 +1,25 @@
+// UTS 原生插件：interviewer-realtime
+// 职责：流式 ASR / TTS、断线重连、缓冲（文档 04）
+// 真实实现为原生层；此处为契约与降级实现。
+
+export interface RealtimePlugin {
+  streamASR(audioPath: string): void
+  playTTS(text: string): Promise<void>
+  onTranscript(cb: (text: string, stable: boolean) => void): void
+  onReconnect(cb: () => void): void
+  onTTSState(cb: (state: 'start' | 'end') => void): void
+}
+
+class RealtimePluginStub implements RealtimePlugin {
+  streamASR(audioPath: string): void {
+    console.warn('[realtime] 原生插件未接入')
+  }
+  playTTS(text: string): Promise<void> {
+    return Promise.resolve()
+  }
+  onTranscript(cb: (text: string, stable: boolean) => void): void {}
+  onReconnect(cb: () => void): void {}
+  onTTSState(cb: (state: 'start' | 'end') => void): void {}
+}
+
+export const realtimePlugin: RealtimePlugin = new RealtimePluginStub()

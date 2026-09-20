@@ -1,0 +1,23 @@
+// UTS 原生插件：interviewer-device
+// 职责：权限、网络、前后台、诊断（文档 04）
+// 真实实现为原生层；此处为契约与降级实现。
+
+export interface DevicePlugin {
+  checkPermission(): Promise<Record<string, boolean>>
+  onNetworkChange(cb: (online: boolean) => void): void
+  onForeground(cb: (foreground: boolean) => void): void
+  diagnose(): Promise<Record<string, string>>
+}
+
+class DevicePluginStub implements DevicePlugin {
+  checkPermission(): Promise<Record<string, boolean>> {
+    return Promise.resolve({ record: true, network: true })
+  }
+  onNetworkChange(cb: (online: boolean) => void): void {}
+  onForeground(cb: (foreground: boolean) => void): void {}
+  diagnose(): Promise<Record<string, string>> {
+    return Promise.resolve({ mic: 'ok', net: 'ok' })
+  }
+}
+
+export const devicePlugin: DevicePlugin = new DevicePluginStub()

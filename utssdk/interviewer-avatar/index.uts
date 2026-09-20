@@ -1,0 +1,25 @@
+// UTS 原生插件：interviewer-avatar
+// 职责：口型、动作、缓存、渲染桥接（文档 04）
+// 真实实现为原生层；此处为契约与降级实现。
+// 注意：rooms 页当前使用 components/interviewer-avatar.vue（SVG/CSS 占位），
+// 接真实 UTS 渲染时替换为本插件的渲染桥接。
+
+export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'summary'
+
+export interface AvatarPlugin {
+  setState(state: AvatarState): void
+  syncLip(phoneme: string): void
+  preload(role: string): Promise<void>
+}
+
+class AvatarPluginStub implements AvatarPlugin {
+  setState(state: AvatarState): void {
+    console.warn('[avatar] 原生渲染未接入，使用占位组件')
+  }
+  syncLip(phoneme: string): void {}
+  preload(role: string): Promise<void> {
+    return Promise.resolve()
+  }
+}
+
+export const avatarPlugin: AvatarPlugin = new AvatarPluginStub()
