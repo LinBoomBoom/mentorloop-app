@@ -1,0 +1,16 @@
+<template>
+  <view
+    class="flex-row items-center h-6 px-2.5 rounded-full"
+    :style="{ backgroundColor: bg }"
+  >
+    <text class="text-xs" :style="{ color: color }">{{ label }}</text>
+  </view>
+</template>
+
+<script setup lang="uts">
+const props = defineProps({
+  label: { type: String, default: '' },
+  bg: { type: String, default: '#EEF1FF' },
+  color: { type: String, default: '#5B6CFF' }
+})
+</script>

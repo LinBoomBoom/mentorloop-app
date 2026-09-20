@@ -1,0 +1,15 @@
+<template>
+  <view class="bg-surface rounded-2xl p-4 border border-line" @click="onClick">
+    <slot></slot>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { defineEmits } from 'vue'
+
+const emit = defineEmits(['tap'])
+
+function onClick() {
+  emit('tap')
+}
+</script>

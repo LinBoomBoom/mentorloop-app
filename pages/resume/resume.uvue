@@ -1,0 +1,44 @@
+<template>
+  <view class="p-4">
+    <text class="text-xl font-bold text-ink mb-3">简历优化</text>
+
+    <view class="mb-2.5">
+      <ml-card>
+        <text class="text-xs text-ink-soft mb-2.5">上传简历（PDF / Word / 图片）</text>
+        <ml-button text="选择文件" type="secondary" @click="pick"></ml-button>
+      </ml-card>
+    </view>
+
+    <text class="text-base font-semibold text-ink mt-4 mb-2.5">
+      改写建议（均为「建议稿」，确认后才保存）
+    </text>
+
+    <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+      <ml-card>
+        <text class="text-xs text-ink-soft">原句：{{ s.original }}</text>
+        <text class="text-sm font-semibold text-ink mt-1.5">建议稿：{{ s.suggested }}</text>
+        <text class="text-xs text-ink-soft mt-1.5">{{ s.reason }}</text>
+        <view class="mt-2" v-if="s.needsUserEvidence">
+          <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+        </view>
+      </ml-card>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import mlTag from '../../components/ml-tag.uvue'
+import { optimizeResume } from '../../api/resume.uts'
+import { ResumeSuggestion } from '../../types/resume.uts'
+
+const emptySuggestions: ResumeSuggestion[] = []
+const suggestions = ref(emptySuggestions)
+
+async function pick() {
+  const r = await optimizeResume('负责系统开发', 'Java 后端')
+  suggestions.value = r
+}
+</script>

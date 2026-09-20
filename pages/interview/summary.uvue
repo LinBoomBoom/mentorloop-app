@@ -1,0 +1,39 @@
+<template>
+  <view class="p-3">
+    <ml-nav-bar title="面试总结"></ml-nav-bar>
+
+    <view class="mb-3">
+      <ml-card>
+        <text class="text-xs text-ink-soft">本次覆盖</text>
+        <text class="text-2xl font-bold text-ink my-1.5">{{ count }} 道题</text>
+        <text class="text-xs text-ink-soft">
+          覆盖能力域：并发与JVM、系统设计、项目经历、表达能力
+        </text>
+      </ml-card>
+    </view>
+
+    <ml-button text="生成报告" type="primary" @click="genReport"></ml-button>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import mlNavBar from '../../components/ml-nav-bar.uvue'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import { interviewSession } from '../../store/interview-session.uts'
+
+const count = ref(0)
+
+onLoad(() => {
+  count.value = interviewSession.getQuestions().length
+})
+
+function genReport() {
+  // 收束并进入报告（状态机按当前态安全迁移；非法迁移仅告警不中断）
+  interviewSession.transition('WRAP_UP')
+  interviewSession.transition('REPORT_GENERATING')
+  uni.navigateTo({ url: '/pages/report/report' })
+}
+</script>

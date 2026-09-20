@@ -1,0 +1,111 @@
+<template>
+  <view class="p-3">
+    <ml-nav-bar title="面试准备"></ml-nav-bar>
+
+    <view class="mb-3">
+      <ml-card>
+        <text class="text-xs text-ink-soft">目标岗位</text>
+        <text class="text-base font-semibold text-ink mt-1">{{ position }}</text>
+      </ml-card>
+    </view>
+
+    <view class="mb-3">
+      <ml-card>
+        <text class="text-xs text-ink-soft">面试时长</text>
+        <view class="flex-row mt-2.5">
+          <view
+            class="flex-1 h-10 rounded-lg bg-line flex-row items-center justify-center mr-2"
+            :class="mode === 'quick' ? 'bg-smart' : 'bg-line'"
+            @click="mode = 'quick'"
+          >
+            <text class="text-sm" :class="mode === 'quick' ? 'text-white' : 'text-ink'">
+              快练 5′
+            </text>
+          </view>
+          <view
+            class="flex-1 h-10 rounded-lg flex-row items-center justify-center mr-2"
+            :class="mode === 'standard' ? 'bg-smart' : 'bg-line'"
+            @click="mode = 'standard'"
+          >
+            <text class="text-sm" :class="mode === 'standard' ? 'text-white' : 'text-ink'">
+              标准 20′
+            </text>
+          </view>
+          <view
+            class="flex-1 h-10 rounded-lg flex-row items-center justify-center"
+            :class="mode === 'deep' ? 'bg-smart' : 'bg-line'"
+            @click="mode = 'deep'"
+          >
+            <text class="text-sm" :class="mode === 'deep' ? 'text-white' : 'text-ink'">
+              深度 40′
+            </text>
+          </view>
+        </view>
+      </ml-card>
+    </view>
+
+    <ml-card>
+      <text class="text-xs text-ink-soft">设备检测</text>
+      <view class="flex-row justify-between mt-2.5" v-for="c in checks" :key="c.key">
+        <text class="text-sm text-ink">{{ c.name }}</text>
+        <text class="text-xs" :class="c.ok ? 'text-reliable' : 'text-warn'">
+          {{ c.ok ? '已通过' : '待检测' }}
+        </text>
+      </view>
+      <view class="mt-3">
+        <ml-button
+          :text="deviceOk ? '进入面试' : '开始检测'"
+          :type="deviceOk ? 'primary' : 'secondary'"
+          @click="onPrimary"
+        ></ml-button>
+      </view>
+    </ml-card>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import mlNavBar from '../../components/ml-nav-bar.uvue'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+
+type CheckItem = {
+  key: string
+  name: string
+  ok: boolean
+}
+
+const position = ref('Java 后端 · 1-3年')
+const mode = ref('standard')
+
+const initialChecks: CheckItem[] = [
+  { key: 'mic', name: '麦克风', ok: false } as CheckItem,
+  { key: 'net', name: '网络', ok: false } as CheckItem,
+  { key: 'record', name: '录音授权', ok: false } as CheckItem
+]
+const checks = ref(initialChecks)
+
+const deviceOk = computed(() => {
+  const list: CheckItem[] = checks.value
+  return list.every((c: CheckItem) => c.ok)
+})
+
+function runCheck() {
+  const list: CheckItem[] = checks.value
+  const next: CheckItem[] = []
+  for (let i = 0; i < list.length; i++) {
+    next.push({ key: list[i].key, name: list[i].name, ok: true } as CheckItem)
+  }
+  checks.value = next
+}
+
+function start() {
+  if (!deviceOk.value) return
+  uni.navigateTo({ url: '/pages/interview/room' })
+}
+
+function onPrimary() {
+  if (deviceOk.value) start()
+  else runCheck()
+}
+</script>

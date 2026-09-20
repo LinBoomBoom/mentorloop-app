@@ -1,0 +1,21 @@
+<script setup lang="uts">
+// 蒸汽模式要求：<script setup> 组合式，不支持选项式 API / mixin
+import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+
+onLaunch(() => {
+  console.log('[MentorLoop] app launch')
+})
+
+onShow(() => {
+  console.log('[MentorLoop] app show')
+})
+
+onHide(() => {
+  console.log('[MentorLoop] app hide')
+})
+</script>
+
+<style>
+/* Tailwind CSS 4 入口（weapp-tailwindcss 的 cssEntries 需指向同一个文件） */
+@import './main.css';
+</style>

@@ -1,0 +1,39 @@
+<template>
+  <view
+    class="flex-row items-center justify-center h-12 rounded-xl px-5"
+    :class="[bgClass, disabled ? 'opacity-50' : '']"
+    @click="onClick"
+  >
+    <text class="text-base font-semibold" :class="textColorClass">{{ text }}</text>
+  </view>
+</template>
+
+<script setup lang="uts">
+// 蒸汽模式：<script setup> 组合式；原子类替代复杂后代选择器（.ml-btn.primary .ml-btn-text）
+import { computed } from 'vue'
+
+const props = defineProps({
+  text: { type: String, default: '' },
+  type: { type: String, default: 'primary' }, // primary | secondary | ghost
+  disabled: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['tap'])
+
+const bgClass = computed(() => {
+  if (props.type === 'secondary') return 'bg-line'
+  if (props.type === 'ghost') return 'bg-transparent border border-smart'
+  return 'bg-smart'
+})
+
+const textColorClass = computed(() => {
+  if (props.type === 'secondary') return 'text-ink'
+  if (props.type === 'ghost') return 'text-smart'
+  return 'text-white'
+})
+
+function onClick() {
+  if (props.disabled) return
+  emit('tap')
+}
+</script>

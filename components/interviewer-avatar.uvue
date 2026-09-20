@@ -1,0 +1,43 @@
+<template>
+  <view class="w-full h-full flex-col items-center justify-center" :style="{ backgroundColor: bg }">
+    <view class="flex-col items-center">
+      <view class="w-18 h-18 rounded-full bg-figure-head flex-row items-center justify-center">
+        <!-- 口型随状态机变化：原 .s-listening .avatar-mouth 后代选择器已改为扁平原子类 -->
+        <view :class="mouthClass"></view>
+      </view>
+      <view
+        class="w-28 h-12 bg-figure-body mt-2"
+        :style="{ borderTopLeftRadius: '28px', borderTopRightRadius: '28px' }"
+      ></view>
+    </view>
+    <text class="text-xs text-mist mt-3">{{ label }}</text>
+  </view>
+</template>
+
+<script setup lang="uts">
+// 2.5D 数字人占位（状态驱动），真实 UTS 渲染（utssdk/interviewer-avatar）后续替换
+// 状态：idle / asking / listening / followup / summary（文档 02 §4 / 文档 04）
+import { computed } from 'vue'
+import { AVATAR_STATE_LABEL, StringMap } from '../styles/theme.uts'
+
+const props = defineProps({
+  state: { type: String, default: 'idle' }
+})
+
+const LABELS: StringMap = AVATAR_STATE_LABEL
+
+const label = computed(() => {
+  const v = LABELS[props.state]
+  return v.length > 0 ? v : '待机'
+})
+
+const bg = computed(() => (props.state === 'idle' ? '#0F2C4C' : '#13294A'))
+
+const mouthClass = computed(() => {
+  const base = 'h-1.5 rounded-full mt-5 '
+  if (props.state === 'listening') return base + 'w-4 bg-reliable'
+  if (props.state === 'followup') return base + 'w-7 bg-smart'
+  if (props.state === 'summary') return base + 'w-5 bg-reliable'
+  return base + 'w-6 bg-smart'
+})
+</script>

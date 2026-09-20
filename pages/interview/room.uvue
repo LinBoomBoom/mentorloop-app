@@ -1,0 +1,161 @@
+<template>
+  <view class="flex-col h-screen bg-navy">
+    <!-- 顶部状态条 -->
+    <view class="flex-row items-center justify-between h-11 px-4 mt-5">
+      <text class="text-sm text-mist" @click="confirmExit">退出</text>
+      <text class="text-xs text-reliable">网络良好</text>
+      <text class="text-sm text-white">{{ remain }}″</text>
+    </view>
+
+    <!-- 数字人舞台 -->
+    <view class="flex-1">
+      <interviewer-avatar :state="avatarState"></interviewer-avatar>
+    </view>
+
+    <!-- 字幕 / 实时转写（仅显示稳定文本，避免频闪） -->
+    <view class="p-4 mx-3 rounded-2xl" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
+      <text class="text-base font-semibold text-white">
+        {{ currentQuestion.content.length > 0 ? currentQuestion.content : '准备开始…' }}
+      </text>
+      <text class="text-xs text-mist mt-1.5">{{ caption }}</text>
+    </view>
+
+    <!-- 控制条 -->
+    <view class="flex-row justify-around px-3 py-4 bg-navy-deep">
+      <view class="flex-col items-center" @click="toggleRecord">
+        <view
+          class="w-10 h-10 rounded-full"
+          :class="recording ? 'bg-smart' : 'bg-line'"
+        ></view>
+        <text class="text-xs text-mist mt-1.5">{{ recording ? '停止' : '录音' }}</text>
+      </view>
+      <view class="flex-col items-center" @click="replay">
+        <text class="text-xs text-mist">再说一遍</text>
+      </view>
+      <view class="flex-col items-center" @click="pause">
+        <text class="text-xs text-mist">暂停</text>
+      </view>
+      <view class="flex-col items-center" @click="textMode">
+        <text class="text-xs text-mist">文字辅助</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
+import interviewerAvatar from '../../components/interviewer-avatar.uvue'
+import { interviewSession } from '../../store/interview-session.uts'
+import { createSession, nextQuestion } from '../../api/interview.uts'
+import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
+
+const recording = ref(false)
+const remain = ref(1200)
+const caption = ref('')
+const sessionId = ref('')
+
+const initialState: string = 'idle'
+const avatarState = ref(initialState)
+
+const emptyQuestion: QuestionItem = {
+  id: '',
+  abilityDomain: '',
+  subAbility: '',
+  content: '',
+  purpose: '',
+  difficulty: 'junior',
+  expectedEvidence: ''
+} as QuestionItem
+const currentQuestion = ref(emptyQuestion)
+
+const blueprint: PositionBlueprint = {
+  position: 'Java 后端',
+  experienceRange: '1-3年',
+  companyType: '互联网',
+  language: '中文',
+  target: '求职'
+} as PositionBlueprint
+
+let timer: number = 0
+
+onLoad(() => {
+  init()
+  timer = setInterval(() => {
+    if (remain.value > 0) remain.value = remain.value - 1
+  }, 1000)
+})
+
+onUnload(() => {
+  if (timer > 0) clearInterval(timer)
+})
+
+async function init() {
+  const s = await createSession('Java 后端')
+  sessionId.value = s.sessionId
+  interviewSession.reset(s.sessionId)
+  interviewSession.transition('DEVICE_CHECK')
+  interviewSession.transition('READY')
+  ask()
+}
+
+async function ask() {
+  interviewSession.transition('ASKING')
+  avatarState.value = 'asking'
+  caption.value = ''
+  const q = await nextQuestion(sessionId.value, 'standard', blueprint)
+  currentQuestion.value = q
+  interviewSession.pushQuestion(q)
+  // 数字人播报后进入倾听（真实播报由 realtime 插件驱动）
+  setTimeout(() => {
+    interviewSession.transition('LISTENING')
+    avatarState.value = 'listening'
+  }, 1500)
+}
+
+function toggleRecord() {
+  recording.value = !recording.value
+  if (recording.value) {
+    avatarState.value = 'listening'
+    caption.value = '正在聆听…'
+  } else {
+    caption.value = '已记录你的回答'
+    interviewSession.appendTranscript({
+      questionId: currentQuestion.value.id,
+      speaker: 'user',
+      text: '（录音转写占位）',
+      timestamp: Date.now()
+    })
+    interviewSession.transition('TRANSCRIBING')
+    interviewSession.transition('FOLLOW_UP_DECISION')
+    setTimeout(() => {
+      const ev = interviewSession.transition('NEXT_QUESTION')
+      if (ev != null) ask()
+    }, 800)
+  }
+}
+
+function replay() {
+  avatarState.value = 'asking'
+}
+
+function pause() {
+  recording.value = false
+}
+
+function textMode() {
+  // 降级文字输入（正式评分需标记输入方式）
+  uni.showToast({ title: '文字辅助模式', icon: 'none' })
+}
+
+function confirmExit() {
+  // 结束必须二次确认；异常退出自动保存会话（文档 03）
+  uni.showModal({
+    title: '结束面试',
+    content: '进度将自动保存，确认退出？',
+    success: (r: any) => {
+      if (r.confirm) uni.navigateBack()
+    }
+  })
+}
+</script>

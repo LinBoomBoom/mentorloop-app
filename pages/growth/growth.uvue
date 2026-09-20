@@ -1,0 +1,14 @@
+<template>
+  <view class="p-4">
+    <text class="text-xl font-bold text-ink mb-3">我的成长</text>
+    <ml-card>
+      <text class="text-sm text-ink-soft">
+        完成多场模拟后，这里对比你的能力变化（避免只比较总分，应比较具体能力与证据覆盖率）。
+      </text>
+    </ml-card>
+  </view>
+</template>
+
+<script setup lang="uts">
+import mlCard from '../../components/ml-card.uvue'
+</script>

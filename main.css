@@ -1,0 +1,50 @@
+/* Tailwind CSS 4 入口（uni-app x）
+   注意：CSS 生成由 weapp-tailwindcss 接管，不要再注册 tailwindcss / @tailwindcss/postcss / @tailwindcss/vite
+   source(none) 关闭自动扫描，改用显式 @source 精准指定候选文件 */
+
+@import 'tailwindcss' source(none);
+
+@source './App.uvue';
+@source './pages/**/*.uvue';
+@source './components/**/*.uvue';
+
+/* 设计 Token（文档 03：深海军蓝 / 紫蓝 / 青绿 + 浅色学习页背景）
+   Tailwind 4 会自动生成 bg-navy / text-smart / border-line 等原子类 */
+@theme {
+  --color-navy: #0f2c4c;
+  --color-navy-deep: #0b2138;
+  --color-smart: #5b6cff;
+  --color-reliable: #1fb6a6;
+  --color-warn: #e08a00;
+
+  --color-bg-light: #f7f9fc;
+  --color-surface: #ffffff;
+  --color-line: #e3e8f0;
+
+  --color-ink: #1a2433;
+  --color-ink-soft: #5b6472;
+  --color-mist: #aeb9cc;
+
+  --color-chip-smart: #eef1ff;
+  --color-chip-reliable: #e6f7f4;
+  --color-chip-warn: #fff3e0;
+
+  --color-figure-head: #c9d4e5;
+  --color-figure-body: #8c9bb5;
+}
+
+/* 全局基线：uvue 样式不继承，文字样式必须写在 text 上 */
+:root,
+page {
+  background-color: var(--color-bg-light);
+}
+
+/* 尊重系统「减少动态效果」（文档 03 无障碍要求） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

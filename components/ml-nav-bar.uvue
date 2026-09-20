@@ -1,0 +1,12 @@
+<template>
+  <view class="flex-row items-center justify-between h-11 px-4">
+    <text class="text-base font-semibold text-ink">{{ title }}</text>
+    <slot name="right"></slot>
+  </view>
+</template>
+
+<script setup lang="uts">
+const props = defineProps({
+  title: { type: String, default: '' }
+})
+</script>

@@ -1,0 +1,35 @@
+<template>
+  <view class="p-4">
+    <text class="text-xl font-bold text-ink mb-3">专项训练</text>
+    <view class="mb-2.5" v-for="t in tasks" :key="t.id" @click="startTask(t)">
+      <ml-card>
+        <view class="flex-row justify-between items-center">
+          <text class="text-base text-ink">{{ t.title }}</text>
+          <text class="text-xs text-ink-soft">{{ t.durationMin }} 分钟</text>
+        </view>
+      </ml-card>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import mlCard from '../../components/ml-card.uvue'
+
+type TrainingEntry = {
+  id: string
+  title: string
+  durationMin: number
+}
+
+const initialTasks: TrainingEntry[] = [
+  { id: 't1', title: '并发基础 3 分钟快练', durationMin: 3 } as TrainingEntry,
+  { id: 't2', title: '系统设计 5 分钟快练', durationMin: 5 } as TrainingEntry,
+  { id: 't3', title: '项目经历表达 10 分钟', durationMin: 10 } as TrainingEntry
+]
+const tasks = ref(initialTasks)
+
+function startTask(t: TrainingEntry) {
+  uni.showToast({ title: '开始：' + t.title, icon: 'none' })
+}
+</script>

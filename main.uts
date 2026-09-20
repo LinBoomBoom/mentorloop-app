@@ -1,0 +1,8 @@
+// uni-app x 应用入口（官方模板约定：main.uts，不是 main.js）
+import { createSSRApp } from 'vue'
+import App from './App.uvue'
+
+export function createApp() {
+  const app = createSSRApp(App)
+  return { app }
+}

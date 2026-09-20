@@ -1,0 +1,45 @@
+<template>
+  <view class="p-4">
+    <text class="text-xl font-bold text-ink mb-3">我的</text>
+
+    <view class="mb-2.5">
+      <ml-card>
+        <text class="text-xs text-ink-soft">账户</text>
+        <text class="text-base font-semibold text-ink mt-1">
+          {{ nickname }} · {{ planLabel }}
+        </text>
+      </ml-card>
+    </view>
+
+    <view class="mb-2.5" @click="privacy">
+      <ml-card><text class="text-xs text-ink-soft">数据删除入口（隐私透明）</text></ml-card>
+    </view>
+
+    <view class="mb-2.5" @click="about">
+      <ml-card><text class="text-xs text-ink-soft">关于 MentorLoop</text></ml-card>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import mlCard from '../../components/ml-card.uvue'
+import { userStore } from '../../store/user-profile.uts'
+
+const nickname = ref(userStore.profile.nickname)
+const plan = ref(userStore.profile.plan)
+
+const planLabel = computed(() => {
+  if (plan.value === 'member') return '会员'
+  if (plan.value === 'single') return '单次包'
+  return '免费'
+})
+
+function privacy() {
+  uni.showToast({ title: '前往数据删除', icon: 'none' })
+}
+
+function about() {
+  uni.showToast({ title: 'MentorLoop · 学面一体', icon: 'none' })
+}
+</script>
