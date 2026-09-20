@@ -1,0 +1,44 @@
+{
+  "name": "MentorLoop",
+  "appid": "",
+  "description": "学面一体·智能导师 — AI 数字人面试训练",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "vueVersion": "3",
+  "uni-app-x": {
+    "compilerVersion": "4.0.0"
+  },
+  "app-plus": {
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+          "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>"
+        ]
+      },
+      "ios": {
+        "permissions": {
+          "NSMicrophoneUsageDescription": "用于 AI 语音面试录音",
+          "NSLocalNetworkUsageDescription": "用于连接面试服务"
+        }
+      }
+    },
+    "modules": {}
+  },
+  "mp-weixin": {
+    "appid": "touristappid",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "permission": {
+      "scope.record": {
+        "desc": "用于 AI 语音面试录音"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation"]
+  }
+}

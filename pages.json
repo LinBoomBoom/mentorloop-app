@@ -1,0 +1,59 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "MentorLoop" }
+    },
+    {
+      "path": "pages/interview/prep",
+      "style": { "navigationBarTitleText": "面试准备" }
+    },
+    {
+      "path": "pages/interview/room",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "面试房间" }
+    },
+    {
+      "path": "pages/interview/summary",
+      "style": { "navigationBarTitleText": "面试总结" }
+    },
+    {
+      "path": "pages/report/report",
+      "style": { "navigationBarTitleText": "面试报告" }
+    },
+    {
+      "path": "pages/training/training",
+      "style": { "navigationBarTitleText": "专项训练" }
+    },
+    {
+      "path": "pages/resume/resume",
+      "style": { "navigationBarTitleText": "简历优化" }
+    },
+    {
+      "path": "pages/growth/growth",
+      "style": { "navigationBarTitleText": "我的成长" }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": { "navigationBarTitleText": "我的" }
+    }
+  ],
+  "tabBar": {
+    "color": "#94A3B8",
+    "selectedColor": "#0F2C4C",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/training/training", "text": "专项训练" },
+      { "pagePath": "pages/resume/resume", "text": "简历优化" },
+      { "pagePath": "pages/growth/growth", "text": "我的成长" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "MentorLoop",
+    "navigationBarBackgroundColor": "#F7F9FC",
+    "backgroundColor": "#F7F9FC"
+  }
+}

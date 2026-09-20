@@ -1,0 +1,11 @@
+// 主题变量（文档化 Token，与 App.vue 中 CSS 变量保持一致）
+// 注意：uni-app x 的 uvue 页面优先使用 App.vue 注入的 CSS 变量；
+// 此处保留 SCSS 变量便于后续非 uvue 场景与文档对齐。
+$color-navy: #0F2C4C;
+$color-smart: #5B6CFF;
+$color-reliable: #1FB6A6;
+$color-bg-light: #F7F9FC;
+$color-text-primary: #1A2433;
+$color-text-secondary: #5B6472;
+$color-border: #E3E8F0;
+$color-surface: #FFFFFF;
