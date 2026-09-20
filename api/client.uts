@@ -1,0 +1,27 @@
+// 统一请求 / WebSocket 客户端（封装 uni.request）
+// Mock 优先：BASE_URL 为空时走 mock 模块，接真后端只改此处。
+
+export const BASE_URL: string = '' // 接真后端时填入网关地址（如 https://api.mentorloop.com）
+
+export interface ApiResult<T> {
+  code: number
+  data: T
+  message: string
+}
+
+export function useMock(): boolean {
+  return BASE_URL.length === 0
+}
+
+// 简单请求封装（真实模式）
+export function request<T>(path: string, options?: { method?: string; data?: any }): Promise<ApiResult<T>> {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: BASE_URL + path,
+      method: (options?.method || 'GET') as any,
+      data: options?.data,
+      success: (res: any) => resolve(res.data as ApiResult<T>),
+      fail: (err: any) => reject(err)
+    })
+  })
+}

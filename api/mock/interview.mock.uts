@@ -1,0 +1,22 @@
+// 面试 mock 数据（无后端时本地跑通流程）
+import { QuestionItem, InterviewMode, PositionBlueprint } from '../../types/interview.uts'
+
+export function mockCreateSession(position: string): Promise<{ sessionId: string }> {
+  return Promise.resolve({ sessionId: 'mock-' + Date.now() })
+}
+
+const SAMPLE_QUESTIONS: QuestionItem[] = [
+  { id: 'q1', abilityDomain: '并发与JVM', subAbility: '问题定位', content: '请描述一次你定位过的内存溢出问题。', purpose: '验证项目深度与个人贡献', difficulty: 'mid', expectedEvidence: '指标、假设、验证、结果' },
+  { id: 'q2', abilityDomain: '系统设计', subAbility: '容量与权衡', content: '设计一个短链服务，说明容量估算与权衡。', purpose: '评估约束与备选方案', difficulty: 'mid', expectedEvidence: '约束、备选方案、取舍' },
+  { id: 'q3', abilityDomain: '项目经历', subAbility: '个人贡献', content: '你在上一个项目里最关键的决策是什么？', purpose: '区分团队成果与个人决策', difficulty: 'junior', expectedEvidence: '个人贡献、决策依据' },
+  { id: 'q4', abilityDomain: '表达能力', subAbility: 'STAR叙述', content: '用结构化方式讲一个你解决冲突的例子。', purpose: '评估表达结构与结论先行', difficulty: 'junior', expectedEvidence: '结论、证据、反思' }
+]
+
+export function mockNextQuestion(sessionId: string, mode: InterviewMode): Promise<QuestionItem> {
+  const i = Math.floor(Math.random() * SAMPLE_QUESTIONS.length)
+  return Promise.resolve(SAMPLE_QUESTIONS[i])
+}
+
+export function mockSubmitAnswer(sessionId: string, questionId: string, text: string): Promise<{ ok: boolean }> {
+  return Promise.resolve({ ok: true })
+}

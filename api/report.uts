@@ -1,0 +1,9 @@
+// 评分与报告接口（来源文档 02 §3.4 / §2.5）
+import { request, useMock } from './client.uts'
+import { mockGetReport } from './mock/report.mock.uts'
+import { InterviewReport } from '../types/scoring.uts'
+
+export function getReport(sessionId: string): Promise<InterviewReport> {
+  if (useMock()) return mockGetReport(sessionId)
+  return request<InterviewReport>('/report?sessionId=' + sessionId)
+}

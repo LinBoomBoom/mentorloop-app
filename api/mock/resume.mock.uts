@@ -1,0 +1,24 @@
+// 简历 mock 数据
+import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+
+export function mockParseResume(fileUrl: string): Promise<ResumeParseResult> {
+  return Promise.resolve({
+    contact: true,
+    projects: 3,
+    techStack: ['Java', 'Spring Boot', 'MySQL', 'Redis'],
+    quantified: false,
+    gaps: ['缺少量化成果', '空档期未说明'],
+    formatRisks: ['一页超过 2 屏']
+  })
+}
+
+export function mockOptimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {
+  return Promise.resolve([
+    {
+      original: '负责系统开发与维护',
+      suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（需补充真实数据）',
+      reason: '突出行动与量化结果，便于面试官快速判断价值',
+      needsUserEvidence: true
+    }
+  ])
+}

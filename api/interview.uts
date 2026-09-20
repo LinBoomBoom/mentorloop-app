@@ -1,0 +1,19 @@
+// 面试会话编排接口（来源文档 04 服务端：会话编排 / 题目与追问）
+import { request, useMock } from './client.uts'
+import { mockCreateSession, mockNextQuestion, mockSubmitAnswer } from './mock/interview.mock.uts'
+import { QuestionItem, InterviewMode, PositionBlueprint } from '../types/interview.uts'
+
+export function createSession(position: string): Promise<{ sessionId: string }> {
+  if (useMock()) return mockCreateSession(position)
+  return request<{ sessionId: string }>('/interview/session', { method: 'POST', data: { position } })
+}
+
+export function nextQuestion(sessionId: string, mode: InterviewMode, blueprint: PositionBlueprint): Promise<QuestionItem> {
+  if (useMock()) return mockNextQuestion(sessionId, mode)
+  return request<QuestionItem>('/interview/next?sessionId=' + sessionId)
+}
+
+export function submitAnswer(sessionId: string, questionId: string, text: string): Promise<{ ok: boolean }> {
+  if (useMock()) return mockSubmitAnswer(sessionId, questionId, text)
+  return request<{ ok: boolean }>('/interview/answer', { method: 'POST', data: { sessionId, questionId, text } })
+}

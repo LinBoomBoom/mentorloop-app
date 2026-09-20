@@ -1,0 +1,14 @@
+// 简历解析 / 优化接口（来源文档 02 §2.4）
+import { request, useMock } from './client.uts'
+import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
+import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
+
+export function parseResume(fileUrl: string): Promise<ResumeParseResult> {
+  if (useMock()) return mockParseResume(fileUrl)
+  return request<ResumeParseResult>('/resume/parse', { method: 'POST', data: { fileUrl } })
+}
+
+export function optimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {
+  if (useMock()) return mockOptimizeResume(text, position)
+  return request<ResumeSuggestion[]>('/resume/optimize', { method: 'POST', data: { text, position } })
+}
