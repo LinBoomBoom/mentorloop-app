@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: uvue CSS guard
+        run: node scripts/check-uvue-css.mjs
+
+      - name: Unit test
+        run: pnpm test
+
+      - name: Type check
+        run: pnpm typecheck
+        continue-on-error: true # uvue/uts 类型需 HBuilderX 环境，暂不阻断
+
+      - name: Security audit
+        run: pnpm audit --audit-level high
+        continue-on-error: true

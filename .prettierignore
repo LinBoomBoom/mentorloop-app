@@ -1,0 +1,9 @@
+node_modules
+unpackage
+dist
+.temp
+coverage
+playwright-report
+static
+pnpm-lock.yaml
+package-lock.json
