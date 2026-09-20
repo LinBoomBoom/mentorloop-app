@@ -1,0 +1,24 @@
+// 设计系统 Token（uts 侧引用，例如状态机/原生层颜色与数字人状态）
+// 与 App.vue 中 CSS 变量、uni.scss 保持一致（单一事实来源）
+
+export const THEME = {
+  navy: '#0F2C4C',
+  smart: '#5B6CFF',
+  reliable: '#1FB6A6',
+  bgLight: '#F7F9FC',
+  textPrimary: '#1A2433',
+  textSecondary: '#5B6472',
+  border: '#E3E8F0',
+  surface: '#FFFFFF'
+}
+
+// 数字人状态（文档 02 / 04：idle/asking/listening/followup/summary）
+export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'summary'
+
+export const AVATAR_STATE_LABEL: Record<AvatarState, string> = {
+  idle: '待机',
+  asking: '提问中',
+  listening: '倾听中',
+  followup: '追问中',
+  summary: '总结中'
+}

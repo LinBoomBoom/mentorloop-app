@@ -1,0 +1,54 @@
+// 面试领域模型（与后端契约对齐，可后续替换实现）
+// 来源文档 02 / 04
+
+export type InterviewMode = 'quick' | 'standard' | 'deep' // 快练5min / 标准20 / 深度40
+export type Difficulty = 'junior' | 'mid' | 'senior'
+
+// 文档 04 状态机
+export type InterviewStatus =
+  | 'CREATED'
+  | 'DEVICE_CHECK'
+  | 'READY'
+  | 'ASKING'
+  | 'LISTENING'
+  | 'TRANSCRIBING'
+  | 'FOLLOW_UP_DECISION'
+  | 'NEXT_QUESTION'
+  | 'WRAP_UP'
+  | 'REPORT_GENERATING'
+  | 'COMPLETED'
+
+export interface PositionBlueprint {
+  position: string
+  experienceRange: string
+  companyType: string
+  language: string
+  target: string
+}
+
+export interface QuestionItem {
+  id: string
+  abilityDomain: string       // 能力域
+  subAbility: string
+  content: string
+  purpose: string             // 提问目的
+  difficulty: Difficulty
+  expectedEvidence: string    // 期望证据
+}
+
+export interface TranscriptEntry {
+  questionId: string
+  speaker: 'interviewer' | 'user'
+  text: string
+  timestamp: number
+}
+
+// 关键事件：带会话ID/题目ID/事件序号/幂等键（文档 04）
+export interface InterviewEvent {
+  sessionId: string
+  questionId: string
+  eventSeq: number
+  status: InterviewStatus
+  idempotencyKey: string
+  at: number
+}

@@ -1,0 +1,52 @@
+// 评分与报告领域模型（来源文档 02 §3.4 / §2.5）
+
+export type ScoreDimension =
+  | 'knowledge'      // 岗位知识与正确性 25%
+  | 'engineering'    // 项目与工程实践 25%
+  | 'analysis'       // 问题分析与权衡 20%
+  | 'communication'  // 表达与沟通 15%
+  | 'learning'       // 学习与复盘 10%
+  | 'motivation'     // 职业动机与匹配 5%
+
+export interface DimensionScore {
+  dimension: ScoreDimension
+  level: 'A' | 'B' | 'C' | 'D'
+  confidence: number        // 0-1，低置信度不伪装为精确分数
+  evidence: string          // 引用证据
+  missingEvidence: string
+  suggestQuestions: string[]
+}
+
+export interface TrainingTask {
+  id: string
+  title: string
+  durationMin: number
+  priority: number
+}
+
+export interface InterviewReport {
+  overall: string
+  strongest: string
+  topPriority: string
+  dimensions: DimensionScore[]
+  riskQuestions: string[]
+  trainingPlan: TrainingTask[]
+}
+
+export const DIMENSION_WEIGHT: Record<ScoreDimension, number> = {
+  knowledge: 0.25,
+  engineering: 0.25,
+  analysis: 0.20,
+  communication: 0.15,
+  learning: 0.10,
+  motivation: 0.05
+}
+
+export const DIMENSION_LABEL: Record<ScoreDimension, string> = {
+  knowledge: '岗位知识与正确性',
+  engineering: '项目与工程实践',
+  analysis: '问题分析与权衡',
+  communication: '表达与沟通',
+  learning: '学习与复盘',
+  motivation: '职业动机与匹配'
+}

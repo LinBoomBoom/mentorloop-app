@@ -1,0 +1,28 @@
+// 用户 / 登录态（轻量单例，零依赖）
+// 与文档 01 商业模式（free / single / member）对齐
+
+interface UserProfile {
+  uid: string
+  nickname: string
+  plan: 'free' | 'single' | 'member'
+  currentPosition: string
+}
+
+class UserStore {
+  profile: UserProfile = {
+    uid: '',
+    nickname: '访客',
+    plan: 'free',
+    currentPosition: 'Java 后端'
+  }
+
+  setProfile(p: Partial<UserProfile>) {
+    this.profile = { ...this.profile, ...p }
+  }
+
+  isMember(): boolean {
+    return this.profile.plan === 'member'
+  }
+}
+
+export const userStore = new UserStore()

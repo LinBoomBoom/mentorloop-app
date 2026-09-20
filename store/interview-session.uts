@@ -1,0 +1,85 @@
+// 面试会话状态机 + 本地草稿（来源文档 04）
+// 单例：70–80% 逻辑跨端复用，不依赖 UI / 后端，可独立单测。
+
+import {
+  InterviewStatus,
+  InterviewEvent,
+  QuestionItem,
+  TranscriptEntry
+} from '../types/interview.uts'
+
+// 合法状态迁移表
+const TRANSITIONS: Record<InterviewStatus, InterviewStatus[]> = {
+  CREATED: ['DEVICE_CHECK'],
+  DEVICE_CHECK: ['READY'],
+  READY: ['ASKING'],
+  ASKING: ['LISTENING'],
+  LISTENING: ['TRANSCRIBING'],
+  TRANSCRIBING: ['FOLLOW_UP_DECISION'],
+  FOLLOW_UP_DECISION: ['NEXT_QUESTION', 'WRAP_UP'],
+  NEXT_QUESTION: ['ASKING'],
+  WRAP_UP: ['REPORT_GENERATING'],
+  REPORT_GENERATING: ['COMPLETED'],
+  COMPLETED: []
+}
+
+class InterviewSession {
+  sessionId: string = ''
+  status: InterviewStatus = 'CREATED'
+  private eventSeq: number = 0
+  private transcript: TranscriptEntry[] = []
+  private questions: QuestionItem[] = []
+
+  reset(sessionId: string) {
+    this.sessionId = sessionId
+    this.status = 'CREATED'
+    this.eventSeq = 0
+    this.transcript = []
+    this.questions = []
+  }
+
+  canTransition(to: InterviewStatus): boolean {
+    return TRANSITIONS[this.status].includes(to)
+  }
+
+  // 返回事件（含幂等键）；非法迁移返回 null 并告警
+  transition(to: InterviewStatus): InterviewEvent | null {
+    if (!this.canTransition(to)) {
+      console.warn(`[session] 非法状态迁移: ${this.status} -> ${to}`)
+      return null
+    }
+    this.status = to
+    this.eventSeq += 1
+    const ev: InterviewEvent = {
+      sessionId: this.sessionId,
+      questionId: this.questions[this.questions.length - 1]?.id || '',
+      eventSeq: this.eventSeq,
+      status: to,
+      idempotencyKey: `${this.sessionId}-${this.eventSeq}`,
+      at: Date.now()
+    }
+    return ev
+  }
+
+  pushQuestion(q: QuestionItem) {
+    this.questions.push(q)
+  }
+
+  appendTranscript(entry: TranscriptEntry) {
+    this.transcript.push(entry)
+  }
+
+  getTranscript(): TranscriptEntry[] {
+    return this.transcript
+  }
+
+  getQuestions(): QuestionItem[] {
+    return this.questions
+  }
+
+  getStatus(): InterviewStatus {
+    return this.status
+  }
+}
+
+export const interviewSession = new InterviewSession()
