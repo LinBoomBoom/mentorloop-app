@@ -54,6 +54,7 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "MentorLoop",
     "navigationBarBackgroundColor": "#F7F9FC",
-    "backgroundColor": "#F7F9FC"
+    "backgroundColor": "#F7F9FC",
+    "styleIsolation": "2"
   }
 }
