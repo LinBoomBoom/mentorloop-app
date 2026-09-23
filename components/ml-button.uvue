@@ -1,7 +1,7 @@
 <template>
   <view
     class="flex-row items-center justify-center h-12 rounded-xl px-5"
-    :class="[bgClass, disabled ? 'opacity-50' : '']"
+    :class="[bgClass, block ? 'w-full' : '', disabled ? 'opacity-50' : '']"
     @click="onClick"
   >
     <text class="text-base font-semibold" :class="textColorClass">{{ text }}</text>
@@ -9,12 +9,12 @@
 </template>
 
 <script setup lang="uts">
-// 蒸汽模式：<script setup> 组合式；原子类替代复杂后代选择器（.ml-btn.primary .ml-btn-text）
 import { computed } from 'vue'
 
 const props = defineProps({
   text: { type: String, default: '' },
   type: { type: String, default: 'primary' }, // primary | secondary | ghost
+  block: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false }
 })
 

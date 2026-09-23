@@ -2,19 +2,61 @@
   <view class="p-3">
     <ml-nav-bar title="面试准备"></ml-nav-bar>
 
+    <!-- 岗位方向选择 -->
     <view class="mb-3">
       <ml-card>
-        <text class="text-xs text-ink-soft">目标岗位</text>
-        <text class="text-base font-semibold text-ink mt-1">{{ position }}</text>
+        <text class="text-xs text-ink-soft">面试方向</text>
+        <view class="flex-row flex-wrap mt-2.5">
+          <view
+            v-for="p in positionOptions"
+            :key="p.id"
+            class="px-3.5 h-9 rounded-lg flex-row items-center justify-center mr-2 mb-2"
+            :class="
+              positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
+            "
+            @click="selectPosition(p)"
+          >
+            <text
+              class="text-sm"
+              :class="
+                positionId === p.id ? 'text-white' : p.available ? 'text-ink' : 'text-ink-soft'
+              "
+            >
+              {{ p.name }}
+            </text>
+            <text v-if="!p.available" class="text-xs text-mist ml-1">（敬请期待）</text>
+          </view>
+        </view>
       </ml-card>
     </view>
 
+    <!-- 经验等级选择 -->
+    <view class="mb-3">
+      <ml-card>
+        <text class="text-xs text-ink-soft">经验年限（会影响题目难度）</text>
+        <view class="flex-row flex-wrap mt-2.5">
+          <view
+            v-for="e in experienceOptions"
+            :key="e.id"
+            class="px-3.5 h-9 rounded-lg flex-row items-center justify-center mr-2 mb-2"
+            :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
+            @click="experienceLevel = e.id"
+          >
+            <text class="text-sm" :class="experienceLevel === e.id ? 'text-white' : 'text-ink'">
+              {{ e.label }}
+            </text>
+          </view>
+        </view>
+      </ml-card>
+    </view>
+
+    <!-- 面试时长 -->
     <view class="mb-3">
       <ml-card>
         <text class="text-xs text-ink-soft">面试时长</text>
         <view class="flex-row mt-2.5">
           <view
-            class="flex-1 h-10 rounded-lg bg-line flex-row items-center justify-center mr-2"
+            class="flex-1 h-10 rounded-lg flex-row items-center justify-center mr-2"
             :class="mode === 'quick' ? 'bg-smart' : 'bg-line'"
             @click="mode = 'quick'"
           >
@@ -48,14 +90,19 @@
       <text class="text-xs text-ink-soft">设备检测</text>
       <view class="flex-row justify-between mt-2.5" v-for="c in checks" :key="c.key">
         <text class="text-sm text-ink">{{ c.name }}</text>
-        <text class="text-xs" :class="c.ok ? 'text-reliable' : 'text-warn'">
-          {{ c.ok ? '已通过' : '待检测' }}
+        <text
+          class="text-xs"
+          :class="c.ok ? 'text-reliable' : c.checking ? 'text-mist' : 'text-warn'"
+        >
+          {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
         </text>
       </view>
+      <text v-if="checkError.length > 0" class="text-xs text-warn mt-2">{{ checkError }}</text>
       <view class="mt-3">
         <ml-button
-          :text="deviceOk ? '进入面试' : '开始检测'"
+          :text="deviceOk ? '进入面试' : checking ? '检测中…' : '开始检测'"
           :type="deviceOk ? 'primary' : 'secondary'"
+          :disabled="checking || !canStart"
           @click="onPrimary"
         ></ml-button>
       </view>
@@ -65,23 +112,37 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlNavBar from '../../components/ml-nav-bar.uvue'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import { userStore } from '../../store/user-profile.uts'
+import { POSITION_OPTIONS, EXPERIENCE_OPTIONS } from '../../data/position-options.uts'
+import { PositionId, PositionOption, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
+
+type CheckKey = 'mic' | 'net' | 'record'
 
 type CheckItem = {
-  key: string
+  key: CheckKey
   name: string
   ok: boolean
+  checking: boolean
 }
 
-const position = ref('Java 后端 · 1-3年')
-const mode = ref('standard')
+const positionOptions = POSITION_OPTIONS
+const experienceOptions = EXPERIENCE_OPTIONS
+
+// 默认读取用户上次选择
+const positionId = ref<PositionId>(userStore.profile.positionId)
+const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
+const mode = ref<InterviewMode>('standard')
+const checking = ref(false)
+const checkError = ref('')
 
 const initialChecks: CheckItem[] = [
-  { key: 'mic', name: '麦克风', ok: false } as CheckItem,
-  { key: 'net', name: '网络', ok: false } as CheckItem,
-  { key: 'record', name: '录音授权', ok: false } as CheckItem
+  { key: 'net', name: '网络', ok: false, checking: false } as CheckItem,
+  { key: 'record', name: '录音授权', ok: false, checking: false } as CheckItem,
+  { key: 'mic', name: '麦克风', ok: false, checking: false } as CheckItem
 ]
 const checks = ref(initialChecks)
 
@@ -90,18 +151,214 @@ const deviceOk = computed(() => {
   return list.every((c: CheckItem) => c.ok)
 })
 
-function runCheck() {
-  const list: CheckItem[] = checks.value
+// 当前选中方向必须可用（题库就绪）才能开始
+const canStart = computed((): boolean => {
+  for (let i = 0; i < positionOptions.length; i++) {
+    if (positionOptions[i].id === positionId.value) return positionOptions[i].available
+  }
+  return false
+})
+
+onShow(() => {
+  // 从用户 profile 恢复默认选择
+  positionId.value = userStore.profile.positionId
+  experienceLevel.value = userStore.profile.experienceLevel
+})
+
+function selectPosition(p: PositionOption) {
+  if (!p.available) {
+    uni.showToast({ title: p.name + '题库建设中，敬请期待', icon: 'none' })
+    return
+  }
+  positionId.value = p.id
+}
+
+function setCheck(key: CheckKey, ok: boolean, isChecking: boolean) {
   const next: CheckItem[] = []
-  for (let i = 0; i < list.length; i++) {
-    next.push({ key: list[i].key, name: list[i].name, ok: true } as CheckItem)
+  for (let i = 0; i < checks.value.length; i++) {
+    const c = checks.value[i]
+    if (c.key === key) {
+      next.push({ key: c.key, name: c.name, ok: ok, checking: isChecking } as CheckItem)
+    } else {
+      next.push(c)
+    }
   }
   checks.value = next
 }
 
+// 1) 网络检测：用 uni.getNetworkType
+function checkNet(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    setCheck('net', false, true)
+    uni.getNetworkType({
+      success: (r: any) => {
+        const t = r.networkType as string
+        const ok = t !== 'none'
+        setCheck('net', ok, false)
+        resolve(ok)
+      },
+      fail: () => {
+        setCheck('net', false, false)
+        resolve(false)
+      }
+    })
+  })
+}
+
+// 2) 录音授权：uni.authorize + uni.getSetting
+function checkRecordAuth(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    setCheck('record', false, true)
+    // #ifdef MP-WEIXIN || APP-PLUS || APP
+    uni.getSetting({
+      success: (r: any) => {
+        const authSetting = r.authSetting
+        const scopeRecord = authSetting != null ? authSetting['scope.record'] : null
+        if (scopeRecord === false) {
+          // 曾经被拒：引导用户手动开启
+          uni.showModal({
+            title: '需要录音权限',
+            content: '请在设置中开启麦克风授权，否则无法进行面试。',
+            confirmText: '去设置',
+            success: (m: any) => {
+              if (m.confirm) {
+                uni.openSetting({
+                  success: (s: any) => {
+                    const ok = s.authSetting != null && s.authSetting['scope.record'] === true
+                    setCheck('record', ok, false)
+                    resolve(ok)
+                  }
+                })
+              } else {
+                setCheck('record', false, false)
+                resolve(false)
+              }
+            }
+          })
+          return
+        }
+        if (scopeRecord === true) {
+          setCheck('record', true, false)
+          resolve(true)
+          return
+        }
+        // 未申请过：主动请求授权
+        uni.authorize({
+          scope: 'scope.record',
+          success: () => {
+            setCheck('record', true, false)
+            resolve(true)
+          },
+          fail: () => {
+            setCheck('record', false, false)
+            resolve(false)
+          }
+        })
+      },
+      fail: () => {
+        // H5 等不支持授权 API 的环境：直接放行（H5 录音走浏览器媒体设备）
+        setCheck('record', true, false)
+        resolve(true)
+      }
+    })
+    // #endif
+    // #ifndef MP-WEIXIN || APP-PLUS || APP
+    setCheck('record', true, false)
+    resolve(true)
+    // #endif
+  })
+}
+
+// 3) 麦克风可用性：尝试启动一次短录音（1s）验证
+function checkMic(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    setCheck('mic', false, true)
+    try {
+      // #ifdef MP-WEIXIN || APP-PLUS || APP
+      const rm = uni.getRecorderManager()
+      let done = false
+      const finish = (ok: boolean) => {
+        if (done) return
+        done = true
+        setCheck('mic', ok, false)
+        resolve(ok)
+      }
+      rm.onStart(() => {
+        setTimeout(() => {
+          try {
+            rm.stop()
+          } catch {
+            finish(false)
+          }
+        }, 800)
+      })
+      rm.onStop(() => {
+        finish(true)
+      })
+      rm.onError(() => {
+        finish(false)
+      })
+      rm.start({ format: 'mp3', duration: 2000 })
+      // #endif
+      // #ifndef MP-WEIXIN || APP-PLUS || APP
+      setCheck('mic', true, false)
+      resolve(true)
+      // #endif
+    } catch {
+      setCheck('mic', false, false)
+      resolve(false)
+    }
+  })
+}
+
+async function runCheck() {
+  if (checking.value) return
+  checking.value = true
+  checkError.value = ''
+  // 重置所有状态为未通过
+  const reset: CheckItem[] = []
+  for (let i = 0; i < initialChecks.length; i++) {
+    reset.push({
+      key: initialChecks[i].key,
+      name: initialChecks[i].name,
+      ok: false,
+      checking: false
+    } as CheckItem)
+  }
+  checks.value = reset
+
+  const netOk = await checkNet()
+  const authOk = await checkRecordAuth()
+  // 仅在网络+授权都通过时再探测麦克风（避免两次弹权限）
+  const micOk = netOk && authOk ? await checkMic() : false
+
+  checking.value = false
+  if (!netOk) checkError.value = '网络不可用，请连接网络后重试'
+  else if (!authOk) checkError.value = '未获得录音授权，无法开始面试'
+  else if (!micOk) checkError.value = '麦克风不可用，请检查设备或权限'
+}
+
 function start() {
-  if (!deviceOk.value) return
-  uni.navigateTo({ url: '/pages/interview/room' })
+  if (!deviceOk.value || !canStart.value) return
+  // 持久化用户的方向/等级选择，下次进入默认选中
+  userStore.setProfile({
+    uid: null,
+    nickname: null,
+    plan: null,
+    positionId: positionId.value,
+    experienceLevel: experienceLevel.value,
+    token: null
+  })
+  userStore.persist()
+  // 将方向、等级、时长一同传给房间页
+  const url =
+    '/pages/interview/room?mode=' +
+    mode.value +
+    '&positionId=' +
+    positionId.value +
+    '&experienceLevel=' +
+    experienceLevel.value
+  uni.navigateTo({ url: url })
 }
 
 function onPrimary() {

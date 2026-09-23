@@ -1,44 +1,224 @@
 <template>
-  <view class="p-4">
-    <!-- Hero -->
-    <view class="bg-navy rounded-2xl p-6 flex-col items-start">
-      <text class="text-2xl font-bold text-white">开始一次面试</text>
-      <text class="text-sm text-mist mt-1.5 mb-4">当前岗位：{{ currentPosition }}</text>
-      <ml-button text="开始面试" type="primary" @click="startInterview"></ml-button>
+  <view class="flex-col w-full h-full bg-navy relative overflow-hidden">
+    <!-- 背景装饰光晕 -->
+    <view
+      class="absolute top-20 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-smart opacity-15 blur-circle"
+    ></view>
+    <view
+      class="absolute bottom-40 right-0 w-60 h-60 rounded-full bg-reliable opacity-10 blur-circle"
+    ></view>
+
+    <!-- 顶部问候区 -->
+    <view class="flex-col items-center pt-14 px-6">
+      <text class="text-2xl font-bold text-white">{{ greeting }}</text>
+      <text class="text-sm text-mist mt-1.5">{{ positionSubtitle }}</text>
     </view>
 
-    <text class="text-base font-semibold text-ink mt-5 mb-2.5">快速入口</text>
+    <!-- 数字人核心展示区 -->
+    <view class="flex-1 flex-col items-center justify-center relative">
+      <!-- 呼吸光环 -->
+      <view
+        class="absolute w-64 h-64 rounded-full border-2 border-smart opacity-20 breath-ring"
+      ></view>
+      <view
+        class="absolute w-52 h-52 rounded-full border border-reliable opacity-30 breath-ring-delay"
+      ></view>
 
-    <view class="mb-2.5" @click="goTab('/pages/training/training')">
-      <ml-card><text class="text-base text-ink">专项训练</text></ml-card>
-    </view>
-    <view class="mb-2.5" @click="goTab('/pages/resume/resume')">
-      <ml-card><text class="text-base text-ink">简历优化</text></ml-card>
-    </view>
-    <view class="mb-2.5" @click="goTab('/pages/growth/growth')">
-      <ml-card><text class="text-base text-ink">我的成长</text></ml-card>
+      <!-- 数字人头像（放大版） -->
+      <view class="flex-col items-center relative z-1">
+        <view
+          class="w-32 h-32 rounded-full bg-figure-head flex-row items-center justify-center shadow-figure"
+        >
+          <!-- 口型：待机状态微张，带轻动效 -->
+          <view class="h-2.5 w-8 rounded-full bg-smart avatar-mouth-idle"></view>
+        </view>
+        <view
+          class="w-44 h-20 bg-figure-body mt-3 shadow-figure"
+          :style="{ borderTopLeftRadius: '44px', borderTopRightRadius: '44px' }"
+        ></view>
+      </view>
+
+      <!-- 状态提示 -->
+      <view class="mt-8 flex-row items-center">
+        <view class="w-2 h-2 rounded-full bg-reliable mr-2 pulse-dot"></view>
+        <text class="text-sm text-mist">{{ statusText }}</text>
+      </view>
+
+      <!-- 数字人语气泡 -->
+      <view class="mt-5 mx-8 bg-navy-deep rounded-2xl px-5 py-3.5 relative bubble">
+        <text class="text-sm text-white text-center">{{ bubbleText }}</text>
+        <view
+          class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-navy-deep rotate-45"
+        ></view>
+      </view>
     </view>
 
-    <text class="text-base font-semibold text-ink mt-5 mb-2.5">最近报告</text>
-    <ml-card>
-      <text class="text-sm text-ink-soft">完成首次面试后，这里会显示你的最新报告</text>
-    </ml-card>
+    <!-- 底部操作区 -->
+    <view class="px-6 pb-10">
+      <!-- 未登录提示 -->
+      <view
+        v-if="!loggedIn"
+        class="mb-3 bg-chip-warn rounded-xl p-3 flex-row items-center"
+        @click="goLogin"
+      >
+        <text class="text-sm text-warn flex-1">登录后同步训练记录与报告</text>
+        <text class="text-sm text-warn">去登录 ›</text>
+      </view>
+
+      <!-- 主按钮：开始模拟面试 -->
+      <ml-button text="开始模拟面试" type="primary" block @tap="startInterview"></ml-button>
+
+      <!-- 次要快速入口 -->
+      <view class="flex-row justify-between mt-3">
+        <view
+          class="flex-1 mr-2 bg-navy-deep rounded-xl py-3 flex-col items-center"
+          @click="quickStart(3)"
+        >
+          <text class="text-base font-semibold text-white">3 分钟快练</text>
+          <text class="text-xs text-mist mt-1">单题速答</text>
+        </view>
+        <view
+          class="flex-1 ml-2 bg-navy-deep rounded-xl py-3 flex-col items-center"
+          @click="quickStart(5)"
+        >
+          <text class="text-base font-semibold text-white">5 分钟专项</text>
+          <text class="text-xs text-mist mt-1">聚焦薄弱项</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
-import mlCard from '../../components/ml-card.uvue'
-import { userStore } from '../../store/user-profile.uts'
+import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 
-const currentPosition = ref(userStore.profile.currentPosition)
+const positionLabel = ref(positionDisplay(userStore.profile))
+const experienceLabel = ref(experienceDisplay(userStore.profile))
+const loggedIn = ref(userStore.isLoggedIn())
+
+// 顶部副标题：岗位 · 年限 · 引导
+const positionSubtitle = computed((): string => {
+  return positionLabel.value + ' · ' + experienceLabel.value + ' · 准备好开始了吗'
+})
+
+// 根据时间段显示问候语
+const greeting = computed((): string => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了，注意休息'
+  if (h < 12) return '早上好'
+  if (h < 14) return '中午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
+
+const bubbleTexts: string[] = [
+  '今天想挑战哪道题？',
+  '上次的薄弱项要不要再练一次？',
+  '深呼吸，我们慢慢开始。',
+  '准备好了就告诉我，随时可以开始。',
+  '保持自信，你比想象中更优秀。'
+]
+const bubbleText = ref(bubbleTexts[0])
+const statusText = ref('AI 面试官已就绪')
+
+onShow(() => {
+  loggedIn.value = userStore.isLoggedIn()
+  positionLabel.value = positionDisplay(userStore.profile)
+  experienceLabel.value = experienceDisplay(userStore.profile)
+  // 每次进入首页随机切换一句问候
+  const idx = Math.floor(Math.random() * bubbleTexts.length)
+  bubbleText.value = bubbleTexts[idx]
+})
 
 function startInterview() {
   uni.navigateTo({ url: '/pages/interview/prep' })
 }
 
-function goTab(url: string) {
-  uni.switchTab({ url: url })
+function quickStart(_minutes: number) {
+  uni.navigateTo({ url: '/pages/interview/prep' })
+}
+
+function goLogin() {
+  // #ifdef APP
+  uni.navigateTo({ url: '/pages/login/login' })
+  // #endif
+  // #ifndef APP
+  uni.showToast({ title: '微信授权登录中，请稍候', icon: 'none' })
+  // #endif
 }
 </script>
+
+<style>
+/* 呼吸光环动画 */
+@keyframes breath {
+  0% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.08;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+}
+@keyframes breath-delay {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes mouth-idle {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.6);
+  }
+}
+
+.breath-ring {
+  animation: breath 3s ease-in-out infinite;
+}
+.breath-ring-delay {
+  animation: breath-delay 3s ease-in-out infinite 0.8s;
+}
+.pulse-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+.avatar-mouth-idle {
+  animation: mouth-idle 2.5s ease-in-out infinite;
+}
+.blur-circle {
+  filter: blur(60px);
+}
+.bubble {
+  max-width: 280px;
+}
+.shadow-figure {
+  box-shadow: 0 8px 32px rgba(91, 108, 255, 0.25);
+}
+</style>
