@@ -1,57 +1,79 @@
 <template>
   <scroll-view class="h-screen p-4" scroll-y="true">
-    <!-- 首屏三要素：总体判断 + 最强项 + 最高优先级（文档 02 §2.5） -->
-    <view v-if="report.dimensions.length > 0" class="bg-navy rounded-2xl p-5">
-      <text class="text-xs text-mist">总体判断</text>
-      <text class="text-lg font-semibold text-white mt-1.5 mb-3.5">{{ report.overall }}</text>
-      <view class="flex-row">
-        <view class="flex-1 bg-white/10 rounded-xl p-3 mr-2.5">
-          <text class="text-xs text-mist">最强项</text>
-          <text class="text-sm text-white mt-1">{{ report.strongest }}</text>
-        </view>
-        <view
-          class="flex-1 rounded-xl p-3"
-          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
-        >
-          <text class="text-xs text-mist">最高优先级</text>
-          <text class="text-sm text-white mt-1">{{ report.topPriority }}</text>
+    <view v-if="!hasReport" class="flex-col items-center justify-center mt-40">
+      <text class="text-sm text-ink-soft">暂无报告，完成一次面试后查看</text>
+    </view>
+
+    <template v-else>
+      <!-- 首屏三要素 -->
+      <view class="bg-navy rounded-2xl p-5">
+        <text class="text-xs text-mist">总体判断</text>
+        <text class="text-lg font-semibold text-white mt-1.5 mb-3.5">{{ report.overall }}</text>
+        <view class="flex-row">
+          <view
+            class="flex-1 rounded-xl p-3 mr-2.5"
+            :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
+          >
+            <text class="text-xs text-mist">最强项</text>
+            <text class="text-sm text-white mt-1">{{ report.strongest }}</text>
+          </view>
+          <view
+            class="flex-1 rounded-xl p-3"
+            :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+          >
+            <text class="text-xs text-mist">最高优先级</text>
+            <text class="text-sm text-white mt-1">{{ report.topPriority }}</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <text class="text-base font-semibold text-ink mt-5 mb-2.5">能力维度</text>
-    <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
-      <ml-card>
-        <view class="flex-row justify-between items-center">
-          <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
-          <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
+      <text class="text-base font-semibold text-ink mt-5 mb-2.5">能力维度</text>
+      <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
+        <ml-card>
+          <view class="flex-row justify-between items-center">
+            <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
+            <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
+          </view>
+          <text class="text-xs text-ink-soft mt-2">证据：{{ d.evidence }}</text>
+          <text v-if="d.missingEvidence.length > 0" class="text-xs text-warn mt-1">
+            待补：{{ d.missingEvidence }}
+          </text>
+        </ml-card>
+      </view>
+
+      <view v-if="report.riskQuestions.length > 0">
+        <text class="text-base font-semibold text-ink mt-5 mb-2.5">风险提示</text>
+        <view class="mb-2.5" v-for="(r, i) in report.riskQuestions" :key="i">
+          <ml-card>
+            <text class="text-sm text-warn">{{ r }}</text>
+          </ml-card>
         </view>
-        <text class="text-xs text-ink-soft mt-2">证据：{{ d.evidence }}</text>
-      </ml-card>
-    </view>
+      </view>
 
-    <text class="text-base font-semibold text-ink mt-5 mb-2.5">训练计划</text>
-    <view class="mb-2.5" v-for="t in report.trainingPlan" :key="t.id">
-      <ml-card>
-        <text class="text-base text-ink">{{ t.title }}</text>
-        <text class="text-xs text-ink-soft mt-1">
-          {{ t.durationMin }} 分钟 · 优先级 {{ t.priority }}
-        </text>
-      </ml-card>
-    </view>
+      <text class="text-base font-semibold text-ink mt-5 mb-2.5">训练计划</text>
+      <view class="mb-2.5" v-for="t in report.trainingPlan" :key="t.id" @click="goTraining(t)">
+        <ml-card>
+          <text class="text-base text-ink">{{ t.title }}</text>
+          <text class="text-xs text-ink-soft mt-1">
+            {{ t.durationMin }} 分钟 · 优先级 {{ t.priority }}
+          </text>
+        </ml-card>
+      </view>
 
-    <view class="mt-4 mb-6">
-      <ml-button text="再次模拟" type="ghost" @click="again"></ml-button>
-    </view>
+      <view class="mt-4 mb-6">
+        <ml-button text="再次模拟" type="ghost" @click="again"></ml-button>
+      </view>
+    </template>
   </scroll-view>
 </template>
 
 <script setup lang="uts">
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import { reportHistory } from '../../store/report-history.uts'
 import { getReport } from '../../api/report.uts'
 import { InterviewReport, DimensionScore, TrainingTask, DIMENSION_LABEL } from '../../types/scoring.uts'
 
@@ -65,15 +87,24 @@ const emptyReport: InterviewReport = {
 } as InterviewReport
 
 const report = ref(emptyReport)
+const hasReport = ref(false)
 
-onLoad(async () => {
-  const r = await getReport('mock')
-  report.value = r
+onShow(async () => {
+  try {
+    // 优先用 API（mock 模式下内部从 history 取最新）
+    const latest = reportHistory.latest()
+    const sid = latest != null ? latest.sessionId : 'latest'
+    const r = await getReport(sid)
+    report.value = r
+    hasReport.value = r.overall.length > 0
+  } catch {
+    hasReport.value = false
+  }
 })
 
 function dimLabel(k: string): string {
   const v = DIMENSION_LABEL[k]
-  return v.length > 0 ? v : k
+  return v != null && v.length > 0 ? v : k
 }
 
 function levelBg(l: string): string {
@@ -86,6 +117,10 @@ function levelColor(l: string): string {
   if (l === 'A') return '#1FB6A6'
   if (l === 'B') return '#5B6CFF'
   return '#E08A00'
+}
+
+function goTraining(_t: TrainingTask) {
+  uni.switchTab({ url: '/pages/training/training' })
 }
 
 function again() {

@@ -16,13 +16,14 @@ export const THEME: StringMap = {
   surface: '#FFFFFF'
 }
 
-// 数字人状态（文档 02 / 04：idle/asking/listening/followup/summary）
-export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'summary'
+// 数字人状态（文档 02 / 04：idle/asking/listening/followup/thinking/summary）
+export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'thinking' | 'summary'
 
 export const AVATAR_STATE_LABEL: StringMap = {
   idle: '待机',
   asking: '提问中',
   listening: '倾听中',
   followup: '追问中',
+  thinking: '思考中',
   summary: '总结中'
 }

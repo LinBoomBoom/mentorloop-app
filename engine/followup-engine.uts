@@ -1,0 +1,141 @@
+// 追问策略引擎（文档 02 §3.3）
+// 追问按意图分类，而非由模型自由发挥。
+// 硬约束：单个知识点最多深挖两层；无效循环、羞辱性追问和与岗位无关的隐私问题必须禁止。
+
+import { FollowupIntent, QuestionItem } from '../types/interview.uts'
+
+export type AnswerSignal = {
+  questionId: string
+  text: string // 用户回答文本（转写或文字输入）
+  isVague: boolean // 回答模糊
+  hasMetrics: boolean // 是否包含具体指标
+  isAbsolute: boolean // 是否绝对化表述（“肯定”“绝对”“都”）
+  contradictsPrevious: boolean // 是否与之前回答矛盾
+}
+
+export type FollowupDecision = {
+  shouldFollowup: boolean
+  intent: FollowupIntent | null
+  prompt: string // 追问话术
+  depth: number // 本次追问所处深度（1 或 2）
+  reason: string // 决策依据（供报告与评测）
+}
+
+// 各意图的默认话术模板（题目卡 followupPrompts 优先）
+const INTENT_PROMPTS: { [key: string]: string } = {
+  clarify: '能再具体说明一下你提到的范围或角色吗？',
+  evidence: '这里有没有具体的指标、日志或代码可以支撑？',
+  deepdive: '你为什么选择这个方案？当时还有哪些备选？',
+  counterexample: '如果这个方案失败了，或者遇到边界情况，会怎样？',
+  transfer: '如果把这套方法用在一个新的问题上，你会怎么迁移？',
+  wrapup: '好的，这部分我了解了，我们进入下一个话题。'
+}
+
+// 禁则词表：追问话术中不得出现（羞辱性/施压表述）
+const FORBIDDEN_PATTERNS: string[] = ['你怎么连', '这么简单都', '你不行', '太基础了', '别人都会']
+
+// 与岗位无关的隐私话题关键词（禁止追问）
+const PRIVACY_KEYWORDS: string[] = ['婚育', '恋爱', '宗教', '政治立场', '家庭收入']
+
+export function isForbiddenPrompt(prompt: string): boolean {
+  for (let i = 0; i < FORBIDDEN_PATTERNS.length; i++) {
+    if (prompt.includes(FORBIDDEN_PATTERNS[i])) return true
+  }
+  return false
+}
+
+export function isPrivacyTopic(text: string): boolean {
+  for (let i = 0; i < PRIVACY_KEYWORDS.length; i++) {
+    if (text.includes(PRIVACY_KEYWORDS[i])) return true
+  }
+  return false
+}
+
+// 根据回答信号判定追问意图（规则3：模糊、绝对化、缺指标、矛盾 → 深挖/证据/澄清）
+export function decideFollowup(
+  signal: AnswerSignal,
+  question: QuestionItem,
+  currentDepth: number
+): FollowupDecision {
+  // 硬约束：单知识点最多深挖两层
+  if (currentDepth >= 2) {
+    return {
+      shouldFollowup: false,
+      intent: null,
+      prompt: '',
+      depth: currentDepth,
+      reason: '已达最大深挖深度（2层），收束转下一能力域'
+    } as FollowupDecision
+  }
+
+  // 禁则：隐私话题不追问
+  if (isPrivacyTopic(signal.text)) {
+    return {
+      shouldFollowup: false,
+      intent: null,
+      prompt: '',
+      depth: currentDepth,
+      reason: '涉及隐私话题，禁止追问'
+    } as FollowupDecision
+  }
+
+  const nextDepth = currentDepth + 1
+  let intent: FollowupIntent = 'wrapup'
+  let reason = '回答完整，收束'
+
+  if (signal.contradictsPrevious) {
+    intent = 'clarify'
+    reason = '与先前回答矛盾，需澄清'
+  } else if (signal.isVague) {
+    intent = 'clarify'
+    reason = '回答模糊，需澄清范围与角色'
+  } else if (!signal.hasMetrics && question.expectedEvidence.includes('指标')) {
+    intent = 'evidence'
+    reason = '缺少期望证据（指标），要求补充'
+  } else if (signal.isAbsolute) {
+    intent = 'counterexample'
+    reason = '绝对化表述，用反例检验边界'
+  } else if (currentDepth === 0 && question.type === 'project') {
+    intent = 'deepdive'
+    reason = '项目题首层深挖：动机与替代方案'
+  } else if (currentDepth === 1 && question.type === 'project') {
+    intent = 'transfer'
+    reason = '项目题二层迁移：方法迁移到新场景'
+  }
+
+  if (intent === 'wrapup') {
+    return {
+      shouldFollowup: false,
+      intent: null,
+      prompt: '',
+      depth: currentDepth,
+      reason: reason
+    } as FollowupDecision
+  }
+
+  // 题目卡预设话术优先，其次意图默认话术
+  let prompt = INTENT_PROMPTS[intent]
+  if (question.followupPrompts.length > 0) {
+    const idx = currentDepth < question.followupPrompts.length ? currentDepth : 0
+    prompt = question.followupPrompts[idx]
+  }
+
+  // 双重保险：话术禁则校验
+  if (isForbiddenPrompt(prompt)) {
+    return {
+      shouldFollowup: false,
+      intent: null,
+      prompt: '',
+      depth: currentDepth,
+      reason: '话术命中禁则，放弃追问'
+    } as FollowupDecision
+  }
+
+  return {
+    shouldFollowup: true,
+    intent: intent,
+    prompt: prompt,
+    depth: nextDepth,
+    reason: reason
+  } as FollowupDecision
+}

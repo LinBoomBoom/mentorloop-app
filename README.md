@@ -6,17 +6,17 @@ uni-app x 单代码库（微信小程序 / Android / iOS / 鸿蒙 / Web），**�
 
 ## 1. 技术栈
 
-| 类别 | 选型 | 版本 |
-|---|---|---|
-| 框架 | uni-app x（uvue + UTS） | 蒸汽模式 `manifest.uni-app-x.vapor = true` |
-| Vue | 组合式 `<script setup lang="uts">`（蒸汽模式强制） | 由 HBuilderX 编译器内置提供 |
-| CSS | Tailwind CSS 4 + weapp-tailwindcss v5 `uniAppX()` preset | `^4.3` / `^5.3.3` |
-| 构建 | Vite（`@dcloudio/vite-plugin-uni`）+ HBuilderX 编译打包 | Node `^22.18 \|\| >=24.11` |
-| 包管理 | pnpm | `11.x` |
-| Lint | ESLint 9 flat config + eslint-plugin-vue | |
-| 格式化 | Prettier | |
-| 测试 | Vitest（纯逻辑）+ Playwright（E2E） | |
-| 提交 | husky + lint-staged + commitlint | |
+| 类别   | 选型                                                     | 版本                                       |
+| ------ | -------------------------------------------------------- | ------------------------------------------ |
+| 框架   | uni-app x（uvue + UTS）                                  | 蒸汽模式 `manifest.uni-app-x.vapor = true` |
+| Vue    | 组合式 `<script setup lang="uts">`（蒸汽模式强制）       | 由 HBuilderX 编译器内置提供                |
+| CSS    | Tailwind CSS 4 + weapp-tailwindcss v5 `uniAppX()` preset | `^4.3` / `^5.3.3`                          |
+| 构建   | Vite（`@dcloudio/vite-plugin-uni`）+ HBuilderX 编译打包  | Node `^22.18 \|\| >=24.11`                 |
+| 包管理 | pnpm                                                     | `11.x`                                     |
+| Lint   | ESLint 9 flat config + eslint-plugin-vue                 |                                            |
+| 格式化 | Prettier                                                 |                                            |
+| 测试   | Vitest（纯逻辑）+ Playwright（E2E）                      |                                            |
+| 提交   | husky + lint-staged + commitlint                         |                                            |
 
 > **关于 Vue 版本**：npm 上 `vue` 的最新稳定版是 **3.5.43**，3.6 目前只有 alpha/beta/rc。
 > uni-app x 的 Vue（含蒸汽模式实现）由 DCloud 编译器内置，**与 npm 上的 `vue` 版本解耦**，
@@ -24,12 +24,12 @@ uni-app x 单代码库（微信小程序 / Android / iOS / 鸿蒙 / Web），**�
 
 ### 蒸汽模式支持矩阵（HBuilderX 门槛）
 
-| 平台 | 最低 HBuilderX |
-|---|---|
-| 鸿蒙 HarmonyOS | 5.0+ |
-| iOS | 5.11+ |
-| Android | 5.21+ |
-| 小程序 / Web | 当前降级 VDOM 运行，官方称后续升级 |
+| 平台           | 最低 HBuilderX                     |
+| -------------- | ---------------------------------- |
+| 鸿蒙 HarmonyOS | 5.0+                               |
+| iOS            | 5.11+                              |
+| Android        | 5.21+                              |
+| 小程序 / Web   | 当前降级 VDOM 运行，官方称后续升级 |
 
 ---
 
@@ -103,6 +103,7 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 ## 5. 必须遵守的编码约束
 
 ### UTS（`*.uts` 与 `<script setup lang="uts">`）
+
 - **不支持 `interface`** 声明对象类型 → 必须用 `type X = { ... }` 命名。
 - **不支持 `undefined`** → 空值用 `null`。
 - 对象字面量必须 `as NamedType` 才能与类型关联。
@@ -110,6 +111,7 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 - 强类型：变量、参数、返回值都要有类型。
 
 ### uvue（页面 / 组件）
+
 - 必须 `<script setup lang="uts">` 组合式；**不支持选项式 API、不支持 mixin**（蒸汽模式硬性要求）。
 - `view` 默认 `flex-direction: column`，横向布局要显式写 `flex-row`。
 - **样式不继承**：文字必须用 `<text>` 包裹，并在 `<text>` 上写 `text-*` / `font-*`。
@@ -118,6 +120,7 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 - 单位用 rpx（已开启 `rem2rpx`，直接写 Tailwind 的 rem 间距即可自动换算）。
 
 ### Tailwind
+
 - 生成由 weapp-tailwindcss 接管，**不要**再注册 `tailwindcss()` / `@tailwindcss/postcss` / `@tailwindcss/vite`。
 - 新增页面后确认 `main.css` 的 `@source` 已覆盖（当前：`App.uvue`、`pages/**`、`components/**`）。
 - 设计 token 写在 `main.css` 的 `@theme` 块（单一事实来源，与 `styles/theme.uts` 同步）。

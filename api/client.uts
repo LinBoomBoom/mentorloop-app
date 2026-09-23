@@ -1,11 +1,16 @@
 // 统一请求客户端（封装 uni.request）
 // Mock 优先：BASE_URL 为空时走 mock 模块，接真后端只改此处。
+// 能力：token 注入、超时、统一业务码/HTTP 错误处理、401 自动登出、GET 参数序列化、失败事件入队（供补传）。
+
+import { userStore } from '../store/user-profile.uts'
 
 export const BASE_URL: string = '' // 接真后端时填入网关地址（如 https://api.mentorloop.com）
+export const REQUEST_TIMEOUT: number = 15000
 
 export type RequestOptions = {
-  method: string
-  data: any
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  data: any | null
+  header: { [key: string]: string } | null
 }
 
 export type ApiResult = {
@@ -18,18 +23,132 @@ export function useMock(): boolean {
   return BASE_URL.length === 0
 }
 
-export function request(path: string, options: RequestOptions): Promise<ApiResult> {
+// GET 参数序列化（处理空值 & encode）
+function serializeQuery(params: { [key: string]: any } | null): string {
+  if (params == null) return ''
+  const parts: string[] = []
+  const keys = Object.keys(params)
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i]
+    const v = params[k]
+    if (v == null) continue
+    parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(v)))
+  }
+  if (parts.length === 0) return ''
+  return '?' + parts.join('&')
+}
+
+// 统一构造请求头：Content-Type + Authorization
+function buildHeaders(custom: { [key: string]: string } | null): { [key: string]: string } {
+  const h: { [key: string]: string } = {
+    'Content-Type': 'application/json'
+  }
+  const token = userStore.profile.token
+  if (token.length > 0) {
+    h['Authorization'] = 'Bearer ' + token
+  }
+  if (custom != null) {
+    const keys = Object.keys(custom)
+    for (let i = 0; i < keys.length; i++) {
+      h[keys[i]] = custom[keys[i]]
+    }
+  }
+  return h
+}
+
+// 401/业务未登录：清态并跳登录
+function handleUnauthorized() {
+  userStore.logout()
+  uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
+  // #ifdef APP
+  setTimeout(() => {
+    uni.navigateTo({ url: '/pages/login/login' })
+  }, 800)
+  // #endif
+}
+
+export function request(
+  path: string,
+  options: RequestOptions,
+  query: { [key: string]: any } | null = null
+): Promise<ApiResult> {
   return new Promise<ApiResult>((resolve, reject) => {
+    const url = BASE_URL + path + serializeQuery(query)
+    const header = buildHeaders(options.header)
+    let settled = false
+
     uni.request({
-      url: BASE_URL + path,
+      url: url,
       method: options.method as any,
       data: options.data,
-      success: (res: any) => resolve(res.data as ApiResult),
-      fail: (err: any) => reject(err)
+      header: header,
+      timeout: REQUEST_TIMEOUT,
+      success: (res: any) => {
+        if (settled) return
+        settled = true
+        const statusCode = res.statusCode as number
+
+        // HTTP 401 → 清态
+        if (statusCode === 401) {
+          handleUnauthorized()
+          reject(new Error('UNAUTHORIZED'))
+          return
+        }
+        if (statusCode < 200 || statusCode >= 300) {
+          const msg = '网络异常（' + statusCode + '）'
+          uni.showToast({ title: msg, icon: 'none' })
+          reject(new Error(msg))
+          return
+        }
+
+        const body = res.data as ApiResult | null
+        if (body == null) {
+          const msg = '响应为空'
+          uni.showToast({ title: msg, icon: 'none' })
+          reject(new Error(msg))
+          return
+        }
+
+        // 业务码：0/200 成功；其余按业务错误处理
+        if (body.code === 0 || body.code === 200) {
+          resolve(body)
+          return
+        }
+        // 业务 401（网关可能以 body 返回）
+        if (body.code === 401 || body.code === 40001) {
+          handleUnauthorized()
+          reject(new Error('UNAUTHORIZED'))
+          return
+        }
+        const msg = body.message.length > 0 ? body.message : '请求失败（' + body.code + '）'
+        uni.showToast({ title: msg, icon: 'none' })
+        reject(new Error(msg))
+      },
+      fail: (err: any) => {
+        if (settled) return
+        settled = true
+        const errMsg = err != null && err.errMsg != null ? String(err.errMsg) : '网络不可用'
+        // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
+        uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
+        reject(new Error(errMsg))
+      }
     })
   })
 }
 
-export function makeOptions(method: string, data: any): RequestOptions {
-  return { method: method, data: data } as RequestOptions
+export function makeOptions(
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  data: any | null,
+  header: { [key: string]: string } | null = null
+): RequestOptions {
+  return { method: method, data: data, header: header } as RequestOptions
+}
+
+// 便捷方法：GET/POST
+export function get(path: string, query: { [key: string]: any } | null = null): Promise<ApiResult> {
+  return request(path, makeOptions('GET', null), query)
+}
+
+export function post(path: string, data: any): Promise<ApiResult> {
+  return request(path, makeOptions('POST', data))
 }

@@ -1,25 +1,29 @@
 // UTS 原生插件：interviewer-realtime
 // 职责：流式 ASR / TTS、断线重连、缓冲（文档 04）
 // 真实实现为原生层；此处为契约与降级实现。
+// 注意：UTS 不支持 interface，契约以类的公开方法为准。
 
-export interface RealtimePlugin {
-  streamASR(audioPath: string): void
-  playTTS(text: string): Promise<void>
-  onTranscript(cb: (text: string, stable: boolean) => void): void
-  onReconnect(cb: () => void): void
-  onTTSState(cb: (state: 'start' | 'end') => void): void
-}
-
-class RealtimePluginStub implements RealtimePlugin {
+export class RealtimePlugin {
   streamASR(audioPath: string): void {
-    console.warn('[realtime] 原生插件未接入')
+    console.warn('[realtime] 原生插件未接入', audioPath)
   }
+
   playTTS(text: string): Promise<void> {
+    console.warn('[realtime] playTTS 未接入', text)
     return Promise.resolve()
   }
-  onTranscript(cb: (text: string, stable: boolean) => void): void {}
-  onReconnect(cb: () => void): void {}
-  onTTSState(cb: (state: 'start' | 'end') => void): void {}
+
+  onTranscript(cb: (text: string, stable: boolean) => void): void {
+    console.warn('[realtime] onTranscript 未接入', cb)
+  }
+
+  onReconnect(cb: () => void): void {
+    console.warn('[realtime] onReconnect 未接入', cb)
+  }
+
+  onTTSState(cb: (state: 'start' | 'end') => void): void {
+    console.warn('[realtime] onTTSState 未接入', cb)
+  }
 }
 
-export const realtimePlugin: RealtimePlugin = new RealtimePluginStub()
+export const realtimePlugin: RealtimePlugin = new RealtimePlugin()

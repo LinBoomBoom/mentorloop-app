@@ -15,10 +15,10 @@ export default defineConfig({
       uniAppX({
         base: projectRoot,
         cssEntries: [resolve(projectRoot, 'main.css')],
-        cssOptions: { rem2rpx: true },
+        rem2rpx: true,
         // 原生 App 端不支持 gap / space-x-* / space-y-* → 直接报错，避免静默失效
-        uvueUnsupported: 'error',
+        uvueUnsupported: 'error'
       })
-    ),
-  ],
+    )
+  ]
 })

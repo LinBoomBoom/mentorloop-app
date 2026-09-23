@@ -1,7 +1,7 @@
 // 简历 mock 数据
 import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
 
-export function mockParseResume(fileUrl: string): Promise<ResumeParseResult> {
+export function mockParseResume(_fileUrl: string): Promise<ResumeParseResult> {
   return Promise.resolve({
     contact: true,
     projects: 3,
@@ -12,7 +12,7 @@ export function mockParseResume(fileUrl: string): Promise<ResumeParseResult> {
   } as ResumeParseResult)
 }
 
-export function mockOptimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {
+export function mockOptimizeResume(_text: string, _position: string): Promise<ResumeSuggestion[]> {
   return Promise.resolve([
     {
       original: '负责系统开发与维护',

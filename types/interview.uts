@@ -5,6 +5,24 @@
 export type InterviewMode = 'quick' | 'standard' | 'deep' // 快练5min / 标准20 / 深度40
 export type Difficulty = 'junior' | 'mid' | 'senior'
 
+// 目标岗位方向 id（用于题目过滤；题库未覆盖的方向在 prep 页显示"敬请期待"）
+export type PositionId = 'java-backend' | 'frontend' | 'golang-backend' | 'pm'
+
+// 经验档位 id（决定抽题难度区间）
+export type ExperienceLevel = 'fresh' | 'junior' | 'mid' | 'senior'
+
+// 题型（文档 02 §2.3：按题型组织题目）
+export type QuestionType = 'concept' | 'scenario' | 'project' | 'design' | 'behavioral'
+
+// 追问意图（文档 02 §3.3：追问按意图分类，而非由模型自由发挥）
+export type FollowupIntent =
+  | 'clarify' // 澄清：术语、角色、范围、约束不清
+  | 'evidence' // 证据：要求具体指标、日志、代码、决策或个人贡献
+  | 'deepdive' // 深挖：从"做了什么"进入"为什么这样做、替代方案是什么"
+  | 'counterexample' // 反例：失败场景、边界条件、故障恢复
+  | 'transfer' // 迁移：把原项目方法迁移到新问题
+  | 'wrapup' // 收束：总结用户回答，转向下一个能力域
+
 // 文档 04 状态机
 export type InterviewStatus =
   | 'CREATED'
@@ -20,21 +38,30 @@ export type InterviewStatus =
   | 'COMPLETED'
 
 export type PositionBlueprint = {
-  position: string
-  experienceRange: string
+  positionId: PositionId
+  position: string // 展示名，例如"Java 后端"
+  experienceLevel: ExperienceLevel
+  experienceRange: string // 展示名，例如"1-3年"
   companyType: string
   language: string
   target: string
 }
 
+// 题目卡（文档 02 §2.3：按岗位、能力、知识点、难度、常见误区、题型和答案证据要求组织题目）
 export type QuestionItem = {
   id: string
-  abilityDomain: string // 能力域
-  subAbility: string
+  positionId: PositionId // 所属岗位方向（跨岗位题库过滤用）
+  abilityDomain: string // 能力域（图谱 domainId）
+  subAbility: string // 子能力（图谱 subAbilityId）
+  knowledgePoint: string // 知识点
   content: string
   purpose: string // 提问目的
   difficulty: Difficulty
+  type: QuestionType
+  misconceptions: string[] // 常见误区（评分与追问线索）
   expectedEvidence: string // 期望证据
+  followupPrompts: string[] // 预设追问话术（按意图配套使用）
+  resumeRisk: boolean // 是否用于简历高价值项目验证性追问（文档 02 §3.2 规则2）
 }
 
 export type TranscriptEntry = {

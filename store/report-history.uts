@@ -1,0 +1,87 @@
+// 报告历史（成长页 & 首页"最近报告"的数据来源）
+// 文档 02 §2.5 成长档案：保留最近 N 场面试报告，供维度对比与训练计划追踪。
+
+import { InterviewReport } from '../types/scoring.uts'
+
+const HISTORY_KEY = 'ml_report_history'
+const MAX_KEEP = 10
+
+// 带时间戳的报告记录
+export type ReportRecord = {
+  sessionId: string
+  at: number
+  report: InterviewReport
+}
+
+class ReportHistory {
+  private list: ReportRecord[] = []
+
+  // 启动时从本地缓存加载
+  load() {
+    try {
+      const raw = uni.getStorageSync(HISTORY_KEY) as string
+      if (raw == null || raw.length === 0) {
+        this.list = []
+        return
+      }
+      const arr = JSON.parse(raw) as ReportRecord[]
+      this.list = arr != null ? arr : []
+    } catch (e: any) {
+      console.warn('[report-history] load failed', e)
+      this.list = []
+    }
+  }
+
+  push(sessionId: string, report: InterviewReport) {
+    const rec: ReportRecord = {
+      sessionId: sessionId,
+      at: Date.now(),
+      report: report
+    } as ReportRecord
+    // 同会话覆盖（避免重复）
+    const rest: ReportRecord[] = []
+    for (let i = 0; i < this.list.length; i++) {
+      if (this.list[i].sessionId !== sessionId) rest.push(this.list[i])
+    }
+    rest.unshift(rec)
+    if (rest.length > MAX_KEEP) {
+      this.list = rest.slice(0, MAX_KEEP)
+    } else {
+      this.list = rest
+    }
+    this.persist()
+  }
+
+  latest(): ReportRecord | null {
+    return this.list.length > 0 ? this.list[0] : null
+  }
+
+  all(): ReportRecord[] {
+    return this.list
+  }
+
+  // 返回最近 n 条（按时间倒序）
+  recent(n: number): ReportRecord[] {
+    if (n >= this.list.length) return this.list
+    return this.list.slice(0, n)
+  }
+
+  clear() {
+    this.list = []
+    try {
+      uni.removeStorageSync(HISTORY_KEY)
+    } catch (e: any) {
+      console.warn('[report-history] clear failed', e)
+    }
+  }
+
+  private persist() {
+    try {
+      uni.setStorageSync(HISTORY_KEY, JSON.stringify(this.list))
+    } catch (e: any) {
+      console.warn('[report-history] persist failed', e)
+    }
+  }
+}
+
+export const reportHistory = new ReportHistory()

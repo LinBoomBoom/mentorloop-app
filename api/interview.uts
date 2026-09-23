@@ -1,5 +1,5 @@
 // 面试会话编排接口（来源文档 04 服务端：会话编排 / 题目与追问）
-import { request, useMock, makeOptions } from './client.uts'
+import { get, post, useMock } from './client.uts'
 import { mockCreateSession, mockNextQuestion, mockSubmitAnswer } from './mock/interview.mock.uts'
 import {
   QuestionItem,
@@ -9,31 +9,50 @@ import {
   AnswerAck
 } from '../types/interview.uts'
 
-export async function createSession(position: string): Promise<SessionRef> {
-  if (useMock()) return await mockCreateSession(position)
-  const r = await request('/interview/session', makeOptions('POST', { position: position }))
+export async function createSession(blueprint: PositionBlueprint): Promise<SessionRef> {
+  if (useMock()) return await mockCreateSession(blueprint.position)
+  const r = await post('/interview/session', {
+    positionId: blueprint.positionId,
+    position: blueprint.position,
+    experienceLevel: blueprint.experienceLevel,
+    experienceRange: blueprint.experienceRange
+  })
   return r.data as SessionRef
 }
 
 export async function nextQuestion(
   sessionId: string,
   mode: InterviewMode,
-  blueprint: PositionBlueprint
+  blueprint: PositionBlueprint,
+  asked: string[] = [],
+  remainSeconds: number = 0,
+  resumeRiskTopics: string[] = []
 ): Promise<QuestionItem> {
-  if (useMock()) return await mockNextQuestion(sessionId, mode)
-  const r = await request('/interview/next?sessionId=' + sessionId, makeOptions('GET', null))
+  if (useMock()) return await mockNextQuestion(sessionId, mode, blueprint)
+  const r = await get('/interview/next', {
+    sessionId: sessionId,
+    mode: mode,
+    positionId: blueprint.positionId,
+    experienceLevel: blueprint.experienceLevel,
+    asked: asked.join(','),
+    remainSeconds: remainSeconds,
+    resumeRiskTopics: resumeRiskTopics.join(',')
+  })
   return r.data as QuestionItem
 }
 
 export async function submitAnswer(
   sessionId: string,
   questionId: string,
-  text: string
+  text: string,
+  isFollowup: boolean = false
 ): Promise<AnswerAck> {
   if (useMock()) return await mockSubmitAnswer(sessionId, questionId, text)
-  const r = await request(
-    '/interview/answer',
-    makeOptions('POST', { sessionId: sessionId, questionId: questionId, text: text })
-  )
+  const r = await post('/interview/answer', {
+    sessionId: sessionId,
+    questionId: questionId,
+    text: text,
+    isFollowup: isFollowup
+  })
   return r.data as AnswerAck
 }

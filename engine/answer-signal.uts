@@ -1,0 +1,116 @@
+// 答案信号分析器（规则 v1）
+// 从用户回答文本中提取 AnswerSignal 供追问引擎使用。
+// 规则故意保持简单可解释，后续可替换为 NLP / 大模型打分。
+
+import { AnswerSignal } from './followup-engine.uts'
+
+// 模糊词：回答范围/角色不清
+const VAGUE_PATTERNS: string[] = [
+  '大概',
+  '可能',
+  '差不多',
+  '好像',
+  '应该是',
+  '记不清',
+  '不太记得',
+  '之类的',
+  '什么的',
+  '云云',
+  '一般般',
+  '简单做了'
+]
+
+// 绝对化词：容易被反例挑战
+const ABSOLUTE_PATTERNS: string[] = [
+  '肯定',
+  '绝对',
+  '一定',
+  '所有',
+  '全部',
+  '永远',
+  '从来',
+  '完全',
+  '百分之百',
+  '100%',
+  '必须',
+  '毫无疑问'
+]
+
+// 数字/百分比/时间指标关键词（粗略，匹配阿拉伯数字+中文数字+常见单位）
+const METRIC_REGEX_PARTS: string[] = [
+  '%',
+  '％',
+  'QPS',
+  'TPS',
+  'TPS',
+  'RT',
+  'ms',
+  '毫秒',
+  '秒',
+  '分钟',
+  'GB',
+  'MB',
+  'KB',
+  '并发',
+  '万',
+  '亿',
+  '倍',
+  '人日',
+  '人月'
+]
+
+// 检测文本是否包含数字（阿拉伯/中文）
+function containsNumber(text: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch >= '0' && ch <= '9') return true
+    if ('零一二三四五六七八九十百千'.indexOf(ch) >= 0) return true
+  }
+  return false
+}
+
+function containsAny(text: string, patterns: string[]): boolean {
+  for (let i = 0; i < patterns.length; i++) {
+    if (text.includes(patterns[i])) return true
+  }
+  return false
+}
+
+// 回答过短：长度阈值（中文按字符数近似）
+function isTooShort(text: string): boolean {
+  // 去除空白
+  let len = 0
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch !== ' ' && ch !== '\n' && ch !== '\t' && ch !== '　') len += 1
+  }
+  return len < 20
+}
+
+// 分析回答文本 → AnswerSignal
+// questionId 与 contradictsPrevious 由调用方填；本函数只负责基于文本的信号。
+export function analyzeAnswer(text: string, questionId: string): AnswerSignal {
+  const vague = isTooShort(text) || containsAny(text, VAGUE_PATTERNS)
+  const absolute = containsAny(text, ABSOLUTE_PATTERNS)
+
+  // 指标 = 含数字 且 含至少一个单位/术语关键词
+  let hasMetric = false
+  if (containsNumber(text)) {
+    if (containsAny(text, METRIC_REGEX_PARTS)) {
+      hasMetric = true
+    } else {
+      // 纯数字没单位也给一半机会：比如"优化了 3 个接口"也算指标
+      // 这里保守处理：只有数字+单位才算，避免误判
+      hasMetric = false
+    }
+  }
+
+  return {
+    questionId: questionId,
+    text: text,
+    isVague: vague,
+    hasMetrics: hasMetric,
+    isAbsolute: absolute,
+    contradictsPrevious: false
+  } as AnswerSignal
+}

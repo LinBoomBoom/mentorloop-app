@@ -1,0 +1,12 @@
+// 认证领域模型
+// 本阶段登录策略（决策记录 D1，见 docs/project-execution-plan.md）：
+// - App 端：完整认证流程（手机号 + 短信验证码），见 pages/login/login.uvue
+// - 小程序端：微信授权静默登录，不开发登录页模块；补做时点待与产品团队评估
+
+export type LoginChannel = 'app' | 'mp-weixin'
+
+export type AuthResult = {
+  uid: string
+  nickname: string
+  token: string
+}

@@ -1,14 +1,202 @@
 <template>
-  <view class="p-4">
+  <scroll-view class="h-screen p-4" scroll-y="true">
     <text class="text-xl font-bold text-ink mb-3">我的成长</text>
-    <ml-card>
-      <text class="text-sm text-ink-soft">
-        完成多场模拟后，这里对比你的能力变化（避免只比较总分，应比较具体能力与证据覆盖率）。
+
+    <!-- 无报告空状态 -->
+    <view v-if="records.length === 0">
+      <ml-card>
+        <text class="text-sm text-ink-soft">
+          还没有完成过面试，开始第一次模拟后这里会显示你的能力变化曲线。
+        </text>
+        <view class="mt-3">
+          <ml-button text="去开始一次面试" type="primary" @click="goStart"></ml-button>
+        </view>
+      </ml-card>
+    </view>
+
+    <template v-else>
+      <!-- 概览 -->
+      <ml-card class="mb-3">
+        <text class="text-xs text-ink-soft">累计场次</text>
+        <text class="text-2xl font-bold text-ink my-1">{{ records.length }} 场</text>
+        <text v-if="trendText.length > 0" class="text-xs text-reliable mt-1">{{ trendText }}</text>
+      </ml-card>
+
+      <!-- 每场时间列表 -->
+      <text class="text-base font-semibold text-ink mt-4 mb-2.5">最近场次</text>
+      <view class="mb-2.5" v-for="(r, i) in records" :key="r.sessionId + '_' + i">
+        <ml-card @click="showIdx = i">
+          <view class="flex-row justify-between items-center">
+            <text class="text-sm text-ink">
+              第{{ records.length - i }}场 · {{ formatDate(r.at) }}
+            </text>
+            <ml-tag
+              :label="avgLevel(r.report)"
+              :bg="i === showIdx ? '#E6F7F4' : '#F5F6FA'"
+              :color="i === showIdx ? '#1FB6A6' : '#5B6CFF'"
+            ></ml-tag>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 维度对比条：选中的那场 -->
+      <text class="text-base font-semibold text-ink mt-5 mb-2.5">
+        维度得分（{{ showCaption }}）
       </text>
-    </ml-card>
-  </view>
+      <view class="mb-2.5" v-for="d in activeDimensions" :key="d.dimension">
+        <ml-card>
+          <view class="flex-row justify-between items-center">
+            <text class="text-sm font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
+            <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
+          </view>
+          <!-- 条形：宽度 = (score / 100) * 100%，这里用 level 映射一个百分比直观展示 -->
+          <view class="mt-2 h-2 rounded-full bg-line">
+            <view
+              class="h-2 rounded-full"
+              :style="{ width: pctWidth(d.level), backgroundColor: levelColor(d.level) }"
+            ></view>
+          </view>
+          <text class="text-xs text-ink-soft mt-1">对比上次：{{ diffText(d.dimension) }}</text>
+        </ml-card>
+      </view>
+    </template>
+  </scroll-view>
 </template>
 
 <script setup lang="uts">
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
+import mlTag from '../../components/ml-tag.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { DimensionScore, DIMENSION_LABEL } from '../../types/scoring.uts'
+
+const records = ref<ReportRecord[]>([])
+const showIdx = ref(0)
+
+onShow(() => {
+  reportHistory.load()
+  const all = reportHistory.recent(5)
+  records.value = all
+  if (showIdx.value >= all.length) showIdx.value = 0
+})
+
+const activeDimensions = computed((): DimensionScore[] => {
+  if (records.value.length === 0) return []
+  const i = showIdx.value < records.value.length ? showIdx.value : 0
+  return records.value[i].report.dimensions
+})
+
+const showCaption = computed((): string => {
+  if (records.value.length === 0) return ''
+  const i = showIdx.value < records.value.length ? showIdx.value : 0
+  return '第' + (records.value.length - i) + '场'
+})
+
+const trendText = computed((): string => {
+  if (records.value.length < 2) return '完成第二次面试即可看到能力变化趋势'
+  const latest = records.value[0].report
+  const prev = records.value[1].report
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  // 取最新 vs 上一场的最强项等级差
+  const getScore = (r: typeof latest): number => {
+    let total = 0
+    let cnt = 0
+    for (let i = 0; i < r.dimensions.length; i++) {
+      const v = map[r.dimensions[i].level]
+      if (v != null) {
+        total += v
+        cnt += 1
+      }
+    }
+    return cnt > 0 ? total / cnt : 0
+  }
+  const delta = getScore(latest) - getScore(prev)
+  if (delta > 0.2) return '相比上次整体提升，继续保持'
+  if (delta < -0.2) return '相比上次有所下滑，查看高优先级维度'
+  return '与上次基本持平，建议针对性训练'
+})
+
+function avgLevel(r: typeof records.value[0]['report']): string {
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < r.dimensions.length; i++) {
+    const v = map[r.dimensions[i].level]
+    if (v != null) {
+      total += v
+      cnt += 1
+    }
+  }
+  const avg = cnt > 0 ? total / cnt : 0
+  if (avg >= 3.5) return 'A-'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
+}
+
+function dimLabel(k: string): string {
+  const v = DIMENSION_LABEL[k]
+  return v != null && v.length > 0 ? v : k
+}
+
+function levelToScore(l: string): number {
+  if (l === 'A') return 90
+  if (l === 'B') return 75
+  if (l === 'C') return 60
+  return 45
+}
+
+function pctWidth(l: string): string {
+  const w = levelToScore(l)
+  return w + '%'
+}
+
+function levelBg(l: string): string {
+  if (l === 'A') return '#E6F7F4'
+  if (l === 'B') return '#EEF1FF'
+  return '#FFF3E0'
+}
+
+function levelColor(l: string): string {
+  if (l === 'A') return '#1FB6A6'
+  if (l === 'B') return '#5B6CFF'
+  return '#E08A00'
+}
+
+// 维度对比：对比当前 showIdx 与下一场（更早一场）
+function diffText(dim: string): string {
+  if (records.value.length < 2) return '暂无对比数据'
+  const cur = records.value[showIdx.value].report
+  const prevIdx = showIdx.value + 1
+  if (prevIdx >= records.value.length) return '已对比到最早一场'
+  const prev = records.value[prevIdx].report
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  const getLvl = (r: typeof cur): number => {
+    for (let i = 0; i < r.dimensions.length; i++) {
+      if (r.dimensions[i].dimension === dim) return map[r.dimensions[i].level]
+    }
+    return 0
+  }
+  const c = getLvl(cur)
+  const p = getLvl(prev)
+  if (c > p) return '提升 ' + (c - p) + ' 级'
+  if (c < p) return '下降 ' + (p - c) + ' 级'
+  return '持平'
+}
+
+function formatDate(ts: number): string {
+  const d = new Date(ts)
+  const mm = d.getMonth() + 1
+  const dd = d.getDate()
+  const hh = d.getHours()
+  const mi = d.getMinutes()
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(mm) + '-' + pad(dd) + ' ' + pad(hh) + ':' + pad(mi)
+}
+
+function goStart() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
 </script>

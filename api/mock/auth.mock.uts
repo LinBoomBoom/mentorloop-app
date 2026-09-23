@@ -1,0 +1,28 @@
+// 认证 mock 数据（无后端时本地跑通登录流程）
+// Mock 阶段固定验证码 123456；接真后端后由短信网关下发。
+import { AuthResult } from '../../types/auth.uts'
+
+export const MOCK_SMS_CODE = '123456'
+
+export function mockSendSmsCode(phone: string): Promise<boolean> {
+  return Promise.resolve(phone.length === 11)
+}
+
+export function mockLoginByPhone(phone: string, code: string): Promise<AuthResult> {
+  if (code !== MOCK_SMS_CODE) {
+    return Promise.reject(new Error('验证码不正确'))
+  }
+  return Promise.resolve({
+    uid: 'mock-' + phone.slice(7),
+    nickname: '用户' + phone.slice(7),
+    token: 'mock-token-' + Date.now()
+  } as AuthResult)
+}
+
+export function mockLoginByWechat(code: string): Promise<AuthResult> {
+  return Promise.resolve({
+    uid: 'wx-mock-' + code.slice(0, 6),
+    nickname: '微信用户',
+    token: 'wx-mock-token-' + Date.now()
+  } as AuthResult)
+}

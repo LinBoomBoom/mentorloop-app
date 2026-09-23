@@ -13,12 +13,22 @@ const uniGlobals = {
   uniCloud: 'readonly',
   wx: 'readonly',
   getApp: 'readonly',
-  getCurrentPages: 'readonly'
+  getCurrentPages: 'readonly',
+  UniInputEvent: 'readonly',
+  UniSystemInfo: 'readonly'
 }
 
 export default [
   {
-    ignores: ['node_modules/**', 'unpackage/**', 'dist/**', '.temp/**', 'static/**', 'coverage/**']
+    ignores: [
+      'node_modules/**',
+      'unpackage/**',
+      'dist/**',
+      '.temp/**',
+      'static/**',
+      'coverage/**',
+      'env.d.ts'
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -41,7 +51,18 @@ export default [
       // 蒸汽模式 / uvue 约束
       'vue/multi-word-component-names': 'off',
       // uvue 样式不继承，文字必须用 <text> 包裹并单独设置样式
-      'vue/no-v-text': 'error'
+      'vue/no-v-text': 'error',
+      // uvue 脚本即 UTS，uni API 回调常需 any（与 .uts 块同口径）
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ],
+      // 格式类规则交给 Prettier（README：ESLint 与 Prettier 分工，避免规则冲突）
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/max-attributes-per-line': 'off',
+      'vue/html-self-closing': 'off',
+      'vue/attributes-order': 'off'
     }
   },
 
@@ -62,7 +83,12 @@ export default [
           message: 'UTS 不支持 interface 声明对象类型，请改用 type 命名对象类型。'
         }
       ],
-      '@typescript-eslint/no-explicit-any': 'off'
+      '@typescript-eslint/no-explicit-any': 'off',
+      // mock / 契约占位参数以 _ 前缀豁免
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ]
     }
   },
 

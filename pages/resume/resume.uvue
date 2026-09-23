@@ -4,24 +4,80 @@
 
     <view class="mb-2.5">
       <ml-card>
-        <text class="text-xs text-ink-soft mb-2.5">上传简历（PDF / Word / 图片）</text>
-        <ml-button text="选择文件" type="secondary" @click="pick"></ml-button>
+        <text class="text-xs text-ink-soft mb-2">上传简历（PDF / Word / 图片，最大 10MB）</text>
+        <view v-if="fileName.length > 0" class="mb-2">
+          <text class="text-sm text-ink">已选：{{ fileName }}</text>
+        </view>
+        <view class="flex flex-row">
+          <ml-button
+            :text="parsing ? '解析中...' : '选择文件'"
+            type="secondary"
+            :disabled="parsing"
+            @click="pick"
+          ></ml-button>
+          <view v-if="fileName.length > 0 && !parsing" class="ml-2">
+            <ml-button text="重新解析" type="secondary" @click="pick"></ml-button>
+          </view>
+        </view>
       </ml-card>
     </view>
 
-    <text class="text-base font-semibold text-ink mt-4 mb-2.5">
-      改写建议（均为「建议稿」，确认后才保存）
-    </text>
-
-    <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+    <!-- 解析结果 -->
+    <view v-if="parsed != null" class="mb-2.5">
       <ml-card>
-        <text class="text-xs text-ink-soft">原句：{{ s.original }}</text>
-        <text class="text-sm font-semibold text-ink mt-1.5">建议稿：{{ s.suggested }}</text>
-        <text class="text-xs text-ink-soft mt-1.5">{{ s.reason }}</text>
-        <view class="mt-2" v-if="s.needsUserEvidence">
-          <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+        <text class="text-base font-semibold text-ink mb-2">解析结果</text>
+        <view class="flex flex-row flex-wrap mb-2">
+          <ml-tag
+            :label="parsed.contact ? '联系方式：已填' : '联系方式：缺失'"
+            :bg="parsed.contact ? '#E8F5E9' : '#FFEBEE'"
+            :color="parsed.contact ? '#2E7D32' : '#C62828'"
+          ></ml-tag>
+          <view class="ml-1.5"></view>
+          <ml-tag
+            :label="'项目经历：' + parsed.projects + '段'"
+            bg="#E3F2FD"
+            color="#1565C0"
+          ></ml-tag>
+          <view class="ml-1.5"></view>
+          <ml-tag
+            :label="parsed.quantified ? '成果量化：有' : '成果量化：不足'"
+            :bg="parsed.quantified ? '#E8F5E9' : '#FFF3E0'"
+            :color="parsed.quantified ? '#2E7D32' : '#E08A00'"
+          ></ml-tag>
+        </view>
+        <text v-if="parsed.techStack.length > 0" class="text-xs text-ink-soft mb-1">
+          技术栈：{{ parsed.techStack.join(' / ') }}
+        </text>
+        <view v-if="parsed.gaps.length > 0" class="mt-2">
+          <text class="text-xs text-ink-soft">待补充：</text>
+          <text class="text-xs text-warning" v-for="(g, i) in parsed.gaps" :key="'g' + i">
+            · {{ g }}{{ ' ' }}
+          </text>
+        </view>
+        <view v-if="parsed.formatRisks.length > 0" class="mt-1">
+          <text class="text-xs text-ink-soft">格式风险：</text>
+          <text class="text-xs text-danger" v-for="(r, i) in parsed.formatRisks" :key="'r' + i">
+            · {{ r }}{{ ' ' }}
+          </text>
         </view>
       </ml-card>
+    </view>
+
+    <!-- 改写建议 -->
+    <view v-if="suggestions.length > 0">
+      <text class="text-base font-semibold text-ink mt-4 mb-2.5">
+        改写建议（均为「建议稿」，确认后才保存）
+      </text>
+      <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+        <ml-card>
+          <text class="text-xs text-ink-soft">原句：{{ s.original }}</text>
+          <text class="text-sm font-semibold text-ink mt-1.5">建议稿：{{ s.suggested }}</text>
+          <text class="text-xs text-ink-soft mt-1.5">{{ s.reason }}</text>
+          <view class="mt-2" v-if="s.needsUserEvidence">
+            <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+          </view>
+        </ml-card>
+      </view>
     </view>
   </view>
 </template>
@@ -31,14 +87,83 @@ import { ref } from 'vue'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlTag from '../../components/ml-tag.uvue'
-import { optimizeResume } from '../../api/resume.uts'
-import { ResumeSuggestion } from '../../types/resume.uts'
+import { parseResume, optimizeResume } from '../../api/resume.uts'
+import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+import { userStore, positionDisplay } from '../../store/user-profile.uts'
 
-const emptySuggestions: ResumeSuggestion[] = []
-const suggestions = ref(emptySuggestions)
+const fileName = ref('')
+const parsing = ref(false)
+const parsed = ref<ResumeParseResult | null>(null)
+const suggestions = ref<ResumeSuggestion[]>([])
 
-async function pick() {
-  const r = await optimizeResume('负责系统开发', 'Java 后端')
-  suggestions.value = r
+function pick() {
+  // #ifdef H5
+  // H5 降级：toast 提示 + mock 解析（完整 input 方案需 web-view 容器配合）
+  uni.showToast({ title: 'H5 端使用演示数据', icon: 'none' })
+  doParse('h5-demo', 'demo-resume.pdf')
+  // #endif
+
+  // #ifndef H5
+  pickNative()
+  // #endif
+}
+
+// #ifndef H5
+function pickNative() {
+  // #ifdef MP-WEIXIN
+  // 微信小程序：聊天会话选文件
+  // @ts-expect-error chooseMessageFile 是小程序端特有 API
+  uni.chooseMessageFile({
+    count: 1,
+    type: 'file',
+    extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    success(res : any) {
+      const files = res.tempFiles as any[]
+      if (files == null || files.length === 0) return
+      const f = files[0]
+      doParse(f.path as string, f.name as string)
+    },
+    fail() {
+      uni.showToast({ title: '未选择文件', icon: 'none' })
+    }
+  })
+  // #endif
+
+  // #ifdef APP-PLUS || APP
+  // App 端：系统文件选择器
+  // @ts-expect-error chooseFile 为 App 端 API
+  uni.chooseFile({
+    count: 1,
+    extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    success(res : any) {
+      const paths = res.tempFilePaths as string[]
+      if (paths == null || paths.length === 0) return
+      const names = res.tempFiles as any[]
+      const name = names != null && names.length > 0 ? (names[0].name as string) : paths[0]
+      doParse(paths[0], name)
+    },
+    fail() {
+      uni.showToast({ title: '未选择文件', icon: 'none' })
+    }
+  })
+  // #endif
+}
+// #endif
+
+async function doParse(path : string, name : string) {
+  fileName.value = name
+  parsing.value = true
+  parsed.value = null
+  suggestions.value = []
+  try {
+    const r = await parseResume(path)
+    parsed.value = r
+    const sugg = await optimizeResume('简历项目经历', positionDisplay(userStore.profile))
+    suggestions.value = sugg
+  } catch {
+    uni.showToast({ title: '解析失败，请重试', icon: 'none' })
+  } finally {
+    parsing.value = false
+  }
 }
 </script>

@@ -1,0 +1,153 @@
+<template>
+  <!-- 仅 App 端使用的完整认证流程（决策记录 D1）；
+       小程序端不进入本页面，走微信授权静默登录 -->
+  <view class="h-screen bg-bg-light" :style="{ paddingTop: statusBarPad }">
+    <view class="px-6 pt-10 pb-8">
+      <text class="text-3xl font-bold text-navy">MentorLoop</text>
+      <text class="text-sm text-ink-soft mt-2">学面一体智能导师 · 让每次模拟都有证据</text>
+    </view>
+
+    <view class="px-6">
+      <view class="bg-surface rounded-2xl p-4 border border-line">
+        <text class="text-xs text-ink-soft">手机号</text>
+        <input
+          class="mt-1.5 text-base text-ink"
+          type="number"
+          maxlength="11"
+          placeholder="请输入 11 位手机号"
+          :value="phone"
+          @input="onPhoneInput"
+        />
+
+        <view class="flex-row items-center mt-4">
+          <view class="flex-1">
+            <text class="text-xs text-ink-soft">验证码</text>
+            <input
+              class="mt-1.5 text-base text-ink"
+              type="number"
+              maxlength="6"
+              placeholder="6 位验证码"
+              :value="code"
+              @input="onCodeInput"
+            />
+          </view>
+          <view
+            class="ml-3 rounded-lg px-3 h-9 justify-center items-center"
+            :class="canSend ? 'bg-chip-smart' : 'bg-line'"
+            @click="sendCode"
+          >
+            <text class="text-sm" :class="canSend ? 'text-smart' : 'text-mist'">
+              {{ sendLabel }}
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <view class="mt-6">
+        <ml-button
+          :text="loading ? '登录中…' : '登录'"
+          type="primary"
+          :disabled="loading"
+          @tap="doLogin"
+        ></ml-button>
+      </view>
+
+      <view class="flex-row items-center mt-4" @click="toggleAgree">
+        <view
+          class="w-4 h-4 rounded-full border"
+          :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
+        ></view>
+        <text class="text-xs text-ink-soft ml-2">我已阅读并同意《用户协议》与《隐私政策》</text>
+      </view>
+      <text class="text-xs text-mist mt-3">
+        手机号仅用于登录验证；简历与录音数据保护详见隐私政策。
+      </text>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed, onUnmounted } from 'vue'
+import mlButton from '../../components/ml-button.uvue'
+import { sendSmsCode, loginByPhone, applyAuth } from '../../api/auth.uts'
+
+const phone = ref('')
+const code = ref('')
+const agreed = ref(false)
+const loading = ref(false)
+const countdown = ref(0)
+let timer = 0
+
+const statusBarPad = computed((): string => {
+  const info = uni.getSystemInfoSync()
+  return info.statusBarHeight + 8 + 'px'
+})
+
+const canSend = computed((): boolean => phone.value.length === 11 && countdown.value === 0)
+const sendLabel = computed((): string =>
+  countdown.value > 0 ? countdown.value + 's 后重发' : '获取验证码'
+)
+
+function onPhoneInput(e: UniInputEvent) {
+  phone.value = e.detail.value
+}
+
+function onCodeInput(e: UniInputEvent) {
+  code.value = e.detail.value
+}
+
+function toggleAgree() {
+  agreed.value = !agreed.value
+}
+
+function sendCode() {
+  if (!canSend.value) return
+  sendSmsCode(phone.value)
+    .then((ok: boolean) => {
+      if (!ok) {
+        uni.showToast({ title: '发送失败，请稍后重试', icon: 'none' })
+        return
+      }
+      uni.showToast({ title: '验证码已发送', icon: 'none' })
+      countdown.value = 60
+      timer = setInterval(() => {
+        countdown.value = countdown.value - 1
+        if (countdown.value <= 0) clearInterval(timer)
+      }, 1000)
+    })
+    .catch(() => {
+      uni.showToast({ title: '发送失败，请稍后重试', icon: 'none' })
+    })
+}
+
+async function doLogin() {
+  if (loading.value) return
+  if (!agreed.value) {
+    uni.showToast({ title: '请先阅读并同意用户协议与隐私政策', icon: 'none' })
+    return
+  }
+  if (phone.value.length !== 11) {
+    uni.showToast({ title: '请输入 11 位手机号', icon: 'none' })
+    return
+  }
+  if (code.value.length !== 6) {
+    uni.showToast({ title: '请输入 6 位验证码', icon: 'none' })
+    return
+  }
+  loading.value = true
+  try {
+    const r = await loginByPhone(phone.value, code.value)
+    applyAuth(r)
+    uni.reLaunch({ url: '/pages/index/index' })
+  } catch (e: any) {
+    console.warn('[login] failed', e)
+    uni.showToast({ title: '登录失败，请检查验证码', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
+}
+
+onUnmounted(() => {
+  if (timer !== 0) clearInterval(timer)
+})
+</script>

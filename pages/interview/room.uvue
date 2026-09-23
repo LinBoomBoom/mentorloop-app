@@ -15,7 +15,7 @@
     <!-- 字幕 / 实时转写（仅显示稳定文本，避免频闪） -->
     <view class="p-4 mx-3 rounded-2xl" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
       <text class="text-base font-semibold text-white">
-        {{ currentQuestion.content.length > 0 ? currentQuestion.content : '准备开始…' }}
+        {{ displayQuestion }}
       </text>
       <text class="text-xs text-mist mt-1.5">{{ caption }}</text>
     </view>
@@ -23,10 +23,7 @@
     <!-- 控制条 -->
     <view class="flex-row justify-around px-3 py-4 bg-navy-deep">
       <view class="flex-col items-center" @click="toggleRecord">
-        <view
-          class="w-10 h-10 rounded-full"
-          :class="recording ? 'bg-smart' : 'bg-line'"
-        ></view>
+        <view class="w-10 h-10 rounded-full" :class="recording ? 'bg-smart' : 'bg-line'"></view>
         <text class="text-xs text-mist mt-1.5">{{ recording ? '停止' : '录音' }}</text>
       </view>
       <view class="flex-col items-center" @click="replay">
@@ -39,21 +36,82 @@
         <text class="text-xs text-mist">文字辅助</text>
       </view>
     </view>
+
+    <!-- 文字辅助输入弹窗 -->
+    <view
+      v-if="textModalVisible"
+      class="absolute inset-0 flex-col items-center justify-center"
+      :style="{ backgroundColor: 'rgba(0,0,0,0.55)' }"
+      @click="cancelText"
+    >
+      <view class="w-11/12 rounded-2xl p-4" :style="{ backgroundColor: '#1C1F26' }" @click.stop>
+        <text class="text-base font-semibold text-white mb-2">文字作答</text>
+        <text class="text-xs text-mist mb-3">录音不便时可直接输入文字回答，长度建议 ≥ 20 字</text>
+        <textarea
+          class="w-full h-32 rounded-lg p-3 text-sm text-ink"
+          :style="{ backgroundColor: '#2A2E38' }"
+          v-model="textDraft"
+          placeholder="在这里输入你的回答…"
+          placeholder-class="text-mist"
+          :maxlength="1000"
+          :auto-focus="true"
+        />
+        <view class="flex-row justify-end mt-3">
+          <ml-button text="取消" type="secondary" @click="cancelText"></ml-button>
+          <view class="ml-2"></view>
+          <ml-button
+            :text="submittingText ? '提交中…' : '提交回答'"
+            type="primary"
+            :disabled="submittingText || textDraft.length === 0"
+            @click="submitText"
+          ></ml-button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import interviewerAvatar from '../../components/interviewer-avatar.uvue'
+import mlButton from '../../components/ml-button.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
 import { createSession, nextQuestion } from '../../api/interview.uts'
-import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
+import { QuestionItem, PositionBlueprint, InterviewMode, PositionId, ExperienceLevel } from '../../types/interview.uts'
+import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
+import { decideFollowup, FollowupDecision } from '../../engine/followup-engine.uts'
+import { analyzeAnswer } from '../../engine/answer-signal.uts'
 
 const recording = ref(false)
 const remain = ref(1200)
 const caption = ref('')
 const sessionId = ref('')
+// 当前追问话术（非空时显示追问而非原题）
+const followupPrompt = ref('')
+// 最近一次录音文件路径（供后续 ASR 上送；当前版本本地 mock 转写）
+const lastAudioPath = ref('')
+// 面试模式（由 prep 页传入）
+const mode = ref<InterviewMode>('standard')
+// 当前会话的岗位蓝图（由 prep 页传入的 positionId + experienceLevel 构造）
+const blueprint = ref<PositionBlueprint>({
+  positionId: 'java-backend',
+  position: 'Java 后端',
+  experienceLevel: 'junior',
+  experienceRange: '1-3年',
+  companyType: '互联网',
+  language: '中文',
+  target: '求职'
+} as PositionBlueprint)
+
+// 文字辅助输入弹窗状态
+const textModalVisible = ref(false)
+const textDraft = ref('')
+const submittingText = ref(false)
+
+// 录音管理器（H5 端降级为不录音但不报错）
+let recorder: any = null
+let recorderReady = false
 
 const initialState: string = 'idle'
 const avatarState = ref(initialState)
@@ -62,36 +120,114 @@ const emptyQuestion: QuestionItem = {
   id: '',
   abilityDomain: '',
   subAbility: '',
+  knowledgePoint: '',
   content: '',
   purpose: '',
   difficulty: 'junior',
-  expectedEvidence: ''
+  type: 'concept',
+  misconceptions: [],
+  expectedEvidence: '',
+  followupPrompts: [],
+  resumeRisk: false
 } as QuestionItem
 const currentQuestion = ref(emptyQuestion)
 
-const blueprint: PositionBlueprint = {
-  position: 'Java 后端',
-  experienceRange: '1-3年',
-  companyType: '互联网',
-  language: '中文',
-  target: '求职'
-} as PositionBlueprint
-
 let timer: number = 0
 
-onLoad(() => {
+// 展示文本：追问时显示追问话术，否则显示原题
+const displayQuestion = computed((): string => {
+  if (followupPrompt.value.length > 0) return followupPrompt.value
+  if (currentQuestion.value.content.length > 0) return currentQuestion.value.content
+  return '准备开始…'
+})
+
+onLoad((options: any) => {
+  // 接收 prep 页传入的模式、岗位方向、经验等级
+  if (options != null) {
+    if (options.mode != null) {
+      const m = options.mode as string
+      if (m === 'quick') {
+        mode.value = 'quick'
+        remain.value = 300
+      } else if (m === 'deep') {
+        mode.value = 'deep'
+        remain.value = 2400
+      } else {
+        mode.value = 'standard'
+        remain.value = 1200
+      }
+    }
+    const posId = options.positionId != null ? (options.positionId as string) : 'java-backend'
+    const expLv = options.experienceLevel != null ? (options.experienceLevel as string) : 'junior'
+    // 简单校验枚举值
+    const validPos: string[] = ['java-backend', 'frontend', 'golang-backend', 'pm']
+    const validExp: string[] = ['fresh', 'junior', 'mid', 'senior']
+    const finalPos: PositionId = validPos.includes(posId) ? (posId as PositionId) : 'java-backend'
+    const finalExp: ExperienceLevel = validExp.includes(expLv) ? (expLv as ExperienceLevel) : 'junior'
+    blueprint.value = {
+      positionId: finalPos,
+      position: getPositionName(finalPos),
+      experienceLevel: finalExp,
+      experienceRange: getExperienceRange(finalExp),
+      companyType: '互联网',
+      language: '中文',
+      target: '求职'
+    } as PositionBlueprint
+  }
+  initRecorder()
   init()
   timer = setInterval(() => {
     if (remain.value > 0) remain.value = remain.value - 1
+    // 倒计时归零自动收束
+    if (remain.value === 0) {
+      if (recording.value) stopRecord(true)
+      setTimeout(() => {
+        goSummary()
+      }, 500)
+    }
   }, 1000)
 })
 
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
+  // 页面卸载时若仍在录音，停止并释放
+  try {
+    if (recorderReady && recording.value) {
+      recorder.stop()
+    }
+  } catch {
+    // 忽略卸载阶段错误
+  }
 })
 
+// 初始化录音管理器（注册 onStop/onError 回调）
+function initRecorder() {
+  try {
+    // #ifdef MP-WEIXIN || APP-PLUS || APP
+    recorder = uni.getRecorderManager()
+    recorder.onStop((res: any) => {
+      const filePath = res != null ? (res.tempFilePath as string) : ''
+      lastAudioPath.value = filePath
+      handleRecordingStopped(filePath)
+    })
+    recorder.onError((err: any) => {
+      console.warn('[room] recorder error', err)
+      caption.value = '录音失败，请重试'
+      recording.value = false
+      avatarState.value = 'idle'
+    })
+    recorderReady = true
+    // #endif
+    // #ifndef MP-WEIXIN || APP-PLUS || APP
+    recorderReady = false
+    // #endif
+  } catch {
+    recorderReady = false
+  }
+}
+
 async function init() {
-  const s = await createSession('Java 后端')
+  const s = await createSession(blueprint.value)
   sessionId.value = s.sessionId
   interviewSession.reset(s.sessionId)
   interviewSession.transition('DEVICE_CHECK')
@@ -99,13 +235,30 @@ async function init() {
   ask()
 }
 
+// 问新题（重置追问深度、清空追问话术、切到 ASKING）
 async function ask() {
+  interviewSession.resetDepth()
+  followupPrompt.value = ''
   interviewSession.transition('ASKING')
   avatarState.value = 'asking'
   caption.value = ''
-  const q = await nextQuestion(sessionId.value, 'standard', blueprint)
-  currentQuestion.value = q
-  interviewSession.pushQuestion(q)
+  try {
+    const q = await nextQuestion(sessionId.value, mode.value, blueprint.value)
+    currentQuestion.value = q
+    interviewSession.pushQuestion(q)
+    // 记录面试官念题
+    interviewSession.appendTranscript({
+      questionId: q.id,
+      speaker: 'interviewer',
+      text: q.content,
+      timestamp: Date.now()
+    })
+  } catch (e: any) {
+    // 题目已收束（选择器返回 null）→ 进入总结
+    console.warn('[room] no more questions, wrap up', e)
+    goSummary()
+    return
+  }
   // 数字人播报后进入倾听（真实播报由 realtime 插件驱动）
   setTimeout(() => {
     interviewSession.transition('LISTENING')
@@ -113,21 +266,91 @@ async function ask() {
   }, 1500)
 }
 
-function toggleRecord() {
-  recording.value = !recording.value
-  if (recording.value) {
+// 发起追问（不切题，depth+1，展示追问话术）
+function askFollowup(decision: FollowupDecision) {
+  interviewSession.incrementDepth()
+  followupPrompt.value = decision.prompt
+  caption.value = ''
+  // 状态回到 ASKING → LISTENING
+  avatarState.value = 'followup'
+  interviewSession.appendTranscript({
+    questionId: currentQuestion.value.id,
+    speaker: 'interviewer',
+    text: decision.prompt,
+    timestamp: Date.now()
+  })
+  setTimeout(() => {
     avatarState.value = 'listening'
-    caption.value = '正在聆听…'
+  }, 1000)
+}
+
+function toggleRecord() {
+  if (recording.value) {
+    stopRecord(false)
   } else {
-    caption.value = '已记录你的回答'
-    interviewSession.appendTranscript({
-      questionId: currentQuestion.value.id,
-      speaker: 'user',
-      text: '（录音转写占位）',
-      timestamp: Date.now()
-    })
-    interviewSession.transition('TRANSCRIBING')
-    interviewSession.transition('FOLLOW_UP_DECISION')
+    startRecord()
+  }
+}
+
+function startRecord() {
+  recording.value = true
+  avatarState.value = 'listening'
+  caption.value = '正在聆听…'
+  lastAudioPath.value = ''
+  if (recorderReady) {
+    try {
+      recorder.start({
+        format: 'mp3',
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        encodeBitRate: 48000
+      })
+    } catch {
+      console.warn('[room] start record failed')
+      // 启动失败仍允许走文字辅助流程
+    }
+  }
+}
+
+function stopRecord(_auto: boolean) {
+  if (!recording.value) return
+  recording.value = false
+  caption.value = '转写中…'
+  if (recorderReady) {
+    try {
+      recorder.stop()
+    } catch {
+      // H5/降级环境：直接处理
+      handleAnswer('（录音已保存，ASR 转写待接入）')
+    }
+  } else {
+    handleAnswer('（录音已保存，ASR 转写待接入）')
+  }
+}
+
+// 录音结束 / 文字提交后的统一处理：写转写、决策追问/下一题
+function handleAnswer(answerText: string) {
+  caption.value = '已记录你的回答'
+  interviewSession.appendTranscript({
+    questionId: currentQuestion.value.id,
+    speaker: 'user',
+    text: answerText,
+    timestamp: Date.now()
+  })
+  interviewSession.saveDraft(currentQuestion.value.id, answerText)
+  interviewSession.transition('TRANSCRIBING')
+  interviewSession.transition('FOLLOW_UP_DECISION')
+
+  // 基于回答规则信号判定是否追问
+  const signal = analyzeAnswer(answerText, currentQuestion.value.id)
+  const depth = interviewSession.getDepth()
+  const decision = decideFollowup(signal, currentQuestion.value, depth)
+
+  if (decision.shouldFollowup) {
+    setTimeout(() => {
+      askFollowup(decision)
+    }, 600)
+  } else {
     setTimeout(() => {
       const ev = interviewSession.transition('NEXT_QUESTION')
       if (ev != null) ask()
@@ -135,8 +358,19 @@ function toggleRecord() {
   }
 }
 
+// 兼容 onStop 回调签名
+function handleRecordingStopped(_audioPath: string) {
+  handleAnswer('（录音已保存，ASR 转写待接入）')
+}
+
+function goSummary() {
+  interviewSession.saveSnapshot()
+  uni.navigateTo({ url: '/pages/interview/summary' })
+}
+
 function replay() {
   avatarState.value = 'asking'
+  caption.value = followupPrompt.value.length > 0 ? followupPrompt.value : currentQuestion.value.content
 }
 
 function pause() {
@@ -144,17 +378,48 @@ function pause() {
 }
 
 function textMode() {
-  // 降级文字输入（正式评分需标记输入方式）
-  uni.showToast({ title: '文字辅助模式', icon: 'none' })
+  if (recording.value) {
+    uni.showToast({ title: '请先停止录音', icon: 'none' })
+    return
+  }
+  textDraft.value = ''
+  submittingText.value = false
+  textModalVisible.value = true
+}
+
+function cancelText() {
+  if (submittingText.value) return
+  textModalVisible.value = false
+  textDraft.value = ''
+}
+
+function submitText() {
+  const t = textDraft.value.trim()
+  if (t.length === 0) return
+  if (t.length < 5) {
+    uni.showToast({ title: '回答太短，至少 5 个字', icon: 'none' })
+    return
+  }
+  submittingText.value = true
+  textModalVisible.value = false
+  caption.value = '已接收文字回答，分析中…'
+  avatarState.value = 'thinking'
+  setTimeout(() => {
+    handleAnswer(t)
+    submittingText.value = false
+    textDraft.value = ''
+  }, 300)
 }
 
 function confirmExit() {
-  // 结束必须二次确认；异常退出自动保存会话（文档 03）
   uni.showModal({
     title: '结束面试',
     content: '进度将自动保存，确认退出？',
     success: (r: any) => {
-      if (r.confirm) uni.navigateBack()
+      if (r.confirm) {
+        interviewSession.saveSnapshot()
+        uni.navigateBack()
+      }
     }
   })
 }

@@ -11,6 +11,11 @@
       </ml-card>
     </view>
 
+    <!-- 未登录：App 端提供登录入口；小程序端静默登录，无此入口（决策记录 D1） -->
+    <view v-if="!loggedIn" class="mb-2.5" @click="goLogin">
+      <ml-button text="登录" type="primary"></ml-button>
+    </view>
+
     <view class="mb-2.5" @click="privacy">
       <ml-card><text class="text-xs text-ink-soft">数据删除入口（隐私透明）</text></ml-card>
     </view>
@@ -18,22 +23,51 @@
     <view class="mb-2.5" @click="about">
       <ml-card><text class="text-xs text-ink-soft">关于 MentorLoop</text></ml-card>
     </view>
+
+    <view v-if="loggedIn" class="mb-2.5" @click="logout">
+      <ml-card><text class="text-xs text-warn">退出登录</text></ml-card>
+    </view>
   </view>
 </template>
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
 import { userStore } from '../../store/user-profile.uts'
 
 const nickname = ref(userStore.profile.nickname)
 const plan = ref(userStore.profile.plan)
+const loggedIn = ref(userStore.isLoggedIn())
 
 const planLabel = computed(() => {
   if (plan.value === 'member') return '会员'
   if (plan.value === 'single') return '单次包'
   return '免费'
 })
+
+onShow(() => {
+  nickname.value = userStore.profile.nickname
+  plan.value = userStore.profile.plan
+  loggedIn.value = userStore.isLoggedIn()
+})
+
+function goLogin() {
+  // #ifdef APP
+  uni.navigateTo({ url: '/pages/login/login' })
+  // #endif
+  // #ifndef APP
+  uni.showToast({ title: '微信授权登录中，请稍候', icon: 'none' })
+  // #endif
+}
+
+function logout() {
+  userStore.logout()
+  nickname.value = userStore.profile.nickname
+  loggedIn.value = false
+  uni.showToast({ title: '已退出登录', icon: 'none' })
+}
 
 function privacy() {
   uni.showToast({ title: '前往数据删除', icon: 'none' })

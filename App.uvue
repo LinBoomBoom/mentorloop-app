@@ -1,9 +1,57 @@
 <script setup lang="uts">
 // 蒸汽模式要求：<script setup> 组合式，不支持选项式 API / mixin
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { userStore } from './store/user-profile.uts'
+import { reportHistory } from './store/report-history.uts'
+import { interviewSession } from './store/interview-session.uts'
+import { loginByWechat, applyAuth } from './api/auth.uts'
 
 onLaunch(() => {
   console.log('[MentorLoop] app launch')
+  // 启动时恢复会话（App 与小程序通用）
+  userStore.restore()
+  // 加载报告历史（成长页/首页最近报告使用）
+  reportHistory.load()
+
+  // 快照恢复：若上次异常退出留下未完成面试，提示继续
+  const snap = interviewSession.restoreSnapshot()
+  if (snap != null && snap.status !== 'COMPLETED') {
+    setTimeout(() => {
+      uni.showModal({
+        title: '继续上次面试？',
+        content: '检测到未完成的面试，是否回到面试房间继续？',
+        confirmText: '继续',
+        cancelText: '放弃',
+        success: (r: any) => {
+          if (r.confirm) {
+            uni.navigateTo({ url: '/pages/interview/room' })
+          } else {
+            interviewSession.clearSnapshot()
+          }
+        }
+      })
+    }, 800)
+  }
+
+  // #ifdef MP-WEIXIN
+  // 决策记录 D1：小程序端不开发登录页，直接用微信授权静默登录
+  if (!userStore.isLoggedIn()) {
+    uni.login({
+      provider: 'weixin',
+      success: (res: any) => {
+        const code = res.code as string
+        if (code == null || code.length === 0) return
+        loginByWechat(code)
+          .then((r) => {
+            applyAuth(r)
+          })
+          .catch(() => {
+            console.warn('[MentorLoop] wechat silent login failed')
+          })
+      }
+    })
+  }
+  // #endif
 })
 
 onShow(() => {

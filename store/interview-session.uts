@@ -10,6 +10,27 @@ import {
 
 export type TransitionMap = { [key: string]: string[] }
 
+// 作答草稿（文档 04：客户端保存转写和作答草稿；网络恢复后按序补传）
+export type AnswerDraft = {
+  questionId: string
+  text: string
+  updatedAt: number
+}
+
+// 会话快照（异常退出自动保存，文档 03 / 04）
+export type SessionSnapshot = {
+  sessionId: string
+  status: InterviewStatus
+  eventSeq: number
+  questions: QuestionItem[]
+  transcript: TranscriptEntry[]
+  currentQuestionDepth: number
+  pendingEvents: InterviewEvent[]
+  drafts: AnswerDraft[]
+}
+
+const SESSION_STORAGE_KEY = 'ml_interview_snapshot'
+
 // 合法状态迁移表
 const TRANSITIONS: TransitionMap = {
   CREATED: ['DEVICE_CHECK'],
@@ -31,6 +52,11 @@ class InterviewSession {
   private eventSeq: number = 0
   private transcript: TranscriptEntry[] = []
   private questions: QuestionItem[] = []
+  // 当前题目的追问深度（0=首次回答，1/2=第一层/第二层追问）
+  private currentQuestionDepth: number = 0
+  // 待补传事件队列（文档 04：网络恢复后按序补传，幂等键去重由服务端负责）
+  private pendingEvents: InterviewEvent[] = []
+  private drafts: AnswerDraft[] = []
 
   reset(sessionId: string) {
     this.sessionId = sessionId
@@ -38,6 +64,22 @@ class InterviewSession {
     this.eventSeq = 0
     this.transcript = []
     this.questions = []
+    this.currentQuestionDepth = 0
+    this.pendingEvents = []
+    this.drafts = []
+  }
+
+  // 追问深度：进入下一题时重置为 0，追问时 +1
+  getDepth(): number {
+    return this.currentQuestionDepth
+  }
+
+  incrementDepth() {
+    this.currentQuestionDepth += 1
+  }
+
+  resetDepth() {
+    this.currentQuestionDepth = 0
   }
 
   canTransition(to: InterviewStatus): boolean {
@@ -46,6 +88,7 @@ class InterviewSession {
   }
 
   // 返回事件（含幂等键）；非法迁移返回 null 并告警
+  // 事件同时进入待补传队列，上报成功后由 flushEvents 移除
   transition(to: InterviewStatus): InterviewEvent | null {
     if (!this.canTransition(to)) {
       console.warn(`[session] 非法状态迁移: ${this.status} -> ${to}`)
@@ -63,7 +106,45 @@ class InterviewSession {
       idempotencyKey: `${this.sessionId}-${this.eventSeq}`,
       at: Date.now()
     }
+    this.pendingEvents.push(ev)
     return ev
+  }
+
+  // 上报成功后按幂等键移除已确认事件
+  flushEvents(ackedKeys: string[]) {
+    const rest: InterviewEvent[] = []
+    for (let i = 0; i < this.pendingEvents.length; i++) {
+      const ev = this.pendingEvents[i]
+      if (!ackedKeys.includes(ev.idempotencyKey)) rest.push(ev)
+    }
+    this.pendingEvents = rest
+  }
+
+  getPendingEvents(): InterviewEvent[] {
+    return this.pendingEvents
+  }
+
+  // 作答草稿：同一题目覆盖更新（文档 04：不允许静默丢失答案）
+  saveDraft(questionId: string, text: string) {
+    for (let i = 0; i < this.drafts.length; i++) {
+      if (this.drafts[i].questionId === questionId) {
+        this.drafts[i].text = text
+        this.drafts[i].updatedAt = Date.now()
+        return
+      }
+    }
+    this.drafts.push({ questionId: questionId, text: text, updatedAt: Date.now() } as AnswerDraft)
+  }
+
+  getDraft(questionId: string): AnswerDraft | null {
+    for (let i = 0; i < this.drafts.length; i++) {
+      if (this.drafts[i].questionId === questionId) return this.drafts[i]
+    }
+    return null
+  }
+
+  getDrafts(): AnswerDraft[] {
+    return this.drafts
   }
 
   pushQuestion(q: QuestionItem) {
@@ -84,6 +165,55 @@ class InterviewSession {
 
   getStatus(): InterviewStatus {
     return this.status
+  }
+
+  // 异常退出自动保存快照（文档 03：异常退出自动保存会话；文档 04：可恢复状态）
+  saveSnapshot() {
+    const snap: SessionSnapshot = {
+      sessionId: this.sessionId,
+      status: this.status,
+      eventSeq: this.eventSeq,
+      questions: this.questions,
+      transcript: this.transcript,
+      currentQuestionDepth: this.currentQuestionDepth,
+      pendingEvents: this.pendingEvents,
+      drafts: this.drafts
+    } as SessionSnapshot
+    try {
+      uni.setStorageSync(SESSION_STORAGE_KEY, JSON.stringify(snap))
+    } catch (e: any) {
+      console.warn('[session] save snapshot failed', e)
+    }
+  }
+
+  // 恢复快照；无快照返回 null
+  restoreSnapshot(): SessionSnapshot | null {
+    try {
+      const raw = uni.getStorageSync(SESSION_STORAGE_KEY) as string
+      if (raw == null || raw.length === 0) return null
+      const snap = JSON.parse(raw) as SessionSnapshot
+      if (snap.sessionId.length === 0) return null
+      this.sessionId = snap.sessionId
+      this.status = snap.status
+      this.eventSeq = snap.eventSeq
+      this.questions = snap.questions
+      this.transcript = snap.transcript
+      this.currentQuestionDepth = snap.currentQuestionDepth
+      this.pendingEvents = snap.pendingEvents
+      this.drafts = snap.drafts
+      return snap
+    } catch (e: any) {
+      console.warn('[session] restore snapshot failed', e)
+      return null
+    }
+  }
+
+  clearSnapshot() {
+    try {
+      uni.removeStorageSync(SESSION_STORAGE_KEY)
+    } catch (e: any) {
+      console.warn('[session] clear snapshot failed', e)
+    }
   }
 }
 

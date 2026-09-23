@@ -1,0 +1,105 @@
+// 埋点字典 v1（推进计划 0.5；北极星指标见文档 01 §7）
+// 事件命名规范：<domain>_<action>，全小写下划线；属性名 camelCase。
+// 每个事件必须带 sessionId（页面级会话）与 userId；面试相关事件另带 interviewId。
+
+export type TrackingEventDef = {
+  name: string
+  description: string
+  northStar: boolean // 是否直接服务北极星指标
+}
+
+// 北极星指标 → 事件映射（文档 01 §7）
+// 1. 完成一次正式模拟面试的用户数 → interview_complete
+// 2. 面试完成率与报告查看率 → interview_start / interview_complete / report_view
+// 3. 报告后 7 日专项训练完成率 → training_task_complete
+// 4. 14 日内再次模拟率 → interview_start（与上次完成时间比对）
+// 5. 付费转化率、复购率 → payment_success
+// 6. 单场面试综合毛利 → interview_complete + 成本侧（服务端核算，不在客户端埋点）
+
+export const TRACKING_EVENTS: TrackingEventDef[] = [
+  {
+    name: 'app_launch',
+    description: '应用启动（区分冷启动/热启动）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'auth_login_success',
+    description: '登录成功（channel=app|mp-weixin）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'interview_start',
+    description: '进入面试房间（mode=quick|standard|deep）',
+    northStar: true
+  } as TrackingEventDef,
+  {
+    name: 'interview_question_asked',
+    description: '数字人提出问题（questionId、abilityDomain）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'interview_answer_submitted',
+    description: '用户提交回答（inputMode=voice|text，文档 02 §2.2 需标记输入方式）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'interview_followup_asked',
+    description: '追问触发（intent、depth）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'interview_skip',
+    description: '用户跳过题目（跳过保留为证据，文档 02 §2.2）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'interview_complete',
+    description: '完成一次正式模拟面试',
+    northStar: true
+  } as TrackingEventDef,
+  {
+    name: 'interview_abandon',
+    description: '中途退出（reason、已完成题数）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'report_view',
+    description: '查看报告（interviewId）',
+    northStar: true
+  } as TrackingEventDef,
+  {
+    name: 'report_evidence_expand',
+    description: '展开低分点证据卡（文档 03 关键交互）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'training_task_complete',
+    description: '完成专项训练任务（taskId、来源=报告薄弱项|主动）',
+    northStar: true
+  } as TrackingEventDef,
+  {
+    name: 'resume_upload',
+    description: '上传简历（fileType）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'payment_success',
+    description: '支付成功（sku、amount）',
+    northStar: true
+  } as TrackingEventDef
+]
+
+// 公共属性（所有事件必带）
+export type CommonProps = {
+  userId: string
+  sessionId: string // 页面会话
+  platform: 'app-android' | 'app-ios' | 'mp-weixin'
+  timestamp: number
+}
+
+export function isNorthStarEvent(name: string): boolean {
+  for (let i = 0; i < TRACKING_EVENTS.length; i++) {
+    if (TRACKING_EVENTS[i].name === name) return TRACKING_EVENTS[i].northStar
+  }
+  return false
+}

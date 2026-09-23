@@ -2,25 +2,26 @@
 // 职责：录音、降噪、音频焦点、中断恢复（文档 04）
 // 真实实现：utssdk/app-android/index.uts + utssdk/app-ios/index.uts（原生层）
 // 此处仅为「契约 + 默认降级实现」，供客户端 import 使用。
+// 注意：UTS 不支持 interface，契约以类的公开方法为准。
 
-export interface AudioPlugin {
-  startRecord(): void
-  stopRecord(): Promise<string>            // 返回录音文件本地路径
-  onAudioFrame(cb: (frame: Uint8Array) => void): void
-  requestFocus(): Promise<boolean>         // 音频焦点申请
-}
-
-class AudioPluginStub implements AudioPlugin {
+export class AudioPlugin {
   startRecord(): void {
     console.warn('[audio] 原生插件未接入，使用降级实现')
   }
+
+  // 返回录音文件本地路径
   stopRecord(): Promise<string> {
     return Promise.resolve('')
   }
-  onAudioFrame(cb: (frame: Uint8Array) => void): void {}
+
+  onAudioFrame(cb: (frame: Uint8Array) => void): void {
+    console.warn('[audio] onAudioFrame 未接入，回调不会触发', cb)
+  }
+
+  // 音频焦点申请
   requestFocus(): Promise<boolean> {
     return Promise.resolve(true)
   }
 }
 
-export const audioPlugin: AudioPlugin = new AudioPluginStub()
+export const audioPlugin: AudioPlugin = new AudioPlugin()

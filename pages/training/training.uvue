@@ -1,7 +1,25 @@
 <template>
   <view class="p-4">
     <text class="text-xl font-bold text-ink mb-3">专项训练</text>
-    <view class="mb-2.5" v-for="t in tasks" :key="t.id" @click="startTask(t)">
+
+    <!-- 报告推荐任务（从最近报告动态生成） -->
+    <view v-if="recommended.length > 0">
+      <text class="text-base font-semibold text-ink mt-2 mb-2.5">根据你的报告推荐</text>
+      <view class="mb-2.5" v-for="t in recommended" :key="'r_' + t.id" @click="startTask(t)">
+        <ml-card>
+          <view class="flex-row justify-between items-center">
+            <view class="flex-col flex-1">
+              <text class="text-base text-ink">{{ t.title }}</text>
+              <text class="text-xs text-reliable mt-1">优先度 {{ t.priority }}</text>
+            </view>
+            <text class="text-xs text-ink-soft">{{ t.durationMin }} 分钟</text>
+          </view>
+        </ml-card>
+      </view>
+    </view>
+
+    <text class="text-base font-semibold text-ink mt-4 mb-2.5">通用快练</text>
+    <view class="mb-2.5" v-for="t in genericTasks" :key="'g_' + t.id" @click="startTask(t)">
       <ml-card>
         <view class="flex-row justify-between items-center">
           <text class="text-base text-ink">{{ t.title }}</text>
@@ -9,12 +27,23 @@
         </view>
       </ml-card>
     </view>
+
+    <view v-if="recommended.length === 0" class="mt-4">
+      <ml-card>
+        <text class="text-sm text-ink-soft">
+          完成一次面试后，这里会根据你的薄弱维度推荐个性化训练。
+        </text>
+      </ml-card>
+    </view>
   </view>
 </template>
 
 <script setup lang="uts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
+import { reportHistory } from '../../store/report-history.uts'
+import { TrainingTask } from '../../types/scoring.uts'
 
 type TrainingEntry = {
   id: string
@@ -22,14 +51,35 @@ type TrainingEntry = {
   durationMin: number
 }
 
-const initialTasks: TrainingEntry[] = [
-  { id: 't1', title: '并发基础 3 分钟快练', durationMin: 3 } as TrainingEntry,
-  { id: 't2', title: '系统设计 5 分钟快练', durationMin: 5 } as TrainingEntry,
-  { id: 't3', title: '项目经历表达 10 分钟', durationMin: 10 } as TrainingEntry
+const genericTasks: TrainingEntry[] = [
+  { id: 'gt1', title: '并发基础 3 分钟快练', durationMin: 3 } as TrainingEntry,
+  { id: 'gt2', title: '系统设计 5 分钟快练', durationMin: 5 } as TrainingEntry,
+  { id: 'gt3', title: '项目经历表达 10 分钟', durationMin: 10 } as TrainingEntry
 ]
-const tasks = ref(initialTasks)
 
-function startTask(t: TrainingEntry) {
-  uni.showToast({ title: '开始：' + t.title, icon: 'none' })
+const recommended = ref<TrainingTask[]>([])
+
+onShow(() => {
+  reportHistory.load()
+  const latest = reportHistory.latest()
+  if (latest != null) {
+    recommended.value = latest.report.trainingPlan
+  } else {
+    recommended.value = []
+  }
+})
+
+function startTask(_t: TrainingEntry | TrainingTask) {
+  // 训练房间尚未实现：先引导用户回到面试房间走快练模式
+  uni.showModal({
+    title: '开启训练',
+    content: '将进入快练模式（5分钟），专注单一维度训练。',
+    confirmText: '开始',
+    success: (r: any) => {
+      if (r.confirm) {
+        uni.navigateTo({ url: '/pages/interview/prep' })
+      }
+    }
+  })
 }
 </script>

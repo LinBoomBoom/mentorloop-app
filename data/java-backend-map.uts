@@ -1,0 +1,154 @@
+// Java 后端岗位能力图谱 v1（文档 02 §3.1）
+// 每个岗位由能力域、子能力、可观测行为、题目簇、评分锚点组成。
+// 本文件为 M0 产物，供题目选择器与评分引擎引用；变更须经产品与内容审核确认（文档 05 §3）。
+
+export type SubAbility = {
+  id: string
+  name: string
+  observableBehavior: string // 可观测行为：面试官能直接观察到的表现
+  scoringAnchor: string // 评分锚点：达到门槛等级的判断依据
+  questionCluster: string // 题目簇标签（题库按此归类）
+}
+
+export type AbilityDomain = {
+  id: string
+  name: string
+  weight: number // 与评分量表权重对齐（文档 02 §3.4）
+  subAbilities: SubAbility[]
+}
+
+export const JAVA_BACKEND_MAP: AbilityDomain[] = [
+  {
+    id: 'knowledge',
+    name: '基础知识',
+    weight: 0.25,
+    subAbilities: [
+      {
+        id: 'knowledge.concurrency-jvm',
+        name: '并发与JVM',
+        observableBehavior: '能否说明指标、假设、验证和结果',
+        scoringAnchor: '能准确描述并发问题定位的完整链路（现象→指标→假设→验证→结论）',
+        questionCluster: 'concurrency-jvm'
+      } as SubAbility,
+      {
+        id: 'knowledge.java-core',
+        name: 'Java核心',
+        observableBehavior: '能否说明集合、IO、泛型等核心机制的适用边界',
+        scoringAnchor: '能结合场景说明选型理由，而非背诵定义',
+        questionCluster: 'java-core'
+      } as SubAbility,
+      {
+        id: 'knowledge.middleware',
+        name: '中间件',
+        observableBehavior: '能否说明 Redis/消息队列的使用场景与失效模式',
+        scoringAnchor: '能指出缓存与消息队列的典型故障模式及应对',
+        questionCluster: 'middleware'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'engineering',
+    name: '工程能力',
+    weight: 0.25,
+    subAbilities: [
+      {
+        id: 'engineering.project-contribution',
+        name: '项目个人贡献',
+        observableBehavior: '能否区分团队成果与个人决策',
+        scoringAnchor: '能明确说出个人负责的部分、决策依据与量化结果',
+        questionCluster: 'project-contribution'
+      } as SubAbility,
+      {
+        id: 'engineering.code-quality',
+        name: '代码质量与工程实践',
+        observableBehavior: '能否说明测试、评审、发布流程中的个人实践',
+        scoringAnchor: '能举出具体工程实践案例并说明收益',
+        questionCluster: 'code-quality'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'analysis',
+    name: '系统设计',
+    weight: 0.2,
+    subAbilities: [
+      {
+        id: 'analysis.capacity-tradeoff',
+        name: '容量与权衡',
+        observableBehavior: '能否说明约束、备选方案与取舍',
+        scoringAnchor: '能先澄清约束，再给出至少一个备选方案并说明取舍',
+        questionCluster: 'system-design'
+      } as SubAbility,
+      {
+        id: 'analysis.problem-analysis',
+        name: '问题分析',
+        observableBehavior: '能否给出假设、验证路径与风险控制',
+        scoringAnchor: '面对开放问题能拆解为可验证的小问题',
+        questionCluster: 'problem-analysis'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'communication',
+    name: '沟通表达',
+    weight: 0.15,
+    subAbilities: [
+      {
+        id: 'communication.star',
+        name: 'STAR/结构化叙述',
+        observableBehavior: '是否先结论、再证据、后反思',
+        scoringAnchor: '回答结构清晰：结论先行，证据支撑，有反思',
+        questionCluster: 'structured-narrative'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'learning',
+    name: '学习与复盘',
+    weight: 0.1,
+    subAbilities: [
+      {
+        id: 'learning.retrospective',
+        name: '失败复盘与成长',
+        observableBehavior: '能否描述失败经验、纠偏动作与成长路径',
+        scoringAnchor: '能举出真实失败案例并说明具体改进',
+        questionCluster: 'learning-retrospective'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'motivation',
+    name: '职业动机',
+    weight: 0.05,
+    subAbilities: [
+      {
+        id: 'motivation.goal-fit',
+        name: '目标一致性',
+        observableBehavior: '求职目标与岗位是否一致，表述是否诚实',
+        scoringAnchor: '目标表述与简历、岗位一致，无夸大',
+        questionCluster: 'motivation-fit'
+      } as SubAbility
+    ]
+  } as AbilityDomain
+]
+
+// 能力域名称速查（报告与摘要页使用）
+export type DomainLabelMap = { [key: string]: string }
+
+export const DOMAIN_LABEL: DomainLabelMap = {
+  knowledge: '基础知识',
+  engineering: '工程能力',
+  analysis: '系统设计',
+  communication: '沟通表达',
+  learning: '学习与复盘',
+  motivation: '职业动机'
+}
+
+// 图谱覆盖的能力域列表（选择器用于覆盖率判断）
+export function getDomainIds(): string[] {
+  const ids: string[] = []
+  for (let i = 0; i < JAVA_BACKEND_MAP.length; i++) {
+    ids.push(JAVA_BACKEND_MAP[i].id)
+  }
+  return ids
+}

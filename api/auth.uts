@@ -1,0 +1,40 @@
+// 认证接口（决策记录 D1：App 端完整认证流程；小程序端静默登录）
+// 契约已冻结：接真后端时仅需实现 /auth/sms-code 与 /auth/login 两个端点。
+import { post, useMock } from './client.uts'
+import { mockSendSmsCode, mockLoginByPhone, mockLoginByWechat } from './mock/auth.mock.uts'
+import { AuthResult } from '../types/auth.uts'
+import { userStore, UserProfilePatch } from '../store/user-profile.uts'
+
+// App 端：发送短信验证码
+export async function sendSmsCode(phone: string): Promise<boolean> {
+  if (useMock()) return await mockSendSmsCode(phone)
+  const r = await post('/auth/sms-code', { phone: phone })
+  return r.code === 0 || r.code === 200
+}
+
+// App 端：手机号 + 验证码登录
+export async function loginByPhone(phone: string, code: string): Promise<AuthResult> {
+  if (useMock()) return await mockLoginByPhone(phone, code)
+  const r = await post('/auth/login', { phone: phone, code: code })
+  return r.data as AuthResult
+}
+
+// 小程序端：微信授权静默登录（wx.login code 换会话）
+export async function loginByWechat(code: string): Promise<AuthResult> {
+  if (useMock()) return await mockLoginByWechat(code)
+  const r = await post('/auth/wechat', { code: code })
+  return r.data as AuthResult
+}
+
+// 登录成功后统一写入用户状态并持久化（供下次启动恢复会话）
+export function applyAuth(r: AuthResult) {
+  userStore.setProfile({
+    uid: r.uid,
+    nickname: r.nickname,
+    token: r.token,
+    plan: null,
+    positionId: null,
+    experienceLevel: null
+  } as UserProfilePatch)
+  userStore.persist()
+}

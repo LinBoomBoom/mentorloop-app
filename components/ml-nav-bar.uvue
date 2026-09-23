@@ -1,12 +1,38 @@
 <template>
   <view class="flex-row items-center justify-between h-11 px-4">
+    <view class="flex-row items-center" @click="onBack">
+      <text v-if="showBack" class="text-sm text-smart mr-2">‹ 返回</text>
+    </view>
     <text class="text-base font-semibold text-ink">{{ title }}</text>
-    <slot name="right"></slot>
+    <view class="min-w-12 flex-row justify-end">
+      <slot name="right"></slot>
+    </view>
   </view>
 </template>
 
 <script setup lang="uts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+
 const props = defineProps({
-  title: { type: String, default: '' }
+  title: { type: String, default: '' },
+  // 默认显示返回按钮（子页面通常需要）；首页/tab页传 false 隐藏
+  showBack: { type: Boolean, default: true }
 })
+
+// 记录进入时的页面栈深度，避免在非栈顶时 navigateBack 无效
+const pagesLen = ref(0)
+onLoad(() => {
+  const pages = getCurrentPages()
+  pagesLen.value = pages != null ? pages.length : 0
+})
+
+function onBack() {
+  if (!props.showBack) return
+  if (pagesLen.value > 1) {
+    uni.navigateBack()
+  } else {
+    uni.reLaunch({ url: '/pages/index/index' })
+  }
+}
 </script>

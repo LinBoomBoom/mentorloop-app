@@ -1,22 +1,16 @@
 // 简历解析 / 优化接口（来源文档 02 §2.4）
-import { request, useMock, makeOptions } from './client.uts'
+import { post, useMock } from './client.uts'
 import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
 
 export async function parseResume(fileUrl: string): Promise<ResumeParseResult> {
   if (useMock()) return await mockParseResume(fileUrl)
-  const r = await request('/resume/parse', makeOptions('POST', { fileUrl: fileUrl }))
+  const r = await post('/resume/parse', { fileUrl: fileUrl })
   return r.data as ResumeParseResult
 }
 
-export async function optimizeResume(
-  text: string,
-  position: string
-): Promise<ResumeSuggestion[]> {
+export async function optimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {
   if (useMock()) return await mockOptimizeResume(text, position)
-  const r = await request(
-    '/resume/optimize',
-    makeOptions('POST', { text: text, position: position })
-  )
+  const r = await post('/resume/optimize', { text: text, position: position })
   return r.data as ResumeSuggestion[]
 }

@@ -1,25 +1,25 @@
 // UTS 原生插件：interviewer-avatar
 // 职责：口型、动作、缓存、渲染桥接（文档 04）
 // 真实实现为原生层；此处为契约与降级实现。
-// 注意：rooms 页当前使用 components/interviewer-avatar.vue（SVG/CSS 占位），
+// 注意：rooms 页当前使用 components/interviewer-avatar.uvue（SVG/CSS 占位），
 // 接真实 UTS 渲染时替换为本插件的渲染桥接。
+// 注意：UTS 不支持 interface，契约以类的公开方法为准。
 
 export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'summary'
 
-export interface AvatarPlugin {
-  setState(state: AvatarState): void
-  syncLip(phoneme: string): void
-  preload(role: string): Promise<void>
-}
-
-class AvatarPluginStub implements AvatarPlugin {
+export class AvatarPlugin {
   setState(state: AvatarState): void {
-    console.warn('[avatar] 原生渲染未接入，使用占位组件')
+    console.warn('[avatar] 原生渲染未接入，使用占位组件', state)
   }
-  syncLip(phoneme: string): void {}
+
+  syncLip(phoneme: string): void {
+    console.warn('[avatar] syncLip 未接入', phoneme)
+  }
+
   preload(role: string): Promise<void> {
+    console.warn('[avatar] preload 未接入', role)
     return Promise.resolve()
   }
 }
 
-export const avatarPlugin: AvatarPlugin = new AvatarPluginStub()
+export const avatarPlugin: AvatarPlugin = new AvatarPlugin()

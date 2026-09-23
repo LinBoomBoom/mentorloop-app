@@ -6,34 +6,86 @@
       <ml-card>
         <text class="text-xs text-ink-soft">本次覆盖</text>
         <text class="text-2xl font-bold text-ink my-1.5">{{ count }} 道题</text>
-        <text class="text-xs text-ink-soft">
-          覆盖能力域：并发与JVM、系统设计、项目经历、表达能力
-        </text>
+        <text class="text-xs text-ink-soft">覆盖能力域：{{ domainsText }}</text>
+        <text class="text-xs text-ink-soft mt-1">追问次数：{{ followupTotal }}</text>
       </ml-card>
     </view>
 
-    <ml-button text="生成报告" type="primary" @click="genReport"></ml-button>
+    <view v-if="generating" class="mb-3">
+      <ml-card>
+        <text class="text-sm text-ink">正在生成报告…</text>
+      </ml-card>
+    </view>
+
+    <ml-button
+      :text="generating ? '生成中…' : '生成报告'"
+      :type="generating ? 'secondary' : 'primary'"
+      :disabled="generating"
+      @click="genReport"
+    ></ml-button>
   </view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import mlNavBar from '../../components/ml-nav-bar.uvue'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
+import { reportHistory } from '../../store/report-history.uts'
+import { scoreInterview } from '../../engine/scorer.uts'
 
 const count = ref(0)
+const generating = ref(false)
+
+// 覆盖能力域：去重拼接
+const domainsText = computed((): string => {
+  const qs = interviewSession.getQuestions()
+  const seen: string[] = []
+  for (let i = 0; i < qs.length; i++) {
+    const d = qs[i].abilityDomain
+    if (!seen.includes(d)) seen.push(d)
+  }
+  return seen.join('、')
+})
+
+// 追问次数：来自 transcript 中同 questionId 面试官发语句数 - 题目数
+const followupTotal = computed((): number => {
+  const ts = interviewSession.getTranscript()
+  let interviewerMsgs = 0
+  for (let i = 0; i < ts.length; i++) {
+    if (ts[i].speaker === 'interviewer') interviewerMsgs += 1
+  }
+  const q = interviewSession.getQuestions().length
+  const f = interviewerMsgs - q
+  return f > 0 ? f : 0
+})
 
 onLoad(() => {
   count.value = interviewSession.getQuestions().length
 })
 
 function genReport() {
-  // 收束并进入报告（状态机按当前态安全迁移；非法迁移仅告警不中断）
+  if (generating.value) return
+  generating.value = true
+  // 收束状态机
   interviewSession.transition('WRAP_UP')
   interviewSession.transition('REPORT_GENERATING')
-  uni.navigateTo({ url: '/pages/report/report' })
+  interviewSession.transition('COMPLETED')
+
+  // 用规则评分器现场打分
+  const qs = interviewSession.getQuestions()
+  const ts = interviewSession.getTranscript()
+  const report = scoreInterview(qs, ts)
+  reportHistory.push(interviewSession.sessionId, report)
+
+  // 清掉会话快照（已转为报告）
+  interviewSession.clearSnapshot()
+
+  setTimeout(() => {
+    generating.value = false
+    uni.redirectTo({ url: '/pages/report/report' })
+  }, 400)
 }
 </script>

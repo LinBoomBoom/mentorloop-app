@@ -1,0 +1,11 @@
+# pnpm 11：允许执行构建脚本的包（esbuild 必须有二进制，否则 Vitest/Vite 起不来）
+allowBuilds:
+  core-js: false
+  core-js-pure: false
+  esbuild: true
+
+# vite 版本必须与 @dcloudio/vite-plugin-uni 的 peer（5.2.8）及 HBuilderX 自带编译器对齐。
+# 若升到 6+（ESM-only），HBuilderX 以 CJS require 加载 vite.config.ts 会报
+# "ESM file cannot be loaded by require"。详见 docs 决策记录 D2。
+overrides:
+  vite: 5.2.8

@@ -1,5 +1,8 @@
 // 用户 / 登录态（轻量单例，零依赖）
 // 与文档 01 商业模式（free / single / member）对齐
+// 登录策略：App 端完整认证流程；小程序端静默登录（决策记录 D1）
+
+import { PositionId, ExperienceLevel } from '../types/interview.uts'
 
 export type UserPlan = 'free' | 'single' | 'member'
 
@@ -7,7 +10,30 @@ export type UserProfile = {
   uid: string
   nickname: string
   plan: UserPlan
-  currentPosition: string
+  positionId: PositionId
+  experienceLevel: ExperienceLevel
+  token: string // 会话凭证；空串表示未登录
+}
+
+// 便捷展示文本
+export function positionDisplay(p: UserProfile): string {
+  const map: Record<string, string> = {
+    'java-backend': 'Java 后端',
+    frontend: '前端',
+    'golang-backend': 'Go 后端',
+    pm: '产品经理'
+  }
+  return map[p.positionId] != null ? map[p.positionId] : 'Java 后端'
+}
+
+export function experienceDisplay(p: UserProfile): string {
+  const map: Record<string, string> = {
+    fresh: '应届',
+    junior: '1-3年',
+    mid: '3-5年',
+    senior: '5年+'
+  }
+  return map[p.experienceLevel] != null ? map[p.experienceLevel] : '1-3年'
 }
 
 // UTS 不支持 undefined，可选字段用 null 表达
@@ -15,26 +41,79 @@ export type UserProfilePatch = {
   uid: string | null
   nickname: string | null
   plan: UserPlan | null
-  currentPosition: string | null
+  positionId: PositionId | null
+  experienceLevel: ExperienceLevel | null
+  token: string | null
 }
+
+const STORAGE_KEY = 'ml_user_profile'
 
 class UserStore {
   profile: UserProfile = {
     uid: '',
     nickname: '访客',
     plan: 'free',
-    currentPosition: 'Java 后端'
+    positionId: 'java-backend',
+    experienceLevel: 'junior',
+    token: ''
+  }
+
+  isLoggedIn(): boolean {
+    return this.profile.token.length > 0
   }
 
   setProfile(p: UserProfilePatch) {
     if (p.uid != null) this.profile.uid = p.uid
     if (p.nickname != null) this.profile.nickname = p.nickname
     if (p.plan != null) this.profile.plan = p.plan
-    if (p.currentPosition != null) this.profile.currentPosition = p.currentPosition
+    if (p.positionId != null) this.profile.positionId = p.positionId
+    if (p.experienceLevel != null) this.profile.experienceLevel = p.experienceLevel
+    if (p.token != null) this.profile.token = p.token
   }
 
   isMember(): boolean {
     return this.profile.plan === 'member'
+  }
+
+  // 登录成功后持久化，供下次启动恢复会话
+  persist() {
+    try {
+      uni.setStorageSync(STORAGE_KEY, JSON.stringify(this.profile))
+    } catch (e: any) {
+      console.warn('[user-profile] persist failed', e)
+    }
+  }
+
+  // 启动时恢复会话；无缓存返回 false
+  restore(): boolean {
+    try {
+      const raw = uni.getStorageSync(STORAGE_KEY) as string
+      if (raw == null || raw.length === 0) return false
+      const p = JSON.parse(raw) as UserProfile
+      if (p.token.length === 0) return false
+      // 兼容旧版（仅有 currentPosition 字符串）的快照
+      this.profile = p
+      return true
+    } catch (e: any) {
+      console.warn('[user-profile] restore failed', e)
+      return false
+    }
+  }
+
+  logout() {
+    this.profile = {
+      uid: '',
+      nickname: '访客',
+      plan: 'free',
+      positionId: 'java-backend',
+      experienceLevel: 'junior',
+      token: ''
+    } as UserProfile
+    try {
+      uni.removeStorageSync(STORAGE_KEY)
+    } catch (e: any) {
+      console.warn('[user-profile] clear storage failed', e)
+    }
   }
 }
 

@@ -1,0 +1,84 @@
+// 岗位方向与经验档位选项（prep 页选择器 + 选题器过滤共用）
+// 新增岗位方向时：1) 在此添加 PositionOption；2) 在 data/ 下新增对应岗位的 ability-map 与 question-bank
+import { PositionId, ExperienceLevel, Difficulty } from '../types/interview.uts'
+
+export type PositionOption = {
+  id: PositionId
+  name: string
+  available: boolean // 题库是否已就绪；false 时在选择器中置灰提示"敬请期待"
+}
+
+export type ExperienceOption = {
+  id: ExperienceLevel
+  label: string
+  range: string // 展示用年限文本
+  allowedDifficulties: Difficulty[] // 该档位可抽到的题目难度集合
+}
+
+export const POSITION_OPTIONS: PositionOption[] = [
+  { id: 'java-backend', name: 'Java 后端', available: true } as PositionOption,
+  { id: 'frontend', name: '前端', available: false } as PositionOption,
+  { id: 'golang-backend', name: 'Go 后端', available: false } as PositionOption,
+  { id: 'pm', name: '产品经理', available: false } as PositionOption
+]
+
+// 经验档位 → 题目难度白名单（用于选题器过滤）
+// 应届生：只出 junior
+// 1-3年：junior + mid
+// 3-5年：mid + senior
+// 5年+：全量，senior 优先（由 pickByDifficultyPriority 控制）
+export const EXPERIENCE_OPTIONS: ExperienceOption[] = [
+  {
+    id: 'fresh',
+    label: '应届生',
+    range: '应届',
+    allowedDifficulties: ['junior']
+  } as ExperienceOption,
+  {
+    id: 'junior',
+    label: '1-3年',
+    range: '1-3年',
+    allowedDifficulties: ['junior', 'mid']
+  } as ExperienceOption,
+  {
+    id: 'mid',
+    label: '3-5年',
+    range: '3-5年',
+    allowedDifficulties: ['mid', 'senior']
+  } as ExperienceOption,
+  {
+    id: 'senior',
+    label: '5年以上',
+    range: '5年+',
+    allowedDifficulties: ['junior', 'mid', 'senior']
+  } as ExperienceOption
+]
+
+// 档位优先级排序（senior 档位优先出 senior 难度的题）
+export const DIFFICULTY_PRIORITY: Record<ExperienceLevel, Difficulty[]> = {
+  fresh: ['junior', 'mid', 'senior'],
+  junior: ['junior', 'mid', 'senior'],
+  mid: ['mid', 'senior', 'junior'],
+  senior: ['senior', 'mid', 'junior']
+}
+
+export function getPositionName(id: PositionId): string {
+  for (let i = 0; i < POSITION_OPTIONS.length; i++) {
+    if (POSITION_OPTIONS[i].id === id) return POSITION_OPTIONS[i].name
+  }
+  return 'Java 后端'
+}
+
+export function getExperienceRange(level: ExperienceLevel): string {
+  for (let i = 0; i < EXPERIENCE_OPTIONS.length; i++) {
+    if (EXPERIENCE_OPTIONS[i].id === level) return EXPERIENCE_OPTIONS[i].range
+  }
+  return '1-3年'
+}
+
+export function getExperienceOption(level: ExperienceLevel): ExperienceOption | null {
+  for (let i = 0; i < EXPERIENCE_OPTIONS.length; i++) {
+    if (EXPERIENCE_OPTIONS[i].id === level) return EXPERIENCE_OPTIONS[i]
+  }
+  return null
+}

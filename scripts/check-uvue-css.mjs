@@ -12,7 +12,15 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const ROOT = process.cwd()
-const SKIP_DIRS = new Set(['node_modules', '.git', 'unpackage', 'dist', '.temp', 'static', 'coverage'])
+const SKIP_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'unpackage',
+  'dist',
+  '.temp',
+  'static',
+  'coverage'
+])
 
 // 命中的正则：class 属性里出现的受限原子类
 const RULES = [
