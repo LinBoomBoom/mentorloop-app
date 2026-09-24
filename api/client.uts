@@ -3,8 +3,11 @@
 // 能力：token 注入、超时、统一业务码/HTTP 错误处理、401 自动登出、GET 参数序列化、失败事件入队（供补传）。
 
 import { userStore } from '../store/user-profile.uts'
+import { API_BASE_URL, useMock } from './env.uts'
 
-export const BASE_URL: string = '' // 接真后端时填入网关地址（如 https://api.mentorloop.com）
+// 网关地址与 Mock 判定统一取自 api/env.uts（单一切换点）
+export const BASE_URL: string = API_BASE_URL
+export { useMock }
 export const REQUEST_TIMEOUT: number = 15000
 
 export type RequestOptions = {
@@ -17,10 +20,6 @@ export type ApiResult = {
   code: number
   data: any
   message: string
-}
-
-export function useMock(): boolean {
-  return BASE_URL.length === 0
 }
 
 // GET 参数序列化（处理空值 & encode）
