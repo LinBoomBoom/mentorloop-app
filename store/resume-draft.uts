@@ -1,0 +1,125 @@
+// 简历草稿与投递版本（文档 02 §2.4：AI 简历优化）
+// 职责：持久化「解析结果 + 采用标记 + 已生成的投递版本」，支持重进页面恢复；导出版本内容为真实文本。
+// 版本内容为纯函数 buildResumeContent，便于单测（不依赖 uni API）。
+
+import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
+
+export type ResumeVersionExport = {
+  versionId: string
+  name: string
+  content: string
+  exportedAt: number
+}
+
+export type ResumeDraftRecord = {
+  fileId: string // fileName + savedAt 组成，用于草稿去重
+  fileName: string
+  position: string // 目标岗位（版本按岗位动态生成时的展示）
+  parse: ResumeParseResult
+  suggestions: ResumeSuggestion[]
+  adopted: boolean[]
+  versions: ResumeVersionExport[]
+  savedAt: number
+}
+
+const DRAFT_KEY = 'ml_resume_draft'
+const MAX_DRAFTS = 5
+
+// 按目标岗位 + 采用标记组装投递版本内容（真实可读文本，非占位）
+// 规则：采用建议稿，未采用保留原文；不同版本前缀引导不同，内容随岗位/建议变化。
+export function buildResumeContent(
+  fileName: string,
+  position: string,
+  suggestions: ResumeSuggestion[],
+  adopted: boolean[],
+  versionName: string
+): string {
+  const lines: string[] = []
+  lines.push('MentorLoop 简历投递版 · ' + versionName)
+  lines.push('文件：' + fileName + '　目标岗位：' + position)
+  lines.push('------------------------------------')
+  for (let i = 0; i < suggestions.length; i++) {
+    const s = suggestions[i]
+    const useAdopted = i < adopted.length && adopted[i]
+    lines.push('· ' + (useAdopted ? s.suggested : s.original))
+    if (s.needsUserEvidence) {
+      lines.push('  （提示：需补充真实数据，请勿使用虚构数值）')
+    }
+  }
+  lines.push('------------------------------------')
+  lines.push('由 MentorLoop AI 简历优化生成，请核对事实后投递。')
+  return lines.join('\n')
+}
+
+class ResumeDraft {
+  private list: ResumeDraftRecord[] = []
+
+  load() {
+    try {
+      const raw = uni.getStorageSync(DRAFT_KEY) as string
+      if (raw == null || raw.length === 0) {
+        this.list = []
+        return
+      }
+      const arr = JSON.parse(raw) as ResumeDraftRecord[]
+      this.list = arr != null ? arr : []
+    } catch (e: any) {
+      console.warn('[resume-draft] load failed', e)
+      this.list = []
+    }
+  }
+
+  // 保存/覆盖同文件草稿（同 fileId 覆盖，避免多份堆积）
+  save(record: ResumeDraftRecord) {
+    this.load()
+    const rest: ResumeDraftRecord[] = []
+    for (let i = 0; i < this.list.length; i++) {
+      if (this.list[i].fileId !== record.fileId) rest.push(this.list[i])
+    }
+    rest.unshift(record)
+    if (rest.length > MAX_DRAFTS) rest.pop()
+    this.list = rest
+    this.persist()
+  }
+
+  // 追加一个投递版本到某文件草稿
+  addVersion(fileId: string, version: ResumeVersionExport): boolean {
+    this.load()
+    for (let i = 0; i < this.list.length; i++) {
+      if (this.list[i].fileId === fileId) {
+        const record = this.list[i]
+        const versions = record.versions.slice()
+        versions.unshift(version)
+        if (versions.length > MAX_DRAFTS) versions.pop()
+        record.versions = versions
+        this.persist()
+        return true
+      }
+    }
+    return false
+  }
+
+  latest(): ResumeDraftRecord | null {
+    this.load()
+    return this.list.length > 0 ? this.list[0] : null
+  }
+
+  clear() {
+    this.list = []
+    try {
+      uni.removeStorageSync(DRAFT_KEY)
+    } catch (e: any) {
+      console.warn('[resume-draft] clear failed', e)
+    }
+  }
+
+  private persist() {
+    try {
+      uni.setStorageSync(DRAFT_KEY, JSON.stringify(this.list))
+    } catch (e: any) {
+      console.warn('[resume-draft] persist failed', e)
+    }
+  }
+}
+
+export const resumeDraft = new ResumeDraft()

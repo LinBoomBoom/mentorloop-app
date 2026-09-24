@@ -26,6 +26,21 @@
         </template>
       </view>
 
+      <!-- 恢复上次草稿（重进页面仍在） -->
+      <view v-if="draftReady" class="mt-3">
+        <ml-card>
+          <view class="flex-row items-center justify-between">
+            <view class="flex-col flex-1">
+              <text class="text-sm text-ink">{{ draftFileName }}</text>
+              <text class="text-[11px] text-ink-soft mt-0.5">{{ draftHint }}</text>
+            </view>
+            <view class="ml-2">
+              <ml-button text="恢复草稿" type="primary" @click="restoreDraft"></ml-button>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
       <!-- 上传区 -->
       <view class="mt-3">
         <view
@@ -275,6 +290,7 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlTag from '../../components/ml-tag.uvue'
@@ -283,6 +299,12 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
 import { parseResume, optimizeResume } from '../../api/resume.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+import {
+  resumeDraft,
+  buildResumeContent,
+  ResumeDraftRecord,
+  ResumeVersionExport
+} from '../../store/resume-draft.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { userStore, positionDisplay } from '../../store/user-profile.uts'
 
@@ -296,30 +318,33 @@ type ResumeVersion = {
   tint: string
 }
 
-// 投递版本（文档 2.4：按目标岗位生成不同侧重版本）
-const resumeVersions: ResumeVersion[] = [
-  {
-    id: 'standard',
-    name: '标准版',
-    desc: '均衡呈现经历与技能，适合大多数岗位',
-    color: '#5B6CFF',
-    tint: '#EEF1FF'
-  },
-  {
-    id: 'tech',
-    name: '技术深挖版',
-    desc: '突出技术栈与工程实现细节',
-    color: '#1FB6A6',
-    tint: '#E6F7F4'
-  },
-  {
-    id: 'project',
-    name: '项目突出版',
-    desc: '前置核心项目与量化成果',
-    color: '#E08A00',
-    tint: '#FFF3E0'
-  }
-]
+// 投递版本（文档 2.4：按目标岗位动态生成不同侧重版本）
+const resumeVersions = computed((): ResumeVersion[] => {
+  const pos = positionDisplay(userStore.profile)
+  return [
+    {
+      id: 'standard',
+      name: '标准版',
+      desc: '均衡呈现经历与技能，适合' + pos + '相关岗位',
+      color: '#5B6CFF',
+      tint: '#EEF1FF'
+    } as ResumeVersion,
+    {
+      id: 'tech',
+      name: '技术深挖版',
+      desc: '突出技术栈与工程实现细节，面向' + pos + '技术侧',
+      color: '#1FB6A6',
+      tint: '#E6F7F4'
+    } as ResumeVersion,
+    {
+      id: 'project',
+      name: '项目突出版',
+      desc: '前置核心项目与量化成果，匹配' + pos + '岗位 JD',
+      color: '#E08A00',
+      tint: '#FFF3E0'
+    } as ResumeVersion
+  ]
+})
 
 const fileName = ref('')
 const parsing = ref(false)
@@ -380,31 +405,187 @@ function resetAll() {
   adopted.value = []
 }
 
+// ---------- 草稿持久化与投递版本（文档 02 §2.4） ----------
+
+// 组装当前页面状态为草稿记录
+function buildRecord(): ResumeDraftRecord {
+  const last = resumeDraft.latest()
+  const versions = last != null && last.fileId === fileName.value ? last.versions.slice() : []
+  return {
+    fileId: fileName.value,
+    fileName: fileName.value,
+    position: positionDisplay(userStore.profile),
+    parse: parsed.value as ResumeParseResult,
+    suggestions: suggestions.value.slice(),
+    adopted: adopted.value.slice(),
+    versions: versions,
+    savedAt: Date.now()
+  } as ResumeDraftRecord
+}
+
+// 确保当前草稿已写入（导出版本前调用）
+function ensureSaved() {
+  if (parsed.value == null || fileName.value.length === 0) return
+  resumeDraft.load()
+  resumeDraft.save(buildRecord())
+}
+
 function saveAll() {
-  uni.showToast({ title: '已保存 ' + adoptedCount.value + ' 条改写', icon: 'none' })
+  if (parsed.value == null || fileName.value.length === 0) {
+    uni.showToast({ title: '暂无内容可保存', icon: 'none' })
+    return
+  }
+  ensureSaved()
+  trackEvent('resume_draft_saved', { adopted: adoptedCount.value })
+  uni.showToast({ title: '已保存 ' + adoptedCount.value + ' 条改写（本地草稿）', icon: 'none' })
+}
+
+// 把生成的版本内容写入本地文件（尽力而为）；失败静默，交付由复制全文兜底
+function writeVersionFile(vid: string, content: string) {
+  // #ifdef APP-PLUS || APP
+  try {
+    const g = globalThis as any
+    const plus = g.plus
+    if (plus != null && plus.io != null) {
+      const fname = 'resume-' + vid + '-' + Date.now() + '.txt'
+      plus.io.resolveLocalFileSystemURL(
+        '_doc',
+        (dir: any) => {
+          dir.getFile(
+            fname,
+            { create: true },
+            (fileEntry: any) => {
+              fileEntry.createWriter(
+                (writer: any) => {
+                  writer.onerror = function () {}
+                  writer.write(content)
+                },
+                function () {}
+              )
+            },
+            function () {}
+          )
+        },
+        function () {}
+      )
+    }
+  } catch {
+    // 忽略写文件失败，交由复制兜底
+  }
+  // #endif
+  // #ifdef MP-WEIXIN
+  try {
+    // @ts-expect-error getFileSystemManager 为小程序端 API
+    const fsm = uni.getFileSystemManager()
+    const fname = 'resume-' + vid + '-' + Date.now() + '.txt'
+    const dir = uni.env != null && uni.env.USER_DATA_PATH != null ? uni.env.USER_DATA_PATH : ''
+    fsm.writeFile({
+      filePath: dir + '/' + fname,
+      data: content,
+      encoding: 'utf8',
+      success: function () {},
+      fail: function () {}
+    })
+  } catch {
+    // 忽略，交由复制兜底
+  }
+  // #endif
+}
+
+// 复制全文到剪贴板（通用保底：导出总有一个真实动作落定）
+function copyToClipboard(content: string, versionName: string) {
+  uni.setClipboardData({
+    data: content,
+    success: () => {
+      uni.showToast({ title: '已生成「' + versionName + '」并复制全文', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '已生成「' + versionName + '」到本地草稿', icon: 'none' })
+    }
+  })
 }
 
 function exportVersion(v: ResumeVersion) {
+  if (parsed.value == null || suggestions.value.length === 0) {
+    uni.showToast({ title: '请先完成解析与改写建议', icon: 'none' })
+    return
+  }
+  if (adoptedCount.value === 0) {
+    uni.showToast({ title: '请先采用至少一条改写建议', icon: 'none' })
+    return
+  }
   trackEvent('resume_export', { versionId: v.id, versionName: v.name })
-  // #ifdef APP-PLUS || APP
-  uni.share({
-    provider: 'weixin',
-    scene: 'WXSceneSession',
-    type: 0,
-    title: 'MentorLoop 简历 · ' + v.name,
-    summary: v.desc,
-    success() {
-      uni.showToast({ title: '已生成' + v.name, icon: 'none' })
-    },
-    fail() {
-      uni.showToast({ title: '已生成' + v.name + '（本地）', icon: 'none' })
-    }
-  } as any)
-  // #endif
-  // #ifndef APP-PLUS || APP
-  uni.showToast({ title: '已生成「' + v.name + '」', icon: 'none' })
-  // #endif
+  // 按目标岗位 + 采用标记生成真实内容
+  const content = buildResumeContent(
+    fileName.value,
+    positionDisplay(userStore.profile),
+    suggestions.value,
+    adopted.value,
+    v.name
+  )
+  // 持久化版本（草稿库可追溯）
+  ensureSaved()
+  resumeDraft.load()
+  const ex: ResumeVersionExport = {
+    versionId: v.id,
+    name: v.name,
+    content: content,
+    exportedAt: Date.now()
+  } as ResumeVersionExport
+  resumeDraft.addVersion(fileName.value, ex)
+  // 交付：写文件（尽力而为）+ 复制全文（保底）
+  writeVersionFile(v.id, content)
+  copyToClipboard(content, v.name)
 }
+
+// ---------- 恢复上次草稿 ----------
+
+const draftReady = ref(false)
+const draftFileName = ref('')
+const draftHint = ref('')
+
+function refreshDraftHint() {
+  resumeDraft.load()
+  const last = resumeDraft.latest()
+  if (last != null && suggestions.value.length === 0 && parsed.value == null) {
+    draftFileName.value = last.fileName
+    const adoptedN = adoptedCountOf(last)
+    draftHint.value =
+      last.fileName +
+      ' · ' +
+      (adoptedN > 0 ? '已采用 ' + adoptedN + ' 条改写' : '未采用改写') +
+      ' · ' +
+      last.versions.length +
+      ' 个导出版本'
+    draftReady.value = true
+  } else {
+    draftReady.value = false
+  }
+}
+
+function adoptedCountOf(r: ResumeDraftRecord): number {
+  let n = 0
+  for (let i = 0; i < r.adopted.length; i++) {
+    if (r.adopted[i]) n += 1
+  }
+  return n
+}
+
+function restoreDraft() {
+  const last = resumeDraft.latest()
+  if (last == null) return
+  fileName.value = last.fileName
+  parsed.value = last.parse
+  suggestions.value = last.suggestions.slice()
+  adopted.value = last.adopted.slice()
+  draftReady.value = false
+  trackEvent('resume_draft_restored', { fileName: last.fileName })
+  uni.showToast({ title: '已恢复草稿', icon: 'none' })
+}
+
+onShow(() => {
+  refreshDraftHint()
+})
 
 function pick() {
   // #ifdef H5
