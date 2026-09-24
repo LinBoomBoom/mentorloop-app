@@ -1,0 +1,402 @@
+<template>
+  <view class="flex-col h-screen bg-navy relative overflow-hidden">
+    <!-- 背景光晕 -->
+    <view
+      class="absolute top-24 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-reliable opacity-10 blur-circle"
+    ></view>
+
+    <!-- 顶部状态条 -->
+    <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
+      <view class="flex-row items-center h-11" @click="confirmExit">
+        <ml-icon name="arrow-left" :size="16" color="#AEB9CC"></ml-icon>
+        <text class="text-sm text-mist ml-1.5">退出</text>
+      </view>
+      <view class="flex-row items-center h-11">
+        <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-1.5"></view>
+        <text class="text-xs text-mist">专项训练</text>
+      </view>
+      <view class="flex-row items-center h-11">
+        <ml-icon name="timer" :size="14" color="#FFFFFF"></ml-icon>
+        <text class="text-sm text-white ml-1">{{ remainText }}</text>
+      </view>
+    </view>
+
+    <!-- 训练舞台：当前任务卡 -->
+    <view class="flex-1 flex-col justify-center px-6">
+      <view class="flex-row items-center justify-center">
+        <view
+          class="flex-row items-center h-7 px-3 rounded-full"
+          :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
+        >
+          <ml-icon name="dumbbell" :size="12" color="#5CE8D8"></ml-icon>
+          <text class="text-xs text-white ml-1">{{ taskTitle }}</text>
+        </view>
+      </view>
+
+      <!-- 当前题目 -->
+      <view class="mt-6 rounded-2xl p-5" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
+        <view class="flex-row items-center">
+          <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-2"></view>
+          <text class="text-xs text-mist">第 {{ doneCount + 1 }} 题</text>
+        </view>
+        <text class="text-base font-semibold text-white mt-2 leading-6">
+          {{ currentQuestion.content.length > 0 ? currentQuestion.content : '准备开始…' }}
+        </text>
+        <text v-if="hint.length > 0" class="text-xs text-mist mt-2">{{ hint }}</text>
+      </view>
+
+      <!-- 进度点 -->
+      <view class="flex-row justify-center mt-4">
+        <view
+          v-for="i in totalQuestions"
+          :key="i"
+          class="w-1.5 h-1.5 rounded-full mx-1"
+          :class="i <= doneCount ? 'bg-reliable' : i === doneCount + 1 ? 'bg-white' : ''"
+          :style="i > doneCount + 1 ? { backgroundColor: 'rgba(255,255,255,0.2)' } : {}"
+        ></view>
+      </view>
+    </view>
+
+    <!-- 控制条 -->
+    <view
+      class="flex-row items-center justify-center px-6 pt-4"
+      :style="{ paddingBottom: bottomPad + 'px' }"
+    >
+      <!-- 文字作答 -->
+      <view class="flex-col items-center w-16" @click="textMode">
+        <view
+          class="w-11 h-11 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+        >
+          <ml-icon name="keyboard" :size="18" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-mist mt-1.5">文字答</text>
+      </view>
+
+      <!-- 完成本题 -->
+      <view class="flex-col items-center mx-6" @click="submitDone">
+        <view
+          class="w-16 h-16 rounded-full flex-row items-center justify-center"
+          :class="finished ? 'bg-warn' : 'bg-reliable'"
+        >
+          <ml-icon :name="finished ? 'check' : 'mic'" :size="24" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-white mt-2">{{ finished ? '查看小结' : '完成本题' }}</text>
+      </view>
+
+      <!-- 跳过 -->
+      <view class="flex-col items-center w-16" @click="skipQuestion">
+        <view
+          class="w-11 h-11 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+        >
+          <ml-icon name="flag" :size="18" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-mist mt-1.5">跳过</text>
+      </view>
+    </view>
+
+    <!-- 文字输入弹窗 -->
+    <view
+      v-if="textModalVisible"
+      class="absolute inset-0 flex-col items-center justify-center"
+      :style="{ backgroundColor: 'rgba(3,12,24,0.6)' }"
+      @click="cancelText"
+    >
+      <view class="w-11/12 rounded-2xl p-4 bg-navy-deep" @click.stop>
+        <text class="text-base font-semibold text-white">文字作答</text>
+        <text class="text-xs text-mist mt-1 mb-3">写下你的思路，长度建议 ≥ 20 字</text>
+        <textarea
+          class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
+          v-model="textDraft"
+          placeholder="在这里输入你的回答…"
+          placeholder-class="text-mist"
+          :maxlength="1000"
+          :auto-focus="true"
+        />
+        <view class="flex-row justify-end mt-3">
+          <ml-button text="取消" type="secondary" @click="cancelText"></ml-button>
+          <view class="ml-2"></view>
+          <ml-button
+            text="提交"
+            type="primary"
+            :disabled="textDraft.length === 0"
+            @click="submitText"
+          ></ml-button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import { userStore } from '../../store/user-profile.uts'
+import { trackEvent } from '../../api/tracking.uts'
+import { selectNext } from '../../engine/question-selector.uts'
+import { analyzeAnswer } from '../../engine/answer-signal.uts'
+import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
+import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
+
+// 训练任务参数（training 页传入）
+const taskId = ref('')
+const taskTitle = ref('专项训练')
+const durationMin = ref(3)
+const source = ref('direct') // report（报告薄弱项）| direct（主动）
+
+// 训练用岗位蓝图（取用户档案默认方向）
+const blueprint = ref<PositionBlueprint>({
+  positionId: 'java-backend',
+  position: 'Java 后端',
+  experienceLevel: 'junior',
+  experienceRange: '1-3年',
+  companyType: '互联网',
+  language: '中文',
+  target: '求职'
+} as PositionBlueprint)
+
+// 训练状态
+const totalQuestions = ref(3)
+const doneCount = ref(0)
+const remain = ref(180)
+const finished = ref(false)
+const hint = ref('')
+const askedIds = ref<string[]>([])
+
+// 文字输入弹窗
+const textModalVisible = ref(false)
+const textDraft = ref('')
+
+const emptyQuestion: QuestionItem = {
+  id: '',
+  positionId: 'java-backend',
+  abilityDomain: '',
+  subAbility: '',
+  knowledgePoint: '',
+  content: '',
+  purpose: '',
+  difficulty: 'junior',
+  type: 'concept',
+  misconceptions: [],
+  expectedEvidence: '',
+  followupPrompts: [],
+  resumeRisk: false
+} as QuestionItem
+const currentQuestion = ref(emptyQuestion)
+
+// 安全区
+const topPad = ref(28)
+const bottomPad = ref(16)
+
+let timer = 0
+
+const remainText = computed((): string => {
+  const m = Math.floor(remain.value / 60)
+  const s = remain.value % 60
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return m + ':' + pad(s)
+})
+
+onLoad((options: any) => {
+  // 安全区
+  try {
+    const win = uni.getWindowInfo()
+    const sb = win.statusBarHeight
+    topPad.value = sb > 0 ? sb + 6 : 28
+    const insets = win.safeAreaInsets
+    const bottom = insets != null ? insets.bottom : 0
+    bottomPad.value = bottom > 0 ? bottom + 10 : 16
+  } catch {
+    topPad.value = 28
+    bottomPad.value = 16
+  }
+
+  // 接收训练任务参数
+  if (options != null) {
+    taskId.value = options.taskId != null ? (options.taskId as string) : 't_custom'
+    taskTitle.value = options.title != null ? (options.title as string) : '专项训练'
+    durationMin.value = options.durationMin != null ? parseInt(options.durationMin as string) : 3
+    source.value = options.source != null ? (options.source as string) : 'direct'
+  }
+  remain.value = durationMin.value * 60
+  // 训练题量按时长估算：约 1 题/分钟，上限 5 题
+  totalQuestions.value = durationMin.value < 5 ? 3 : durationMin.value < 10 ? 4 : 5
+
+  // 蓝图取用户档案
+  const posId = userStore.profile.positionId
+  const expLv = userStore.profile.experienceLevel
+  blueprint.value = {
+    positionId: posId,
+    position: getPositionName(posId),
+    experienceLevel: expLv,
+    experienceRange: getExperienceRange(expLv),
+    companyType: '互联网',
+    language: '中文',
+    target: '求职'
+  } as PositionBlueprint
+
+  nextQuestion()
+
+  timer = setInterval(() => {
+    if (remain.value > 0) remain.value = remain.value - 1
+    if (remain.value === 0) {
+      finishTraining()
+    }
+  }, 1000)
+})
+
+onUnload(() => {
+  if (timer > 0) clearInterval(timer)
+})
+
+// 从题库选下一题（复用题目选择器，训练模式不问收束题）
+function nextQuestion() {
+  hint.value = ''
+  // 构造已问列表（用 id 匹配 QUESTION_BANK）
+  const asked: QuestionItem[] = []
+  for (let i = 0; i < askedIds.value.length; i++) {
+    const q = findById(askedIds.value[i])
+    if (q != null) asked.push(q)
+  }
+  // 训练时间预算：给足余量，让选择器不因时间收束
+  const out = selectNext({
+    blueprint: blueprint.value,
+    mode: 'quick',
+    asked: asked,
+    remainSeconds: 9999,
+    resumeRiskTopics: []
+  })
+  if (out == null || out.isWrapup) {
+    // 题库耗尽：直接完成
+    finishTraining()
+    return
+  }
+  currentQuestion.value = out.question
+  askedIds.value.push(out.question.id)
+}
+
+function findById(id: string): QuestionItem | null {
+  // 训练场景只需 id 匹配的题面，用于 asked 去重；空实现走 selectNext 内部去重
+  if (id.length === 0) return null
+  const stub = emptyQuestion
+  stub.id = id
+  return stub
+}
+
+// 即时反馈：基于答案信号给出提示（训练核心：单维突破 · 即时反馈）
+function feedbackFor(answerText: string): string {
+  const signal = analyzeAnswer(answerText, currentQuestion.value.id)
+  const tips: string[] = []
+  if (signal.isVague) tips.push('回答偏模糊，试着给出明确的结论与依据')
+  if (!signal.hasMetrics) tips.push('缺少量化指标，补上数字（如 QPS、耗时、占比）')
+  if (signal.isAbsolute) tips.push('有绝对化表述，注意边界条件与反例')
+  if (tips.length === 0) return '回答结构清晰，继续保持：结论 → 依据 → 指标'
+  return tips.join('；')
+}
+
+function submitDone() {
+  if (finished.value) {
+    finishTraining()
+    return
+  }
+  // 无录音版本：直接以口头作答完成，进入反馈
+  hint.value = feedbackFor('（口头作答）')
+  doneCount.value = doneCount.value + 1
+  trackEvent('training_task_complete', {
+    taskId: taskId.value,
+    source: source.value,
+    questionIndex: doneCount.value
+  })
+  if (doneCount.value >= totalQuestions.value) {
+    finishTraining()
+    return
+  }
+  setTimeout(() => {
+    nextQuestion()
+  }, 1200)
+}
+
+function skipQuestion() {
+  if (finished.value) return
+  doneCount.value = doneCount.value + 1
+  if (doneCount.value >= totalQuestions.value) {
+    finishTraining()
+    return
+  }
+  nextQuestion()
+}
+
+function finishTraining() {
+  if (finished.value) return
+  finished.value = true
+  if (timer > 0) {
+    clearInterval(timer)
+    timer = 0
+  }
+  // 北极星：完成专项训练任务（source=report 表示来自报告薄弱项）
+  trackEvent('training_task_complete', {
+    taskId: taskId.value,
+    source: source.value,
+    completed: true,
+    durationMin: durationMin.value
+  })
+  uni.showToast({ title: '训练完成，做得好！', icon: 'none' })
+  setTimeout(() => {
+    uni.navigateBack()
+  }, 1200)
+}
+
+function textMode() {
+  if (finished.value) return
+  textDraft.value = ''
+  textModalVisible.value = true
+}
+
+function cancelText() {
+  textModalVisible.value = false
+  textDraft.value = ''
+}
+
+function submitText() {
+  const t = textDraft.value.trim()
+  if (t.length === 0) return
+  textModalVisible.value = false
+  hint.value = feedbackFor(t)
+  doneCount.value = doneCount.value + 1
+  trackEvent('training_task_complete', {
+    taskId: taskId.value,
+    source: source.value,
+    questionIndex: doneCount.value,
+    inputMode: 'text'
+  })
+  if (doneCount.value >= totalQuestions.value) {
+    finishTraining()
+    return
+  }
+  setTimeout(() => {
+    nextQuestion()
+  }, 1200)
+}
+
+function confirmExit() {
+  uni.showModal({
+    title: '结束训练',
+    content: '当前进度不会保存，确认退出？',
+    success: (r: any) => {
+      if (r.confirm) {
+        if (timer > 0) clearInterval(timer)
+        uni.navigateBack()
+      }
+    }
+  })
+}
+</script>
+
+<style>
+.blur-circle {
+  filter: blur(60px);
+}
+</style>

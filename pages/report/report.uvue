@@ -41,16 +41,29 @@
           </view>
         </view>
 
-        <!-- 能力维度 -->
+        <!-- 能力维度（证据卡：点击展开完整证据 + 优秀回答示例） -->
         <view class="flex-row items-center mt-5 mb-2.5">
           <ml-icon name="chart-column" :size="15" color="#5B6CFF"></ml-icon>
           <text class="text-base font-semibold text-ink ml-1.5">能力维度</text>
+          <text class="text-xs text-mist ml-2">点击卡片展开证据</text>
         </view>
         <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
-          <ml-card>
+          <ml-card pressable @tap="toggleEvidence(d.dimension)">
             <view class="flex-row items-center justify-between">
               <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
-              <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
+              <view class="flex-row items-center">
+                <ml-tag
+                  :label="d.level"
+                  :bg="levelBg(d.level)"
+                  :color="levelColor(d.level)"
+                ></ml-tag>
+                <ml-icon
+                  class="ml-1.5"
+                  :name="isExpanded(d.dimension) ? 'chevron-up' : 'chevron-down'"
+                  :size="14"
+                  color="#AEB9CC"
+                ></ml-icon>
+              </view>
             </view>
             <!-- 等级条 -->
             <view class="mt-2.5 h-1.5 rounded-full bg-line">
@@ -63,6 +76,36 @@
             <text v-if="d.missingEvidence.length > 0" class="text-xs text-warn mt-1">
               待补证据：{{ d.missingEvidence }}
             </text>
+
+            <!-- 展开区：完整证据 + 优秀回答示例 + 建议加练题 -->
+            <template v-if="isExpanded(d.dimension)">
+              <view class="mt-3 rounded-xl p-3 bg-bg-muted">
+                <view class="flex-row items-center">
+                  <ml-icon name="quote" :size="12" color="#AEB9CC"></ml-icon>
+                  <text class="text-[11px] text-mist ml-1">你的回答摘录</text>
+                </view>
+                <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ d.evidence }}</text>
+              </view>
+              <view class="mt-2.5 rounded-xl p-3 bg-chip-reliable">
+                <view class="flex-row items-center">
+                  <ml-icon name="lightbulb" :size="12" color="#1FB6A6"></ml-icon>
+                  <text class="text-[11px] font-semibold text-reliable ml-1">优秀回答示例</text>
+                </view>
+                <text class="text-[13px] text-ink mt-1.5 leading-5">
+                  {{ exampleFor(d.dimension) }}
+                </text>
+              </view>
+              <view v-if="d.suggestQuestions.length > 0" class="mt-2.5">
+                <text class="text-[11px] font-semibold text-ink">建议加练</text>
+                <text
+                  v-for="(sq, i) in d.suggestQuestions"
+                  :key="'sq' + i"
+                  class="text-xs text-ink-soft mt-1 leading-5"
+                >
+                  · {{ sq }}
+                </text>
+              </view>
+            </template>
           </ml-card>
         </view>
 
@@ -134,6 +177,7 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { reportHistory } from '../../store/report-history.uts'
 import { getReport } from '../../api/report.uts'
+import { trackEvent } from '../../api/tracking.uts'
 import {
   InterviewReport,
   DimensionScore,
@@ -153,6 +197,47 @@ const emptyReport: InterviewReport = {
 const report = ref(emptyReport)
 const hasReport = ref(false)
 
+// 证据卡展开状态（记录已展开的维度 key）
+const expandedKeys = ref<string[]>([])
+
+function isExpanded(key: string): boolean {
+  return expandedKeys.value.includes(key)
+}
+
+// 展开/收起证据卡；展开时上报 report_evidence_expand（文档 03 关键交互）
+function toggleEvidence(key: string) {
+  const next = expandedKeys.value.slice()
+  const idx = next.indexOf(key)
+  if (idx >= 0) {
+    next.splice(idx, 1)
+  } else {
+    next.push(key)
+    trackEvent('report_evidence_expand', { dimension: key })
+  }
+  expandedKeys.value = next
+}
+
+// 优秀回答示例（文档 02 §2.5）：按维度给出结构化示范
+const DIM_EXAMPLES: { [key: string]: string } = {
+  knowledge:
+    '「HashMap 在 JDK 8 后改成数组 + 链表 + 红黑树。链表长度超过 8 且数组长度 ≥ 64 时转红黑树，查询从 O(n) 降到 O(logn)。我在业务里用它做本地缓存时，还会关注扩容因子 0.75 带来的 rehash 开销。」',
+  engineering:
+    '「订单超时关单我用了延迟消息方案：下单发 15 分钟延迟消息，消费时先查状态再关单，避免定时任务扫全表。上线后关单及时率从 92% 提到 99.8%，DB 扫描 QPS 从 120 降到 0。」',
+  analysis:
+    '「缓存和 DB 一致性问题，我先看业务容忍度：库存类强一致就走 DB 乐观锁；商品详情类用先更 DB 再删缓存，加上 500ms 延迟双删兜底。两种方案我都压测过，P99 分别是 3ms 和 12ms。」',
+  communication:
+    '「我按『结论 → 依据 → 指标』三段式表达：先说方案选了什么，再讲为什么放弃备选，最后给上线后的量化结果，让面试官 30 秒内抓住重点。」',
+  learning:
+    '「那次线上事故后我做了复盘：根因是连接池没配超时。我把复盘写成团队 wiki，并加了上线前配置巡检脚本，之后同类问题零复发。」',
+  motivation:
+    '「我看重贵司业务里高并发场景的复杂度，这正是我想深耕的方向；我过往的订单系统经验可以直接复用到你们的交易链路上。」'
+}
+
+function exampleFor(key: string): string {
+  const v = DIM_EXAMPLES[key]
+  return v != null ? v : '参考结构：结论 → 依据 → 量化指标 → 边界条件。'
+}
+
 onShow(async () => {
   try {
     // 优先用 API（mock 模式下内部从 history 取最新）
@@ -161,6 +246,8 @@ onShow(async () => {
     const r = await getReport(sid)
     report.value = r
     hasReport.value = r.overall.length > 0
+    // 北极星：报告查看率
+    if (hasReport.value) trackEvent('report_view', { interviewId: sid })
   } catch {
     hasReport.value = false
   }

@@ -25,6 +25,10 @@
       "style": { "navigationBarTitleText": "专项训练" }
     },
     {
+      "path": "pages/training/room",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "训练房间" }
+    },
+    {
       "path": "pages/resume/resume",
       "style": { "navigationBarTitleText": "简历优化" }
     },

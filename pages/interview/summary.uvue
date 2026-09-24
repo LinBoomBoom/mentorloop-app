@@ -62,6 +62,7 @@ import mlIcon from '../../components/ml-icon.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
 import { reportHistory } from '../../store/report-history.uts'
 import { scoreInterview } from '../../engine/scorer.uts'
+import { trackEvent } from '../../api/tracking.uts'
 
 const count = ref(0)
 const generating = ref(false)
@@ -106,6 +107,8 @@ function genReport() {
   const ts = interviewSession.getTranscript()
   const report = scoreInterview(qs, ts)
   reportHistory.push(interviewSession.sessionId, report)
+  // 北极星：完成一次正式模拟面试
+  trackEvent('interview_complete', { questionCount: qs.length, followupCount: followupTotal.value })
 
   // 清掉会话快照（已转为报告）
   interviewSession.clearSnapshot()

@@ -45,11 +45,16 @@
       <view class="flex-row items-center">
         <view
           class="w-1.5 h-1.5 rounded-full mr-2"
-          :class="avatarState === 'listening' ? 'bg-reliable' : 'bg-smart'"
+          :class="paused ? 'bg-warn' : avatarState === 'listening' ? 'bg-reliable' : 'bg-smart'"
         ></view>
         <text class="text-base font-semibold text-white">{{ displayQuestion }}</text>
       </view>
       <text v-if="caption.length > 0" class="text-xs text-mist mt-1.5">{{ caption }}</text>
+      <!-- 文字作答入口（暂停/录音时隐藏） -->
+      <view v-if="!paused && !recording" class="flex-row items-center mt-2.5" @click="textMode">
+        <ml-icon name="keyboard" :size="13" color="#AEB9CC"></ml-icon>
+        <text class="text-xs text-mist ml-1.5">不方便说话？切换文字作答</text>
+      </view>
     </view>
 
     <!-- 控制条：两侧辅助操作 + 中央录音主按钮（底部安全区） -->
@@ -57,19 +62,19 @@
       class="flex-row items-center justify-center px-6 pt-4"
       :style="{ paddingBottom: bottomPad + 'px' }"
     >
-      <!-- 重播本题 -->
-      <view class="flex-col items-center w-16" @click="replay">
+      <!-- 暂停/恢复 -->
+      <view class="flex-col items-center w-16" @click="togglePause">
         <view
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon name="volume-2" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon :name="paused ? 'play' : 'pause'" :size="18" color="#FFFFFF"></ml-icon>
         </view>
-        <text class="text-xs text-mist mt-1.5">重听</text>
+        <text class="text-xs text-mist mt-1.5">{{ paused ? '继续' : '暂停' }}</text>
       </view>
 
       <!-- 录音主按钮 -->
-      <view class="flex-col items-center mx-8" @click="toggleRecord">
+      <view class="flex-col items-center mx-6" @click="toggleRecord">
         <view
           class="w-16 h-16 rounded-full flex-row items-center justify-center"
           :class="recording ? 'bg-danger' : 'bg-smart'"
@@ -79,15 +84,15 @@
         <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '按住作答' }}</text>
       </view>
 
-      <!-- 文字作答 -->
-      <view class="flex-col items-center w-16" @click="textMode">
+      <!-- 跳过本题（跳过保留为证据） -->
+      <view class="flex-col items-center w-16" @click="skipQuestion">
         <view
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon name="keyboard" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon name="flag" :size="18" color="#FFFFFF"></ml-icon>
         </view>
-        <text class="text-xs text-mist mt-1.5">文字答</text>
+        <text class="text-xs text-mist mt-1.5">跳过</text>
       </view>
     </view>
 
@@ -142,6 +147,7 @@ import {
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
 import { decideFollowup, FollowupDecision } from '../../engine/followup-engine.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
+import { trackEvent } from '../../api/tracking.uts'
 
 const recording = ref(false)
 const remain = ref(1200)
@@ -172,6 +178,9 @@ const bottomPad = ref(16)
 const textModalVisible = ref(false)
 const textDraft = ref('')
 const submittingText = ref(false)
+
+// 暂停状态（暂停时冻结倒计时与录音入口）
+const paused = ref(false)
 
 // 录音管理器（H5 端降级为不录音但不报错）
 let recorder: any = null
@@ -257,6 +266,7 @@ onLoad((options: any) => {
   initRecorder()
   init()
   timer = setInterval(() => {
+    if (paused.value) return // 暂停时冻结倒计时
     if (remain.value > 0) remain.value = remain.value - 1
     // 倒计时归零自动收束
     if (remain.value === 0) {
@@ -312,6 +322,12 @@ async function init() {
   interviewSession.reset(s.sessionId)
   interviewSession.transition('DEVICE_CHECK')
   interviewSession.transition('READY')
+  // 北极星：进入面试房间
+  trackEvent('interview_start', {
+    mode: mode.value,
+    positionId: blueprint.value.positionId,
+    experienceLevel: blueprint.value.experienceLevel
+  })
   ask()
 }
 
@@ -326,6 +342,11 @@ async function ask() {
     const q = await nextQuestion(sessionId.value, mode.value, blueprint.value)
     currentQuestion.value = q
     interviewSession.pushQuestion(q)
+    trackEvent('interview_question_asked', {
+      questionId: q.id,
+      abilityDomain: q.abilityDomain,
+      difficulty: q.difficulty
+    })
     // 记录面试官念题
     interviewSession.appendTranscript({
       questionId: q.id,
@@ -351,6 +372,11 @@ function askFollowup(decision: FollowupDecision) {
   interviewSession.incrementDepth()
   followupPrompt.value = decision.prompt
   caption.value = ''
+  trackEvent('interview_followup_asked', {
+    questionId: currentQuestion.value.id,
+    intent: decision.intent,
+    depth: decision.depth
+  })
   // 状态回到 ASKING → LISTENING
   avatarState.value = 'followup'
   interviewSession.appendTranscript({
@@ -365,6 +391,10 @@ function askFollowup(decision: FollowupDecision) {
 }
 
 function toggleRecord() {
+  if (paused.value) {
+    uni.showToast({ title: '已暂停，请先恢复', icon: 'none' })
+    return
+  }
   if (recording.value) {
     stopRecord(false)
   } else {
@@ -409,7 +439,7 @@ function stopRecord(_auto: boolean) {
 }
 
 // 录音结束 / 文字提交后的统一处理：写转写、决策追问/下一题
-function handleAnswer(answerText: string) {
+function handleAnswer(answerText: string, inputMode: string = 'voice') {
   caption.value = '已记录你的回答'
   interviewSession.appendTranscript({
     questionId: currentQuestion.value.id,
@@ -420,6 +450,11 @@ function handleAnswer(answerText: string) {
   interviewSession.saveDraft(currentQuestion.value.id, answerText)
   interviewSession.transition('TRANSCRIBING')
   interviewSession.transition('FOLLOW_UP_DECISION')
+  trackEvent('interview_answer_submitted', {
+    questionId: currentQuestion.value.id,
+    inputMode: inputMode,
+    length: answerText.length
+  })
 
   // 基于回答规则信号判定是否追问
   const signal = analyzeAnswer(answerText, currentQuestion.value.id)
@@ -446,12 +481,6 @@ function handleRecordingStopped(_audioPath: string) {
 function goSummary() {
   interviewSession.saveSnapshot()
   uni.navigateTo({ url: '/pages/interview/summary' })
-}
-
-function replay() {
-  avatarState.value = 'asking'
-  caption.value =
-    followupPrompt.value.length > 0 ? followupPrompt.value : currentQuestion.value.content
 }
 
 function textMode() {
@@ -482,10 +511,52 @@ function submitText() {
   caption.value = '已接收文字回答，分析中…'
   avatarState.value = 'thinking'
   setTimeout(() => {
-    handleAnswer(t)
+    handleAnswer(t, 'text')
     submittingText.value = false
     textDraft.value = ''
   }, 300)
+}
+
+// 跳过本题：跳过保留为证据（文档 02 §2.2），写 transcript 标记后进下一题
+function skipQuestion() {
+  if (recording.value) {
+    uni.showToast({ title: '请先停止录音', icon: 'none' })
+    return
+  }
+  if (paused.value) {
+    uni.showToast({ title: '已暂停，请先恢复', icon: 'none' })
+    return
+  }
+  trackEvent('interview_skip', { questionId: currentQuestion.value.id })
+  interviewSession.appendTranscript({
+    questionId: currentQuestion.value.id,
+    speaker: 'user',
+    text: '（用户跳过本题）',
+    timestamp: Date.now()
+  })
+  caption.value = '已跳过，进入下一题'
+  avatarState.value = 'thinking'
+  setTimeout(() => {
+    const ev = interviewSession.transition('NEXT_QUESTION')
+    if (ev != null) ask()
+  }, 500)
+}
+
+// 暂停/恢复：冻结倒计时与录音入口，异常恢复语义（文档 02 §2.2）
+function togglePause() {
+  if (paused.value) {
+    paused.value = false
+    caption.value = '继续面试'
+    avatarState.value = 'listening'
+    return
+  }
+  if (recording.value) {
+    uni.showToast({ title: '请先停止录音', icon: 'none' })
+    return
+  }
+  paused.value = true
+  avatarState.value = 'idle'
+  caption.value = '已暂停，点击继续'
 }
 
 function confirmExit() {
@@ -494,6 +565,10 @@ function confirmExit() {
     content: '进度将自动保存，确认退出？',
     success: (r: any) => {
       if (r.confirm) {
+        trackEvent('interview_abandon', {
+          reason: 'user_exit',
+          answeredCount: interviewSession.getQuestions().length
+        })
         interviewSession.saveSnapshot()
         uni.navigateBack()
       }

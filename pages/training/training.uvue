@@ -29,7 +29,7 @@
             @action="goReport"
           ></ml-section-header>
           <view class="mb-2.5" v-for="t in recommended" :key="'r_' + t.id">
-            <ml-card pressable @tap="startTask">
+            <ml-card pressable @tap="startTaskEntry(t.id, t.title, t.durationMin)">
               <view class="flex-row items-center">
                 <view
                   class="w-11 h-11 rounded-xl flex-col items-center justify-center mr-3"
@@ -78,7 +78,7 @@
             :class="i % 2 === 0 ? 'w-[calc(50%-5px)] mr-2.5' : 'w-[calc(50%-5px)]'"
             hover-class="card-pressed"
             :hover-start-time="0"
-            @click="startTask"
+            @click="startTaskEntry('dim_' + d.key, d.label + '突破', 5)"
           >
             <view class="flex-row items-center justify-between">
               <view
@@ -110,7 +110,7 @@
             :class="i < genericTasks.length - 1 ? 'border-b border-line' : ''"
             hover-class="row-pressed"
             :hover-start-time="0"
-            @click="startTask"
+            @click="startTaskEntry(t.id, t.title, t.durationMin)"
           >
             <view
               class="w-9 h-9 rounded-lg bg-chip-reliable flex-row items-center justify-center mr-3"
@@ -299,9 +299,27 @@ onShow(() => {
   }
 })
 
-// 训练房间尚未独立实现：进入面试准备页
-function startTask() {
-  uni.navigateTo({ url: '/pages/interview/prep' })
+// 模板入口：把任务参数转成 TrainingEntry 再进训练房间
+function startTaskEntry(id: string, title: string, durationMin: number) {
+  startTask({ id: id, title: title, durationMin: durationMin } as TrainingEntry)
+}
+
+// 进入训练房间（3/5/10 分钟碎片化训练；推荐任务标记来源=报告薄弱项）
+function startTask(task: TrainingEntry | null = null) {
+  const id = task != null ? task.id : 't_custom'
+  const title = task != null ? task.title : '专项训练'
+  const dur = task != null ? task.durationMin : 5
+  const src = task != null && task.id.indexOf('gt') !== 0 ? 'report' : 'direct'
+  const url =
+    '/pages/training/room?taskId=' +
+    id +
+    '&title=' +
+    title +
+    '&durationMin=' +
+    dur +
+    '&source=' +
+    src
+  uni.navigateTo({ url: url })
 }
 
 function startInterview() {

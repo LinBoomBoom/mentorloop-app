@@ -1,0 +1,146 @@
+// 埋点客户端（推进计划 0.5；事件字典见 types/tracking.uts）
+// Mock 优先：useMock() 时仅 console + 本地暂存队列；接真后端后批量上报 /track/batch。
+// 设计原则：埋点永不阻塞 UI、永不抛错、失败事件入本地队列待补传。
+
+import { userStore } from '../store/user-profile.uts'
+import { interviewSession } from '../store/interview-session.uts'
+import { BASE_URL, useMock } from './client.uts'
+
+const QUEUE_KEY = 'ml_tracking_queue'
+const MAX_QUEUE = 200
+
+// 页面级会话 id（冷启动生成一次；面试中事件改用 interviewSession.sessionId）
+let pageSessionId = ''
+
+function ensurePageSession(): string {
+  if (pageSessionId.length === 0) {
+    pageSessionId =
+      'ps_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1679616).toString(36)
+  }
+  return pageSessionId
+}
+
+function platformName(): string {
+  // 条件编译用赋值而非 return，避免 ESLint 误报 unreachable code
+  let name = 'app'
+  // #ifdef APP-ANDROID
+  name = 'app-android'
+  // #endif
+  // #ifdef APP-IOS
+  name = 'app-ios'
+  // #endif
+  // #ifdef MP-WEIXIN
+  name = 'mp-weixin'
+  // #endif
+  return name
+}
+
+// 面试/报告域事件使用面试会话 id，其余使用页面会话 id
+function sessionIdFor(eventName: string): string {
+  if (eventName.indexOf('interview_') === 0 || eventName.indexOf('report_') === 0) {
+    const sid = interviewSession.sessionId
+    if (sid.length > 0) return sid
+  }
+  return ensurePageSession()
+}
+
+function buildPayload(eventName: string, props: { [key: string]: any } | null): string {
+  const payload: { [key: string]: any } = {
+    event: eventName,
+    userId: userStore.profile.uid,
+    sessionId: sessionIdFor(eventName),
+    platform: platformName(),
+    timestamp: Date.now()
+  }
+  if (props != null) {
+    const keys = Object.keys(props)
+    for (let i = 0; i < keys.length; i++) {
+      payload[keys[i]] = props[keys[i]]
+    }
+  }
+  return JSON.stringify(payload)
+}
+
+// 本地待补传队列
+function loadQueue(): string[] {
+  const raw = uni.getStorageSync(QUEUE_KEY)
+  if (raw == null || typeof raw !== 'string') return []
+  try {
+    const arr = JSON.parse(raw as string)
+    if (arr instanceof Array) return arr as string[]
+  } catch {
+    // 队列损坏则丢弃，不影响业务
+  }
+  return []
+}
+
+function saveQueue(queue: string[]) {
+  uni.setStorageSync(QUEUE_KEY, JSON.stringify(queue))
+}
+
+function enqueue(payload: string) {
+  const queue = loadQueue()
+  queue.push(payload)
+  // 超限丢弃最旧事件，避免存储膨胀
+  while (queue.length > MAX_QUEUE) {
+    queue.shift()
+  }
+  saveQueue(queue)
+}
+
+// 静默上报（不走 client.request，避免失败 toast 打扰用户）
+function sendBatch(events: string[], onDone: () => void) {
+  uni.request({
+    url: BASE_URL + '/track/batch',
+    method: 'POST',
+    data: { events: events },
+    header: { 'Content-Type': 'application/json' },
+    timeout: 8000,
+    success: () => {
+      onDone()
+    },
+    fail: () => {
+      // 上报失败：放回队列头部，等待下次补传
+      onDone()
+    }
+  })
+}
+
+// 补传本地队列（App 启动 / 网络恢复时调用）
+export function flushTrackingQueue() {
+  if (useMock()) return
+  const queue = loadQueue()
+  if (queue.length === 0) return
+  const batch = queue.splice(0, 20)
+  saveQueue(queue)
+  sendBatch(batch, () => {
+    if (loadQueue().length > 0) {
+      flushTrackingQueue()
+    }
+  })
+}
+
+// 埋点主入口：trackEvent('interview_start', { mode: 'standard' })
+export function trackEvent(eventName: string, props: { [key: string]: any } | null = null) {
+  const payload = buildPayload(eventName, props)
+  if (useMock()) {
+    // Mock 模式：console 便于联调核对，同时入队留痕
+    console.log('[track] ' + payload)
+    enqueue(payload)
+    return
+  }
+  // 真实模式：先带上未补传的历史事件一起发
+  const backlog = loadQueue()
+  if (backlog.length > 0) {
+    backlog.push(payload)
+    const batch = backlog.splice(0, 20)
+    saveQueue(backlog)
+    sendBatch(batch, () => {
+      if (loadQueue().length > 0) {
+        flushTrackingQueue()
+      }
+    })
+    return
+  }
+  sendBatch([payload], () => {})
+}

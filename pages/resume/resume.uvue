@@ -233,6 +233,42 @@
         <view class="h-2"></view>
         <ml-button text="放弃全部修改" type="ghost" block @click="resetAll"></ml-button>
       </view>
+
+      <!-- 多版本导出（文档 2.4：生成不同投递版本） -->
+      <view v-if="parsed != null" class="mt-5">
+        <ml-section-header
+          title="投递版本"
+          caption="按目标岗位生成不同侧重版本"
+        ></ml-section-header>
+        <ml-card :padded="false">
+          <view
+            v-for="(v, i) in resumeVersions"
+            :key="'v_' + v.id"
+            class="flex-row items-center px-4 py-3"
+            :class="i < resumeVersions.length - 1 ? 'border-b border-line' : ''"
+          >
+            <view
+              class="w-9 h-9 rounded-lg flex-row items-center justify-center mr-3"
+              :style="{ backgroundColor: v.tint }"
+            >
+              <ml-icon name="file-text" :size="16" :color="v.color"></ml-icon>
+            </view>
+            <view class="flex-col flex-1">
+              <text class="text-sm text-ink">{{ v.name }}</text>
+              <text class="text-[11px] text-ink-soft mt-0.5">{{ v.desc }}</text>
+            </view>
+            <view
+              class="h-7 px-3 rounded-full border border-line flex-row items-center pressable"
+              hover-class="card-pressed"
+              :hover-start-time="0"
+              @click="exportVersion(v)"
+            >
+              <ml-icon name="share" :size="12" color="#5B6CFF"></ml-icon>
+              <text class="text-xs text-smart ml-1">导出</text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
     </view>
   </scroll-view>
 </template>
@@ -247,9 +283,43 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
 import { parseResume, optimizeResume } from '../../api/resume.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+import { trackEvent } from '../../api/tracking.uts'
 import { userStore, positionDisplay } from '../../store/user-profile.uts'
 
 const steps: string[] = ['上传简历', 'AI 解析', '优化建议']
+
+type ResumeVersion = {
+  id: string
+  name: string
+  desc: string
+  color: string
+  tint: string
+}
+
+// 投递版本（文档 2.4：按目标岗位生成不同侧重版本）
+const resumeVersions: ResumeVersion[] = [
+  {
+    id: 'standard',
+    name: '标准版',
+    desc: '均衡呈现经历与技能，适合大多数岗位',
+    color: '#5B6CFF',
+    tint: '#EEF1FF'
+  },
+  {
+    id: 'tech',
+    name: '技术深挖版',
+    desc: '突出技术栈与工程实现细节',
+    color: '#1FB6A6',
+    tint: '#E6F7F4'
+  },
+  {
+    id: 'project',
+    name: '项目突出版',
+    desc: '前置核心项目与量化成果',
+    color: '#E08A00',
+    tint: '#FFF3E0'
+  }
+]
 
 const fileName = ref('')
 const parsing = ref(false)
@@ -314,6 +384,28 @@ function saveAll() {
   uni.showToast({ title: '已保存 ' + adoptedCount.value + ' 条改写', icon: 'none' })
 }
 
+function exportVersion(v: ResumeVersion) {
+  trackEvent('resume_export', { versionId: v.id, versionName: v.name })
+  // #ifdef APP-PLUS || APP
+  uni.share({
+    provider: 'weixin',
+    scene: 'WXSceneSession',
+    type: 0,
+    title: 'MentorLoop 简历 · ' + v.name,
+    summary: v.desc,
+    success() {
+      uni.showToast({ title: '已生成' + v.name, icon: 'none' })
+    },
+    fail() {
+      uni.showToast({ title: '已生成' + v.name + '（本地）', icon: 'none' })
+    }
+  } as any)
+  // #endif
+  // #ifndef APP-PLUS || APP
+  uni.showToast({ title: '已生成「' + v.name + '」', icon: 'none' })
+  // #endif
+}
+
 function pick() {
   // #ifdef H5
   // H5 降级：toast 提示 + mock 解析（完整 input 方案需 web-view 容器配合）
@@ -374,6 +466,9 @@ async function doParse(path: string, name: string) {
   parsed.value = null
   suggestions.value = []
   adopted.value = []
+  // 埋点：上传简历（fileType 取扩展名）
+  const dot = name.lastIndexOf('.')
+  trackEvent('resume_upload', { fileType: dot >= 0 ? name.substring(dot + 1) : 'unknown' })
   try {
     const r = await parseResume(path)
     parsed.value = r

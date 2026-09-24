@@ -70,6 +70,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import mlButton from '../../components/ml-button.uvue'
 import { sendSmsCode, loginByPhone, applyAuth } from '../../api/auth.uts'
+import { trackEvent } from '../../api/tracking.uts'
 
 const phone = ref('')
 const code = ref('')
@@ -138,6 +139,7 @@ async function doLogin() {
   try {
     const r = await loginByPhone(phone.value, code.value)
     applyAuth(r)
+    trackEvent('auth_login_success', { channel: 'app' })
     uni.reLaunch({ url: '/pages/index/index' })
   } catch (e: any) {
     console.warn('[login] failed', e)

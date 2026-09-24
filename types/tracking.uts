@@ -83,6 +83,11 @@ export const TRACKING_EVENTS: TrackingEventDef[] = [
     northStar: false
   } as TrackingEventDef,
   {
+    name: 'resume_export',
+    description: '导出投递版本（versionId=standard|tech|project，文档 02 §2.4）',
+    northStar: false
+  } as TrackingEventDef,
+  {
     name: 'payment_success',
     description: '支付成功（sku、amount）',
     northStar: true

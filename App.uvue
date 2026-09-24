@@ -5,11 +5,15 @@ import { userStore } from './store/user-profile.uts'
 import { reportHistory } from './store/report-history.uts'
 import { interviewSession } from './store/interview-session.uts'
 import { loginByWechat, applyAuth } from './api/auth.uts'
+import { trackEvent, flushTrackingQueue } from './api/tracking.uts'
 
 onLaunch(() => {
   console.log('[MentorLoop] app launch')
   // 启动时恢复会话（App 与小程序通用）
   userStore.restore()
+  // 启动埋点 + 补传上次未发出的埋点
+  trackEvent('app_launch')
+  flushTrackingQueue()
   // 加载报告历史（成长页/首页最近报告使用）
   reportHistory.load()
 
