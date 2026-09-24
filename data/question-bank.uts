@@ -2,7 +2,7 @@
 // 来源说明：历史题库素材经人工审核、去重、重构后使用（文档 01 §2）；
 // 每题含知识点、常见误区、期望证据与预设追问话术。变更须经内容运营审核（文档 05 §4）。
 
-import { QuestionItem } from '../types/interview.uts'
+import { QuestionItem, PositionId } from '../types/interview.uts'
 
 export const QUESTION_BANK: QuestionItem[] = [
   // ---------- 基础知识 · 并发与JVM ----------
@@ -383,6 +383,215 @@ export const QUESTION_BANK: QuestionItem[] = [
     followupPrompts: ['你了解我们这个岗位的日常工作吗？'],
     resumeRisk: false,
     positionId: 'java-backend'
+  } as QuestionItem,
+
+  // ---------- 前端岗位题库（P0-2.3 题库与岗位补齐，岗位隔离展示） ----------
+
+  // 前端 · 基础知识 · JS 运行时与浏览器
+  {
+    id: 'f-k01',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.js-runtime',
+    knowledgePoint: '事件循环与异步',
+    content: '请结合一个真实场景，说明 setTimeout、Promise 和浏览器渲染在你的项目里是如何配合的？',
+    purpose: '验证对事件循环与渲染交互的理解',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['只背宏任务/微任务顺序，说不清与渲染的关系'],
+    expectedEvidence: '任务队列、渲染时机、实际场景',
+    followupPrompts: ['如果这个任务改成 requestAnimationFrame 会有什么不同？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-k02',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.rendering',
+    knowledgePoint: '关键渲染路径',
+    content: '你优化过首屏加载吗？当时是依据哪些渲染链路和指标做的判断？',
+    purpose: '验证性能指标与关键路径的理解',
+    difficulty: 'mid',
+    type: 'design',
+    misconceptions: ['只列优化手段，说不出 FCP/LCP 等指标依据'],
+    expectedEvidence: '指标定义、瓶颈定位、优化与回测',
+    followupPrompts: ['优化前后 FCP 和 LCP 各是多少？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-k03',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.framework',
+    knowledgePoint: '响应式原理',
+    content: '你在项目里为什么选这个框架？它的响应式更新机制你知道多少？',
+    purpose: '评估框架理解与选型理由',
+    difficulty: 'mid',
+    type: 'concept',
+    misconceptions: ['只谈用了什么，说不清选型与机制代价'],
+    expectedEvidence: '选型依据、机制说明、性能权衡',
+    followupPrompts: ['如果列表渲染大量数据，你会做哪些优化？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+
+  // 前端 · 工程能力
+  {
+    id: 'f-e01',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.build',
+    knowledgePoint: '构建与拆包',
+    content: '你们的构建产物是怎么优化的？拆包、缓存与按需加载分别怎么做的？',
+    purpose: '验证工程化实践与量化结果',
+    difficulty: 'mid',
+    type: 'design',
+    misconceptions: ['只说用了工具，说不出决策与收益'],
+    expectedEvidence: '拆包策略、缓存方案、体积/加载指标',
+    followupPrompts: ['优化后首包体积和加载耗时是多少？'],
+    resumeRisk: true,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-e02',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.quality',
+    knowledgePoint: '测试与评审',
+    content: '你们前端的单元测试和代码评审是怎么落地的？你写过哪类测试？',
+    purpose: '评估工程质量意识',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['只说写了测试，说不出覆盖策略'],
+    expectedEvidence: '测试类型、覆盖重点、实际案例',
+    followupPrompts: ['哪类逻辑你们最优先覆盖测试？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+
+  // 前端 · 系统设计
+  {
+    id: 'f-a01',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.frontend-arch',
+    knowledgePoint: '前端架构与权衡',
+    content: '如果一个 H5 页面需要兼顾首屏速度和 SEO，你会怎么设计渲染方案？',
+    purpose: '评估约束澄清与方案取舍',
+    difficulty: 'mid',
+    type: 'design',
+    misconceptions: ['直接给出 SSR，不做场景与成本权衡'],
+    expectedEvidence: '约束、备选方案（直出/SSR/静态化）、取舍',
+    followupPrompts: ['如果团队没有 Node 服务，方案会怎么变？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-a02',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.problem-analysis',
+    knowledgePoint: '线上问题定位',
+    content: '线上出现一个只有部分用户复现的白屏问题，你会怎么一步步定位？',
+    purpose: '评估排查路径与假设验证',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['直接猜原因，没有排查顺序'],
+    expectedEvidence: '采样、复现、假设、验证的分层路径',
+    followupPrompts: ['如果只有特定机型出现，你会怎么缩小范围？'],
+    resumeRisk: true,
+    positionId: 'frontend'
+  } as QuestionItem,
+
+  // 前端 · 沟通表达
+  {
+    id: 'f-c01',
+    abilityDomain: 'communication',
+    subAbility: 'communication.star',
+    knowledgePoint: '结构化解说',
+    content: '用结构化方式讲一个你推动前端重构或技术改造落地的例子。',
+    purpose: '评估结论先行与证据支撑',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['流水账描述，说不出收益与反思'],
+    expectedEvidence: '背景、行动、结果、反思',
+    followupPrompts: ['推进过程中遇到阻力了吗？怎么说服的？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-c02',
+    abilityDomain: 'communication',
+    subAbility: 'communication.star',
+    knowledgePoint: '跨方协作',
+    content: '讲一次你和后端或产品在需求/接口上意见不一致、最终解决分歧的经历。',
+    purpose: '评估结构化表达与协作',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['归因对方，缺少自我反思'],
+    expectedEvidence: '冲突点、沟通方式、结果与反思',
+    followupPrompts: ['如果重来一次，哪个环节会做得不同？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+
+  // 前端 · 学习与复盘
+  {
+    id: 'f-l01',
+    abilityDomain: 'learning',
+    subAbility: 'learning.retrospective',
+    knowledgePoint: '失败复盘',
+    content: '讲一次你在前端项目里判断失误或搞砸过的决定，以及你学到的东西。',
+    purpose: '评估复盘深度与诚实度',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['把失败包装成成功，或全部外因'],
+    expectedEvidence: '失败案例、纠偏动作、成长路径',
+    followupPrompts: ['这个教训后来在哪个场景避免了重蹈覆辙？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-l02',
+    abilityDomain: 'learning',
+    subAbility: 'learning.retrospective',
+    knowledgePoint: '技术学习路径',
+    content: '你最近系统学习的一项前端技术或方向是什么？是怎么学并落地的？',
+    purpose: '评估学习能力与自驱力',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['只列资料，没有实践产出'],
+    expectedEvidence: '学习路径、实践产出',
+    followupPrompts: ['学完后在项目里用上了吗？效果如何？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+
+  // 前端 · 职业动机
+  {
+    id: 'f-m01',
+    abilityDomain: 'motivation',
+    subAbility: 'motivation.goal-fit',
+    knowledgePoint: '求职动机',
+    content: '你为什么考虑在这个阶段换工作？期望下一份工作给你什么？',
+    purpose: '评估目标一致性与诚实边界',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['只谈薪资，或与简历矛盾'],
+    expectedEvidence: '目标与岗位的一致性',
+    followupPrompts: ['你了解我们这个前端岗位的日常工作吗？'],
+    resumeRisk: false,
+    positionId: 'frontend'
+  } as QuestionItem,
+  {
+    id: 'f-m02',
+    abilityDomain: 'motivation',
+    subAbility: 'motivation.goal-fit',
+    knowledgePoint: '技术方向规划',
+    content: '你未来一年的技术成长方向是什么？为什么选这个方向？',
+    purpose: '评估目标清晰度与行动力',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['方向空泛，没有行动路径'],
+    expectedEvidence: '方向、理由、计划与已有行动',
+    followupPrompts: ['这个方向上你已经做了哪些投入？'],
+    resumeRisk: false,
+    positionId: 'frontend'
   } as QuestionItem
 ]
 
@@ -402,6 +611,29 @@ export const WRAPUP_QUESTION: QuestionItem = {
   resumeRisk: false,
   positionId: 'java-backend'
 } as QuestionItem
+
+// 前端岗位收束题（岗位化收束，避免跨岗位借用 Java 收束题）
+export const FRONTEND_WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup-fe',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  positionId: 'frontend'
+} as QuestionItem
+
+// 按岗位取收束题（选择器收束阶段使用；未覆盖岗位回退 Java 收束题）
+export function getWrapupForPosition(positionId: PositionId): QuestionItem {
+  if (positionId === 'frontend') return FRONTEND_WRAPUP_QUESTION
+  return WRAPUP_QUESTION
+}
 
 export function getQuestionById(id: string): QuestionItem | null {
   for (let i = 0; i < QUESTION_BANK.length; i++) {

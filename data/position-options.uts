@@ -17,7 +17,7 @@ export type ExperienceOption = {
 
 export const POSITION_OPTIONS: PositionOption[] = [
   { id: 'java-backend', name: 'Java 后端', available: true } as PositionOption,
-  { id: 'frontend', name: '前端', available: false } as PositionOption,
+  { id: 'frontend', name: '前端', available: true } as PositionOption,
   { id: 'golang-backend', name: 'Go 后端', available: false } as PositionOption,
   { id: 'pm', name: '产品经理', available: false } as PositionOption
 ]

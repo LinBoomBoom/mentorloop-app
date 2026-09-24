@@ -365,3 +365,70 @@ describe('规则评分器', () => {
     expect(['C', 'D'].includes(comm.level)).toBe(true)
   })
 })
+
+describe('前端岗位选题（P0-2.3 题库与岗位补齐）', () => {
+  const FE_BLUEPRINT: PositionBlueprint = {
+    positionId: 'frontend',
+    position: '前端',
+    experienceLevel: 'junior',
+    experienceRange: '1-3年',
+    companyType: '互联网',
+    language: '中文',
+    target: '求职'
+  } as PositionBlueprint
+
+  function makeFeInput(asked: QuestionItem[], remainSeconds = 1200): SelectorInput {
+    return {
+      blueprint: FE_BLUEPRINT,
+      mode: 'standard',
+      asked: asked,
+      remainSeconds: remainSeconds,
+      resumeRiskTopics: [],
+      focusDomain: '',
+      maxQuestions: 0
+    } as SelectorInput
+  }
+
+  it('前端岗 6 题覆盖 6 个能力域，且全部为前端岗位题目', () => {
+    const asked: QuestionItem[] = []
+    const domains = new Set<string>()
+    for (let i = 0; i < 6; i++) {
+      const out = selectNext(makeFeInput(asked))
+      expect(out).not.toBeNull()
+      expect(out!.isWrapup).toBe(false)
+      expect(out!.question.positionId).toBe('frontend')
+      domains.add(out!.question.abilityDomain)
+      asked.push(out!.question)
+    }
+    expect(domains.size).toBe(6)
+  })
+
+  it('前端岗收束题使用岗位专属收束题（非 Java 收束题）', () => {
+    // 达上限（标准模式 7 题）后返回前端收束题
+    const asked: QuestionItem[] = []
+    for (let i = 0; i < 7; i++) {
+      const out = selectNext(makeFeInput(asked))
+      expect(out).not.toBeNull()
+      asked.push(out!.question)
+    }
+    const wrap = selectNext(makeFeInput(asked))
+    expect(wrap).not.toBeNull()
+    expect(wrap!.isWrapup).toBe(true)
+    expect(wrap!.question.id).toBe('q-wrapup-fe')
+    expect(wrap!.question.positionId).toBe('frontend')
+  })
+
+  it('岗位隔离：Java 蓝图不会抽到前端题', () => {
+    const asked: QuestionItem[] = []
+    const seen = new Set<string>()
+    for (let i = 0; i < 12; i++) {
+      const out = selectNext(makeInput(asked, 9999, [], '', 12))
+      expect(out).not.toBeNull()
+      if (out!.isWrapup) break
+      expect(out!.question.positionId).toBe('java-backend')
+      expect(seen.has(out!.question.id)).toBe(false)
+      seen.add(out!.question.id)
+      asked.push(out!.question)
+    }
+  })
+})

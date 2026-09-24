@@ -36,7 +36,9 @@ export function mockNextQuestion(
     mode: mode,
     asked: asked,
     remainSeconds: remainSeconds,
-    resumeRiskTopics: DEFAULT_RESUME_TOPICS
+    resumeRiskTopics: DEFAULT_RESUME_TOPICS,
+    focusDomain: '',
+    maxQuestions: 0
   } as SelectorInput
   const out = selectNext(input)
   if (out == null) {

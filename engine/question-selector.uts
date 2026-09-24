@@ -18,7 +18,7 @@ import {
   Difficulty,
   ExperienceLevel
 } from '../types/interview.uts'
-import { QUESTION_BANK, WRAPUP_QUESTION } from '../data/question-bank.uts'
+import { QUESTION_BANK, getWrapupForPosition } from '../data/question-bank.uts'
 import { getDomainIds } from '../data/java-backend-map.uts'
 import { DIFFICULTY_PRIORITY, getExperienceOption } from '../data/position-options.uts'
 
@@ -243,15 +243,13 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
 
   // 规则5：时间预算收束 —— 剩余时间不足以再完整进行一题时，返回收束题
   const timeShort = input.remainSeconds < AVG_QUESTION_SECONDS
-  // 规则4/5：题目数达上限或时间不足 → 收束
+  // 规则4/5：题目数达上限或时间不足 → 收束（收束题为岗位专属）
   if (input.asked.length >= budgetMax || timeShort) {
-    if (
-      !isAsked(input.asked, WRAPUP_QUESTION.id) &&
-      matchesPosition(WRAPUP_QUESTION, input.blueprint)
-    ) {
+    const wrap = getWrapupForPosition(input.blueprint.positionId)
+    if (!isAsked(input.asked, wrap.id) && matchesPosition(wrap, input.blueprint)) {
       return {
-        question: WRAPUP_QUESTION,
-        purpose: WRAPUP_QUESTION.purpose,
+        question: wrap,
+        purpose: wrap.purpose,
         isWrapup: true
       } as SelectorOutput
     }
