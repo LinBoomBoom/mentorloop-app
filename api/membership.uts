@@ -38,13 +38,21 @@ export async function purchase(skuId: SkuId, skuKind: 'member' | 'single'): Prom
     trackEvent('payment_success', { sku: skuId, amount: 0, mock: true })
     return { orderId: 'mock_' + Date.now().toString(), payParams: null } as OrderResult
   }
-  // 真后端：创建订单 → 拉起微信支付
+  // 真后端：创建订单 →（wx 模式）拉起微信支付 /（mock 支付模式）服务端已发放
   const res = await post('/membership/order', { skuId: skuId })
-  const data = res.data as { orderId: string; payParams: PayParams } | null
+  const data = res.data as { orderId: string; payParams: PayParams | null } | null
   if (data == null) {
     throw new Error('订单创建失败')
   }
+  if (data.payParams == null) {
+    // 服务端 mock 支付已发放权益：本地不再 grant，直接对账同步账本
+    trackEvent('payment_success', { sku: skuId, orderId: data.orderId, mock: true })
+    await fetchQuota()
+    return { orderId: data.orderId, payParams: null } as OrderResult
+  }
   await requestWxPay(data.payParams)
+  // 服务端回调可能滞后，用服务端账本兜底对账
+  await fetchQuota()
   trackEvent('payment_success', { sku: skuId, orderId: data.orderId })
   return { orderId: data.orderId, payParams: data.payParams } as OrderResult
 }

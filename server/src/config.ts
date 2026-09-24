@@ -13,6 +13,14 @@ export type Env = {
   llmApiKey: string
   llmModel: string
   llmTimeoutMs: number
+  payMode: 'mock' | 'wx'
+  wxAppId: string
+  wxMchId: string
+  wxMchSerial: string
+  wxApiV3Key: string
+  wxMchPrivateKey: string
+  wxPlatformPublicKey: string
+  wxNotifyUrl: string
 }
 
 const DEFAULT_ENV: Env = {
@@ -26,7 +34,15 @@ const DEFAULT_ENV: Env = {
   llmBaseUrl: '',
   llmApiKey: '',
   llmModel: '',
-  llmTimeoutMs: 30000
+  llmTimeoutMs: 30000,
+  payMode: 'mock', // P1.3：默认 mock 支付（下单即发放）；'wx' 需要 WX_* 配置齐全
+  wxAppId: '',
+  wxMchId: '',
+  wxMchSerial: '',
+  wxApiV3Key: '',
+  wxMchPrivateKey: '',
+  wxPlatformPublicKey: '',
+  wxNotifyUrl: ''
 }
 
 export function loadEnv(): Env {
@@ -42,7 +58,15 @@ export function loadEnv(): Env {
     llmBaseUrl: e.LLM_BASE_URL ?? DEFAULT_ENV.llmBaseUrl,
     llmApiKey: e.LLM_API_KEY ?? DEFAULT_ENV.llmApiKey,
     llmModel: e.LLM_MODEL ?? DEFAULT_ENV.llmModel,
-    llmTimeoutMs: parseInt(e.LLM_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.llmTimeoutMs
+    llmTimeoutMs: parseInt(e.LLM_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.llmTimeoutMs,
+    payMode: e.PAY_MODE === 'wx' ? 'wx' : 'mock',
+    wxAppId: e.WX_APPID ?? DEFAULT_ENV.wxAppId,
+    wxMchId: e.WX_MCHID ?? DEFAULT_ENV.wxMchId,
+    wxMchSerial: e.WX_MCH_SERIAL ?? DEFAULT_ENV.wxMchSerial,
+    wxApiV3Key: e.WX_API_V3_KEY ?? DEFAULT_ENV.wxApiV3Key,
+    wxMchPrivateKey: e.WX_MCH_PRIVATE_KEY ?? DEFAULT_ENV.wxMchPrivateKey,
+    wxPlatformPublicKey: e.WX_PLATFORM_PUBLIC_KEY ?? DEFAULT_ENV.wxPlatformPublicKey,
+    wxNotifyUrl: e.WX_NOTIFY_URL ?? DEFAULT_ENV.wxNotifyUrl
   }
 }
 

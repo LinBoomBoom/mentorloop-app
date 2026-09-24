@@ -31,7 +31,7 @@ cp server/.env.example server/.env
 - 面试：`POST /interview/session`、`GET /interview/next`、`POST /interview/answer`（出题权威在服务端；答题幂等）
 - 报告：`GET /report?sessionId=`（幂等重算，首次生成扣一次免费额度）
 - 简历：`POST /resume/parse`、`POST /resume/optimize`（P1.1 规则版，出参与前端 mock 一致）
-- 会员：`GET /membership/quota`（服务端账本）；`POST /membership/order`、`POST /membership/order/notify` 为 P1.3 占位
+- 会员：`GET /membership/quota`（服务端账本）；`POST /membership/order`（P1.3：mock 模式下单即发放 `payParams:null`；`PAY_MODE=wx` 走微信 JSAPI 返回拉起参数）；`POST /membership/order/notify`（微信 v3 回调验签 + AES-256-GCM 解密 + 幂等发放）
 - ASR：`POST /interview/asr`（P1.1 降级 stub，不伪造转写）
 - 埋点：`POST /track/batch`（批量落库，幂等去重）
 

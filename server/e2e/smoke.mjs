@@ -5,7 +5,8 @@
 import assert from 'node:assert/strict'
 
 const base = process.argv[2] ?? 'http://127.0.0.1:8787'
-const phone = '13800009999'
+// 动态手机号，避免跨轮次配额/账本残差影响断言
+const phone = '138' + String(Date.now()).slice(-8)
 const pass = []
 
 async function api(path, { method = 'GET', token, body } = {}) {
@@ -106,6 +107,19 @@ async function main() {
   })
   const tr = await api('/track/batch', { method: 'POST', body: { events: [payload, payload] } })
   step('埋点批量接收成功（重复事件幂等）', tr.code === 0)
+
+  // 6. 支付（P1.3 mock 模式：下单即发放）
+  const pay = await api('/membership/order', {
+    method: 'POST',
+    token,
+    body: { skuId: 'member_monthly' }
+  })
+  step(
+    'mock 下单返回 payParams=null 且含 orderId',
+    pay.code === 0 && pay.data.payParams === null && typeof pay.data.orderId === 'string'
+  )
+  const q2 = await api('/membership/quota', { token })
+  step('下单后会员生效（memberUntil > 0）', q2.code === 0 && q2.data.memberUntil > 0)
 
   console.log(`\n[smoke] 通过 ${pass.length} 项 ✔`)
 }

@@ -78,13 +78,15 @@ CREATE TABLE IF NOT EXISTS resumes (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-  id         TEXT    PRIMARY KEY,                    -- orderId
-  user_id    INTEGER NOT NULL REFERENCES users(id),
-  sku_id     TEXT    NOT NULL,
-  sku_kind   TEXT    NOT NULL,                       -- 'member' | 'single'
-  amount     INTEGER NOT NULL,                       -- 分
-  status     TEXT    NOT NULL DEFAULT 'CREATED',     -- CREATED/PAID/CLOSED
-  created_at INTEGER NOT NULL
+  id             TEXT    PRIMARY KEY,                -- orderId
+  user_id        INTEGER NOT NULL REFERENCES users(id),
+  sku_id         TEXT    NOT NULL,
+  sku_kind       TEXT    NOT NULL,                   -- 'member' | 'single'
+  amount         INTEGER NOT NULL,                   -- 分
+  status         TEXT    NOT NULL DEFAULT 'CREATED', -- CREATED/PAID/CLOSED
+  transaction_id TEXT,                               -- 微信支付单号（回调写入）
+  paid_at        INTEGER,                            -- 支付完成时间戳
+  created_at     INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tracking_events (

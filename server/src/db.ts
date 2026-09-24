@@ -18,6 +18,21 @@ export class Db {
     this.db.exec('PRAGMA foreign_keys = ON;')
     const schema = readFileSync(join(__dirname, 'schema.sql'), 'utf8')
     this.db.exec(schema)
+    this.migrate()
+  }
+
+  // 轻量列迁移：兼容升级前创建的旧库（新库 CREATE TABLE 已含新列，ALTER 重复会被忽略）
+  private migrate(): void {
+    try {
+      this.db.exec('ALTER TABLE orders ADD COLUMN transaction_id TEXT')
+    } catch {
+      // 列已存在，忽略
+    }
+    try {
+      this.db.exec('ALTER TABLE orders ADD COLUMN paid_at INTEGER')
+    } catch {
+      // 列已存在，忽略
+    }
   }
 
   prepare(sql: string): any {

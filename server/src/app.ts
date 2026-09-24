@@ -24,6 +24,17 @@ export function buildApp(opts: BuildOptions = {}): FastifyInstance {
   ;(app as any).env = env
   ;(app as any).db = db
 
+  // 覆盖默认 application/json 解析器：额外保留字节原文（微信支付回调验签需要）
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (req: any, body: any, done: any) => {
+      req.rawBody = body
+      const text = String(body)
+      done(null, text.length > 0 ? JSON.parse(text) : {})
+    }
+  )
+
   void app.register(cors, { origin: true })
   void app.register(jwt, { secret: env.jwtSecret })
   void app.register(multipart)
