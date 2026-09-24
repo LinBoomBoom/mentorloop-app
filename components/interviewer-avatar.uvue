@@ -1,26 +1,38 @@
 <template>
   <view class="w-full h-full flex-col items-center justify-center" :style="{ backgroundColor: bg }">
+    <!-- P2-11 渲染桥：资产就绪时渲染状态帧图；否则降级内置 CSS 形象 -->
     <view class="flex-col items-center">
-      <view class="w-18 h-18 rounded-full bg-figure-head flex-row items-center justify-center">
-        <!-- 口型随状态机 + TTS 播放状态变化（口型同步：speaking 时张合动画） -->
-        <view :class="mouthClass" :style="mouthStyle"></view>
+      <image v-if="frameUrl.length > 0" class="w-40 h-40" :src="frameUrl" mode="aspectFit"></image>
+      <view v-else class="flex-col items-center">
+        <view class="w-18 h-18 rounded-full bg-figure-head flex-row items-center justify-center">
+          <!-- 口型随状态机 + TTS 播放状态变化（口型同步：speaking 时张合动画） -->
+          <view :class="mouthClass" :style="mouthStyle"></view>
+        </view>
+        <view
+          class="w-28 h-12 bg-figure-body mt-2"
+          :style="{ borderTopLeftRadius: '28px', borderTopRightRadius: '28px' }"
+        ></view>
       </view>
-      <view
-        class="w-28 h-12 bg-figure-body mt-2"
-        :style="{ borderTopLeftRadius: '28px', borderTopRightRadius: '28px' }"
-      ></view>
     </view>
     <text class="text-xs text-mist mt-3">{{ label }}</text>
   </view>
 </template>
 
 <script setup lang="uts">
-// 2.5D 数字人（状态驱动 + TTS 口型同步）
+// 2.5D 数字人（渲染桥 + 状态驱动 + TTS 口型同步）
 // 状态：idle / asking / listening / followup / summary（文档 02 §4 / 文档 04）
+// P2-11：挂载时向渲染桥注入资产清单并预加载；有帧图则渲染帧图，
+//        无资产自动降级为内置 CSS 形象（当前形态，不阻塞流程）。
 // 口型同步：外部通过 speaking 属性驱动（TTS start/end），speaking 时口型张合动画
 // 性能约束（文档 04）：口型动画用 CSS keyframes（合成器线程），不进 JS 响应式状态
-import { computed, ref, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { AVATAR_STATE_LABEL, StringMap } from '../styles/theme.uts'
+import {
+  avatarPlugin,
+  AvatarState,
+  AvatarAssetSet
+} from '../utssdk/interviewer-avatar/index.uts'
+import { AVATAR_ASSETS, AVATAR_LOTTIE_URL } from '../data/avatar-assets.uts'
 
 const props = defineProps({
   state: { type: String, default: 'idle' },
@@ -36,6 +48,22 @@ const label = computed(() => {
 })
 
 const bg = computed(() => (props.state === 'idle' ? '#0F2C4C' : '#13294A'))
+
+// ---- 渲染桥接线（P2-11）----
+// 挂载时注入资产清单（重复注入以最后一次为准）并预加载帧图（失败静默）
+onMounted(() => {
+  const cfg: AvatarAssetSet = AVATAR_ASSETS
+  avatarPlugin.configure({ assets: cfg, lottieUrl: AVATAR_LOTTIE_URL })
+  if (avatarPlugin.hasRenderAsset()) {
+    avatarPlugin.preload('default')
+  }
+})
+
+// 当前状态的帧图资产（空 = 降级 CSS 形象）
+const frameUrl = computed((): string => {
+  avatarPlugin.setState(props.state as AvatarState)
+  return avatarPlugin.assetFor(props.state as AvatarState)
+})
 
 // 口型动画开关（speaking 变化时启停 keyframes）
 const animOn = ref(false)
@@ -61,6 +89,8 @@ onUnmounted(() => {
     clearInterval(animTimer)
     animTimer = 0
   }
+  // 房间退出释放渲染桥状态机（资产清单保留）
+  avatarPlugin.release()
 })
 
 const mouthClass = computed(() => {

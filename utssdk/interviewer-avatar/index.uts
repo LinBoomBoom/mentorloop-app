@@ -1,24 +1,138 @@
-// UTS 原生插件：interviewer-avatar
-// 职责：口型、动作、缓存、渲染桥接（文档 04）
-// 真实实现为原生层；此处为契约与降级实现。
-// 注意：rooms 页当前使用 components/interviewer-avatar.uvue（SVG/CSS 占位），
-// 接真实 UTS 渲染时替换为本插件的渲染桥接。
+// =====================================================
+// interviewer-avatar · 数字人渲染桥（P2-11）
+// 职责：状态机 + 资产插槽位 + 预加载/释放的跨端契约（文档 02 §4 / 文档 04）
+// 设计：
+//   - 美术资产先行原则：资产清单在 data/avatar-assets.uts（状态帧图 / Lottie），
+//     全部为空时组件自动降级为内置 CSS 形象（当前形态，不阻塞流程）。
+//   - 真实 2.5D 渲染（口型/表情/姿态状态机）归原生层 app-android/index.uts：
+//     本桥保留 setState/syncLip/preload/release 钩子，原生就绪后无缝替换。
+//   - 性能约束（文档 04）：口型/音频帧不进响应式状态——syncLip 仅原生层消费，
+//     组件层口型动画由 CSS keyframes 驱动（合成器线程）。
 // 注意：UTS 不支持 interface，契约以类的公开方法为准。
+// =====================================================
 
 export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'summary'
 
+// 状态帧图插槽位（美术资产就绪后填 URL 或本地路径；空 = 该状态降级 CSS 形象）
+export type AvatarAssetSet = {
+  idle: string
+  asking: string
+  listening: string
+  followup: string
+  summary: string
+}
+
+export type AvatarRenderConfig = {
+  assets: AvatarAssetSet
+  // 可选 Lottie 动画（优先于帧图；渲染归原生层，跨端组件暂不消费）
+  lottieUrl: string
+}
+
+export function emptyAvatarAssets(): AvatarAssetSet {
+  return {
+    idle: '',
+    asking: '',
+    listening: '',
+    followup: '',
+    summary: ''
+  } as AvatarAssetSet
+}
+
 export class AvatarPlugin {
+  private cfg: AvatarRenderConfig | null = null
+  private state: AvatarState = 'idle'
+
+  // 注入资产清单（组件挂载时从 data/avatar-assets.uts 注入；重复注入以最后一次为准）
+  configure(cfg: AvatarRenderConfig): void {
+    this.cfg = cfg
+  }
+
+  isConfigured(): boolean {
+    return this.cfg != null
+  }
+
+  // 是否存在可渲染资产（任一状态帧图或 Lottie 非空）
+  hasRenderAsset(): boolean {
+    const cfg = this.cfg
+    if (cfg == null) return false
+    if (cfg.lottieUrl.length > 0) return true
+    return (
+      cfg.assets.idle.length > 0 ||
+      cfg.assets.asking.length > 0 ||
+      cfg.assets.listening.length > 0 ||
+      cfg.assets.followup.length > 0 ||
+      cfg.assets.summary.length > 0
+    )
+  }
+
+  // 状态机推进（原生层钩子：就绪后在此驱动原生渲染；当前仅记录当前态）
   setState(state: AvatarState): void {
-    console.warn('[avatar] 原生渲染未接入，使用占位组件', state)
+    this.state = state
   }
 
+  getState(): AvatarState {
+    return this.state
+  }
+
+  // 取某状态的帧图资产（未配置或该槽位为空返回 ''，组件降级 CSS 形象）
+  assetFor(state: AvatarState): string {
+    const cfg = this.cfg
+    if (cfg == null) return ''
+    if (state === 'idle') return cfg.assets.idle
+    if (state === 'asking') return cfg.assets.asking
+    if (state === 'listening') return cfg.assets.listening
+    if (state === 'followup') return cfg.assets.followup
+    if (state === 'summary') return cfg.assets.summary
+    return ''
+  }
+
+  // Lottie 地址（原生层消费；跨端组件不渲染 Lottie）
+  lottieUrl(): string {
+    const cfg = this.cfg
+    return cfg != null ? cfg.lottieUrl : ''
+  }
+
+  // 口型同步（音素 → 口型；仅原生层消费，跨端为静默空操作——
+  // 文档 04：口型帧不进 JS 响应式状态，组件层用 CSS 动画）
   syncLip(phoneme: string): void {
-    console.warn('[avatar] syncLip 未接入', phoneme)
+    // 原生渲染接入后由 app-android/index.uts 覆写；跨端静默降级
+    if (phoneme.length === 0) return
   }
 
-  preload(role: string): Promise<void> {
-    console.warn('[avatar] preload 未接入', role)
-    return Promise.resolve()
+  // 预加载资产（帧图走 getImageInfo 预热缓存；失败静默，不阻塞流程）
+  preload(_role: string): Promise<void> {
+    const cfg = this.cfg
+    if (cfg == null) return Promise.resolve()
+    const urls: string[] = []
+    if (cfg.assets.idle.length > 0) urls.push(cfg.assets.idle)
+    if (cfg.assets.asking.length > 0) urls.push(cfg.assets.asking)
+    if (cfg.assets.listening.length > 0) urls.push(cfg.assets.listening)
+    if (cfg.assets.followup.length > 0) urls.push(cfg.assets.followup)
+    if (cfg.assets.summary.length > 0) urls.push(cfg.assets.summary)
+    if (urls.length === 0) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      let done = 0
+      const settle = () => {
+        done += 1
+        if (done >= urls.length) resolve()
+      }
+      for (let i = 0; i < urls.length; i++) {
+        try {
+          uni.getImageInfo({
+            src: urls[i],
+            success: () => settle(),
+            fail: () => settle()
+          } as any)
+        } catch (_e: any) {
+          settle()
+        }
+      }
+    })
+  }
+
+  // 释放（房间退出时调用；资产清单保留，仅复位状态机）
+  release(): void {
+    this.state = 'idle'
   }
 }
 
