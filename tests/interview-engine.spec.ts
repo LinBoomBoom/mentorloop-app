@@ -7,6 +7,7 @@ import { confidenceBand, displayLevel } from '../engine/rubric.uts'
 import { analyzeAnswer } from '../engine/answer-signal.uts'
 import { scoreInterview } from '../engine/scorer.uts'
 import { interviewSession } from '../store/interview-session.uts'
+import { reasonForAnswer, domainOfTaskId, SKIP_REASON } from '../store/training-history.uts'
 import { QUESTION_BANK, WRAPUP_QUESTION } from '../data/question-bank.uts'
 import { QuestionItem, PositionBlueprint } from '../types/interview.uts'
 
@@ -23,14 +24,18 @@ const BLUEPRINT: PositionBlueprint = {
 function makeInput(
   asked: QuestionItem[],
   remainSeconds = 1200,
-  topics: string[] = ['订单系统']
+  topics: string[] = ['订单系统'],
+  focusDomain: string = '',
+  maxQuestions: number = 0
 ): SelectorInput {
   return {
     blueprint: BLUEPRINT,
     mode: 'standard',
     asked: asked,
     remainSeconds: remainSeconds,
-    resumeRiskTopics: topics
+    resumeRiskTopics: topics,
+    focusDomain: focusDomain,
+    maxQuestions: maxQuestions
   } as SelectorInput
 }
 
@@ -122,6 +127,50 @@ describe('题目选择器（文档 02 §3.2）', () => {
     const out = selectNext(makeInput(asked, 1200, ['某普通项目描述']))
     expect(out).not.toBeNull()
     expect(out!.question.resumeRisk).toBe(true)
+  })
+
+  it('规则0b：focusDomain 定向出题，只出该能力域且不重复', () => {
+    const domain = 'knowledge'
+    const asked: QuestionItem[] = []
+    const seen: string[] = []
+    for (let i = 0; i < 6; i++) {
+      const out = selectNext(makeInput(asked, 9999, [], domain))
+      expect(out).not.toBeNull()
+      expect(out!.isWrapup).toBe(false)
+      expect(out!.question.abilityDomain).toBe(domain)
+      expect(seen.includes(out!.question.id)).toBe(false)
+      seen.push(out!.question.id)
+      asked.push(out!.question)
+    }
+  })
+
+  it('规则0b：目标能力域出完后放宽到全量，训练链路不中断', () => {
+    // analysis 域仅 4 道题，出完后继续抽不应中断
+    const asked: QuestionItem[] = []
+    for (let i = 0; i < 6; i++) {
+      const out = selectNext(makeInput(asked, 9999, [], 'analysis'))
+      expect(out).not.toBeNull()
+      expect(out!.isWrapup).toBe(false)
+      asked.push(out!.question)
+    }
+    // 最终应包含 analysis 域内全部题 + 其他域兜底题
+    const domainsIn = new Set(asked.map((q) => q.abilityDomain))
+    expect(domainsIn.size).toBeGreaterThan(1)
+  })
+
+  it('maxQuestions 覆盖模式预算：达上限立即收束', () => {
+    const asked: QuestionItem[] = []
+    const out1 = selectNext(makeInput(asked, 9999, [], '', 2))
+    expect(out1).not.toBeNull()
+    expect(out1!.isWrapup).toBe(false)
+    asked.push(out1!.question)
+    const out2 = selectNext(makeInput(asked, 9999, [], '', 2))
+    expect(out2).not.toBeNull()
+    expect(out2!.isWrapup).toBe(false)
+    asked.push(out2!.question)
+    const out3 = selectNext(makeInput(asked, 9999, [], '', 2))
+    expect(out3).not.toBeNull()
+    expect(out3!.isWrapup).toBe(true)
   })
 })
 
@@ -232,6 +281,32 @@ describe('答案信号分析器', () => {
   it('绝对化表述被识别', () => {
     const s = analyzeAnswer('这个方案绝对没有问题，所有情况都能覆盖', 'q1')
     expect(s.isAbsolute).toBe(true)
+  })
+})
+
+describe('训练记录领域（P0-1 训练闭环）', () => {
+  it('错因分类：模糊→说不清 / 无指标→项目证据不足 / 绝对化→推理不完整', () => {
+    expect(reasonForAnswer(true, false, false)).toBe('说不清')
+    expect(reasonForAnswer(false, false, false)).toBe('项目证据不足')
+    expect(reasonForAnswer(false, true, true)).toBe('推理不完整')
+  })
+
+  it('错因分类：正常作答无错因信号', () => {
+    expect(reasonForAnswer(false, true, false)).toBeNull()
+  })
+
+  it('跳过记为"不会"', () => {
+    expect(SKIP_REASON).toBe('不会')
+  })
+
+  it('任务 id → 定向能力域解析', () => {
+    expect(domainOfTaskId('dim_analysis')).toBe('analysis')
+    expect(domainOfTaskId('dim_knowledge')).toBe('knowledge')
+    expect(domainOfTaskId('train-knowledge-1')).toBe('knowledge')
+    expect(domainOfTaskId('train-analysis-2')).toBe('analysis')
+    // 通用任务不限定维度
+    expect(domainOfTaskId('gt1')).toBe('')
+    expect(domainOfTaskId('t_custom')).toBe('')
   })
 })
 

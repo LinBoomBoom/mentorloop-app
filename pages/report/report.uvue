@@ -131,7 +131,7 @@
           <text class="text-base font-semibold text-ink ml-1.5">建议训练计划</text>
         </view>
         <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
-          <ml-card pressable @tap="goTraining">
+          <ml-card pressable @tap="startPlanTask(t)">
             <view class="flex-row items-center">
               <view
                 class="w-9 h-9 rounded-lg flex-row items-center justify-center mr-3"
@@ -176,6 +176,7 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { reportHistory } from '../../store/report-history.uts'
+import { domainOfTaskId } from '../../store/training-history.uts'
 import { getReport } from '../../api/report.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import {
@@ -277,8 +278,21 @@ function levelPct(l: string): string {
   return '40%'
 }
 
-function goTraining() {
-  uni.switchTab({ url: '/pages/training/training' })
+// 训练计划 → 直达训练房间（source=report 定向薄弱项维度；额度在房间内统一扣减）
+function startPlanTask(t: TrainingTask) {
+  trackEvent('training_start_from_report', { taskId: t.id, priority: t.priority })
+  const id = t.id
+  const domain = domainOfTaskId(id)
+  const url =
+    '/pages/training/room?taskId=' +
+    encodeURIComponent(id) +
+    '&title=' +
+    encodeURIComponent(t.title) +
+    '&durationMin=' +
+    t.durationMin +
+    '&source=report&domain=' +
+    domain
+  uni.navigateTo({ url: url })
 }
 
 function again() {

@@ -1,0 +1,110 @@
+// 专项训练记录（文档 02 §2.3：训练结果与错因回写）
+// 职责：记录每次专项训练的任务信息、完成题数、错因分类，供成长页追溯与报告对照。
+// 错因分类（文档 02 §2.3）：不会 / 说不清 / 项目证据不足 / 推理不完整 / 表达结构差
+
+export type TrainingItem = {
+  id: string // 任务 id（report 任务为 train-<dim>-<n>；通用任务为 gt1..）
+  title: string
+  durationMin: number
+  source: 'report' | 'direct' // report=报告薄弱项定向训练；direct=主动训练
+  domain: string // ScoreDimension 或 ''（通用训练不限维度）
+  questions: number // 完成题数
+  skipped: number // 跳过题数
+  reasons: string[] // 本次训练记录的错因（去重的弱项信号）
+  completedAt: number
+}
+
+const HISTORY_KEY = 'ml_training_history'
+const MAX_KEEP = 50
+
+class TrainingHistory {
+  private list: TrainingItem[] = []
+
+  load() {
+    try {
+      const raw = uni.getStorageSync(HISTORY_KEY) as string
+      if (raw == null || raw.length === 0) {
+        this.list = []
+        return
+      }
+      const arr = JSON.parse(raw) as TrainingItem[]
+      this.list = arr != null ? arr : []
+    } catch (e: any) {
+      console.warn('[training-history] load failed', e)
+      this.list = []
+    }
+  }
+
+  // 记录一次训练（新记录在前）
+  push(item: TrainingItem) {
+    this.load()
+    this.list.unshift(item)
+    if (this.list.length > MAX_KEEP) {
+      this.list = this.list.slice(0, MAX_KEEP)
+    }
+    this.persist()
+  }
+
+  all(): TrainingItem[] {
+    return this.list
+  }
+
+  // 返回最近 n 条（按时间倒序）
+  recent(n: number): TrainingItem[] {
+    if (n >= this.list.length) return this.list
+    return this.list.slice(0, n)
+  }
+
+  // 最近一次训练（供完成页 / 对照展示）
+  latest(): TrainingItem | null {
+    return this.list.length > 0 ? this.list[0] : null
+  }
+
+  clear() {
+    this.list = []
+    try {
+      uni.removeStorageSync(HISTORY_KEY)
+    } catch (e: any) {
+      console.warn('[training-history] clear failed', e)
+    }
+  }
+
+  private persist() {
+    try {
+      uni.setStorageSync(HISTORY_KEY, JSON.stringify(this.list))
+    } catch (e: any) {
+      console.warn('[training-history] persist failed', e)
+    }
+  }
+}
+
+export const trainingHistory = new TrainingHistory()
+
+// 回答信号 → 错因标签（文档 02 §2.3 错因分类；规则 v1 可解释版本）
+// 返回 null 表示无明确弱项信号（正常作答）
+export function reasonForAnswer(
+  isVague: boolean,
+  hasMetrics: boolean,
+  isAbsolute: boolean
+): string | null {
+  if (isVague) return '说不清'
+  if (!hasMetrics) return '项目证据不足'
+  if (isAbsolute) return '推理不完整'
+  return null
+}
+
+export const SKIP_REASON: string = '不会'
+
+// 从任务 id 提取定向能力域（'' = 通用训练不限维度）
+// 规则：dim_<key>（分维度卡片）/ train-<dim>-<n>（报告薄弱项任务）；其余（gt* 等）为通用
+export function domainOfTaskId(id: string): string {
+  if (id.indexOf('dim_') === 0) {
+    const d = id.substring(4)
+    return d.length > 0 ? d : ''
+  }
+  if (id.indexOf('train-') === 0) {
+    const parts = id.split('-')
+    return parts.length > 1 ? parts[1] : ''
+  }
+  return ''
+}

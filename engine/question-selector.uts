@@ -1,9 +1,10 @@
-// 题目选择器 v2（文档 02 §3.2 + 岗位方向 / 经验等级个性化）
+// 题目选择器 v3（文档 02 §3.2 + 岗位方向 / 经验等级个性化 + 专项训练定向）
 // 输入：岗位蓝图、简历风险、已答题目、剩余时间、实时可信度
 // 输出：下一道题及提问目的
-// 选择规则（v1 原有 5 条 + v2 新增方向/等级过滤）：
+// 选择规则（v1 原有 5 条 + v2 方向/等级过滤 + v3 训练定向）：
 // 0. 岗位过滤：只抽 positionId 与 blueprint.positionId 匹配的题；
 //    难度过滤：只抽 blueprint.experienceLevel 允许的难度，按档位优先级顺序选题
+// 0b. 训练定向（v3）：focusDomain 非空时，优先出该能力域的题（报告薄弱项 → 定向训练）
 // 1. 先覆盖岗位最低门槛能力（图谱能力域优先）
 // 2. 对简历中的高价值项目做验证性追问（resumeRisk 题）
 // 3. 对回答模糊、绝对化、缺少指标或前后矛盾的内容深挖（由追问引擎处理）
@@ -27,6 +28,8 @@ export type SelectorInput = {
   asked: QuestionItem[] // 已答题目
   remainSeconds: number // 剩余时间
   resumeRiskTopics: string[] // 简历高价值项目关键词（命中 resumeRisk 题优先）
+  focusDomain: string // '' = 不限维度（正式面试）；非空 = 专项训练定向能力域
+  maxQuestions: number // 0 = 使用 mode 预算；>0 = 覆盖（专项训练按任务题量控制）
 }
 
 export type SelectorOutput = {
@@ -214,13 +217,34 @@ function pickAny(asked: QuestionItem[], blueprint: PositionBlueprint): QuestionI
   return pickByDifficultyPriority(unasked, blueprint)
 }
 
+// 规则0b：专项训练定向 —— 优先出目标能力域内未答、且满足岗位+难度的题
+// 返回 null 表示该能力域已出完（调用方放宽到全量，保证训练链路不中断）
+function pickForFocusDomain(
+  asked: QuestionItem[],
+  blueprint: PositionBlueprint,
+  domain: string
+): QuestionItem | null {
+  if (domain.length === 0) return null
+  const forDomain: QuestionItem[] = []
+  for (let j = 0; j < QUESTION_BANK.length; j++) {
+    const q = QUESTION_BANK[j]
+    if (q.abilityDomain !== domain) continue
+    if (!eligible(q, blueprint)) continue
+    if (isAsked(asked, q.id)) continue
+    forDomain.push(q)
+  }
+  return pickByDifficultyPriority(forDomain, blueprint)
+}
+
 export function selectNext(input: SelectorInput): SelectorOutput | null {
   const budget = getModeBudget(input.mode)
+  // 专项训练可通过 maxQuestions 覆盖模式预算（训练房间按任务题量控制收尾）
+  const budgetMax = input.maxQuestions > 0 ? input.maxQuestions : budget.maxQuestions
 
   // 规则5：时间预算收束 —— 剩余时间不足以再完整进行一题时，返回收束题
   const timeShort = input.remainSeconds < AVG_QUESTION_SECONDS
   // 规则4/5：题目数达上限或时间不足 → 收束
-  if (input.asked.length >= budget.maxQuestions || timeShort) {
+  if (input.asked.length >= budgetMax || timeShort) {
     if (
       !isAsked(input.asked, WRAPUP_QUESTION.id) &&
       matchesPosition(WRAPUP_QUESTION, input.blueprint)
@@ -232,6 +256,19 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
       } as SelectorOutput
     }
     return null // 收束题也已问完，面试应进入 WRAP_UP
+  }
+
+  // 规则0b：训练定向优先（报告薄弱项 → 该能力域题目）
+  if (input.focusDomain.length > 0) {
+    const focused = pickForFocusDomain(input.asked, input.blueprint, input.focusDomain)
+    if (focused != null) {
+      return {
+        question: focused,
+        purpose: focused.purpose,
+        isWrapup: false
+      } as SelectorOutput
+    }
+    // 目标能力域已出完：放宽到下面规则兜底，避免训练中断
   }
 
   // 规则1：优先覆盖未触达的能力域

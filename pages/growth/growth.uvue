@@ -166,6 +166,57 @@
           <ml-button text="查看最近完整报告" type="primary" block @click="goReport"></ml-button>
         </view>
       </template>
+
+      <!-- 训练记录（薄弱项定向训练 + 错因追溯，与面试报告独立展示） -->
+      <view class="mt-6">
+        <ml-section-header
+          title="训练记录"
+          caption="薄弱项定向训练 · 错因可对照报告追溯"
+        ></ml-section-header>
+        <template v-if="trainings.length > 0">
+          <view v-for="t in trainings" :key="'tr_' + t.id + '_' + t.completedAt" class="mb-2">
+            <ml-card>
+              <view class="flex-row items-center justify-between">
+                <view class="flex-col flex-1">
+                  <view class="flex-row items-center">
+                    <text class="text-sm text-ink flex-1">{{ t.title }}</text>
+                    <view v-if="t.domain.length > 0" class="ml-2">
+                      <ml-tag
+                        :label="'定向·' + dimLabel(t.domain)"
+                        bg="#EEF1FF"
+                        color="#5B6CFF"
+                      ></ml-tag>
+                    </view>
+                  </view>
+                  <text class="text-[11px] text-ink-soft mt-1">
+                    {{ formatDate(t.completedAt) }} · 完成 {{ t.questions }} 题{{
+                      t.skipped > 0 ? ' · 跳过 ' + t.skipped + ' 题' : ''
+                    }}
+                  </text>
+                </view>
+                <view class="ml-2" v-if="t.reasons.length > 0">
+                  <ml-tag
+                    :label="'错因 ' + t.reasons.join(' / ')"
+                    bg="#FFF3E0"
+                    color="#E08A00"
+                  ></ml-tag>
+                </view>
+                <view class="ml-2" v-else>
+                  <ml-tag label="表现良好" bg="#E6F7F4" color="#1FB6A6"></ml-tag>
+                </view>
+              </view>
+            </ml-card>
+          </view>
+        </template>
+        <ml-card v-else>
+          <view class="flex-row items-center">
+            <ml-icon name="dumbbell" :size="14" color="#AEB9CC"></ml-icon>
+            <text class="text-xs text-ink-soft ml-2"
+              >暂无训练记录，从报告薄弱项开始一次定向训练</text
+            >
+          </view>
+        </ml-card>
+      </view>
     </view>
   </scroll-view>
 </template>
@@ -181,16 +232,20 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { trainingHistory, TrainingItem } from '../../store/training-history.uts'
 import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT, ScoreLevel } from '../../types/scoring.uts'
 
 const records = ref<ReportRecord[]>([])
 const showIdx = ref(0)
+const trainings = ref<TrainingItem[]>([])
 
 onShow(() => {
   reportHistory.load()
   const all = reportHistory.recent(6)
   records.value = all
   if (showIdx.value >= all.length) showIdx.value = 0
+  trainingHistory.load()
+  trainings.value = trainingHistory.recent(5)
 })
 
 const activeDimensions = computed((): DimensionScore[] => {

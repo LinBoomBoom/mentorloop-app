@@ -164,6 +164,7 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
+import { domainOfTaskId } from '../../store/training-history.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
 
@@ -308,7 +309,7 @@ function startTaskEntry(id: string, title: string, durationMin: number) {
 
 // 进入训练房间（3/5/10 分钟碎片化训练；推荐任务标记来源=报告薄弱项）
 function startTask(task: TrainingEntry | null = null) {
-  // 权益门控：免费层每日训练额度（会员不限）
+  // 权益门控：免费层每日训练额度（会员不限）；额度扣减在训练房间 onLoad 统一执行
   quotaStore.restore()
   if (!quotaStore.canStartTraining()) {
     trackEvent('quota_exceeded', { scene: 'training' })
@@ -325,20 +326,22 @@ function startTask(task: TrainingEntry | null = null) {
     })
     return
   }
-  quotaStore.consumeTraining()
   const id = task != null ? task.id : 't_custom'
   const title = task != null ? task.title : '专项训练'
   const dur = task != null ? task.durationMin : 5
   const src = task != null && task.id.indexOf('gt') !== 0 ? 'report' : 'direct'
+  const domain = domainOfTaskId(id)
   const url =
     '/pages/training/room?taskId=' +
-    id +
+    encodeURIComponent(id) +
     '&title=' +
-    title +
+    encodeURIComponent(title) +
     '&durationMin=' +
     dur +
     '&source=' +
-    src
+    src +
+    '&domain=' +
+    domain
   uni.navigateTo({ url: url })
 }
 

@@ -27,6 +27,12 @@ declare module '*.uts' {
   export function scoreInterview(...args: any[]): any
   // store/interview-session
   export const interviewSession: any
+  // store/training-history（P0-1 训练闭环）
+  export function reasonForAnswer(...args: any[]): any
+  export function domainOfTaskId(...args: any[]): any
+  export const SKIP_REASON: any
+  // store/resume-draft（P0-2.2 简历线闭环）
+  export function buildResumeContent(...args: any[]): any
   // data/question-bank
   export const QUESTION_BANK: any[]
   export const WRAPUP_QUESTION: any

@@ -141,6 +141,13 @@ import { onLoad, onUnload } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
+import { quotaStore } from '../../store/quota.uts'
+import {
+  trainingHistory,
+  TrainingItem,
+  reasonForAnswer,
+  SKIP_REASON
+} from '../../store/training-history.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { selectNext } from '../../engine/question-selector.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
@@ -161,6 +168,11 @@ const taskId = ref('')
 const taskTitle = ref('专项训练')
 const durationMin = ref(3)
 const source = ref('direct') // report（报告薄弱项）| direct（主动）
+const domain = ref('') // 定向能力域（'' = 通用训练不限维度）
+
+// 本次训练的过程记录（完成后写入 trainingHistory 供成长页追溯）
+const sessionReasons: string[] = []
+let skippedCount = 0
 
 // 训练用岗位蓝图（取用户档案默认方向）
 const blueprint = ref<PositionBlueprint>({
@@ -242,7 +254,31 @@ onLoad((options: any) => {
     taskTitle.value = options.title != null ? (options.title as string) : '专项训练'
     durationMin.value = options.durationMin != null ? parseInt(options.durationMin as string) : 3
     source.value = options.source != null ? (options.source as string) : 'direct'
+    domain.value = options.domain != null ? (options.domain as string) : ''
   }
+
+  // 统一权益门控 + 额度扣减（训练页/报告页等多入口收敛到此处，避免重复扣减）
+  quotaStore.restore()
+  if (!quotaStore.canStartTraining()) {
+    uni.showModal({
+      title: '今日训练次数已用完',
+      content: '免费版每日 3 次训练，开通会员不限次数',
+      confirmText: '去开通',
+      cancelText: '返回',
+      success: (r: any) => {
+        if (r.confirm) {
+          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
+        } else {
+          uni.navigateBack()
+        }
+      },
+      fail: () => {
+        uni.navigateBack()
+      }
+    })
+    return
+  }
+  quotaStore.consumeTraining()
   remain.value = durationMin.value * 60
   // 训练题量按时长估算：约 1 题/分钟，上限 5 题
   totalQuestions.value = durationMin.value < 5 ? 3 : durationMin.value < 10 ? 4 : 5
@@ -309,12 +345,15 @@ function nextQuestion() {
     if (q != null) asked.push(q)
   }
   // 训练时间预算：给足余量，让选择器不因时间收束
+  // 定向训练（source=report / dim_*）：优先出目标能力域题目，并按任务题量收尾
   const out = selectNext({
     blueprint: blueprint.value,
     mode: 'quick',
     asked: asked,
     remainSeconds: 9999,
-    resumeRiskTopics: []
+    resumeRiskTopics: [],
+    focusDomain: domain.value,
+    maxQuestions: totalQuestions.value
   })
   if (out == null || out.isWrapup) {
     // 题库耗尽：直接完成
@@ -425,6 +464,12 @@ function finishTranscribe(text: string) {
 // 即时反馈 + 推进（语音/文字共用）
 function applyFeedback(answerText: string, inputMode: string) {
   hint.value = feedbackFor(answerText)
+  // 记录错因（文档 02 §2.3：不会/说不清/项目证据不足/推理不完整/表达结构差）
+  const sig = analyzeAnswer(answerText, currentQuestion.value.id)
+  const reason = reasonForAnswer(sig.isVague, sig.hasMetrics, sig.isAbsolute)
+  if (reason != null && !sessionReasons.includes(reason)) {
+    sessionReasons.push(reason)
+  }
   doneCount.value = doneCount.value + 1
   trackEvent('training_task_complete', {
     taskId: taskId.value,
@@ -443,6 +488,10 @@ function applyFeedback(answerText: string, inputMode: string) {
 
 function skipQuestion() {
   if (finished.value) return
+  skippedCount += 1
+  if (!sessionReasons.includes(SKIP_REASON)) {
+    sessionReasons.push(SKIP_REASON)
+  }
   doneCount.value = doneCount.value + 1
   if (doneCount.value >= totalQuestions.value) {
     finishTraining()
@@ -465,6 +514,19 @@ function finishTraining() {
     completed: true,
     durationMin: durationMin.value
   })
+  // 回写训练记录（成长页追溯 + 与面试报告对照）
+  trainingHistory.load()
+  trainingHistory.push({
+    id: taskId.value,
+    title: taskTitle.value,
+    durationMin: durationMin.value,
+    source: source.value === 'report' ? 'report' : 'direct',
+    domain: domain.value,
+    questions: doneCount.value - skippedCount,
+    skipped: skippedCount,
+    reasons: sessionReasons.slice(),
+    completedAt: Date.now()
+  } as TrainingItem)
   uni.showToast({ title: '训练完成，做得好！', icon: 'none' })
   setTimeout(() => {
     uni.navigateBack()
