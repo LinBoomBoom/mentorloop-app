@@ -1,4 +1,7 @@
 # pnpm 11：允许执行构建脚本的包（esbuild 必须有二进制，否则 Vitest/Vite 起不来）
+# 服务端 SQLite 使用 Node 内置 node:sqlite（零原生依赖），故无需额外 allowBuilds
+packages:
+  - server
 allowBuilds:
   core-js: false
   core-js-pure: false

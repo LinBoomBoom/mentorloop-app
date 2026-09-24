@@ -39,6 +39,16 @@ jobs:
         run: pnpm typecheck
         continue-on-error: true # uvue/uts 类型需 HBuilderX 环境，暂不阻断
 
+      # ---- @mentorloop/server（P1 后端）----
+      - name: Server typecheck
+        run: pnpm --filter @mentorloop/server typecheck
+
+      - name: Server test
+        run: pnpm --filter @mentorloop/server test
+
+      - name: Server build
+        run: pnpm --filter @mentorloop/server build
+
       - name: Security audit
         run: pnpm audit --audit-level high
         continue-on-error: true

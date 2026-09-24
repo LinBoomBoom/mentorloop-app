@@ -12,7 +12,7 @@
 //
 // 规则刻意保持可解释：每个 dimension 的 confidence 来源于"证据数/题数"。
 
-import { QuestionItem, TranscriptEntry } from '../types/interview.uts'
+import { QuestionItem, TranscriptEntry } from '../types/interview.js'
 import {
   InterviewReport,
   DimensionScore,
@@ -20,10 +20,10 @@ import {
   ScoreLevel,
   TrainingTask,
   DIMENSION_LABEL
-} from '../types/scoring.uts'
-import { confidenceBand } from './rubric.uts'
-import { analyzeAnswer } from './answer-signal.uts'
-import { QUESTION_BANK } from '../data/question-bank.uts'
+} from '../types/scoring.js'
+import { confidenceBand } from './rubric.js'
+import { analyzeAnswer } from './answer-signal.js'
+import { QUESTION_BANK } from '../data/question-bank.js'
 
 // ------ 题型 → 维度映射（决定该题的回答主要影响哪些维度）------
 // knowledge: concept / design（基础概念+系统设计都要讲清楚原理）

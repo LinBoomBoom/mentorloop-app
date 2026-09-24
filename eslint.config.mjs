@@ -25,6 +25,7 @@ export default [
       'node_modules/**',
       'unpackage/**',
       'dist/**',
+      '**/dist/**',
       '.temp/**',
       'static/**',
       'coverage/**',
