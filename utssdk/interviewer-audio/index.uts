@@ -1,27 +1,161 @@
-// UTS 原生插件：interviewer-audio
-// 职责：录音、降噪、音频焦点、中断恢复（文档 04）
-// 真实实现：utssdk/app-android/index.uts + utssdk/app-ios/index.uts（原生层）
-// 此处仅为「契约 + 默认降级实现」，供客户端 import 使用。
-// 注意：UTS 不支持 interface，契约以类的公开方法为准。
+// =====================================================
+// interviewer-audio · 跨端 API 与降级实现
+// P2-9 「录音、降噪、音频焦点、中断恢复」（文档 04）
+// 结构：
+//   - index.uts                      跨端契约 + 非 Android 降级
+//   - app-android/index.uts          Android 原生增强（Kotlin UTS；仅 Android 编译参与）
+// 状态：原生层已按 uni-app x UTS 插件结构落地，编译与真机验证归 P3-14。
+// 使用：Android 上 init() 成功后通过 audioPlugin 走原生渲染（降噪/焦点/中断），
+//       失败或非 Android 平台返回 enhanced=false，调用方保留既有降级路径。
+// 注意：UTS 不支持 interface，契约以类的公开方法为准；
+//       音频帧摘要 12 次/秒上报（含录音振幅），原生帧级数据不进响应式状态。
+// =====================================================
+
+// #ifdef APP-ANDROID
+import { AudioService } from './app-android/index.uts'
+// #endif
+
+// 录音配置（sampleRate/channels/encodeBitRate 与云端 ASR 推荐一致：16k 单声道）
+export type AudioRecordConfig = {
+  format: string
+  sampleRate: number
+  channels: number
+  encodeBitRate: number
+  enableNoiseSuppression: boolean
+}
+
+export type AudioInterruptEvent = 'interrupted' | 'resumed' | 'permission_denied'
 
 export class AudioPlugin {
-  startRecord(): void {
-    console.warn('[audio] 原生插件未接入，使用降级实现')
+  private service: AudioService | null = null
+  private interruptCb: ((e: AudioInterruptEvent) => void) | null = null
+  private levelCb: ((level: number) => void) | null = null
+
+  // 原生增强是否已就绪（未就绪时所有方法返回失败/空，调用方走降级）
+  enhanced: boolean = false
+
+  // 初始化原生增强（申请音频焦点）；失败静默返回 false
+  async init(): Promise<boolean> {
+    if (this.enhanced) return true
+    // #ifdef APP-ANDROID
+    if (this.service == null) {
+      try {
+        this.service = new AudioService()
+        this.enhanced = this.service.initFocus()
+        if (this.enhanced) {
+          this.service.setListeners(
+            (e: string) => {
+              this.emitInterrupt(e)
+            },
+            (level: number) => {
+              const cb = this.levelCb
+              if (cb != null) cb(level)
+            }
+          )
+        } else {
+          this.service = null
+        }
+      } catch (e: any) {
+        console.warn('[audio] 原生增强初始化失败', e)
+        this.enhanced = false
+        this.service = null
+      }
+    }
+    // #endif
+    return this.enhanced
   }
 
-  // 返回录音文件本地路径
-  stopRecord(): Promise<string> {
-    return Promise.resolve('')
+  // 开始录音；返回是否成功起身（onLevel 回调随后按 12 次/秒上报振幅）
+  startRecord(cfg: AudioRecordConfig): boolean {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      return this.service.start(
+        cfg.sampleRate,
+        cfg.channels,
+        cfg.encodeBitRate,
+        cfg.enableNoiseSuppression
+      )
+    }
+    // #endif
+    return false
   }
 
-  onAudioFrame(cb: (frame: Uint8Array) => void): void {
-    console.warn('[audio] onAudioFrame 未接入，回调不会触发', cb)
+  // 停止录音并返回文件本地路径（失败/无有效录音返回空串）
+  async stopRecord(): Promise<string> {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      return this.service.stop()
+    }
+    // #endif
+    return ''
   }
 
-  // 音频焦点申请
-  requestFocus(): Promise<boolean> {
-    return Promise.resolve(true)
+  // 丢弃当前录音（退出/跳题时调用，不再产出文件）
+  discardRecord(): void {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      this.service.discard()
+    }
+    // #endif
+  }
+
+  // 暂停/恢复（来电等焦点短暂丢失时原生层自动执行；此处供 UI 主动控制）
+  pauseRecord(): boolean {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      return this.service.pause()
+    }
+    // #endif
+    return false
+  }
+
+  resumeRecord(): boolean {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      return this.service.resume()
+    }
+    // #endif
+    return false
+  }
+
+  // 音频焦点（房间进入/退出时如需预先申请/释放）
+  async requestFocus(): Promise<boolean> {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      return this.service.initFocus()
+    }
+    // #endif
+    return true
+  }
+
+  releaseFocus(): void {
+    // #ifdef APP-ANDROID
+    if (this.enhanced && this.service != null) {
+      this.service.releaseFocus()
+      this.enhanced = false
+      this.service = null
+    }
+    // #endif
+  }
+
+  // 中断事件监听（录音被来电/切后台打断或恢复）
+  setInterruptListener(cb: (e: AudioInterruptEvent) => void): void {
+    this.interruptCb = cb
+  }
+
+  // 录音振幅摘要（0–255，约 12 次/秒；用于波形提示，不进响应式高频状态）
+  onLevel(cb: (level: number) => void): void {
+    this.levelCb = cb
+  }
+
+  private emitInterrupt(e: string): void {
+    let evt: AudioInterruptEvent = 'interrupted'
+    if (e === 'resumed') evt = 'resumed'
+    if (e === 'permission_denied') evt = 'permission_denied'
+    const cb = this.interruptCb
+    if (cb != null) cb(evt)
   }
 }
 
+// 单例导出（页面/感知层共享同一实例，房间退出时调 releaseFocus）
 export const audioPlugin: AudioPlugin = new AudioPlugin()

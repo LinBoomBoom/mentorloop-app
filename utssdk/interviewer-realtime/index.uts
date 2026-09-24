@@ -1,29 +1,325 @@
-// UTS 原生插件：interviewer-realtime
-// 职责：流式 ASR / TTS、断线重连、缓冲（文档 04）
-// 真实实现为原生层；此处为契约与降级实现。
+// =====================================================
+// interviewer-realtime · 实时音频通道（P2-10）
+// 职责：流式 ASR / TTS 的 WebSocket 传输、断线重连、离线缓冲（文档 04）
+// 结构：本插件为跨端 UTS 实现（uni.connectSocket，App 与小程序通用）；
+//       原生帧级 PCM 上送（onAudioFrame 字节流）留待 app-android/index.uts 扩展。
+// ≥ 断线重连：指数退避（1s 起，上限 30s），重连成功后自动补发缓冲中的消息。
+// ≥ 离线缓冲：断网期间的上送消息入队，重连后按序补发（不丢答案，文档 04 §3）。
+// ≥ 服务端协议契约（待 P1/P2 服务端实现，见 closure-development-plan P2-10）：
+//   客户端→服务端  {type:'asr-start', sessionId} | {type:'asr-audio', data:base64, last:boolean}
+//                 | {type:'tts-request', text}
+//   服务端→客户端  {type:'asr-transcript', text, stable:boolean} | {type:'asr-error', message}
+//                 | {type:'tts-audio', format:'mp3', url} | {type:'tts-end'}
+// 状态：传输/重连/缓冲已实现；真实 ASR/TTS 引擎接入归 P2-13/P1 服务端，P3-14 真机验证。
 // 注意：UTS 不支持 interface，契约以类的公开方法为准。
+// =====================================================
+
+export type RealtimeConfig = {
+  wsUrl: string // ws(s):// 网关地址
+  token: string // JWT（鉴权头）
+  maxRetries: number // 重连次数上限
+  reconnectBaseMs: number // 指数退避基数
+}
+
+// 内部消息类型（发送/接收）
+type OutgoingMsg = {
+  type: string
+  text?: string
+  sessionId?: string
+  data?: string
+  last?: boolean
+}
 
 export class RealtimePlugin {
-  streamASR(audioPath: string): void {
-    console.warn('[realtime] 原生插件未接入', audioPath)
+  private cfg: RealtimeConfig | null = null
+  private socket: any = null
+  private connected = false
+  private retry = 0
+  private reconnectTimer: number = 0
+  private buffer: string[] = []
+
+  private transcriptCb: ((text: string, stable: boolean) => void) | null = null
+  private reconnectCb: (() => void) | null = null
+  private ttsStateCb: ((state: 'start' | 'end') => void) | null = null
+
+  // ---------------- 配置与连接 ----------------
+
+  // 由感知层在登录/真后端模式就绪后注入；未配置时所有方法为安全空操作
+  configure(cfg: RealtimeConfig): void {
+    this.cfg = cfg
   }
 
-  playTTS(text: string): Promise<void> {
-    console.warn('[realtime] playTTS 未接入', text)
-    return Promise.resolve()
+  isConfigured(): boolean {
+    return this.cfg != null
   }
+
+  isConnected(): boolean {
+    return this.connected
+  }
+
+  // 建立 WebSocket 连接（已连接则直接返回 true）
+  async connect(): Promise<boolean> {
+    if (this.connected) return true
+    const cfg = this.cfg
+    if (cfg == null) return false
+    if (this.retry >= cfg.maxRetries) {
+      console.warn('[realtime] 重连次数达上限，停止重试')
+      return false
+    }
+    return new Promise<boolean>((resolve) => {
+      try {
+        let settled = false
+        const task = uni.connectSocket({
+          url: cfg.wsUrl,
+          header: {
+            Authorization: 'Bearer ' + cfg.token
+          },
+          complete: () => {}
+        })
+        task.onOpen(() => {
+          if (settled) return
+          settled = true
+          this.connected = true
+          this.retry = 0
+          this.flushBuffer()
+          resolve(true)
+        })
+        task.onMessage((res: any) => {
+          this.handleMessage(res != null ? res.data : '')
+        })
+        task.onError((_e: any) => {
+          if (settled) {
+            this.scheduleReconnect()
+            return
+          }
+          settled = true
+          this.connected = false
+          resolve(false)
+        })
+        task.onClose(() => {
+          this.connected = false
+          this.scheduleReconnect()
+        })
+        this.socket = task
+      } catch (_e: any) {
+        resolve(false)
+      }
+    })
+  }
+
+  // 断开（房间退出时必须调用，文档 04：退出立即释放音频与网络资源）
+  disconnect(): void {
+    if (this.reconnectTimer > 0) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = 0
+    }
+    const task = this.socket
+    this.socket = null
+    this.connected = false
+    this.retry = 0
+    this.buffer = []
+    if (task != null) {
+      try {
+        task.close({ code: 1000, reason: 'bye' } as any)
+      } catch (_e: any) {
+        // 忽略关闭异常
+      }
+    }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer > 0) return
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = 0
+      const cfg = this.cfg
+      if (cfg == null) return
+      this.retry += 1
+      this.connect().then((ok: boolean) => {
+        if (ok) {
+          const cb = this.reconnectCb
+          if (cb != null) cb()
+        }
+      })
+    }, this.backoffMs())
+  }
+
+  private backoffMs(): number {
+    const cfg = this.cfg
+    const base = cfg != null && cfg.reconnectBaseMs > 0 ? cfg.reconnectBaseMs : 1000
+    // 指数退避并封顶 30s
+    let ms = base
+    let i = this.retry
+    while (i > 0 && ms < 30000) {
+      ms = ms * 2
+      i -= 1
+    }
+    return ms > 30000 ? 30000 : ms
+  }
+
+  // ---------------- 发送与会话 ----------------
+
+  // 发送 JSON 消息；离线时入队等待重连补发
+  private send(msg: OutgoingMsg): void {
+    const task = this.socket
+    if (this.connected && task != null) {
+      try {
+        task.send({ data: JSON.stringify(msg) } as any)
+        return
+      } catch (_e: any) {
+        // 发送失败按离线处理
+      }
+    }
+    this.buffer.push(JSON.stringify(msg))
+    console.warn('[realtime] 通道未就绪，消息入队待补发', msg.type)
+  }
+
+  // 断线期间入队的消息按序补发
+  private flushBuffer(): void {
+    while (this.buffer.length > 0 && this.connected) {
+      const raw = this.buffer.shift()
+      if (raw == null) break
+      const task = this.socket
+      if (task != null) {
+        try {
+          task.send({ data: raw } as any)
+        } catch (_e: any) {
+          this.buffer.unshift(raw)
+          break
+        }
+      }
+    }
+  }
+
+  // 开启一次流式识别会话（流式音频帧以 base64 上送）
+  startStream(sessionId: string): void {
+    this.send({ type: 'asr-start', sessionId: sessionId } as OutgoingMsg)
+  }
+
+  // 上送音频片段（16k 单声道）；last=true 表示本段结束
+  sendAudio(data: string, last: boolean): void {
+    this.send({ type: 'asr-audio', data: data, last: last } as OutgoingMsg)
+  }
+
+  // 结束并丢弃当前流式会话
+  stopStream(): void {
+    this.send({ type: 'asr-end' } as OutgoingMsg)
+  }
+
+  // 请求 TTS 播报（服务端回传音频 URL；口语链路见 api/speech.uts 的 speak）
+  playTTS(text: string): void {
+    this.send({ type: 'tts-request', text: text } as OutgoingMsg)
+  }
+
+  // ---------------- 回调注册 ----------------
 
   onTranscript(cb: (text: string, stable: boolean) => void): void {
-    console.warn('[realtime] onTranscript 未接入', cb)
+    this.transcriptCb = cb
   }
 
   onReconnect(cb: () => void): void {
-    console.warn('[realtime] onReconnect 未接入', cb)
+    this.reconnectCb = cb
   }
 
   onTTSState(cb: (state: 'start' | 'end') => void): void {
-    console.warn('[realtime] onTTSState 未接入', cb)
+    this.ttsStateCb = cb
+  }
+
+  // ---------------- 消息处理 ----------------
+
+  private handleMessage(raw: string): void {
+    if (raw == null || raw.length === 0) return
+    let msg: any = null
+    try {
+      msg = JSON.parse(raw)
+    } catch (_e: any) {
+      console.warn('[realtime] 非法消息', raw)
+      return
+    }
+    const type = msg != null ? msg.type : ''
+    if (type === 'asr-transcript') {
+      const cb = this.transcriptCb
+      if (cb != null) {
+        const t = msg.text != null ? String(msg.text) : ''
+        const stable = msg.stable === true
+        if (t.length > 0) cb(t, stable)
+      }
+    } else if (type === 'tts-audio') {
+      const stateCb = this.ttsStateCb
+      if (stateCb != null) stateCb('start')
+      this.playTtsAudio(msg)
+    } else if (type === 'tts-end') {
+      const stateCb = this.ttsStateCb
+      if (stateCb != null) stateCb('end')
+    } else if (type === 'asr-error') {
+      console.warn('[realtime] 服务端 ASR 错误', msg.message)
+      const cb = this.transcriptCb
+      if (cb != null) cb('', true)
+    }
+  }
+
+  private playTtsAudio(msg: any): void {
+    // 优先 URL 直播；无 URL 且为 base64 时落临时文件后播放（App 端 FileSystemManager）
+    const url = msg != null && msg.url != null ? String(msg.url) : ''
+    const base64 = msg != null && msg.data != null ? String(msg.data) : ''
+    if (url.length > 0) {
+      this.play(url)
+      return
+    }
+    if (base64.length > 0) {
+      this.emitTtsEnd()
+      // 服务端应回传可直接播放的 URL；base64 落盘实现见 App 分支（P3-14 验证）
+      // #ifdef APP-PLUS || APP
+      try {
+        const fs = uni.getFileSystemManager() as any
+        if (fs != null && fs.writeFile != null) {
+          const filePath = '_doc/tts_' + Date.now() + '.mp3'
+          fs.writeFile({
+            filePath: filePath,
+            data: base64,
+            encoding: 'base64',
+            success: () => {
+              this.play(filePath)
+            },
+            fail: () => {
+              // 落盘失败：忽略本次 TTS（字幕仍承担信息，不阻塞流程）
+            }
+          } as any)
+        }
+      } catch (e: any) {
+        console.warn('[realtime] 音频落盘失败', e)
+      }
+      // #endif
+    }
+  }
+
+  private emitTtsEnd(): void {
+    const cb = this.ttsStateCb
+    if (cb != null) cb('end')
+  }
+
+  private play(src: string): void {
+    let player: any = null
+    try {
+      player = uni.createInnerAudioContext()
+    } catch (e: any) {
+      console.warn('[realtime] 创建播放器失败', e)
+      return
+    }
+    if (player == null) return
+    player.src = src
+    const done = () => {
+      this.emitTtsEnd()
+      try {
+        player.destroy()
+      } catch (_e2: any) {
+        // 忽略销毁异常
+      }
+    }
+    player.onEnded(done)
+    player.onError(done)
+    player.play()
   }
 }
 
+// 单例导出（感知层与房间共享同一通道；房间退出调 disconnect）
 export const realtimePlugin: RealtimePlugin = new RealtimePlugin()

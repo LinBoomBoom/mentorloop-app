@@ -1,0 +1,288 @@
+// =====================================================
+// interviewer-audio · Android 原生实现（Kotlin / UTS）
+// P2-9 「录音、降噪、音频焦点、中断恢复」
+// 说明：
+//  - 本文件仅参与 Android 原生编译（HBuilderX / Android Studio），
+//    本地 JS 工具链（eslint/prettier/vue-tsc）已按约定忽略 utssdk/*/app-android。
+//  - 编译与真机验证归 P3-14（README 已标注未编译验证），用到的 uni-app x
+//    Context 获取 helper、AudioFocusRequest 等 API 以当前 SDK 文档为准，
+//    首次真机构建时按编译报错微调。
+//  - 性能契约（文档 04）：帧级音频不进响应式状态；本层仅通过 onLevel 以
+//    12 次/秒上报振幅摘要，满足「UI 每秒只同步 10–15 次」。
+//  - 降噪：录音音源使用 VOICE_COMMUNICATION（系统级噪声抑制 + 回声抵消），
+//    显式 setNoiseSuppressionEnabled 不再单独调用（VOICE_COMMUNICATION 已内置）。
+// =====================================================
+
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.media.MediaRecorder
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+
+// uni-app x 运行时全局：获取 App Context
+// `ut` 为 UTS 内置全局（App 三端通用）；getUTSAndroid().getAppContext() 为 Android 用法，
+// 若安装的 SDK 版本提示 API 变更，优先改为文档推荐的 UTSAndroidHelper 等价调用。
+private fun appContext(): Context {
+  return ut.getUTSAndroid().getAppContext()
+}
+
+export class AudioService {
+  private var context: Context
+  private var recorder: MediaRecorder? = null
+  private var audioManager: AudioManager? = null
+  private var focusRequest: AudioFocusRequest? = null
+  private var focusListener: AudioManager.OnAudioFocusChangeListener? = null
+
+  private var filePath: String = ''
+  private var recording: Boolean = false
+  private var interrupted: Boolean = false
+  private var autoResume: Boolean = false
+
+  private var levelHandler: Handler? = null
+  private var levelTask: Runnable? = null
+  private var onInterrupt: ((e: String) -> Unit)? = null
+  private var onLevel: ((level: Int) -> Unit)? = null
+
+  constructor() {
+    this.context = appContext()
+  }
+
+  // ---------------- 生命周期 ----------------
+
+  // 申请音频焦点并持有 AudioManager（失败返回 false，调用方降级）
+  fun initFocus(): Boolean {
+    val ctx = this.context
+    val mgr = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    if (mgr == null) return false
+    this.audioManager = mgr
+
+    val listener = object : AudioManager.OnAudioFocusChangeListener {
+      override fun onAudioFocusChange(change: Int) {
+        // 焦点回调可能不在主线程，切到主线程再派发
+        val h = Handler(Looper.getMainLooper())
+        h.post(object : Runnable {
+          override fun run() {
+            handleFocusChange(change)
+          }
+        })
+      }
+    }
+    this.focusListener = listener
+
+    var granted = false
+    if (Build.VERSION.SDK_INT >= 26) {
+      val attrs = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build()
+      val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        .setAudioAttributes(attrs)
+        .setOnAudioFocusChangeListener(listener)
+        .setAcceptsDelayedFocusGain(true)
+        .build()
+      this.focusRequest = req
+      granted = mgr.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    } else {
+      granted = mgr.requestAudioFocus(
+        listener,
+        AudioManager.STREAM_MUSIC,
+        AudioManager.AUDIOFOCUS_GAIN
+      ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+    return granted
+  }
+
+  // 释放音频焦点（房间退出时必须调用，文档 04：退出立即释放音频资源）
+  fun releaseFocus() {
+    val mgr = this.audioManager
+    val req = this.focusRequest
+    val listener = this.focusListener
+    if (mgr != null) {
+      if (req != null) {
+        mgr.abandonAudioFocusRequest(req)
+      } else if (listener != null) {
+        mgr.abandonAudioFocus(listener)
+      }
+    }
+    this.focusRequest = null
+    this.focusListener = null
+    this.audioManager = null
+  }
+
+  // 原生 → JS 回调注入
+  fun setListeners(
+    interrupt: (e: String) -> Unit,
+    level: (level: Int) -> Unit
+  ) {
+    this.onInterrupt = interrupt
+    this.onLevel = level
+  }
+
+  // ---------------- 录音 ----------------
+
+  // 录音参数来自 index.uts（已按云端 ASR 推荐配置）：16k 单声道 AAC
+  fun start(sampleRate: Int, channels: Int, bitRate: Int, noiseSuppression: Boolean): Boolean {
+    if (this.recording || this.recorder != null) return false
+    val ctx = this.context
+    val path = ctx.getCacheDir().absolutePath + "/ml_rec_" + SystemClock.uptimeMillis() + ".m4a"
+    try {
+      val r = MediaRecorder()
+      // VOICE_COMMUNICATION：系统级噪声抑制 + 回声抵消（比 MIC 更适合面试语音）
+      val src = if (noiseSuppression) MediaRecorder.AudioSource.VOICE_COMMUNICATION
+      else MediaRecorder.AudioSource.MIC
+      r.setAudioSource(src)
+      r.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+      r.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+      r.setAudioSamplingRate(if (sampleRate >= 16000) sampleRate else 16000)
+      r.setAudioChannels(1)
+      r.setAudioEncodingBitRate(if (bitRate >= 48000) bitRate else 48000)
+      r.setOutputFile(path)
+      r.prepare()
+      r.start()
+      this.recorder = r
+      this.filePath = path
+      this.recording = true
+      startLevelMeter()
+      return true
+    } catch (e: Exception) {
+      return false
+    }
+  }
+
+  // 停止并返回录音文件路径（无有效录音返回空串）
+  fun stop(): String {
+    val r = this.recorder
+    val p = this.filePath
+    this.recorder = null
+    this.recording = false
+    stopLevelMeter()
+    if (r != null) {
+      try {
+        r.stop()
+      } catch (e: Exception) {
+        // 中断/时长过短等导致的 stop 异常：文件不可用，返回空串由上层降级
+        return ''
+      } finally {
+        r.release()
+      }
+    }
+    return p
+  }
+
+  // 丢弃当前录音（不产出文件）
+  fun discard() {
+    stopLevelMeter()
+    val r = this.recorder
+    this.recorder = null
+    this.recording = false
+    this.filePath = ''
+    if (r != null) {
+      try {
+        r.stop()
+      } catch (e: Exception) {
+        // 忽略
+      }
+      r.release()
+    }
+  }
+
+  // 暂时停止（来电/切后台等短暂焦点丢失），API>=24 才真正支持 pause
+  fun pause(): Boolean {
+    val r = this.recorder
+    if (!this.recording || r == null) return false
+    if (Build.VERSION.SDK_INT >= 24) {
+      try {
+        r.pause()
+        return true
+      } catch (e: Exception) {
+        // 暂停失败：直接停止录音，避免丢数据
+        this.stop()
+        return false
+      }
+    }
+    return false
+  }
+
+  fun resume(): Boolean {
+    val r = this.recorder
+    if (!this.recording || r == null) return false
+    if (Build.VERSION.SDK_INT >= 24) {
+      try {
+        r.resume()
+        return true
+      } catch (e: Exception) {
+        return false
+      }
+    }
+    return false
+  }
+
+  // ---------------- 中断恢复（音频焦点） ----------------
+
+  private fun handleFocusChange(change: Int) {
+    if (change == AudioManager.AUDIOFOCUS_GAIN) {
+      // 重新获得焦点：若此前因短暂丢失被自动暂停，则恢复录音
+      this.interrupted = false
+      if (this.autoResume) {
+        this.autoResume = false
+        if (!resume()) {
+          this.stop()
+        }
+      }
+      emit('resumed')
+    } else if (change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+      || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+      this.autoResume = true
+      if (!pause()) {
+        this.stop()
+      }
+      emit('interrupted')
+    } else if (change == AudioManager.AUDIOFOCUS_LOSS) {
+      this.autoResume = false
+      this.stop()
+      emit('interrupted')
+    }
+  }
+
+  private fun emit(e: String) {
+    val cb = this.onInterrupt
+    if (cb != null) cb(e)
+  }
+
+  // ---------------- 振幅摘要（12 次/秒，遵守性能规则） ----------------
+
+  private fun startLevelMeter() {
+    stopLevelMeter()
+    val h = Handler(Looper.getMainLooper())
+    val task = object : Runnable {
+      override fun run() {
+        val r = recorder
+        if (!recording || r == null) {
+          return
+        }
+        val amp = r.getMaxAmplitude()
+        val lvl = if (amp <= 0) 0 else if (amp >= 32767) 255 else amp * 255 / 32767
+        val cb = onLevel
+        if (cb != null) cb(lvl)
+        h.postDelayed(this, 83)
+      }
+    }
+    this.levelHandler = h
+    this.levelTask = task
+    h.postDelayed(task, 83)
+  }
+
+  private fun stopLevelMeter() {
+    val t = this.levelTask
+    val h = this.levelHandler
+    if (t != null && h != null) {
+      h.removeCallbacks(t)
+    }
+    this.levelTask = null
+    this.levelHandler = null
+  }
+}

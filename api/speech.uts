@@ -199,12 +199,21 @@ export type RecordCallbacks = {
   onError: (errMsg: string) => void
 }
 
+// P2-9：Android 原生录音增强（降噪/音频焦点/中断恢复）。
+// 经 audioPlugin.init() 成功后走原生路径；失败/非 Android 回退 uni.getRecorderManager。
+import { audioPlugin, AudioRecordConfig } from '../utssdk/interviewer-audio/index.uts'
+// P2-10：实时音频通道（WS 传输/断线重连/缓冲），App 端流式识别依托该通道。
+import { realtimePlugin, RealtimeConfig } from '../utssdk/interviewer-realtime/index.uts'
+import { BASE_URL, useMock } from './client.uts'
+import { userStore } from '../store/user-profile.uts'
+
 // 录音器封装：单例 RecorderManager，回调式 API
 export class SpeechRecorder {
   private recorder: any = null
   private ready = false
   private cb: RecordCallbacks | null = null
   private recording = false
+  private enhanced = false
 
   isReady(): boolean {
     return this.ready
@@ -244,12 +253,50 @@ export class SpeechRecorder {
     } catch {
       inited = false
     }
+    // P2-9：Android 原生增强初始化（异步就绪；失败不影响既有 RecorderManager 路径）
+    // #ifdef APP-PLUS || APP
+    audioPlugin
+      .init()
+      .then((ok: boolean) => {
+        this.enhanced = ok
+        if (ok) {
+          // 中断事件由原生层自动暂停/恢复，此处仅记录（UI 提示归设备诊断/状态层）
+          audioPlugin.setInterruptListener((_e) => {
+            console.warn('[speech] 音频焦点中断事件', _e)
+          })
+        }
+      })
+      .catch((_e: any) => {
+        this.enhanced = false
+      })
+    // #endif
     // #endif
     this.ready = inited
   }
 
   start() {
     if (!this.ready || this.recording) return
+    // #ifdef APP-PLUS || APP
+    if (this.enhanced) {
+      const cfg = {
+        format: 'm4a',
+        sampleRate: 16000,
+        channels: 1,
+        encodeBitRate: 48000,
+        enableNoiseSuppression: true
+      } as AudioRecordConfig
+      const ok = audioPlugin.startRecord(cfg)
+      if (ok) {
+        this.recording = true
+        const c = this.cb
+        if (c != null) c.onStart()
+      } else {
+        const c = this.cb
+        if (c != null) c.onError('录音启动失败')
+      }
+      return
+    }
+    // #endif
     try {
       // 16k 单声道 mp3：云端 ASR 通用格式
       this.recorder.start({
@@ -266,6 +313,24 @@ export class SpeechRecorder {
 
   stop() {
     if (!this.ready || !this.recording) return
+    // #ifdef APP-PLUS || APP
+    if (this.enhanced) {
+      this.recording = false
+      audioPlugin
+        .stopRecord()
+        .then((path: string) => {
+          const c = this.cb
+          if (c != null) {
+            c.onStop({ ok: path.length > 0, audioPath: path, errMsg: '' } as RecordResult)
+          }
+        })
+        .catch((_e: any) => {
+          const c = this.cb
+          if (c != null) c.onError('录音停止失败')
+        })
+      return
+    }
+    // #endif
     try {
       this.recorder.stop()
     } catch {
@@ -325,11 +390,62 @@ export function startRealtimeAsr(
   // #ifdef MP-WEIXIN
   session = startRealtimeAsrWeixin(onText)
   // #endif
-  // #ifndef MP-WEIXIN
-  console.warn('[speech] 实时识别仅微信端可用')
+  // #ifdef APP-PLUS || APP
+  session = startRealtimeAsrApp(onText)
+  // #endif
+  // #ifndef MP-WEIXIN || APP-PLUS || APP
+  console.warn('[speech] 实时识别仅微信/App 端可用')
   // #endif
   return session
 }
+
+// #ifdef APP-PLUS || APP
+// App 端流式识别：依托 realtime 通道（WS 传输 + 断线重连 + 缓冲）。
+// 未配置/连接失败时返回可用的 session（内部降级），稳定文本为空即降级标记。
+function startRealtimeAsrApp(
+  onText: (text: string, stable: boolean) => void
+): RealtimeAsrSession | null {
+  // 懒配置：真后端模式从网关地址推导 ws 端点（未能配置则返回 null 走既有降级）
+  if (!realtimePlugin.isConfigured() && !useMock() && BASE_URL.length > 0) {
+    let wsUrl = BASE_URL
+    if (wsUrl.indexOf('https://') === 0) {
+      wsUrl = 'wss://' + wsUrl.substring(8)
+    } else if (wsUrl.indexOf('http://') === 0) {
+      wsUrl = 'ws://' + wsUrl.substring(7)
+    }
+    const cfg = {
+      wsUrl: wsUrl + '/ws/realtime',
+      token: userStore.profile.token,
+      maxRetries: 3,
+      reconnectBaseMs: 1200
+    } as RealtimeConfig
+    realtimePlugin.configure(cfg)
+  }
+  if (!realtimePlugin.isConfigured()) {
+    console.warn('[speech] 实时通道未配置，App 端走录音文件转写')
+    return null
+  }
+  let stopped = false
+  realtimePlugin.onTranscript((text: string, stable: boolean) => {
+    if (!stopped) onText(text, stable)
+  })
+  realtimePlugin.connect().then((ok: boolean) => {
+    if (ok) {
+      realtimePlugin.startStream('app-realtime')
+    } else {
+      onText('', true)
+    }
+  })
+  const session: RealtimeAsrSession = {
+    stop: () => {
+      if (stopped) return
+      stopped = true
+      realtimePlugin.stopStream()
+    }
+  } as RealtimeAsrSession
+  return session
+}
+// #endif
 
 // #ifdef MP-WEIXIN
 function startRealtimeAsrWeixin(

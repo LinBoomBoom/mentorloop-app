@@ -29,7 +29,10 @@ export default [
       '.temp/**',
       'static/**',
       'coverage/**',
-      'env.d.ts'
+      'env.d.ts',
+      // UTS 原生层（Kotlin/Swift）由 HBuilderX 编译，本地 JS 工具链不解析（编译验证归 P3-14）
+      'utssdk/*/app-android/**',
+      'utssdk/*/app-ios/**'
     ]
   },
   js.configs.recommended,
@@ -92,7 +95,7 @@ export default [
       // mock / 契约占位参数以 _ 前缀豁免
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
       ]
     }
   },

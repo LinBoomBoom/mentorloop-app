@@ -7,3 +7,6 @@ playwright-report
 static
 pnpm-lock.yaml
 package-lock.json
+# UTS 原生层由 HBuilderX 编译，不参与 Prettier（避免误改 Kotlin/Swift 语法）
+utssdk/*/app-android
+utssdk/*/app-ios
