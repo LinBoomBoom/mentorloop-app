@@ -1,0 +1,145 @@
+<template>
+  <text class="font-icon" :style="iconStyle">{{ glyph }}</text>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+import { StringMap } from '../styles/theme.uts'
+
+// Lucide 图标（PUA 码位，来源 static/fonts/lucide.css；字体由 styles/icons.css 注册）
+// icons 数据库未命中匹配，图标家族为 fallback 选择（MASTER.md §A3-1）
+const ICON_GLYPH: StringMap = {
+  // 导航 / 基础
+  home: '',
+  user: '',
+  settings: '',
+  search: '',
+  bell: '',
+  info: '',
+  x: '',
+  minus: '',
+  check: '',
+  'check-check': '',
+  'check-circle': '',
+  'circle-check': '',
+  'circle-alert': '',
+  'chevron-right': '',
+  'chevron-down': '',
+  'chevron-up': '',
+  'arrow-left': '',
+  'arrow-right': '',
+  'arrow-up-right': '',
+  // 面试 / 语音
+  mic: '',
+  'mic-vocal': '',
+  'audio-lines': '',
+  keyboard: '',
+  'volume-2': '',
+  'phone-off': '',
+  play: '',
+  pause: '',
+  'circle-play': '',
+  bot: '',
+  timer: '',
+  clock: '',
+  history: '',
+  'rotate-ccw': '',
+  repeat: '',
+  'refresh-cw': '',
+  zap: '',
+  sparkle: '',
+  sparkles: '',
+  // 训练 / 成长
+  dumbbell: '',
+  target: '',
+  crosshair: '',
+  trophy: '',
+  medal: '',
+  award: '',
+  star: '',
+  flame: '',
+  flag: '',
+  activity: '',
+  gauge: '',
+  'chart-column': '',
+  'trending-up': '',
+  'trending-down': '',
+  brain: '',
+  'heart-pulse': '',
+  'graduation-cap': '',
+  'book-open': '',
+  'book-marked': '',
+  'notebook-pen': '',
+  compass: '',
+  layers: '',
+  'layout-grid': '',
+  list: '',
+  'list-checks': '',
+  'clipboard-check': '',
+  // 岗位 / 简历
+  briefcase: '',
+  'message-square': '',
+  'message-circle': '',
+  'file-text': '',
+  'file-check': '',
+  'file-up': '',
+  folder: '',
+  upload: '',
+  'cloud-upload': '',
+  'scan-text': '',
+  'wand-2': '',
+  pencil: '',
+  'pen-line': '',
+  'square-pen': '',
+  quote: '',
+  // 状态 / 安全
+  'shield-check': '',
+  shield: '',
+  lock: '',
+  wifi: '',
+  server: '',
+  smartphone: '',
+  database: '',
+  'triangle-alert': '',
+  'circle-help': '',
+  lightbulb: '',
+  crown: '',
+  gem: '',
+  'badge-check': '',
+  palette: '',
+  moon: '',
+  'sliders-horizontal': '',
+  share: '',
+  'log-out': '',
+  'trash-2': '',
+  circle: '',
+  square: '',
+  calendar: '',
+}
+
+const props = defineProps({
+  name: { type: String, default: '' },
+  size: { type: Number, default: 16 },
+  color: { type: String, default: '#1A2433' }
+})
+
+const glyph = computed((): string => {
+  const v = ICON_GLYPH[props.name]
+  return v != null ? v : ''
+})
+
+const iconStyle = computed((): StringMap => {
+  return {
+    fontFamily: 'lucide',
+    fontSize: props.size + 'px',
+    lineHeight: props.size + 'px',
+    color: props.color
+  } as StringMap
+})
+</script>
+
+<style>
+.font-icon {
+  font-family: 'lucide';
+}
+</style>

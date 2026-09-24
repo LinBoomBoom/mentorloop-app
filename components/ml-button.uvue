@@ -2,6 +2,9 @@
   <view
     class="flex-row items-center justify-center h-12 rounded-xl px-5"
     :class="[bgClass, block ? 'w-full' : '', disabled ? 'opacity-50' : '']"
+    :hover-class="disabled ? 'none' : 'ml-button-pressed'"
+    :hover-start-time="0"
+    :hover-stay-time="80"
     @click="onClick"
   >
     <text class="text-base font-semibold" :class="textColorClass">{{ text }}</text>
@@ -13,7 +16,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   text: { type: String, default: '' },
-  type: { type: String, default: 'primary' }, // primary | secondary | ghost
+  type: { type: String, default: 'primary' }, // primary | secondary | ghost | danger
   block: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false }
 })
@@ -23,6 +26,7 @@ const emit = defineEmits(['tap'])
 const bgClass = computed(() => {
   if (props.type === 'secondary') return 'bg-line'
   if (props.type === 'ghost') return 'bg-transparent border border-smart'
+  if (props.type === 'danger') return 'bg-danger'
   return 'bg-smart'
 })
 
@@ -37,3 +41,9 @@ function onClick() {
   emit('tap')
 }
 </script>
+
+<style>
+.ml-button-pressed {
+  opacity: 0.85;
+}
+</style>

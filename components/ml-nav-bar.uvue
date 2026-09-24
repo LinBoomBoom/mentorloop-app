@@ -1,7 +1,8 @@
 <template>
   <view class="flex-row items-center justify-between h-11 px-4">
-    <view class="flex-row items-center" @click="onBack">
-      <text v-if="showBack" class="text-sm text-smart mr-2">‹ 返回</text>
+    <view class="flex-row items-center min-w-12" @click="onBack">
+      <ml-icon v-if="showBack" name="arrow-left" :size="18" color="#5B6CFF"></ml-icon>
+      <text v-if="showBack" class="text-sm text-smart ml-1">返回</text>
     </view>
     <text class="text-base font-semibold text-ink">{{ title }}</text>
     <view class="min-w-12 flex-row justify-end">
@@ -13,6 +14,7 @@
 <script setup lang="uts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import mlIcon from './ml-icon.uvue'
 
 const props = defineProps({
   title: { type: String, default: '' },

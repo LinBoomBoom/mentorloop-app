@@ -15,7 +15,8 @@ const uniGlobals = {
   getApp: 'readonly',
   getCurrentPages: 'readonly',
   UniInputEvent: 'readonly',
-  UniSystemInfo: 'readonly'
+  UniSystemInfo: 'readonly',
+  OnLoadOption: 'readonly'
 }
 
 export default [
@@ -62,7 +63,10 @@ export default [
       'vue/singleline-html-element-content-newline': 'off',
       'vue/max-attributes-per-line': 'off',
       'vue/html-self-closing': 'off',
-      'vue/attributes-order': 'off'
+      'vue/attributes-order': 'off',
+      // 长行换行由 Prettier 决断，二者冲突时以 Prettier 为准（与 lint-staged 顺序一致）
+      'vue/multiline-html-element-content-newline': 'off',
+      'vue/html-closing-bracket-newline': 'off'
     }
   },
 

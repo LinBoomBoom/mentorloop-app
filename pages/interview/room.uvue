@@ -1,10 +1,24 @@
 <template>
-  <view class="flex-col h-screen bg-navy">
-    <!-- 顶部状态条 -->
-    <view class="flex-row items-center justify-between h-11 px-4 mt-5">
-      <text class="text-sm text-mist" @click="confirmExit">退出</text>
-      <text class="text-xs text-reliable">网络良好</text>
-      <text class="text-sm text-white">{{ remain }}″</text>
+  <view class="flex-col h-screen bg-navy relative overflow-hidden">
+    <!-- 背景光晕 -->
+    <view
+      class="absolute top-24 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-smart opacity-10 blur-circle"
+    ></view>
+
+    <!-- 顶部状态条（安全区动态内边距） -->
+    <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
+      <view class="flex-row items-center h-11" @click="confirmExit">
+        <ml-icon name="phone-off" :size="16" color="#AEB9CC"></ml-icon>
+        <text class="text-sm text-mist ml-1.5">退出</text>
+      </view>
+      <view class="flex-row items-center h-11">
+        <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-1.5"></view>
+        <text class="text-xs text-mist">网络良好</text>
+      </view>
+      <view class="flex-row items-center h-11">
+        <ml-icon name="clock" :size="14" color="#FFFFFF"></ml-icon>
+        <text class="text-sm text-white ml-1">{{ remain }}″</text>
+      </view>
     </view>
 
     <!-- 数字人舞台 -->
@@ -12,28 +26,68 @@
       <interviewer-avatar :state="avatarState"></interviewer-avatar>
     </view>
 
-    <!-- 字幕 / 实时转写（仅显示稳定文本，避免频闪） -->
-    <view class="p-4 mx-3 rounded-2xl" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
-      <text class="text-base font-semibold text-white">
-        {{ displayQuestion }}
-      </text>
-      <text class="text-xs text-mist mt-1.5">{{ caption }}</text>
+    <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
+    <view class="flex-row items-center justify-center">
+      <view
+        class="flex-row items-center h-7 px-3 rounded-full"
+        :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
+      >
+        <ml-icon name="sparkles" :size="12" color="#8C9BFF"></ml-icon>
+        <text class="text-xs text-white ml-1">AI 面试官</text>
+      </view>
     </view>
 
-    <!-- 控制条 -->
-    <view class="flex-row justify-around px-3 py-4 bg-navy-deep">
-      <view class="flex-col items-center" @click="toggleRecord">
-        <view class="w-10 h-10 rounded-full" :class="recording ? 'bg-smart' : 'bg-line'"></view>
-        <text class="text-xs text-mist mt-1.5">{{ recording ? '停止' : '录音' }}</text>
+    <!-- 字幕 / 实时转写面板 -->
+    <view
+      class="mx-4 mt-2.5 rounded-2xl p-4"
+      :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }"
+    >
+      <view class="flex-row items-center">
+        <view
+          class="w-1.5 h-1.5 rounded-full mr-2"
+          :class="avatarState === 'listening' ? 'bg-reliable' : 'bg-smart'"
+        ></view>
+        <text class="text-base font-semibold text-white">{{ displayQuestion }}</text>
       </view>
-      <view class="flex-col items-center" @click="replay">
-        <text class="text-xs text-mist">再说一遍</text>
+      <text v-if="caption.length > 0" class="text-xs text-mist mt-1.5">{{ caption }}</text>
+    </view>
+
+    <!-- 控制条：两侧辅助操作 + 中央录音主按钮（底部安全区） -->
+    <view
+      class="flex-row items-center justify-center px-6 pt-4"
+      :style="{ paddingBottom: bottomPad + 'px' }"
+    >
+      <!-- 重播本题 -->
+      <view class="flex-col items-center w-16" @click="replay">
+        <view
+          class="w-11 h-11 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+        >
+          <ml-icon name="volume-2" :size="18" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-mist mt-1.5">重听</text>
       </view>
-      <view class="flex-col items-center" @click="pause">
-        <text class="text-xs text-mist">暂停</text>
+
+      <!-- 录音主按钮 -->
+      <view class="flex-col items-center mx-8" @click="toggleRecord">
+        <view
+          class="w-16 h-16 rounded-full flex-row items-center justify-center"
+          :class="recording ? 'bg-danger' : 'bg-smart'"
+        >
+          <ml-icon :name="recording ? 'square' : 'mic'" :size="24" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '按住作答' }}</text>
       </view>
-      <view class="flex-col items-center" @click="textMode">
-        <text class="text-xs text-mist">文字辅助</text>
+
+      <!-- 文字作答 -->
+      <view class="flex-col items-center w-16" @click="textMode">
+        <view
+          class="w-11 h-11 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+        >
+          <ml-icon name="keyboard" :size="18" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xs text-mist mt-1.5">文字答</text>
       </view>
     </view>
 
@@ -41,15 +95,14 @@
     <view
       v-if="textModalVisible"
       class="absolute inset-0 flex-col items-center justify-center"
-      :style="{ backgroundColor: 'rgba(0,0,0,0.55)' }"
+      :style="{ backgroundColor: 'rgba(3,12,24,0.6)' }"
       @click="cancelText"
     >
-      <view class="w-11/12 rounded-2xl p-4" :style="{ backgroundColor: '#1C1F26' }" @click.stop>
-        <text class="text-base font-semibold text-white mb-2">文字作答</text>
-        <text class="text-xs text-mist mb-3">录音不便时可直接输入文字回答，长度建议 ≥ 20 字</text>
+      <view class="w-11/12 rounded-2xl p-4 bg-navy-deep" @click.stop>
+        <text class="text-base font-semibold text-white">文字作答</text>
+        <text class="text-xs text-mist mt-1 mb-3">录音不便时可直接输入，长度建议 ≥ 20 字</text>
         <textarea
-          class="w-full h-32 rounded-lg p-3 text-sm text-ink"
-          :style="{ backgroundColor: '#2A2E38' }"
+          class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
           v-model="textDraft"
           placeholder="在这里输入你的回答…"
           placeholder-class="text-mist"
@@ -76,9 +129,16 @@ import { ref, computed } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import interviewerAvatar from '../../components/interviewer-avatar.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
 import { createSession, nextQuestion } from '../../api/interview.uts'
-import { QuestionItem, PositionBlueprint, InterviewMode, PositionId, ExperienceLevel } from '../../types/interview.uts'
+import {
+  QuestionItem,
+  PositionBlueprint,
+  InterviewMode,
+  PositionId,
+  ExperienceLevel
+} from '../../types/interview.uts'
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
 import { decideFollowup, FollowupDecision } from '../../engine/followup-engine.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
@@ -104,6 +164,10 @@ const blueprint = ref<PositionBlueprint>({
   target: '求职'
 } as PositionBlueprint)
 
+// 安全区内边距（onLoad 时从窗口信息读取）
+const topPad = ref(28)
+const bottomPad = ref(16)
+
 // 文字辅助输入弹窗状态
 const textModalVisible = ref(false)
 const textDraft = ref('')
@@ -118,6 +182,7 @@ const avatarState = ref(initialState)
 
 const emptyQuestion: QuestionItem = {
   id: '',
+  positionId: 'java-backend',
   abilityDomain: '',
   subAbility: '',
   knowledgePoint: '',
@@ -142,6 +207,19 @@ const displayQuestion = computed((): string => {
 })
 
 onLoad((options: any) => {
+  // 读取安全区：顶部状态栏 + 底部 home indicator
+  try {
+    const win = uni.getWindowInfo()
+    const sb = win.statusBarHeight
+    topPad.value = sb > 0 ? sb + 6 : 28
+    const insets = win.safeAreaInsets
+    const bottom = insets != null ? insets.bottom : 0
+    bottomPad.value = bottom > 0 ? bottom + 10 : 16
+  } catch {
+    topPad.value = 28
+    bottomPad.value = 16
+  }
+
   // 接收 prep 页传入的模式、岗位方向、经验等级
   if (options != null) {
     if (options.mode != null) {
@@ -163,7 +241,9 @@ onLoad((options: any) => {
     const validPos: string[] = ['java-backend', 'frontend', 'golang-backend', 'pm']
     const validExp: string[] = ['fresh', 'junior', 'mid', 'senior']
     const finalPos: PositionId = validPos.includes(posId) ? (posId as PositionId) : 'java-backend'
-    const finalExp: ExperienceLevel = validExp.includes(expLv) ? (expLv as ExperienceLevel) : 'junior'
+    const finalExp: ExperienceLevel = validExp.includes(expLv)
+      ? (expLv as ExperienceLevel)
+      : 'junior'
     blueprint.value = {
       positionId: finalPos,
       position: getPositionName(finalPos),
@@ -370,11 +450,8 @@ function goSummary() {
 
 function replay() {
   avatarState.value = 'asking'
-  caption.value = followupPrompt.value.length > 0 ? followupPrompt.value : currentQuestion.value.content
-}
-
-function pause() {
-  recording.value = false
+  caption.value =
+    followupPrompt.value.length > 0 ? followupPrompt.value : currentQuestion.value.content
 }
 
 function textMode() {
@@ -424,3 +501,9 @@ function confirmExit() {
   })
 }
 </script>
+
+<style>
+.blur-circle {
+  filter: blur(60px);
+}
+</style>

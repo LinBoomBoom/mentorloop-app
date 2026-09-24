@@ -1,67 +1,125 @@
 <template>
-  <scroll-view class="h-screen p-4" scroll-y="true">
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
     <view v-if="!hasReport" class="flex-col items-center justify-center mt-40">
+      <view class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center mb-3">
+        <ml-icon name="file-text" :size="25" color="#5B6CFF"></ml-icon>
+      </view>
       <text class="text-sm text-ink-soft">暂无报告，完成一次面试后查看</text>
     </view>
 
     <template v-else>
-      <!-- 首屏三要素 -->
-      <view class="bg-navy rounded-2xl p-5">
-        <text class="text-xs text-mist">总体判断</text>
-        <text class="text-lg font-semibold text-white mt-1.5 mb-3.5">{{ report.overall }}</text>
-        <view class="flex-row">
-          <view
-            class="flex-1 rounded-xl p-3 mr-2.5"
-            :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
-          >
-            <text class="text-xs text-mist">最强项</text>
-            <text class="text-sm text-white mt-1">{{ report.strongest }}</text>
+      <view class="p-4">
+        <!-- 总体判断（深色品牌卡） -->
+        <view class="bg-navy rounded-2xl p-5 relative overflow-hidden">
+          <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+          <view class="flex-row items-center">
+            <ml-icon name="sparkles" :size="14" color="#AEB9CC"></ml-icon>
+            <text class="text-xs text-mist ml-1.5">总体判断</text>
           </view>
-          <view
-            class="flex-1 rounded-xl p-3"
-            :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
-          >
-            <text class="text-xs text-mist">最高优先级</text>
-            <text class="text-sm text-white mt-1">{{ report.topPriority }}</text>
+          <text class="text-lg font-semibold text-white mt-2 mb-4">{{ report.overall }}</text>
+          <view class="flex-row">
+            <view
+              class="flex-1 rounded-xl p-3 mr-2.5"
+              :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
+            >
+              <view class="flex-row items-center">
+                <ml-icon name="award" :size="12" color="#5CE8D8"></ml-icon>
+                <text class="text-xs text-mist ml-1">最强项</text>
+              </view>
+              <text class="text-sm text-white mt-1.5">{{ report.strongest }}</text>
+            </view>
+            <view
+              class="flex-1 rounded-xl p-3"
+              :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+            >
+              <view class="flex-row items-center">
+                <ml-icon name="target" :size="12" color="#F5C97B"></ml-icon>
+                <text class="text-xs text-mist ml-1">最该提升</text>
+              </view>
+              <text class="text-sm text-white mt-1.5">{{ report.topPriority }}</text>
+            </view>
           </view>
         </view>
-      </view>
 
-      <text class="text-base font-semibold text-ink mt-5 mb-2.5">能力维度</text>
-      <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
-        <ml-card>
-          <view class="flex-row justify-between items-center">
-            <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
-            <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
-          </view>
-          <text class="text-xs text-ink-soft mt-2">证据：{{ d.evidence }}</text>
-          <text v-if="d.missingEvidence.length > 0" class="text-xs text-warn mt-1">
-            待补：{{ d.missingEvidence }}
-          </text>
-        </ml-card>
-      </view>
-
-      <view v-if="report.riskQuestions.length > 0">
-        <text class="text-base font-semibold text-ink mt-5 mb-2.5">风险提示</text>
-        <view class="mb-2.5" v-for="(r, i) in report.riskQuestions" :key="i">
+        <!-- 能力维度 -->
+        <view class="flex-row items-center mt-5 mb-2.5">
+          <ml-icon name="chart-column" :size="15" color="#5B6CFF"></ml-icon>
+          <text class="text-base font-semibold text-ink ml-1.5">能力维度</text>
+        </view>
+        <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
           <ml-card>
-            <text class="text-sm text-warn">{{ r }}</text>
+            <view class="flex-row items-center justify-between">
+              <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
+              <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
+            </view>
+            <!-- 等级条 -->
+            <view class="mt-2.5 h-1.5 rounded-full bg-line">
+              <view
+                class="h-1.5 rounded-full"
+                :style="{ width: levelPct(d.level), backgroundColor: levelColor(d.level) }"
+              ></view>
+            </view>
+            <text class="text-xs text-ink-soft mt-2">证据：{{ d.evidence }}</text>
+            <text v-if="d.missingEvidence.length > 0" class="text-xs text-warn mt-1">
+              待补证据：{{ d.missingEvidence }}
+            </text>
           </ml-card>
         </view>
-      </view>
 
-      <text class="text-base font-semibold text-ink mt-5 mb-2.5">训练计划</text>
-      <view class="mb-2.5" v-for="t in report.trainingPlan" :key="t.id" @click="goTraining(t)">
-        <ml-card>
-          <text class="text-base text-ink">{{ t.title }}</text>
-          <text class="text-xs text-ink-soft mt-1">
-            {{ t.durationMin }} 分钟 · 优先级 {{ t.priority }}
-          </text>
-        </ml-card>
-      </view>
+        <!-- 风险提示 -->
+        <view v-if="report.riskQuestions.length > 0">
+          <view class="flex-row items-center mt-5 mb-2.5">
+            <ml-icon name="triangle-alert" :size="15" color="#DC2626"></ml-icon>
+            <text class="text-base font-semibold text-ink ml-1.5">风险提示</text>
+          </view>
+          <view class="mb-2" v-for="(r, i) in report.riskQuestions" :key="i">
+            <ml-card>
+              <view class="flex-row items-center">
+                <ml-icon name="circle-help" :size="15" color="#E08A00"></ml-icon>
+                <text class="text-sm text-ink ml-2 flex-1">{{ r }}</text>
+              </view>
+            </ml-card>
+          </view>
+        </view>
 
-      <view class="mt-4 mb-6">
-        <ml-button text="再次模拟" type="ghost" @click="again"></ml-button>
+        <!-- 训练计划 -->
+        <view class="flex-row items-center mt-5 mb-2.5">
+          <ml-icon name="dumbbell" :size="15" color="#5B6CFF"></ml-icon>
+          <text class="text-base font-semibold text-ink ml-1.5">建议训练计划</text>
+        </view>
+        <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
+          <ml-card pressable @tap="goTraining">
+            <view class="flex-row items-center">
+              <view
+                class="w-9 h-9 rounded-lg flex-row items-center justify-center mr-3"
+                :class="t.priority === 1 ? 'bg-chip-warn' : 'bg-chip-smart'"
+              >
+                <ml-icon
+                  name="zap"
+                  :size="16"
+                  :color="t.priority === 1 ? '#E08A00' : '#5B6CFF'"
+                ></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink">{{ t.title }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">
+                  {{ t.durationMin }} 分钟 · 优先级 {{ t.priority }}
+                </text>
+              </view>
+              <ml-icon name="chevron-right" :size="16" color="#AEB9CC"></ml-icon>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 底部操作 -->
+        <view class="mt-4 mb-6 flex-row">
+          <view class="flex-1 mr-2">
+            <ml-button text="再次模拟" type="primary" block @click="again"></ml-button>
+          </view>
+          <view class="flex-1 ml-2">
+            <ml-button text="返回首页" type="secondary" block @click="again"></ml-button>
+          </view>
+        </view>
       </view>
     </template>
   </scroll-view>
@@ -73,9 +131,15 @@ import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
 import { reportHistory } from '../../store/report-history.uts'
 import { getReport } from '../../api/report.uts'
-import { InterviewReport, DimensionScore, TrainingTask, DIMENSION_LABEL } from '../../types/scoring.uts'
+import {
+  InterviewReport,
+  DimensionScore,
+  TrainingTask,
+  DIMENSION_LABEL
+} from '../../types/scoring.uts'
 
 const emptyReport: InterviewReport = {
   overall: '',
@@ -83,7 +147,7 @@ const emptyReport: InterviewReport = {
   topPriority: '',
   dimensions: [] as DimensionScore[],
   riskQuestions: [] as string[],
-  trainingPlan: [] as TrainingTask[]
+  trainingPlan: [] as TrainingTask
 } as InterviewReport
 
 const report = ref(emptyReport)
@@ -119,7 +183,14 @@ function levelColor(l: string): string {
   return '#E08A00'
 }
 
-function goTraining(_t: TrainingTask) {
+function levelPct(l: string): string {
+  if (l === 'A') return '92%'
+  if (l === 'B') return '75%'
+  if (l === 'C') return '58%'
+  return '40%'
+}
+
+function goTraining() {
   uni.switchTab({ url: '/pages/training/training' })
 }
 

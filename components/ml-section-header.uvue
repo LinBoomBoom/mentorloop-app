@@ -1,0 +1,45 @@
+<template>
+  <view class="flex-row items-end justify-between mb-3">
+    <view class="flex-row items-center flex-1">
+      <view v-if="icon.length > 0" class="w-1 h-4 rounded-full bg-smart mr-2"></view>
+      <view class="flex-col">
+        <text class="text-base font-semibold text-ink">{{ title }}</text>
+        <text v-if="caption.length > 0" class="text-xs text-ink-soft mt-0.5">{{ caption }}</text>
+      </view>
+    </view>
+    <view
+      v-if="actionText.length > 0"
+      class="flex-row items-center h-7 px-1 -mr-1"
+      hover-class="ml-sh-pressed"
+      :hover-start-time="0"
+      @click="onAction"
+    >
+      <text class="text-xs text-smart">{{ actionText }}</text>
+      <ml-icon name="chevron-right" :size="13" color="#5B6CFF"></ml-icon>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import mlIcon from './ml-icon.uvue'
+
+// 区块标题：左侧竖条 + 标题（+说明），右侧可选操作入口
+defineProps({
+  title: { type: String, default: '' },
+  caption: { type: String, default: '' },
+  actionText: { type: String, default: '' },
+  icon: { type: String, default: 'default' } // 保留占位：竖条恒显示，符合预上线版式统一性
+})
+
+const emit = defineEmits(['action'])
+
+function onAction() {
+  emit('action')
+}
+</script>
+
+<style>
+.ml-sh-pressed {
+  opacity: 0.7;
+}
+</style>

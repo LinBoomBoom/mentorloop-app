@@ -1,89 +1,251 @@
 <template>
   <view class="flex-col w-full h-full bg-navy relative overflow-hidden">
-    <!-- 背景装饰光晕 -->
+    <!-- 背景氛围光晕（静态，避免动态 blur 开销） -->
     <view
-      class="absolute top-20 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-smart opacity-15 blur-circle"
+      class="absolute -top-24 left-1/2 -ml-40 w-80 h-80 rounded-full bg-smart opacity-15 blur-disc"
     ></view>
     <view
-      class="absolute bottom-40 right-0 w-60 h-60 rounded-full bg-reliable opacity-10 blur-circle"
+      class="absolute top-64 -right-16 w-64 h-64 rounded-full bg-reliable opacity-10 blur-disc"
+    ></view>
+    <view
+      class="absolute bottom-0 -left-20 w-72 h-72 rounded-full bg-smart opacity-10 blur-disc"
     ></view>
 
-    <!-- 顶部问候区 -->
-    <view class="flex-col items-center pt-14 px-6">
-      <text class="text-2xl font-bold text-white">{{ greeting }}</text>
-      <text class="text-sm text-mist mt-1.5">{{ positionSubtitle }}</text>
+    <!-- 顶栏：问候 + 设置 -->
+    <view
+      class="flex-row items-center justify-between px-5"
+      :style="{ paddingTop: topPad + 'px', height: topPad + 44 + 'px' }"
+    >
+      <view class="flex-col">
+        <text class="text-[22px] font-bold text-white">{{ greeting }}</text>
+        <text class="text-xs text-mist mt-1">
+          {{ dateText }} · {{ positionLabel }} · {{ experienceLabel }}
+        </text>
+      </view>
+      <view
+        class="w-10 h-10 rounded-full flex-row items-center justify-center pressable"
+        :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+        hover-class="hero-pressed"
+        :hover-start-time="0"
+        @click="openSettings"
+      >
+        <ml-icon name="settings" :size="19" color="#FFFFFF"></ml-icon>
+      </view>
     </view>
 
-    <!-- 数字人核心展示区 -->
-    <view class="flex-1 flex-col items-center justify-center relative">
+    <!-- 数字人主视觉 -->
+    <view class="flex-none h-[300px] flex-col items-center justify-center relative">
       <!-- 呼吸光环 -->
       <view
-        class="absolute w-64 h-64 rounded-full border-2 border-smart opacity-20 breath-ring"
+        class="absolute w-64 h-64 rounded-full border border-smart opacity-20 breath-ring"
       ></view>
       <view
-        class="absolute w-52 h-52 rounded-full border border-reliable opacity-30 breath-ring-delay"
+        class="absolute w-56 h-56 rounded-full border border-reliable opacity-25 breath-ring-delay"
       ></view>
+      <!-- 底部光晕 -->
+      <view class="absolute bottom-4 w-44 h-8 rounded-full bg-smart opacity-25 blur-floor"></view>
 
-      <!-- 数字人头像（放大版） -->
+      <!-- 数字人：头部 + 面部 + 肩部 -->
       <view class="flex-col items-center relative z-1">
-        <view
-          class="w-32 h-32 rounded-full bg-figure-head flex-row items-center justify-center shadow-figure"
-        >
-          <!-- 口型：待机状态微张，带轻动效 -->
-          <view class="h-2.5 w-8 rounded-full bg-smart avatar-mouth-idle"></view>
+        <view class="figure-head flex-col items-center justify-center">
+          <view class="flex-row items-center">
+            <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
+            <view class="w-5"></view>
+            <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
+          </view>
+          <view class="h-1.5 w-6 rounded-full bg-navy-deep mt-2.5 avatar-mouth"></view>
         </view>
-        <view
-          class="w-44 h-20 bg-figure-body mt-3 shadow-figure"
-          :style="{ borderTopLeftRadius: '44px', borderTopRightRadius: '44px' }"
-        ></view>
+        <view class="figure-body"></view>
       </view>
 
-      <!-- 状态提示 -->
-      <view class="mt-8 flex-row items-center">
-        <view class="w-2 h-2 rounded-full bg-reliable mr-2 pulse-dot"></view>
-        <text class="text-sm text-mist">{{ statusText }}</text>
-      </view>
-
-      <!-- 数字人语气泡 -->
-      <view class="mt-5 mx-8 bg-navy-deep rounded-2xl px-5 py-3.5 relative bubble">
-        <text class="text-sm text-white text-center">{{ bubbleText }}</text>
-        <view
-          class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-navy-deep rotate-45"
-        ></view>
+      <!-- 状态点 + 语气泡 -->
+      <view class="absolute -bottom-2 flex-col items-center">
+        <view class="flex-row items-center">
+          <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-1.5 pulse-dot"></view>
+          <text class="text-xs text-mist">AI 面试官 · 就绪</text>
+        </view>
+        <view class="bubble-wrap mt-2 px-4 py-2 rounded-2xl relative">
+          <text class="text-xs text-white text-center">{{ bubbleText }}</text>
+          <view class="absolute -top-1 left-1/2 -ml-1 w-2 h-2 rotate-45 bubble-tail"></view>
+        </view>
       </view>
     </view>
 
+    <!-- 可滚动内容区 -->
+    <scroll-view class="flex-1" scroll-y="true">
+      <view class="px-5 pt-5">
+        <!-- 数据条 -->
+        <view
+          class="flex-row rounded-2xl border px-2 py-3"
+          :style="{
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            borderColor: 'rgba(255,255,255,0.1)'
+          }"
+        >
+          <view class="flex-1 flex-col items-center" @click="goGrowth">
+            <ml-icon name="target" :size="16" color="#F5C97B"></ml-icon>
+            <text class="text-lg font-bold text-white mt-1">{{ totalCount }}</text>
+            <text class="text-[11px] text-mist mt-0.5">累计面试</text>
+          </view>
+          <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
+          <view class="flex-1 flex-col items-center" @click="goGrowth">
+            <ml-icon name="award" :size="16" color="#5CE8D8"></ml-icon>
+            <text class="text-lg font-bold text-white mt-1">{{ avgLevel }}</text>
+            <text class="text-[11px] text-mist mt-0.5">平均等级</text>
+          </view>
+          <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
+          <view class="flex-1 flex-col items-center" @click="goTraining">
+            <ml-icon name="flame" :size="16" color="#FF9E6D"></ml-icon>
+            <text class="text-lg font-bold text-white mt-1">{{ todoCount }}</text>
+            <text class="text-[11px] text-mist mt-0.5">待训练</text>
+          </view>
+        </view>
+
+        <!-- 有报告：今日任务 + 最近报告 -->
+        <template v-if="hasReport">
+          <!-- 今日任务 -->
+          <view
+            class="mt-3 rounded-2xl border p-4 pressable"
+            :style="cardStyle"
+            hover-class="hero-pressed"
+            :hover-start-time="0"
+            @click="goTraining"
+          >
+            <view class="flex-row items-center justify-between">
+              <view class="flex-row items-center">
+                <view
+                  class="w-7 h-7 rounded-lg flex-row items-center justify-center"
+                  :style="{ backgroundColor: 'rgba(224,138,0,0.18)' }"
+                >
+                  <ml-icon name="zap" :size="15" color="#F5C97B"></ml-icon>
+                </view>
+                <text class="text-sm font-semibold text-white ml-2">今日训练任务</text>
+              </view>
+              <view class="flex-row items-center h-6 px-1">
+                <text class="text-xs text-mist">全部</text>
+                <ml-icon name="chevron-right" :size="13" color="#AEB9CC"></ml-icon>
+              </view>
+            </view>
+            <view class="flex-row items-center mt-3">
+              <view class="flex-col flex-1">
+                <text class="text-[15px] text-white font-medium">{{ topTask.title }}</text>
+                <text class="text-xs text-mist mt-1">
+                  出自最近报告 · {{ topTask.durationMin }} 分钟
+                </text>
+              </view>
+              <view
+                class="h-8 px-3.5 rounded-full flex-row items-center"
+                :style="{ backgroundColor: 'rgba(91,108,255,0.25)' }"
+              >
+                <text class="text-xs font-semibold text-white">去训练</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 最近报告 -->
+          <view
+            class="mt-3 rounded-2xl border p-4 pressable"
+            :style="cardStyle"
+            hover-class="hero-pressed"
+            :hover-start-time="0"
+            @click="goReport"
+          >
+            <view class="flex-row items-center justify-between">
+              <view class="flex-row items-center">
+                <view
+                  class="w-7 h-7 rounded-lg flex-row items-center justify-center"
+                  :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
+                >
+                  <ml-icon name="file-check" :size="15" color="#5CE8D8"></ml-icon>
+                </view>
+                <text class="text-sm font-semibold text-white ml-2">最近报告</text>
+              </view>
+              <text class="text-[11px] text-mist">{{ latestAt }}</text>
+            </view>
+            <view class="flex-row items-center mt-3">
+              <view class="w-12 h-12 rounded-full flex-col items-center justify-center level-badge">
+                <text class="text-lg font-bold" :style="{ color: levelColor }">
+                  {{ latestLevel }}
+                </text>
+              </view>
+              <view class="flex-col flex-1 ml-3">
+                <text class="text-[13px] text-white leading-5 report-line">
+                  {{ latestOverall }}
+                </text>
+                <text class="text-xs text-warn mt-1">优先改进：{{ topPriority }}</text>
+              </view>
+            </view>
+          </view>
+        </template>
+
+        <!-- 无报告：引导卡 -->
+        <view v-else class="mt-3 rounded-2xl border p-5 flex-col items-center" :style="cardStyle">
+          <view
+            class="w-12 h-12 rounded-full flex-row items-center justify-center"
+            :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
+          >
+            <ml-icon name="sparkles" :size="22" color="#8FA0FF"></ml-icon>
+          </view>
+          <text class="text-[15px] font-semibold text-white mt-3">完成第一场模拟面试</text>
+          <text class="text-xs text-mist mt-1.5 text-center leading-5">
+            生成能力评估报告后，这里会给出{'\n'}针对性的训练任务与成长追踪
+          </text>
+        </view>
+
+        <!-- 次级入口 -->
+        <view class="flex-row mt-3 mb-4">
+          <view
+            v-for="(e, i) in entries"
+            :key="e.text"
+            class="flex-1 rounded-2xl border py-3 flex-col items-center pressable"
+            :class="i < entries.length - 1 ? 'mr-2.5' : ''"
+            :style="cardStyle"
+            hover-class="hero-pressed"
+            :hover-start-time="0"
+            @click="e.onTap"
+          >
+            <ml-icon :name="e.icon" :size="17" :color="e.color"></ml-icon>
+            <text class="text-xs text-white mt-1.5">{{ e.text }}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
     <!-- 底部操作区 -->
-    <view class="px-6 pb-10">
-      <!-- 未登录提示 -->
+    <view
+      class="px-5 pt-3"
+      :style="{ paddingBottom: bottomPad + 'px', backgroundColor: 'rgba(11,33,56,0.9)' }"
+    >
+      <!-- 模式选择 -->
+      <view
+        class="flex-row rounded-full p-1"
+        :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+      >
+        <view
+          v-for="m in modes"
+          :key="m.id"
+          class="flex-1 h-9 rounded-full flex-col items-center justify-center"
+          :style="mode === m.id ? { backgroundColor: '#5B6CFF' } : {}"
+          hover-class="hero-pressed"
+          :hover-start-time="0"
+          @click="mode = m.id"
+        >
+          <text class="text-[13px] font-medium" :class="mode === m.id ? 'text-white' : 'text-mist'">
+            {{ m.label }}
+          </text>
+        </view>
+      </view>
+      <!-- 主 CTA -->
+      <view class="mt-3">
+        <ml-button text="开始模拟面试" type="primary" block @tap="startInterview"></ml-button>
+      </view>
       <view
         v-if="!loggedIn"
-        class="mb-3 bg-chip-warn rounded-xl p-3 flex-row items-center"
+        class="flex-row items-center justify-center mt-2.5 h-7"
         @click="goLogin"
       >
-        <text class="text-sm text-warn flex-1">登录后同步训练记录与报告</text>
-        <text class="text-sm text-warn">去登录 ›</text>
-      </view>
-
-      <!-- 主按钮：开始模拟面试 -->
-      <ml-button text="开始模拟面试" type="primary" block @tap="startInterview"></ml-button>
-
-      <!-- 次要快速入口 -->
-      <view class="flex-row justify-between mt-3">
-        <view
-          class="flex-1 mr-2 bg-navy-deep rounded-xl py-3 flex-col items-center"
-          @click="quickStart(3)"
-        >
-          <text class="text-base font-semibold text-white">3 分钟快练</text>
-          <text class="text-xs text-mist mt-1">单题速答</text>
-        </view>
-        <view
-          class="flex-1 ml-2 bg-navy-deep rounded-xl py-3 flex-col items-center"
-          @click="quickStart(5)"
-        >
-          <text class="text-base font-semibold text-white">5 分钟专项</text>
-          <text class="text-xs text-mist mt-1">聚焦薄弱项</text>
-        </view>
+        <ml-icon name="sparkles" :size="12" color="#E08A00"></ml-icon>
+        <text class="text-xs text-warn ml-1">登录后同步训练记录与报告</text>
       </view>
     </view>
   </view>
@@ -93,18 +255,121 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
+import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { InterviewReport } from '../../types/scoring.uts'
+
+// 安全区内边距（onShow 从窗口信息读取）
+const topPad = ref(36)
+const bottomPad = ref(24)
 
 const positionLabel = ref(positionDisplay(userStore.profile))
 const experienceLabel = ref(experienceDisplay(userStore.profile))
 const loggedIn = ref(userStore.isLoggedIn())
 
-// 顶部副标题：岗位 · 年限 · 引导
-const positionSubtitle = computed((): string => {
-  return positionLabel.value + ' · ' + experienceLabel.value + ' · 准备好开始了吗'
+// 最近报告数据
+const records = ref<ReportRecord[]>([])
+
+const hasReport = computed((): boolean => records.value.length > 0)
+
+const totalCount = computed((): number => records.value.length)
+
+const latest = computed((): ReportRecord | null =>
+  records.value.length > 0 ? records.value[0] : null
+)
+
+// 平均等级（A=4 ... D=1）
+const avgLevel = computed((): string => {
+  const all = records.value
+  if (all.length === 0) return '--'
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < all.length; i++) {
+    const dims = all[i].report.dimensions
+    for (let j = 0; j < dims.length; j++) {
+      const v = map[dims[j].level]
+      if (v != null) {
+        total += v
+        cnt += 1
+      }
+    }
+  }
+  if (cnt === 0) return '--'
+  const avg = total / cnt
+  if (avg >= 3.5) return 'A'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
 })
 
-// 根据时间段显示问候语
+const topTask = computed((): { title: string; durationMin: number } => {
+  const r = latest.value
+  if (r != null && r.report.trainingPlan.length > 0) {
+    const t = r.report.trainingPlan[0]
+    return { title: t.title, durationMin: t.durationMin }
+  }
+  return { title: '', durationMin: 0 }
+})
+
+const todoCount = computed((): number => {
+  const r = latest.value
+  return r != null ? r.report.trainingPlan.length : 0
+})
+
+const latestAt = computed((): string => {
+  const r = latest.value
+  if (r == null) return ''
+  const d = new Date(r.at)
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+})
+
+const latestOverall = computed((): string => {
+  const r = latest.value
+  return r != null && r.report.overall.length > 0 ? r.report.overall : '已完成一场模拟面试'
+})
+
+const topPriority = computed((): string => {
+  const r = latest.value
+  return r != null && r.report.topPriority.length > 0 ? r.report.topPriority : '暂无'
+})
+
+const latestLevel = computed((): string => {
+  const r = latest.value
+  if (r == null) return '--'
+  return avgOfReport(r.report)
+})
+
+const levelColor = computed((): string => {
+  const l = latestLevel.value
+  if (l === 'A') return '#5CE8D8'
+  if (l === 'B') return '#8FA0FF'
+  if (l === 'C') return '#F5C97B'
+  return '#FF9E6D'
+})
+
+function avgOfReport(r: InterviewReport): string {
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < r.dimensions.length; i++) {
+    const v = map[r.dimensions[i].level]
+    if (v != null) {
+      total += v
+      cnt += 1
+    }
+  }
+  if (cnt === 0) return '--'
+  const avg = total / cnt
+  if (avg >= 3.5) return 'A'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
+}
+
+// 问候语
 const greeting = computed((): string => {
   const h = new Date().getHours()
   if (h < 6) return '夜深了，注意休息'
@@ -112,6 +377,13 @@ const greeting = computed((): string => {
   if (h < 14) return '中午好'
   if (h < 18) return '下午好'
   return '晚上好'
+})
+
+const dateText = computed((): string => {
+  const d = new Date()
+  const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(d.getMonth() + 1) + '月' + pad(d.getDate()) + '日 周' + week
 })
 
 const bubbleTexts: string[] = [
@@ -122,23 +394,76 @@ const bubbleTexts: string[] = [
   '保持自信，你比想象中更优秀。'
 ]
 const bubbleText = ref(bubbleTexts[0])
-const statusText = ref('AI 面试官已就绪')
+
+// 面试模式
+type Mode = 'quick' | 'standard' | 'deep'
+const modes: { id: Mode; label: string }[] = [
+  { id: 'quick', label: '快练 5min' },
+  { id: 'standard', label: '标准 20min' },
+  { id: 'deep', label: '深度 40min' }
+]
+const mode = ref<Mode>('standard')
+
+// 次级入口
+type Entry = { icon: string; color: string; text: string; onTap: () => void }
+const entries: Entry[] = [
+  { icon: 'dumbbell', color: '#8FA0FF', text: '专项训练', onTap: goTraining },
+  { icon: 'file-text', color: '#5CE8D8', text: '简历优化', onTap: goResume },
+  { icon: 'trending-up', color: '#F5C97B', text: '我的成长', onTap: goGrowth }
+]
+
+// 深色卡样式（实色 + 细描边，避免滚动区 blur 开销）
+const cardStyle = {
+  backgroundColor: '#0B2138',
+  borderColor: 'rgba(255,255,255,0.08)'
+}
 
 onShow(() => {
+  try {
+    const win = uni.getWindowInfo()
+    const sb = win.statusBarHeight
+    topPad.value = sb > 0 ? sb + 4 : 36
+    const insets = win.safeAreaInsets
+    const bottom = insets != null ? insets.bottom : 0
+    bottomPad.value = bottom > 0 ? bottom + 10 : 24
+  } catch {
+    topPad.value = 36
+    bottomPad.value = 24
+  }
+
   loggedIn.value = userStore.isLoggedIn()
   positionLabel.value = positionDisplay(userStore.profile)
   experienceLabel.value = experienceDisplay(userStore.profile)
-  // 每次进入首页随机切换一句问候
+
+  reportHistory.load()
+  records.value = reportHistory.all()
+
   const idx = Math.floor(Math.random() * bubbleTexts.length)
   bubbleText.value = bubbleTexts[idx]
 })
 
 function startInterview() {
-  uni.navigateTo({ url: '/pages/interview/prep' })
+  uni.navigateTo({ url: '/pages/interview/prep?mode=' + mode.value })
 }
 
-function quickStart(_minutes: number) {
-  uni.navigateTo({ url: '/pages/interview/prep' })
+function goTraining() {
+  uni.switchTab({ url: '/pages/training/training' })
+}
+
+function goResume() {
+  uni.switchTab({ url: '/pages/resume/resume' })
+}
+
+function goGrowth() {
+  uni.switchTab({ url: '/pages/growth/growth' })
+}
+
+function goReport() {
+  uni.navigateTo({ url: '/pages/report/report' })
+}
+
+function openSettings() {
+  uni.switchTab({ url: '/pages/mine/mine' })
 }
 
 function goLogin() {
@@ -152,15 +477,15 @@ function goLogin() {
 </script>
 
 <style>
-/* 呼吸光环动画 */
+/* 呼吸光环 */
 @keyframes breath {
   0% {
     transform: scale(1);
     opacity: 0.25;
   }
   50% {
-    transform: scale(1.12);
-    opacity: 0.08;
+    transform: scale(1.1);
+    opacity: 0.1;
   }
   100% {
     transform: scale(1);
@@ -173,8 +498,8 @@ function goLogin() {
     opacity: 0.3;
   }
   50% {
-    transform: scale(1.18);
-    opacity: 0.1;
+    transform: scale(1.16);
+    opacity: 0.12;
   }
   100% {
     transform: scale(1);
@@ -187,7 +512,7 @@ function goLogin() {
     opacity: 1;
   }
   50% {
-    opacity: 0.4;
+    opacity: 0.35;
   }
 }
 @keyframes mouth-idle {
@@ -196,29 +521,68 @@ function goLogin() {
     transform: scaleY(1);
   }
   50% {
-    transform: scaleY(0.6);
+    transform: scaleY(0.55);
   }
 }
 
 .breath-ring {
-  animation: breath 3s ease-in-out infinite;
+  animation: breath 3.2s ease-in-out infinite;
 }
 .breath-ring-delay {
-  animation: breath-delay 3s ease-in-out infinite 0.8s;
+  animation: breath-delay 3.2s ease-in-out infinite 0.9s;
 }
 .pulse-dot {
   animation: pulse 2s ease-in-out infinite;
 }
-.avatar-mouth-idle {
-  animation: mouth-idle 2.5s ease-in-out infinite;
+.avatar-mouth {
+  animation: mouth-idle 2.6s ease-in-out infinite;
 }
-.blur-circle {
-  filter: blur(60px);
+.blur-disc {
+  filter: blur(56px);
 }
-.bubble {
-  max-width: 280px;
+.blur-floor {
+  filter: blur(18px);
 }
-.shadow-figure {
-  box-shadow: 0 8px 32px rgba(91, 108, 255, 0.25);
+.pressable {
+  /* 仅标记可点击，按压态由 hover-class 控制 */
+}
+.hero-pressed {
+  opacity: 0.75;
+}
+
+/* 数字人形象：头部（靛紫→青绿渐变）+ 肩部 */
+.figure-head {
+  width: 96px;
+  height: 96px;
+  border-radius: 48px;
+  background-color: #8fa0ff;
+  background-image: linear-gradient(160deg, #aab6ff 0%, #7d8ef7 55%, #5b6cff 100%);
+  box-shadow:
+    0 12px 32px rgba(91, 108, 255, 0.45),
+    inset 0 -8px 16px rgba(15, 44, 76, 0.25);
+}
+.figure-body {
+  width: 128px;
+  height: 44px;
+  margin-top: -6px;
+  background-color: #5b6cff;
+  background-image: linear-gradient(180deg, #6f7fff 0%, #4a5ce0 100%);
+  border-top-left-radius: 64px;
+  border-top-right-radius: 64px;
+  box-shadow: 0 10px 28px rgba(15, 44, 76, 0.4);
+}
+.eye {
+  /* 眼睛为深色椭圆，配合头部渐变形成表情 */
+}
+.bubble-wrap {
+  background-color: rgba(255, 255, 255, 0.1);
+  max-width: 260px;
+}
+.bubble-tail {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.level-badge {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 </style>

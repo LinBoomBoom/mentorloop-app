@@ -1,49 +1,169 @@
 <template>
-  <view class="p-4">
-    <text class="text-xl font-bold text-ink mb-3">专项训练</text>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-3 pb-6">
+      <!-- 概览统计条 -->
+      <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row">
+        <view class="flex-1 flex-col items-center">
+          <text class="text-lg font-bold text-smart">{{ todoCount }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">待训练任务</text>
+        </view>
+        <view class="w-px h-9 bg-line"></view>
+        <view class="flex-1 flex-col items-center">
+          <text class="text-lg font-bold text-ink">{{ doneCount }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">已完成面试</text>
+        </view>
+        <view class="w-px h-9 bg-line"></view>
+        <view class="flex-1 flex-col items-center">
+          <text class="text-lg font-bold" :style="{ color: levelColor }">{{ latestLevel }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">当前等级</text>
+        </view>
+      </view>
 
-    <!-- 报告推荐任务（从最近报告动态生成） -->
-    <view v-if="recommended.length > 0">
-      <text class="text-base font-semibold text-ink mt-2 mb-2.5">根据你的报告推荐</text>
-      <view class="mb-2.5" v-for="t in recommended" :key="'r_' + t.id" @click="startTask(t)">
-        <ml-card>
-          <view class="flex-row justify-between items-center">
-            <view class="flex-col flex-1">
-              <text class="text-base text-ink">{{ t.title }}</text>
-              <text class="text-xs text-reliable mt-1">优先度 {{ t.priority }}</text>
+      <template v-if="recommended.length > 0">
+        <!-- 报告推荐任务 -->
+        <view class="mt-5">
+          <ml-section-header
+            title="为你推荐"
+            :caption="'基于 ' + reportDate + ' 的评估报告'"
+            action-text="查看报告"
+            @action="goReport"
+          ></ml-section-header>
+          <view class="mb-2.5" v-for="t in recommended" :key="'r_' + t.id">
+            <ml-card pressable @tap="startTask">
+              <view class="flex-row items-center">
+                <view
+                  class="w-11 h-11 rounded-xl flex-col items-center justify-center mr-3"
+                  :style="{ backgroundColor: t.priority === 1 ? '#FFF3E0' : '#EEF1FF' }"
+                >
+                  <ml-icon
+                    name="target"
+                    :size="18"
+                    :color="t.priority === 1 ? '#E08A00' : '#5B6CFF'"
+                  ></ml-icon>
+                </view>
+                <view class="flex-col flex-1">
+                  <view class="flex-row items-center">
+                    <text class="text-[15px] font-medium text-ink flex-1">{{ t.title }}</text>
+                    <ml-tag
+                      :label="t.priority === 1 ? '最高优先' : 'P' + t.priority"
+                      :bg="t.priority === 1 ? '#FFF3E0' : '#F1F5F9'"
+                      :color="t.priority === 1 ? '#E08A00' : '#5B6472'"
+                    ></ml-tag>
+                  </view>
+                  <view class="flex-row items-center mt-1.5">
+                    <ml-icon name="clock" :size="11" color="#AEB9CC"></ml-icon>
+                    <text class="text-xs text-ink-soft ml-1">{{ t.durationMin }} 分钟</text>
+                    <view class="w-1 h-1 rounded-full bg-line mx-2"></view>
+                    <text class="text-xs text-ink-soft">单维突破 · 即时反馈</text>
+                  </view>
+                </view>
+                <ml-icon name="chevron-right" :size="17" color="#AEB9CC"></ml-icon>
+              </view>
+            </ml-card>
+          </view>
+        </view>
+      </template>
+
+      <!-- 分维度突破 -->
+      <view class="mt-5">
+        <ml-section-header
+          title="分维度突破"
+          caption="六大能力维度 · 对照最近报告等级"
+        ></ml-section-header>
+        <view class="flex-row flex-wrap">
+          <view
+            v-for="(d, i) in dimensions"
+            :key="d.key"
+            class="bg-surface rounded-2xl border border-line p-3 mb-2.5 pressable"
+            :class="i % 2 === 0 ? 'w-[calc(50%-5px)] mr-2.5' : 'w-[calc(50%-5px)]'"
+            hover-class="card-pressed"
+            :hover-start-time="0"
+            @click="startTask"
+          >
+            <view class="flex-row items-center justify-between">
+              <view
+                class="w-9 h-9 rounded-lg flex-row items-center justify-center"
+                :style="{ backgroundColor: d.tint }"
+              >
+                <ml-icon :name="d.icon" :size="17" :color="d.color"></ml-icon>
+              </view>
+              <ml-tag
+                :label="d.level.length > 0 ? d.level : '待评估'"
+                :bg="d.levelBg.length > 0 ? d.levelBg : '#F1F5F9'"
+                :color="d.levelColor.length > 0 ? d.levelColor : '#AEB9CC'"
+              ></ml-tag>
             </view>
-            <text class="text-xs text-ink-soft">{{ t.durationMin }} 分钟</text>
+            <text class="text-[13px] font-medium text-ink mt-2.5">{{ d.label }}</text>
+            <text class="text-[11px] text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 通用快练 -->
+      <view class="mt-4">
+        <ml-section-header title="通用快练" caption="不限维度 · 利用碎片时间"></ml-section-header>
+        <ml-card :padded="false">
+          <view
+            v-for="(t, i) in genericTasks"
+            :key="'g_' + t.id"
+            class="flex-row items-center px-4 h-[60px]"
+            :class="i < genericTasks.length - 1 ? 'border-b border-line' : ''"
+            hover-class="row-pressed"
+            :hover-start-time="0"
+            @click="startTask"
+          >
+            <view
+              class="w-9 h-9 rounded-lg bg-chip-reliable flex-row items-center justify-center mr-3"
+            >
+              <ml-icon name="play" :size="15" color="#1FB6A6"></ml-icon>
+            </view>
+            <view class="flex-col flex-1">
+              <text class="text-sm text-ink">{{ t.title }}</text>
+              <text class="text-[11px] text-ink-soft mt-0.5">
+                {{ t.durationMin }} 分钟 · 单维突破
+              </text>
+            </view>
+            <view class="h-7 px-3 rounded-full border border-line flex-row items-center">
+              <text class="text-xs text-smart">开始</text>
+            </view>
           </view>
         </ml-card>
       </view>
-    </view>
 
-    <text class="text-base font-semibold text-ink mt-4 mb-2.5">通用快练</text>
-    <view class="mb-2.5" v-for="t in genericTasks" :key="'g_' + t.id" @click="startTask(t)">
-      <ml-card>
-        <view class="flex-row justify-between items-center">
-          <text class="text-base text-ink">{{ t.title }}</text>
-          <text class="text-xs text-ink-soft">{{ t.durationMin }} 分钟</text>
-        </view>
-      </ml-card>
+      <!-- 空状态引导 -->
+      <view v-if="recommended.length === 0" class="mt-5">
+        <ml-card>
+          <ml-empty
+            icon="dumbbell"
+            icon-color="#5B6CFF"
+            icon-bg="#EEF1FF"
+            title="还没有个性化推荐"
+            desc="完成一次模拟面试后，这里会根据你的薄弱维度生成训练计划"
+          >
+            <ml-button
+              text="去完成一次面试"
+              type="primary"
+              block
+              @click="startInterview"
+            ></ml-button>
+          </ml-empty>
+        </ml-card>
+      </view>
     </view>
-
-    <view v-if="recommended.length === 0" class="mt-4">
-      <ml-card>
-        <text class="text-sm text-ink-soft">
-          完成一次面试后，这里会根据你的薄弱维度推荐个性化训练。
-        </text>
-      </ml-card>
-    </view>
-  </view>
+  </scroll-view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
-import { reportHistory } from '../../store/report-history.uts'
-import { TrainingTask } from '../../types/scoring.uts'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import mlTag from '../../components/ml-tag.uvue'
+import mlSectionHeader from '../../components/ml-section-header.uvue'
+import mlEmpty from '../../components/ml-empty.uvue'
+import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
 
 type TrainingEntry = {
   id: string
@@ -51,35 +171,153 @@ type TrainingEntry = {
   durationMin: number
 }
 
+type DimCard = {
+  key: string
+  label: string
+  icon: string
+  color: string
+  tint: string
+  weight: number
+  level: string
+  levelBg: string
+  levelColor: string
+}
+
 const genericTasks: TrainingEntry[] = [
-  { id: 'gt1', title: '并发基础 3 分钟快练', durationMin: 3 } as TrainingEntry,
-  { id: 'gt2', title: '系统设计 5 分钟快练', durationMin: 5 } as TrainingEntry,
-  { id: 'gt3', title: '项目经历表达 10 分钟', durationMin: 10 } as TrainingEntry
+  { id: 'gt1', title: '并发基础快练', durationMin: 3 } as TrainingEntry,
+  { id: 'gt2', title: '系统设计快练', durationMin: 5 } as TrainingEntry,
+  { id: 'gt3', title: '项目经历表达', durationMin: 10 } as TrainingEntry
 ]
 
 const recommended = ref<TrainingTask[]>([])
+const latest = ref<ReportRecord | null>(null)
+
+// 六维卡片静态配置（图标/色值），等级来自最近报告
+const DIM_META: { [key: string]: { icon: string; color: string; tint: string } } = {
+  knowledge: { icon: 'book-open', color: '#5B6CFF', tint: '#EEF1FF' },
+  engineering: { icon: 'briefcase', color: '#1FB6A6', tint: '#E6F7F4' },
+  analysis: { icon: 'brain', color: '#E08A00', tint: '#FFF3E0' },
+  communication: { icon: 'message-square', color: '#7C5CFF', tint: '#F0EBFF' },
+  learning: { icon: 'graduation-cap', color: '#0EA5B7', tint: '#E0F5F8' },
+  motivation: { icon: 'compass', color: '#E0654A', tint: '#FDEBE6' }
+}
+
+const dimensions = computed((): DimCard[] => {
+  const keys = ['knowledge', 'engineering', 'analysis', 'communication', 'learning', 'motivation']
+  const out: DimCard[] = []
+  const levelMap: { [key: string]: ScoreLevel } = {}
+  if (latest.value != null) {
+    const dims = latest.value.report.dimensions
+    for (let i = 0; i < dims.length; i++) {
+      levelMap[dims[i].dimension] = dims[i].level
+    }
+  }
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i]
+    const meta = DIM_META[k]
+    const lv = levelMap[k]
+    const hasLevel = lv != null
+    out.push({
+      key: k,
+      label: DIMENSION_LABEL[k],
+      icon: meta != null ? meta.icon : 'target',
+      color: meta != null ? meta.color : '#5B6CFF',
+      tint: meta != null ? meta.tint : '#EEF1FF',
+      weight: Math.round((DIMENSION_WEIGHT[k] != null ? DIMENSION_WEIGHT[k] : 0) * 100),
+      level: hasLevel ? lv : '',
+      levelBg: hasLevel ? levelBg(lv) : '',
+      levelColor: hasLevel ? levelColorOf(lv) : ''
+    } as DimCard)
+  }
+  return out
+})
+
+const todoCount = computed((): number => recommended.value.length)
+
+const doneCount = computed((): number => {
+  // 完成面试数以报告历史为准（每场面试生成一份报告）
+  return latest.value != null ? reportHistory.all().length : 0
+})
+
+const latestLevel = computed((): string => {
+  const r = latest.value
+  if (r == null) return '--'
+  return avgLevelOf(r.report.dimensions)
+})
+
+const levelColor = computed((): string => {
+  return levelColorOf(latestLevel.value)
+})
+
+const reportDate = computed((): string => {
+  const r = latest.value
+  if (r == null) return ''
+  const d = new Date(r.at)
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+})
+
+function avgLevelOf(dims: { level: ScoreLevel }[]): string {
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < dims.length; i++) {
+    const v = map[dims[i].level]
+    if (v != null) {
+      total += v
+      cnt += 1
+    }
+  }
+  if (cnt === 0) return '--'
+  const avg = total / cnt
+  if (avg >= 3.5) return 'A'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
+}
+
+function levelBg(l: ScoreLevel): string {
+  if (l === 'A') return '#E6F7F4'
+  if (l === 'B') return '#EEF1FF'
+  return '#FFF3E0'
+}
+
+function levelColorOf(l: string): string {
+  if (l === 'A') return '#1FB6A6'
+  if (l === 'B') return '#5B6CFF'
+  return '#E08A00'
+}
 
 onShow(() => {
   reportHistory.load()
-  const latest = reportHistory.latest()
-  if (latest != null) {
-    recommended.value = latest.report.trainingPlan
+  const rec = reportHistory.latest()
+  latest.value = rec
+  if (rec != null) {
+    recommended.value = rec.report.trainingPlan
   } else {
     recommended.value = []
   }
 })
 
-function startTask(_t: TrainingEntry | TrainingTask) {
-  // 训练房间尚未实现：先引导用户回到面试房间走快练模式
-  uni.showModal({
-    title: '开启训练',
-    content: '将进入快练模式（5分钟），专注单一维度训练。',
-    confirmText: '开始',
-    success: (r: any) => {
-      if (r.confirm) {
-        uni.navigateTo({ url: '/pages/interview/prep' })
-      }
-    }
-  })
+// 训练房间尚未独立实现：进入面试准备页
+function startTask() {
+  uni.navigateTo({ url: '/pages/interview/prep' })
+}
+
+function startInterview() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
+function goReport() {
+  uni.navigateTo({ url: '/pages/report/report' })
 }
 </script>
+
+<style>
+.card-pressed {
+  opacity: 0.85;
+}
+.row-pressed {
+  opacity: 0.7;
+}
+</style>

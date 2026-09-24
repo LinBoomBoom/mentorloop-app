@@ -1,5 +1,12 @@
 <template>
-  <view class="bg-surface rounded-2xl p-4 border border-line" @click="onClick">
+  <view
+    class="bg-surface rounded-2xl p-4 border border-line"
+    :class="[raised ? 'shadow-card' : '', padded ? '' : 'p-0']"
+    :hover-class="pressable ? 'ml-card-pressed' : 'none'"
+    :hover-start-time="0"
+    :hover-stay-time="80"
+    @click="onClick"
+  >
     <slot></slot>
   </view>
 </template>
@@ -7,9 +14,25 @@
 <script setup lang="uts">
 import { defineEmits } from 'vue'
 
+defineProps({
+  // raised：带卡片阴影（默认 true）；flat 场景（嵌套/分隔区域）传 false
+  raised: { type: Boolean, default: true },
+  // pressable：是否显示按压反馈（可点击卡片传 true）
+  pressable: { type: Boolean, default: false },
+  // padded：默认内边距 p-4；自定义留白时传 false
+  padded: { type: Boolean, default: true }
+})
+
 const emit = defineEmits(['tap'])
 
 function onClick() {
   emit('tap')
 }
 </script>
+
+<style>
+/* uvue 组件样式：按压时仅改透明度，不引起布局位移（MASTER.md A3-5） */
+.ml-card-pressed {
+  opacity: 0.85;
+}
+</style>

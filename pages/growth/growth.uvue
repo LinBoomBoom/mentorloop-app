@@ -1,65 +1,172 @@
 <template>
-  <scroll-view class="h-screen p-4" scroll-y="true">
-    <text class="text-xl font-bold text-ink mb-3">我的成长</text>
-
-    <!-- 无报告空状态 -->
-    <view v-if="records.length === 0">
-      <ml-card>
-        <text class="text-sm text-ink-soft">
-          还没有完成过面试，开始第一次模拟后这里会显示你的能力变化曲线。
-        </text>
-        <view class="mt-3">
-          <ml-button text="去开始一次面试" type="primary" @click="goStart"></ml-button>
-        </view>
-      </ml-card>
-    </view>
-
-    <template v-else>
-      <!-- 概览 -->
-      <ml-card class="mb-3">
-        <text class="text-xs text-ink-soft">累计场次</text>
-        <text class="text-2xl font-bold text-ink my-1">{{ records.length }} 场</text>
-        <text v-if="trendText.length > 0" class="text-xs text-reliable mt-1">{{ trendText }}</text>
-      </ml-card>
-
-      <!-- 每场时间列表 -->
-      <text class="text-base font-semibold text-ink mt-4 mb-2.5">最近场次</text>
-      <view class="mb-2.5" v-for="(r, i) in records" :key="r.sessionId + '_' + i">
-        <ml-card @click="showIdx = i">
-          <view class="flex-row justify-between items-center">
-            <text class="text-sm text-ink">
-              第{{ records.length - i }}场 · {{ formatDate(r.at) }}
-            </text>
-            <ml-tag
-              :label="avgLevel(r.report)"
-              :bg="i === showIdx ? '#E6F7F4' : '#F5F6FA'"
-              :color="i === showIdx ? '#1FB6A6' : '#5B6CFF'"
-            ></ml-tag>
-          </view>
-        </ml-card>
-      </view>
-
-      <!-- 维度对比条：选中的那场 -->
-      <text class="text-base font-semibold text-ink mt-5 mb-2.5">
-        维度得分（{{ showCaption }}）
-      </text>
-      <view class="mb-2.5" v-for="d in activeDimensions" :key="d.dimension">
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-3 pb-6">
+      <!-- 空状态 -->
+      <view v-if="records.length === 0">
         <ml-card>
-          <view class="flex-row justify-between items-center">
-            <text class="text-sm font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
-            <ml-tag :label="d.level" :bg="levelBg(d.level)" :color="levelColor(d.level)"></ml-tag>
-          </view>
-          <!-- 条形：宽度 = (score / 100) * 100%，这里用 level 映射一个百分比直观展示 -->
-          <view class="mt-2 h-2 rounded-full bg-line">
-            <view
-              class="h-2 rounded-full"
-              :style="{ width: pctWidth(d.level), backgroundColor: levelColor(d.level) }"
-            ></view>
-          </view>
-          <text class="text-xs text-ink-soft mt-1">对比上次：{{ diffText(d.dimension) }}</text>
+          <ml-empty
+            icon="chart-column"
+            icon-color="#1FB6A6"
+            icon-bg="#E6F7F4"
+            title="还没有成长记录"
+            desc="完成第一次模拟面试后，这里会展示你的能力画像与变化趋势"
+          >
+            <ml-button text="开始第一次面试" type="primary" block @click="goStart"></ml-button>
+          </ml-empty>
         </ml-card>
       </view>
-    </template>
+
+      <template v-else>
+        <!-- 统计行 -->
+        <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row">
+          <view class="flex-1 flex-col items-center">
+            <text class="text-lg font-bold text-ink">{{ records.length }}</text>
+            <text class="text-[11px] text-ink-soft mt-0.5">累计面试</text>
+          </view>
+          <view class="w-px h-9 bg-line"></view>
+          <view class="flex-1 flex-col items-center">
+            <text class="text-lg font-bold text-smart">{{ avgLevel }}</text>
+            <text class="text-[11px] text-ink-soft mt-0.5">平均等级</text>
+          </view>
+          <view class="w-px h-9 bg-line"></view>
+          <view class="flex-1 flex-col items-center">
+            <text class="text-lg font-bold text-reliable">{{ strongest }}</text>
+            <text class="text-[11px] text-ink-soft mt-0.5">最强维度</text>
+          </view>
+        </view>
+
+        <!-- 能力趋势 -->
+        <view class="mt-5">
+          <ml-section-header
+            title="能力趋势"
+            caption="最近 {{ chartItems.length }} 场综合得分"
+          ></ml-section-header>
+          <ml-card>
+            <view class="flex-row items-end h-36 px-1">
+              <view
+                v-for="(c, i) in chartItems"
+                :key="c.key"
+                class="flex-1 flex-col items-center justify-end h-full"
+                @click="showIdx = c.index"
+              >
+                <text
+                  class="text-[11px] mb-1"
+                  :class="i === chartItems.length - 1 ? 'text-smart font-semibold' : 'text-mist'"
+                >
+                  {{ c.score }}
+                </text>
+                <view
+                  class="w-7 rounded-t-lg pressable"
+                  :style="barStyle(c.score, i === chartItems.length - 1, c.index === showIdx)"
+                ></view>
+              </view>
+            </view>
+            <view class="h-px bg-line mt-2"></view>
+            <view class="flex-row px-1 mt-1.5">
+              <view v-for="c in chartItems" :key="'x' + c.key" class="flex-1 flex-col items-center">
+                <text
+                  class="text-[10px]"
+                  :class="c.index === showIdx ? 'text-smart font-semibold' : 'text-mist'"
+                >
+                  {{ c.label }}
+                </text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 最近场次 -->
+        <view class="mt-5">
+          <ml-section-header title="最近场次" caption="点选查看该场维度画像"></ml-section-header>
+          <scroll-view scroll-x="true" class="whitespace-nowrap">
+            <view class="flex-row">
+              <view
+                v-for="(r, i) in records"
+                :key="r.sessionId + '_' + i"
+                class="flex-col items-center mr-2.5 pressable"
+                @click="showIdx = i"
+              >
+                <view
+                  class="w-[104px] rounded-xl border px-2.5 py-2.5"
+                  :style="sessionCardStyle(i === showIdx)"
+                >
+                  <view class="flex-row items-center justify-between">
+                    <text class="text-[11px] text-ink-soft">第 {{ records.length - i }} 场</text>
+                    <ml-tag
+                      :label="avgLevelOf(r.report)"
+                      :bg="i === showIdx ? '#EEF1FF' : '#F1F5F9'"
+                      :color="i === showIdx ? '#5B6CFF' : '#5B6472'"
+                    ></ml-tag>
+                  </view>
+                  <text
+                    class="text-[13px] font-semibold mt-1.5"
+                    :class="i === showIdx ? 'text-smart' : 'text-ink'"
+                  >
+                    {{ formatDate(r.at) }}
+                  </text>
+                </view>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <!-- 维度画像 -->
+        <view class="mt-5">
+          <ml-section-header
+            title="维度画像"
+            :caption="'第 ' + (records.length - showIdx) + ' 场 · 六维能力评估'"
+          ></ml-section-header>
+          <ml-card>
+            <view
+              v-for="(d, i) in activeDimensions"
+              :key="d.dimension"
+              :class="i < activeDimensions.length - 1 ? 'mb-4' : ''"
+            >
+              <view class="flex-row items-center justify-between">
+                <view class="flex-row items-center flex-1">
+                  <view
+                    class="w-7 h-7 rounded-lg flex-row items-center justify-center mr-2"
+                    :style="{ backgroundColor: dimTint(d.dimension) }"
+                  >
+                    <ml-icon
+                      :name="dimIcon(d.dimension)"
+                      :size="14"
+                      :color="dimColor(d.dimension)"
+                    ></ml-icon>
+                  </view>
+                  <text class="text-[13px] font-medium text-ink">{{ dimLabel(d.dimension) }}</text>
+                </view>
+                <view class="flex-row items-center">
+                  <text class="text-[11px] text-mist mr-1.5">
+                    权重 {{ weightOf(d.dimension) }}%
+                  </text>
+                  <ml-tag
+                    :label="d.level"
+                    :bg="levelBg(d.level)"
+                    :color="levelColor(d.level)"
+                  ></ml-tag>
+                </view>
+              </view>
+              <view class="mt-2 ml-9">
+                <ml-progress
+                  :percent="levelToScore(d.level)"
+                  :color="levelColor(d.level)"
+                  :show-value="false"
+                ></ml-progress>
+                <text class="text-[11px] mt-1" :class="diffTone(d.dimension)">
+                  {{ diffText(d.dimension) }}
+                </text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 报告入口 -->
+        <view class="mt-5">
+          <ml-button text="查看最近完整报告" type="primary" block @click="goReport"></ml-button>
+        </view>
+      </template>
+    </view>
   </scroll-view>
 </template>
 
@@ -69,15 +176,19 @@ import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import mlSectionHeader from '../../components/ml-section-header.uvue'
+import mlEmpty from '../../components/ml-empty.uvue'
+import mlProgress from '../../components/ml-progress.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
-import { DimensionScore, DIMENSION_LABEL } from '../../types/scoring.uts'
+import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT, ScoreLevel } from '../../types/scoring.uts'
 
 const records = ref<ReportRecord[]>([])
 const showIdx = ref(0)
 
 onShow(() => {
   reportHistory.load()
-  const all = reportHistory.recent(5)
+  const all = reportHistory.recent(6)
   records.value = all
   if (showIdx.value >= all.length) showIdx.value = 0
 })
@@ -88,37 +199,81 @@ const activeDimensions = computed((): DimensionScore[] => {
   return records.value[i].report.dimensions
 })
 
-const showCaption = computed((): string => {
-  if (records.value.length === 0) return ''
-  const i = showIdx.value < records.value.length ? showIdx.value : 0
-  return '第' + (records.value.length - i) + '场'
+const avgLevel = computed((): string => {
+  if (records.value.length === 0) return '--'
+  return avgLevelOf(records.value[0].report)
 })
 
-const trendText = computed((): string => {
-  if (records.value.length < 2) return '完成第二次面试即可看到能力变化趋势'
-  const latest = records.value[0].report
-  const prev = records.value[1].report
+// 最强维度：取最近一场等级最高的维度
+const strongest = computed((): string => {
+  if (records.value.length === 0) return '--'
+  const dims = records.value[0].report.dimensions
   const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
-  // 取最新 vs 上一场的最强项等级差
-  const getScore = (r: typeof latest): number => {
-    let total = 0
-    let cnt = 0
-    for (let i = 0; i < r.dimensions.length; i++) {
-      const v = map[r.dimensions[i].level]
-      if (v != null) {
-        total += v
-        cnt += 1
-      }
+  let best = -1
+  let bestKey = ''
+  for (let i = 0; i < dims.length; i++) {
+    const v = map[dims[i].level]
+    if (v != null && v > best) {
+      best = v
+      bestKey = dims[i].dimension
     }
-    return cnt > 0 ? total / cnt : 0
   }
-  const delta = getScore(latest) - getScore(prev)
-  if (delta > 0.2) return '相比上次整体提升，继续保持'
-  if (delta < -0.2) return '相比上次有所下滑，查看高优先级维度'
-  return '与上次基本持平，建议针对性训练'
+  return bestKey.length > 0 ? dimLabel(bestKey) : '--'
 })
 
-function avgLevel(r: typeof records.value[0]['report']): string {
+type ChartItem = { key: string; index: number; score: number; label: string }
+
+// 趋势图：时间正序（最早→最新），最新一场高亮
+const chartItems = computed((): ChartItem[] => {
+  const out: ChartItem[] = []
+  const n = records.value.length
+  for (let i = n - 1; i >= 0; i--) {
+    const r = records.value[i]
+    out.push({
+      key: r.sessionId + '_' + i,
+      index: i,
+      score: scoreOf(r.report),
+      label: '第' + (n - i) + '场'
+    } as ChartItem)
+  }
+  return out
+})
+
+function scoreOf(r: typeof records.value[0]['report']): number {
+  const map: { [key: string]: number } = { A: 90, B: 75, C: 60, D: 45 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < r.dimensions.length; i++) {
+    const v = map[r.dimensions[i].level]
+    if (v != null) {
+      total += v
+      cnt += 1
+    }
+  }
+  return cnt > 0 ? Math.round(total / cnt) : 0
+}
+
+function barStyle(score: number, isLatest: boolean, isSelected: boolean): { [key: string]: string } {
+  const h = Math.round((score / 100) * 120)
+  const bg = isLatest ? '#5B6CFF' : isSelected ? '#8FA0FF' : '#D9E0F2'
+  const s: { [key: string]: string } = {
+    height: h + 'px',
+    backgroundColor: bg
+  }
+  if (isSelected) {
+    s['border'] = '1px solid #5B6CFF'
+  }
+  return s
+}
+
+function sessionCardStyle(active: boolean): { [key: string]: string } {
+  if (active) {
+    return { backgroundColor: '#FFFFFF', borderColor: '#5B6CFF' }
+  }
+  return { backgroundColor: '#F7F9FC', borderColor: '#E3E8F0' }
+}
+
+function avgLevelOf(r: typeof records.value[0]['report']): string {
   const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
   let total = 0
   let cnt = 0
@@ -129,8 +284,9 @@ function avgLevel(r: typeof records.value[0]['report']): string {
       cnt += 1
     }
   }
-  const avg = cnt > 0 ? total / cnt : 0
-  if (avg >= 3.5) return 'A-'
+  if (cnt === 0) return '--'
+  const avg = total / cnt
+  if (avg >= 3.5) return 'A'
   if (avg >= 2.5) return 'B'
   if (avg >= 1.5) return 'C'
   return 'D'
@@ -141,6 +297,50 @@ function dimLabel(k: string): string {
   return v != null && v.length > 0 ? v : k
 }
 
+function weightOf(k: string): number {
+  const w = DIMENSION_WEIGHT[k]
+  return w != null ? Math.round(w * 100) : 0
+}
+
+function dimIcon(k: string): string {
+  const map: { [key: string]: string } = {
+    knowledge: 'book-open',
+    engineering: 'briefcase',
+    analysis: 'brain',
+    communication: 'message-square',
+    learning: 'graduation-cap',
+    motivation: 'compass'
+  }
+  const v = map[k]
+  return v != null ? v : 'target'
+}
+
+function dimColor(k: string): string {
+  const map: { [key: string]: string } = {
+    knowledge: '#5B6CFF',
+    engineering: '#1FB6A6',
+    analysis: '#E08A00',
+    communication: '#7C5CFF',
+    learning: '#0EA5B7',
+    motivation: '#E0654A'
+  }
+  const v = map[k]
+  return v != null ? v : '#5B6CFF'
+}
+
+function dimTint(k: string): string {
+  const map: { [key: string]: string } = {
+    knowledge: '#EEF1FF',
+    engineering: '#E6F7F4',
+    analysis: '#FFF3E0',
+    communication: '#F0EBFF',
+    learning: '#E0F5F8',
+    motivation: '#FDEBE6'
+  }
+  const v = map[k]
+  return v != null ? v : '#EEF1FF'
+}
+
 function levelToScore(l: string): number {
   if (l === 'A') return 90
   if (l === 'B') return 75
@@ -148,29 +348,36 @@ function levelToScore(l: string): number {
   return 45
 }
 
-function pctWidth(l: string): string {
-  const w = levelToScore(l)
-  return w + '%'
-}
-
-function levelBg(l: string): string {
+function levelBg(l: ScoreLevel): string {
   if (l === 'A') return '#E6F7F4'
   if (l === 'B') return '#EEF1FF'
   return '#FFF3E0'
 }
 
-function levelColor(l: string): string {
+function levelColor(l: ScoreLevel): string {
   if (l === 'A') return '#1FB6A6'
   if (l === 'B') return '#5B6CFF'
   return '#E08A00'
 }
 
-// 维度对比：对比当前 showIdx 与下一场（更早一场）
+function diffTone(dim: string): string {
+  const t = diffOf(dim)
+  if (t.indexOf('提升') >= 0) return 'text-reliable'
+  if (t.indexOf('下降') >= 0) return 'text-danger'
+  return 'text-ink-soft'
+}
+
+// 维度对比：当前场次 vs 更早一场
 function diffText(dim: string): string {
+  return diffOf(dim)
+}
+
+function diffOf(dim: string): string {
   if (records.value.length < 2) return '暂无对比数据'
-  const cur = records.value[showIdx.value].report
-  const prevIdx = showIdx.value + 1
+  const curIdx = showIdx.value < records.value.length ? showIdx.value : 0
+  const prevIdx = curIdx + 1
   if (prevIdx >= records.value.length) return '已对比到最早一场'
+  const cur = records.value[curIdx].report
   const prev = records.value[prevIdx].report
   const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
   const getLvl = (r: typeof cur): number => {
@@ -181,22 +388,28 @@ function diffText(dim: string): string {
   }
   const c = getLvl(cur)
   const p = getLvl(prev)
-  if (c > p) return '提升 ' + (c - p) + ' 级'
-  if (c < p) return '下降 ' + (p - c) + ' 级'
-  return '持平'
+  if (c > p) return '对比上一场：提升 ' + (c - p) + ' 级'
+  if (c < p) return '对比上一场：下降 ' + (p - c) + ' 级'
+  return '对比上一场：持平'
 }
 
 function formatDate(ts: number): string {
   const d = new Date(ts)
-  const mm = d.getMonth() + 1
-  const dd = d.getDate()
-  const hh = d.getHours()
-  const mi = d.getMinutes()
   const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
-  return pad(mm) + '-' + pad(dd) + ' ' + pad(hh) + ':' + pad(mi)
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
 
 function goStart() {
   uni.switchTab({ url: '/pages/index/index' })
 }
+
+function goReport() {
+  uni.navigateTo({ url: '/pages/report/report' })
+}
 </script>
+
+<style>
+.pressable {
+  /* 按压态由 hover-class 控制 */
+}
+</style>

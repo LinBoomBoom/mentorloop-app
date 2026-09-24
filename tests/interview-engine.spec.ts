@@ -285,7 +285,7 @@ describe('规则评分器', () => {
       })
     }
     const r = scoreInterview(qs, ts as any)
-    const comm = r.dimensions.find((d) => d.dimension === 'communication')!
+    const comm = r.dimensions.find((d: any) => d.dimension === 'communication')!
     // 短模糊回答 → communication 不超过 C
     expect(['C', 'D'].includes(comm.level)).toBe(true)
   })

@@ -1,5 +1,5 @@
 // 设计系统 Token（uts 侧引用，例如状态机/原生层颜色与数字人状态）
-// 颜色与 main.css 的 @theme 块保持单一事实来源
+// 颜色与 main.css 的 @theme 块保持单一事实来源（MASTER.md §A1）
 
 export type StringMap = { [key: string]: string }
 
@@ -9,7 +9,9 @@ export const THEME: StringMap = {
   smart: '#5B6CFF',
   reliable: '#1FB6A6',
   warn: '#E08A00',
+  danger: '#DC2626',
   bgLight: '#F7F9FC',
+  bgMuted: '#F1F5F9',
   textPrimary: '#1A2433',
   textSecondary: '#5B6472',
   border: '#E3E8F0',

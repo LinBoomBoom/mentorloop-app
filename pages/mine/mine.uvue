@@ -1,33 +1,141 @@
 <template>
-  <view class="p-4">
-    <text class="text-xl font-bold text-ink mb-3">我的</text>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-3 pb-6">
+      <!-- 资料卡（深色品牌面） -->
+      <view class="bg-navy rounded-2xl p-4 relative overflow-hidden">
+        <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+        <view
+          class="absolute right-16 -bottom-12 w-24 h-24 rounded-full bg-reliable opacity-15"
+        ></view>
+        <view class="flex-row items-center">
+          <view
+            class="w-14 h-14 rounded-full flex-row items-center justify-center mr-3"
+            :style="{
+              backgroundColor: 'rgba(255,255,255,0.14)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }"
+          >
+            <ml-icon name="user" :size="26" color="#FFFFFF"></ml-icon>
+          </view>
+          <view class="flex-col flex-1">
+            <text class="text-lg font-semibold text-white">{{ nickname }}</text>
+            <view class="flex-row items-center mt-1">
+              <view
+                class="h-5 px-2 rounded-full flex-row items-center"
+                :style="{ backgroundColor: planBadgeBg }"
+              >
+                <ml-icon :name="planBadgeIcon" :size="10" :color="planBadgeColor"></ml-icon>
+                <text class="text-[10px] ml-0.5" :style="{ color: planBadgeColor }">
+                  {{ planLabel }}
+                </text>
+              </view>
+              <text class="text-[11px] text-mist ml-2">
+                {{ positionLabel }} · {{ experienceLabel }}
+              </text>
+            </view>
+          </view>
+          <view
+            class="w-8 h-8 rounded-full flex-row items-center justify-center"
+            hover-class="row-pressed"
+            :hover-start-time="0"
+            @click="editProfile"
+          >
+            <ml-icon name="chevron-right" :size="18" color="#AEB9CC"></ml-icon>
+          </view>
+        </view>
 
-    <view class="mb-2.5">
-      <ml-card>
-        <text class="text-xs text-ink-soft">账户</text>
-        <text class="text-base font-semibold text-ink mt-1">
-          {{ nickname }} · {{ planLabel }}
-        </text>
-      </ml-card>
-    </view>
+        <!-- 未登录：登录入口 -->
+        <view v-if="!loggedIn" class="mt-4">
+          <ml-button text="登录 / 注册" block @click="goLogin"></ml-button>
+        </view>
+      </view>
 
-    <!-- 未登录：App 端提供登录入口；小程序端静默登录，无此入口（决策记录 D1） -->
-    <view v-if="!loggedIn" class="mb-2.5" @click="goLogin">
-      <ml-button text="登录" type="primary"></ml-button>
-    </view>
+      <!-- 数据行 -->
+      <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row mt-3">
+        <view class="flex-1 flex-col items-center" @click="goGrowth">
+          <text class="text-lg font-bold text-ink">{{ statInterviews }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">模拟面试</text>
+        </view>
+        <view class="w-px h-9 bg-line"></view>
+        <view class="flex-1 flex-col items-center" @click="goReport">
+          <text class="text-lg font-bold text-ink">{{ statReports }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">评估报告</text>
+        </view>
+        <view class="w-px h-9 bg-line"></view>
+        <view class="flex-1 flex-col items-center" @click="goTraining">
+          <text class="text-lg font-bold text-smart">{{ statTodos }}</text>
+          <text class="text-[11px] text-ink-soft mt-0.5">待训练</text>
+        </view>
+      </view>
 
-    <view class="mb-2.5" @click="privacy">
-      <ml-card><text class="text-xs text-ink-soft">数据删除入口（隐私透明）</text></ml-card>
-    </view>
+      <!-- 功能宫格 -->
+      <view class="mt-3">
+        <ml-card :padded="false">
+          <view class="flex-row py-3">
+            <view
+              v-for="f in features"
+              :key="f.text"
+              class="flex-1 flex-col items-center pressable"
+              hover-class="row-pressed"
+              :hover-start-time="0"
+              @click="f.onTap"
+            >
+              <view
+                class="w-11 h-11 rounded-xl flex-row items-center justify-center"
+                :style="{ backgroundColor: f.tint }"
+              >
+                <ml-icon :name="f.icon" :size="19" :color="f.color"></ml-icon>
+              </view>
+              <text class="text-xs text-ink mt-1.5">{{ f.text }}</text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
 
-    <view class="mb-2.5" @click="about">
-      <ml-card><text class="text-xs text-ink-soft">关于 MentorLoop</text></ml-card>
-    </view>
+      <!-- 设置分组 -->
+      <view class="mt-3">
+        <ml-card :padded="false">
+          <view
+            v-for="(s, i) in settings"
+            :key="s.text"
+            class="flex-row items-center px-4 h-[56px]"
+            :class="i < settings.length - 1 ? 'border-b border-line' : ''"
+            hover-class="row-pressed"
+            :hover-start-time="0"
+            @click="s.onTap"
+          >
+            <view
+              class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
+              :style="{ backgroundColor: s.tint }"
+            >
+              <ml-icon :name="s.icon" :size="16" :color="s.color"></ml-icon>
+            </view>
+            <view class="flex-col flex-1">
+              <text class="text-sm text-ink">{{ s.text }}</text>
+              <text class="text-[11px] text-ink-soft mt-0.5">{{ s.desc }}</text>
+            </view>
+            <ml-icon name="chevron-right" :size="16" color="#AEB9CC"></ml-icon>
+          </view>
+        </ml-card>
+      </view>
 
-    <view v-if="loggedIn" class="mb-2.5" @click="logout">
-      <ml-card><text class="text-xs text-warn">退出登录</text></ml-card>
+      <!-- 退出登录 -->
+      <view v-if="loggedIn" class="mt-3">
+        <ml-card pressable @tap="confirmLogout">
+          <view class="flex-row items-center justify-center">
+            <ml-icon name="log-out" :size="16" color="#DC2626"></ml-icon>
+            <text class="text-sm text-danger ml-1.5">退出登录</text>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 版本信息 -->
+      <view class="flex-col items-center mt-6">
+        <text class="text-[11px] text-mist">MentorLoop · 学面一体智能导师</text>
+        <text class="text-[10px] text-mist mt-1">v0.9.0 · 内测版</text>
+      </view>
     </view>
-  </view>
+  </scroll-view>
 </template>
 
 <script setup lang="uts">
@@ -35,23 +143,130 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
-import { userStore } from '../../store/user-profile.uts'
+import mlIcon from '../../components/ml-icon.uvue'
+import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
+import { reportHistory } from '../../store/report-history.uts'
 
 const nickname = ref(userStore.profile.nickname)
 const plan = ref(userStore.profile.plan)
 const loggedIn = ref(userStore.isLoggedIn())
 
-const planLabel = computed(() => {
+const planLabel = computed((): string => {
   if (plan.value === 'member') return '会员'
   if (plan.value === 'single') return '单次包'
-  return '免费'
+  return '免费版'
 })
+
+const planBadgeBg = computed((): string => {
+  if (plan.value === 'member') return 'rgba(245,201,123,0.2)'
+  if (plan.value === 'single') return 'rgba(92,232,216,0.18)'
+  return 'rgba(255,255,255,0.12)'
+})
+
+const planBadgeColor = computed((): string => {
+  if (plan.value === 'member') return '#F5C97B'
+  if (plan.value === 'single') return '#5CE8D8'
+  return '#AEB9CC'
+})
+
+const planBadgeIcon = computed((): string => {
+  if (plan.value === 'member') return 'crown'
+  if (plan.value === 'single') return 'gem'
+  return 'user'
+})
+
+const positionLabel = ref(positionDisplay(userStore.profile))
+const experienceLabel = ref(experienceDisplay(userStore.profile))
+
+const statInterviews = ref(0)
+const statReports = ref(0)
+const statTodos = ref(0)
+
+type Feature = { icon: string; color: string; tint: string; text: string; onTap: () => void }
+const features: Feature[] = [
+  { icon: 'file-check', color: '#5B6CFF', tint: '#EEF1FF', text: '我的报告', onTap: goReport },
+  { icon: 'dumbbell', color: '#1FB6A6', tint: '#E6F7F4', text: '训练计划', onTap: goTraining },
+  { icon: 'cloud-upload', color: '#E08A00', tint: '#FFF3E0', text: '简历优化', onTap: goResume },
+  { icon: 'bell', color: '#7C5CFF', tint: '#F0EBFF', text: '消息通知', onTap: notify }
+]
+
+type SettingRow = {
+  icon: string
+  color: string
+  tint: string
+  text: string
+  desc: string
+  onTap: () => void
+}
+const settings: SettingRow[] = [
+  {
+    icon: 'lock',
+    color: '#5B6CFF',
+    tint: '#EEF1FF',
+    text: '账号与安全',
+    desc: '登录方式、设备管理',
+    onTap: security
+  },
+  {
+    icon: 'sliders-horizontal',
+    color: '#1FB6A6',
+    tint: '#E6F7F4',
+    text: '面试偏好设置',
+    desc: '难度、时长、提醒',
+    onTap: prefs
+  },
+  {
+    icon: 'shield',
+    color: '#E08A00',
+    tint: '#FFF3E0',
+    text: '隐私与数据',
+    desc: '录音、简历与账户删除',
+    onTap: privacy
+  },
+  {
+    icon: 'info',
+    color: '#7C5CFF',
+    tint: '#F0EBFF',
+    text: '关于 MentorLoop',
+    desc: '版本、协议、反馈',
+    onTap: about
+  }
+]
 
 onShow(() => {
   nickname.value = userStore.profile.nickname
   plan.value = userStore.profile.plan
   loggedIn.value = userStore.isLoggedIn()
+  positionLabel.value = positionDisplay(userStore.profile)
+  experienceLabel.value = experienceDisplay(userStore.profile)
+
+  reportHistory.load()
+  const all = reportHistory.all()
+  statInterviews.value = all.length
+  statReports.value = all.length
+  const latest = reportHistory.latest()
+  statTodos.value = latest != null ? latest.report.trainingPlan.length : 0
 })
+
+function editProfile() {
+  uni.showToast({ title: '资料编辑即将上线', icon: 'none' })
+}
+
+function goReport() {
+  uni.navigateTo({ url: '/pages/report/report' })
+}
+
+function goTraining() {
+  uni.switchTab({ url: '/pages/training/training' })
+}
+
+function goResume() {
+  uni.switchTab({ url: '/pages/resume/resume' })
+}
+
+function goGrowth() {
+  uni.switchTab({ url: '/pages/growth/growth' })
+}
 
 function goLogin() {
   // #ifdef APP
@@ -62,6 +277,17 @@ function goLogin() {
   // #endif
 }
 
+function confirmLogout() {
+  uni.showModal({
+    title: '退出登录',
+    content: '退出后训练记录仍保留在本机，确认退出？',
+    confirmColor: '#DC2626',
+    success: (r: any) => {
+      if (r.confirm) logout()
+    }
+  })
+}
+
 function logout() {
   userStore.logout()
   nickname.value = userStore.profile.nickname
@@ -69,11 +295,32 @@ function logout() {
   uni.showToast({ title: '已退出登录', icon: 'none' })
 }
 
+function notify() {
+  uni.showToast({ title: '消息通知设置', icon: 'none' })
+}
+
+function security() {
+  uni.showToast({ title: '账号与安全', icon: 'none' })
+}
+
+function prefs() {
+  uni.showToast({ title: '面试偏好设置', icon: 'none' })
+}
+
 function privacy() {
-  uni.showToast({ title: '前往数据删除', icon: 'none' })
+  uni.showToast({ title: '可在此提交数据删除申请', icon: 'none' })
 }
 
 function about() {
-  uni.showToast({ title: 'MentorLoop · 学面一体', icon: 'none' })
+  uni.showToast({ title: 'MentorLoop · 学面一体智能导师', icon: 'none' })
 }
 </script>
+
+<style>
+.row-pressed {
+  opacity: 0.7;
+}
+.pressable {
+  /* 按压态由 hover-class 控制 */
+}
+</style>

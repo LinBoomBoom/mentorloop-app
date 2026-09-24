@@ -1,100 +1,318 @@
 <template>
-  <view class="p-4">
-    <text class="text-xl font-bold text-ink mb-3">简历优化</text>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-3 pb-6">
+      <!-- 步骤流：上传 → 解析 → 建议 -->
+      <view class="bg-surface rounded-2xl border border-line px-4 py-3.5 flex-row items-center">
+        <template v-for="(s, i) in steps" :key="s">
+          <view class="flex-col items-center">
+            <view
+              class="w-6 h-6 rounded-full flex-row items-center justify-center"
+              :style="stepStyle(i)"
+            >
+              <ml-icon v-if="i < currentStep" name="check" :size="12" color="#FFFFFF"></ml-icon>
+              <text v-else class="text-xs font-semibold" :style="{ color: stepTextColor(i) }">
+                {{ i + 1 }}
+              </text>
+            </view>
+            <text class="text-[11px] mt-1" :class="i <= currentStep ? 'text-ink' : 'text-mist'">
+              {{ s }}
+            </text>
+          </view>
+          <view
+            v-if="i < steps.length - 1"
+            class="flex-1 h-px mx-2 mb-4"
+            :style="{ backgroundColor: i < currentStep ? '#1FB6A6' : '#E3E8F0' }"
+          ></view>
+        </template>
+      </view>
 
-    <view class="mb-2.5">
-      <ml-card>
-        <text class="text-xs text-ink-soft mb-2">上传简历（PDF / Word / 图片，最大 10MB）</text>
-        <view v-if="fileName.length > 0" class="mb-2">
-          <text class="text-sm text-ink">已选：{{ fileName }}</text>
-        </view>
-        <view class="flex flex-row">
-          <ml-button
-            :text="parsing ? '解析中...' : '选择文件'"
-            type="secondary"
-            :disabled="parsing"
-            @click="pick"
-          ></ml-button>
-          <view v-if="fileName.length > 0 && !parsing" class="ml-2">
-            <ml-button text="重新解析" type="secondary" @click="pick"></ml-button>
+      <!-- 上传区 -->
+      <view class="mt-3">
+        <view
+          class="bg-surface rounded-2xl border-2 border-dashed pressable relative overflow-hidden"
+          :style="{ borderColor: fileName.length > 0 ? '#5B6CFF' : '#E3E8F0' }"
+          hover-class="card-pressed"
+          :hover-start-time="0"
+          @click="pick"
+        >
+          <view class="flex-col items-center py-8">
+            <view class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center">
+              <ml-icon
+                :name="parsing ? 'loader-circle' : 'cloud-upload'"
+                :size="26"
+                color="#5B6CFF"
+              ></ml-icon>
+            </view>
+            <text class="text-[15px] font-semibold text-ink mt-3">
+              {{ parsing ? 'AI 解析中…' : fileName.length > 0 ? '重新上传简历' : '点击上传简历' }}
+            </text>
+            <text class="text-xs text-ink-soft mt-1">支持 PDF / Word / 图片，最大 10MB</text>
+
+            <!-- 已选文件 -->
+            <view
+              v-if="fileName.length > 0"
+              class="flex-row items-center mt-3 h-8 px-3 rounded-full bg-chip-smart"
+            >
+              <ml-icon name="file-check" :size="13" color="#5B6CFF"></ml-icon>
+              <text class="text-xs text-smart ml-1">{{ fileName }}</text>
+            </view>
+
+            <view v-if="!parsing" class="mt-4">
+              <ml-button
+                :text="fileName.length > 0 ? '重新选择' : '选择文件'"
+                type="primary"
+                :disabled="parsing"
+                @tap="pick"
+              ></ml-button>
+            </view>
+            <view v-else class="mt-4 flex-row items-center">
+              <ml-progress
+                class="w-40"
+                :percent="60"
+                :show-value="false"
+                color="#5B6CFF"
+              ></ml-progress>
+            </view>
           </view>
         </view>
-      </ml-card>
-    </view>
 
-    <!-- 解析结果 -->
-    <view v-if="parsed != null" class="mb-2.5">
-      <ml-card>
-        <text class="text-base font-semibold text-ink mb-2">解析结果</text>
-        <view class="flex flex-row flex-wrap mb-2">
-          <ml-tag
-            :label="parsed.contact ? '联系方式：已填' : '联系方式：缺失'"
-            :bg="parsed.contact ? '#E8F5E9' : '#FFEBEE'"
-            :color="parsed.contact ? '#2E7D32' : '#C62828'"
-          ></ml-tag>
-          <view class="ml-1.5"></view>
-          <ml-tag
-            :label="'项目经历：' + parsed.projects + '段'"
-            bg="#E3F2FD"
-            color="#1565C0"
-          ></ml-tag>
-          <view class="ml-1.5"></view>
-          <ml-tag
-            :label="parsed.quantified ? '成果量化：有' : '成果量化：不足'"
-            :bg="parsed.quantified ? '#E8F5E9' : '#FFF3E0'"
-            :color="parsed.quantified ? '#2E7D32' : '#E08A00'"
-          ></ml-tag>
+        <!-- 隐私说明 -->
+        <view class="flex-row items-center justify-center mt-2.5">
+          <ml-icon name="lock" :size="11" color="#AEB9CC"></ml-icon>
+          <text class="text-[11px] text-mist ml-1">简历仅用于本次分析，不会上传至第三方</text>
         </view>
-        <text v-if="parsed.techStack.length > 0" class="text-xs text-ink-soft mb-1">
-          技术栈：{{ parsed.techStack.join(' / ') }}
-        </text>
-        <view v-if="parsed.gaps.length > 0" class="mt-2">
-          <text class="text-xs text-ink-soft">待补充：</text>
-          <text class="text-xs text-warning" v-for="(g, i) in parsed.gaps" :key="'g' + i">
-            · {{ g }}{{ ' ' }}
-          </text>
-        </view>
-        <view v-if="parsed.formatRisks.length > 0" class="mt-1">
-          <text class="text-xs text-ink-soft">格式风险：</text>
-          <text class="text-xs text-danger" v-for="(r, i) in parsed.formatRisks" :key="'r' + i">
-            · {{ r }}{{ ' ' }}
-          </text>
-        </view>
-      </ml-card>
-    </view>
+      </view>
 
-    <!-- 改写建议 -->
-    <view v-if="suggestions.length > 0">
-      <text class="text-base font-semibold text-ink mt-4 mb-2.5">
-        改写建议（均为「建议稿」，确认后才保存）
-      </text>
-      <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+      <!-- 解析结果 -->
+      <view v-if="parsed != null" class="mt-5">
+        <ml-section-header title="解析结果" caption="结构化提取关键信息"></ml-section-header>
         <ml-card>
-          <text class="text-xs text-ink-soft">原句：{{ s.original }}</text>
-          <text class="text-sm font-semibold text-ink mt-1.5">建议稿：{{ s.suggested }}</text>
-          <text class="text-xs text-ink-soft mt-1.5">{{ s.reason }}</text>
-          <view class="mt-2" v-if="s.needsUserEvidence">
-            <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+          <!-- 状态标签组 -->
+          <view class="flex-row flex-wrap">
+            <ml-tag
+              :label="parsed.contact ? '联系方式已填' : '联系方式缺失'"
+              :bg="parsed.contact ? '#E6F7F4' : '#FEECEC'"
+              :color="parsed.contact ? '#1FB6A6' : '#DC2626'"
+            ></ml-tag>
+            <view class="w-1.5"></view>
+            <ml-tag
+              label="'项目经历 ' + parsed.projects + ' 段'"
+              bg="#EEF1FF"
+              color="#5B6CFF"
+            ></ml-tag>
+            <view class="w-1.5"></view>
+            <ml-tag
+              :label="parsed.quantified ? '成果已量化' : '成果未量化'"
+              :bg="parsed.quantified ? '#E6F7F4' : '#FFF3E0'"
+              :color="parsed.quantified ? '#1FB6A6' : '#E08A00'"
+            ></ml-tag>
+          </view>
+
+          <!-- 技术栈 -->
+          <template v-if="parsed.techStack.length > 0">
+            <view class="flex-row items-center mt-4">
+              <ml-icon name="layers" :size="13" color="#5B6CFF"></ml-icon>
+              <text class="text-xs font-semibold text-ink ml-1">技术栈</text>
+            </view>
+            <view class="flex-row flex-wrap mt-2">
+              <view
+                v-for="(t, i) in parsed.techStack"
+                :key="'t' + i"
+                class="h-7 px-2.5 rounded-lg bg-bg-muted flex-row items-center mr-1.5 mb-1.5"
+              >
+                <text class="text-xs text-ink-soft">{{ t }}</text>
+              </view>
+            </view>
+          </template>
+
+          <!-- 待补充 -->
+          <view v-if="parsed.gaps.length > 0" class="mt-3">
+            <view class="flex-row items-center">
+              <ml-icon name="circle-help" :size="13" color="#E08A00"></ml-icon>
+              <text class="text-xs font-semibold text-warn ml-1">待补充</text>
+            </view>
+            <text
+              v-for="(g, i) in parsed.gaps"
+              :key="'g' + i"
+              class="text-xs text-ink-soft mt-1.5 leading-5"
+            >
+              · {{ g }}
+            </text>
+          </view>
+
+          <!-- 格式风险 -->
+          <view v-if="parsed.formatRisks.length > 0" class="mt-3">
+            <view class="flex-row items-center">
+              <ml-icon name="triangle-alert" :size="13" color="#DC2626"></ml-icon>
+              <text class="text-xs font-semibold text-danger ml-1">格式风险</text>
+            </view>
+            <text
+              v-for="(r, i) in parsed.formatRisks"
+              :key="'r' + i"
+              class="text-xs text-ink-soft mt-1.5 leading-5"
+            >
+              · {{ r }}
+            </text>
           </view>
         </ml-card>
       </view>
+
+      <!-- 改写建议 -->
+      <view v-if="suggestions.length > 0" class="mt-5">
+        <ml-section-header
+          title="改写建议"
+          caption="均为建议稿，确认后才保存"
+          action-text="全部采用"
+          @action="adoptAll"
+        ></ml-section-header>
+        <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+          <ml-card>
+            <!-- 原句 -->
+            <view class="rounded-xl p-3 bg-bg-muted">
+              <view class="flex-row items-center">
+                <ml-icon name="quote" :size="12" color="#AEB9CC"></ml-icon>
+                <text class="text-[11px] text-mist ml-1">原文</text>
+              </view>
+              <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ s.original }}</text>
+            </view>
+            <!-- 建议稿 -->
+            <view class="mt-3 rounded-xl p-3 bg-chip-reliable">
+              <view class="flex-row items-center">
+                <ml-icon name="wand-2" :size="12" color="#1FB6A6"></ml-icon>
+                <text class="text-[11px] font-semibold text-reliable ml-1">建议稿</text>
+              </view>
+              <text class="text-[13px] text-ink mt-1.5 leading-5">{{ s.suggested }}</text>
+            </view>
+            <!-- 原因 -->
+            <text class="text-xs text-ink-soft mt-2.5 leading-5">{{ s.reason }}</text>
+            <view class="mt-2" v-if="s.needsUserEvidence">
+              <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+            </view>
+            <!-- 操作 -->
+            <view class="flex-row mt-3">
+              <view
+                class="h-8 px-3.5 rounded-full flex-row items-center justify-center pressable"
+                :class="isAdopted(i) ? 'bg-line' : 'bg-smart'"
+                hover-class="card-pressed"
+                :hover-start-time="0"
+                @click="toggleAdopt(i)"
+              >
+                <ml-icon
+                  :name="isAdopted(i) ? 'check-check' : 'check'"
+                  :size="13"
+                  :color="isAdopted(i) ? '#5B6472' : '#FFFFFF'"
+                ></ml-icon>
+                <text class="text-xs ml-1" :class="isAdopted(i) ? 'text-ink-soft' : 'text-white'">
+                  {{ isAdopted(i) ? '已采用' : '采用' }}
+                </text>
+              </view>
+              <view class="w-2"></view>
+              <view
+                class="h-8 px-3.5 rounded-full border border-line flex-row items-center justify-center"
+                hover-class="card-pressed"
+                :hover-start-time="0"
+                @click="dismissOne(i)"
+              >
+                <ml-icon name="x" :size="13" color="#5B6472"></ml-icon>
+                <text class="text-xs text-ink-soft ml-1">忽略</text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+      </view>
+
+      <!-- 完成操作 -->
+      <view v-if="suggestions.length > 0" class="mt-4">
+        <ml-button
+          :text="'保存 ' + adoptedCount + ' 条改写'"
+          type="primary"
+          block
+          :disabled="adoptedCount === 0"
+          @click="saveAll"
+        ></ml-button>
+        <view class="h-2"></view>
+        <ml-button text="放弃全部修改" type="ghost" block @click="resetAll"></ml-button>
+      </view>
     </view>
-  </view>
+  </scroll-view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlTag from '../../components/ml-tag.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import mlSectionHeader from '../../components/ml-section-header.uvue'
+import mlProgress from '../../components/ml-progress.uvue'
 import { parseResume, optimizeResume } from '../../api/resume.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
 import { userStore, positionDisplay } from '../../store/user-profile.uts'
+
+const steps: string[] = ['上传简历', 'AI 解析', '优化建议']
 
 const fileName = ref('')
 const parsing = ref(false)
 const parsed = ref<ResumeParseResult | null>(null)
 const suggestions = ref<ResumeSuggestion[]>([])
+const adopted = ref<boolean[]>([])
+
+// 步骤：0 上传；解析完成 1；建议生成 2
+const currentStep = computed((): number => {
+  if (suggestions.value.length > 0) return 2
+  if (parsed.value != null) return 1
+  return 0
+})
+
+const adoptedCount = computed((): number => {
+  let n = 0
+  for (let i = 0; i < adopted.value.length; i++) {
+    if (adopted.value[i]) n += 1
+  }
+  return n
+})
+
+function stepStyle(i: number): { [key: string]: string } {
+  if (i < currentStep.value) return { backgroundColor: '#1FB6A6' }
+  if (i === currentStep.value) return { backgroundColor: '#5B6CFF' }
+  return { backgroundColor: '#F1F5F9', border: '1px solid #E3E8F0' }
+}
+
+function stepTextColor(i: number): string {
+  return i <= currentStep.value ? '#FFFFFF' : '#AEB9CC'
+}
+
+function isAdopted(i: number): boolean {
+  return i < adopted.value.length ? adopted.value[i] : false
+}
+
+function toggleAdopt(i: number) {
+  const next = adopted.value.slice()
+  while (next.length <= i) next.push(false)
+  next[i] = !next[i]
+  adopted.value = next
+}
+
+function dismissOne(i: number) {
+  toggleAdopt(i)
+}
+
+function adoptAll() {
+  const next: boolean[] = []
+  for (let i = 0; i < suggestions.value.length; i++) next.push(true)
+  adopted.value = next
+}
+
+function resetAll() {
+  fileName.value = ''
+  parsed.value = null
+  suggestions.value = []
+  adopted.value = []
+}
+
+function saveAll() {
+  uni.showToast({ title: '已保存 ' + adoptedCount.value + ' 条改写', icon: 'none' })
+}
 
 function pick() {
   // #ifdef H5
@@ -117,7 +335,7 @@ function pickNative() {
     count: 1,
     type: 'file',
     extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-    success(res : any) {
+    success(res: any) {
       const files = res.tempFiles as any[]
       if (files == null || files.length === 0) return
       const f = files[0]
@@ -135,7 +353,7 @@ function pickNative() {
   uni.chooseFile({
     count: 1,
     extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-    success(res : any) {
+    success(res: any) {
       const paths = res.tempFilePaths as string[]
       if (paths == null || paths.length === 0) return
       const names = res.tempFiles as any[]
@@ -150,16 +368,20 @@ function pickNative() {
 }
 // #endif
 
-async function doParse(path : string, name : string) {
+async function doParse(path: string, name: string) {
   fileName.value = name
   parsing.value = true
   parsed.value = null
   suggestions.value = []
+  adopted.value = []
   try {
     const r = await parseResume(path)
     parsed.value = r
     const sugg = await optimizeResume('简历项目经历', positionDisplay(userStore.profile))
     suggestions.value = sugg
+    const init: boolean[] = []
+    for (let i = 0; i < sugg.length; i++) init.push(false)
+    adopted.value = init
   } catch {
     uni.showToast({ title: '解析失败，请重试', icon: 'none' })
   } finally {
@@ -167,3 +389,9 @@ async function doParse(path : string, name : string) {
   }
 }
 </script>
+
+<style>
+.card-pressed {
+  opacity: 0.85;
+}
+</style>

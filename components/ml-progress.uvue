@@ -1,0 +1,31 @@
+<template>
+  <view>
+    <view v-if="label.length > 0 || showValue" class="flex-row items-center justify-between mb-1.5">
+      <text class="text-xs text-ink-soft">{{ label }}</text>
+      <text v-if="showValue" class="text-xs font-semibold" :style="{ color: color }">
+        {{ percent }}%
+      </text>
+    </view>
+    <view class="h-1.5 rounded-full bg-line overflow-hidden">
+      <view class="h-1.5 rounded-full" :style="{ width: barWidth, backgroundColor: color }"></view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+
+// 进度条：标签 + 百分比 + 轨道（用于能力值、完成度等）
+const props = defineProps({
+  label: { type: String, default: '' },
+  percent: { type: Number, default: 0 }, // 0-100
+  color: { type: String, default: '#5B6CFF' },
+  showValue: { type: Boolean, default: true }
+})
+
+const barWidth = computed((): string => {
+  const p = props.percent
+  const v = p < 0 ? 0 : p > 100 ? 100 : p
+  return v + '%'
+})
+</script>

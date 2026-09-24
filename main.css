@@ -1,36 +1,57 @@
 /* Tailwind CSS 4 入口（uni-app x）
    注意：CSS 生成由 weapp-tailwindcss 接管，不要再注册 tailwindcss / @tailwindcss/postcss / @tailwindcss/vite
-   source(none) 关闭自动扫描，改用显式 @source 精准指定候选文件 */
+   所有 @import 必须连续置于顶部；随后用 @source none 关闭默认扫描，再显式指定候选文件 */
 
-@import 'tailwindcss' source(none);
+@import 'tailwindcss';
+/* 图标字体（Lucide 子集；条件编译见该文件） */
+@import './styles/icons.css';
 
+@source none;
 @source './App.uvue';
 @source './pages/**/*.uvue';
 @source './components/**/*.uvue';
 
-/* 设计 Token（文档 03：深海军蓝 / 紫蓝 / 青绿 + 浅色学习页背景）
+/* 设计 Token（设计系统 MASTER.md §A1：靛紫 / 青绿 / 暖琥珀 / danger + 双表面体系）
    Tailwind 4 会自动生成 bg-navy / text-smart / border-line 等原子类 */
 @theme {
+  /* 深色沉浸面（首页 / 面试房间） */
   --color-navy: #0f2c4c;
   --color-navy-deep: #0b2138;
+
+  /* 品牌语义色 */
   --color-smart: #5b6cff;
   --color-reliable: #1fb6a6;
   --color-warn: #e08a00;
+  --color-danger: #dc2626;
 
+  /* 浅色学习面 */
   --color-bg-light: #f7f9fc;
+  --color-bg-muted: #f1f5f9;
   --color-surface: #ffffff;
   --color-line: #e3e8f0;
 
+  /* 文字 */
   --color-ink: #1a2433;
   --color-ink-soft: #5b6472;
   --color-mist: #aeb9cc;
 
+  /* 浅色 chip（语义背景） */
   --color-chip-smart: #eef1ff;
   --color-chip-reliable: #e6f7f4;
   --color-chip-warn: #fff3e0;
+  --color-chip-danger: #feecec;
 
+  /* 数字人占位形象 */
   --color-figure-head: #c9d4e5;
   --color-figure-body: #8c9bb5;
+
+  /* 字体（中文优先系统栈，不加载拉丁 webfont） */
+  --font-sans: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif;
+
+  /* 三级阴影（navy 色调，比纯黑更贴合品牌） */
+  --shadow-sm: 0 1px 2px rgba(15, 44, 76, 0.06);
+  --shadow-card: 0 4px 16px rgba(15, 44, 76, 0.08);
+  --shadow-float: 0 16px 40px rgba(15, 44, 76, 0.14);
 }
 
 /* 全局基线：uvue 样式不继承，文字样式必须写在 text 上 */
@@ -39,7 +60,7 @@ page {
   background-color: var(--color-bg-light);
 }
 
-/* 尊重系统「减少动态效果」（文档 03 无障碍要求） */
+/* 尊重系统「减少动态效果」（MASTER.md A3-7 无障碍要求） */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

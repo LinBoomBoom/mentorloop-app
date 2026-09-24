@@ -8,7 +8,8 @@
   "uni-app-x": {
     "compilerVersion": "4.0.0",
     "vapor": true,
-    "vapor-render-target": "bytecode"
+    "vapor-render-target": "bytecode",
+    "styleIsolationVersion": "2"
   },
   "app-plus": {
     "distribute": {
@@ -35,12 +36,6 @@
       "urlCheck": false,
       "es6": true,
       "minified": true
-    },
-    "permission": {
-      "scope.record": {
-        "desc": "用于 AI 语音面试录音"
-      }
-    },
-    "requiredPrivateInfos": ["getLocation"]
+    }
   }
 }
