@@ -1,0 +1,26 @@
+<template>
+  <view class="h-screen bg-bg-light flex-col">
+    <ml-nav-bar :title="title"></ml-nav-bar>
+    <web-view v-if="url.length > 0" :src="url" class="flex-1"></web-view>
+    <view v-else class="flex-1 flex-col items-center justify-center px-6">
+      <text class="text-sm text-ink-soft">链接暂未开放</text>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import mlNavBar from '../../components/ml-nav-bar.uvue'
+
+const url = ref('')
+const title = ref('')
+
+onLoad((q: OnLoadOption) => {
+  url.value = decodeURIComponent(q['url'] ?? '')
+  title.value = decodeURIComponent(q['title'] ?? '')
+  if (title.value.length > 0) {
+    uni.setNavigationBarTitle({ title: title.value })
+  }
+})
+</script>

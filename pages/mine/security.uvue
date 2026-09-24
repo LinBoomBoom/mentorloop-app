@@ -33,6 +33,7 @@
             :key="s.text"
             class="flex-row items-center px-4 h-[56px]"
             :class="i < securityRows.length - 1 ? 'border-b border-line' : ''"
+            @click="onSecurityRow(s)"
           >
             <view
               class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
@@ -74,11 +75,13 @@ import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { deleteAccount } from '../../api/auth.uts'
 
 const nickname = ref(userStore.profile.nickname)
 const uid = ref(userStore.profile.uid)
 const planLabel = ref(planText(userStore.profile.plan))
 const loggedIn = ref(userStore.isLoggedIn())
+const deleting = ref(false)
 
 function planText(p: string): string {
   if (p === 'member') return '会员'
@@ -118,7 +121,7 @@ const securityRows: SecurityRow[] = [
     tint: '#FEECEC',
     text: '注销账号',
     desc: '永久删除账号与服务端数据',
-    soon: true
+    soon: false
   } as SecurityRow
 ]
 
@@ -129,6 +132,20 @@ function goLogin() {
   // #ifndef APP
   uni.showToast({ title: '微信授权登录中，请稍候', icon: 'none' })
   // #endif
+}
+
+function onSecurityRow(s: SecurityRow) {
+  if (s.soon) {
+    uni.showToast({ title: '即将上线', icon: 'none' })
+    return
+  }
+  if (s.text === '注销账号') {
+    if (!loggedIn.value) {
+      uni.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+    confirmDeleteAccount()
+  }
 }
 
 function confirmLogout() {
@@ -147,5 +164,54 @@ function confirmLogout() {
       }
     }
   })
+}
+
+// 注销账号：双重确认 → 删服务端数据 → 清本地 → 回登录页
+function confirmDeleteAccount() {
+  if (deleting.value) return
+  uni.showModal({
+    title: '注销账号',
+    content: '将永久删除账号、面试记录、报告与简历等全部服务端数据，且不可恢复。确认继续？',
+    confirmColor: '#DC2626',
+    success: (r1: any) => {
+      if (!r1.confirm) return
+      uni.showModal({
+        title: '再次确认',
+        content: '删除不可恢复，确定要注销吗？',
+        confirmColor: '#DC2626',
+        success: (r2: any) => {
+          if (r2.confirm) doDeleteAccount()
+        }
+      })
+    }
+  })
+}
+
+function doDeleteAccount() {
+  deleting.value = true
+  deleteAccount()
+    .then((ok: boolean) => {
+      if (!ok) {
+        uni.showToast({ title: '注销失败，请稍后重试', icon: 'none' })
+        return
+      }
+      trackEvent('account_deleted')
+      userStore.logout()
+      loggedIn.value = false
+      nickname.value = userStore.profile.nickname
+      planLabel.value = planText(userStore.profile.plan)
+      uni.showToast({ title: '账号已注销', icon: 'none' })
+      // #ifdef APP
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/login/login' })
+      }, 800)
+      // #endif
+    })
+    .catch(() => {
+      uni.showToast({ title: '注销失败，请稍后重试', icon: 'none' })
+    })
+    .finally(() => {
+      deleting.value = false
+    })
 }
 </script>

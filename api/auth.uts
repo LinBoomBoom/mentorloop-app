@@ -1,7 +1,12 @@
 // 认证接口（决策记录 D1：App 端完整认证流程；小程序端静默登录）
 // 契约已冻结：接真后端时仅需实现 /auth/sms-code 与 /auth/login 两个端点。
-import { post, useMock } from './client.uts'
-import { mockSendSmsCode, mockLoginByPhone, mockLoginByWechat } from './mock/auth.mock.uts'
+import { post, del, useMock } from './client.uts'
+import {
+  mockSendSmsCode,
+  mockLoginByPhone,
+  mockLoginByWechat,
+  mockDeleteAccount
+} from './mock/auth.mock.uts'
 import { AuthResult } from '../types/auth.uts'
 import { userStore, UserProfilePatch } from '../store/user-profile.uts'
 
@@ -24,6 +29,13 @@ export async function loginByWechat(code: string): Promise<AuthResult> {
   if (useMock()) return await mockLoginByWechat(code)
   const r = await post('/auth/wechat', { code: code })
   return r.data as AuthResult
+}
+
+// 注销账号：删除服务端全部账号数据（幂等），成功后由调用方清本地状态
+export async function deleteAccount(): Promise<boolean> {
+  if (useMock()) return await mockDeleteAccount()
+  const r = await del('/me/account')
+  return r.code === 0 || r.code === 200
 }
 
 // 登录成功后统一写入用户状态并持久化（供下次启动恢复会话）

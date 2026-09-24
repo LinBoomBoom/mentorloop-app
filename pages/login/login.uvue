@@ -57,7 +57,12 @@
           class="w-4 h-4 rounded-full border"
           :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
         ></view>
-        <text class="text-xs text-ink-soft ml-2">我已阅读并同意《用户协议》与《隐私政策》</text>
+        <view class="flex-row items-center ml-2 flex-1">
+          <text class="text-xs text-ink-soft">我已阅读并同意</text>
+          <text class="text-xs text-smart" @click.stop="openAgreement">《用户协议》</text>
+          <text class="text-xs text-ink-soft">与</text>
+          <text class="text-xs text-smart" @click.stop="openPrivacy">《隐私政策》</text>
+        </view>
       </view>
       <text class="text-xs text-mist mt-3">
         手机号仅用于登录验证；简历与录音数据保护详见隐私政策。
@@ -71,6 +76,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import mlButton from '../../components/ml-button.uvue'
 import { sendSmsCode, loginByPhone, applyAuth } from '../../api/auth.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { AGREEMENT_URL, PRIVACY_URL } from '../../api/env.uts'
 
 const phone = ref('')
 const code = ref('')
@@ -99,6 +105,24 @@ function onCodeInput(e: UniInputEvent) {
 
 function toggleAgree() {
   agreed.value = !agreed.value
+}
+
+function openAgreement() {
+  openDoc(AGREEMENT_URL, '用户协议')
+}
+
+function openPrivacy() {
+  openDoc(PRIVACY_URL, '隐私政策')
+}
+
+function openDoc(url: string, title: string) {
+  if (url.length === 0) {
+    uni.showToast({ title: title + '即将上线', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: '/pages/mine/webview?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent(title)
+  })
 }
 
 function sendCode() {

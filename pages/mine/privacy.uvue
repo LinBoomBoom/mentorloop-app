@@ -53,8 +53,9 @@
             <text class="text-xs text-ink-soft flex-1 leading-5">{{ s }}</text>
           </view>
         </ml-card>
-        <text class="text-[11px] text-mist mt-3 text-center">
-          申请删除服务端账号数据请联系客服（服务端上线后开放），正式响应用户删除请求
+        <text class="text-[11px] text-mist mt-3 text-center leading-4">
+          服务端账号数据（面试记录、报告、简历等）可在「账号与安全 →
+          注销账号」自助删除，删除后不可恢复
         </text>
       </view>
     </view>

@@ -63,6 +63,10 @@
     {
       "path": "pages/mine/about",
       "style": { "navigationBarTitleText": "关于 MentorLoop" }
+    },
+    {
+      "path": "pages/mine/webview",
+      "style": { "navigationBarTitleText": "协议详情" }
     }
   ],
   "tabBar": {

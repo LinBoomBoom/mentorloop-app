@@ -1,8 +1,9 @@
-// 我的报告历史（跨设备同步）单测：面试 → 报告 → GET /me/reports 列表与隔离
+// 我的报告历史（跨设备同步）+ 账号自助删除 单测
 import { describe, it, expect, beforeEach } from 'vitest'
 import { buildApp } from './app.js'
 import { loadEnv } from './config.js'
 import { closeDb } from './db.js'
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 
 function makeApp() {
   const env = loadEnv()
@@ -103,6 +104,95 @@ describe('跨设备报告历史 /me/reports', () => {
     expect(mine.json().data.length).toBe(1)
     const other = await app.inject({ method: 'GET', url: '/me/reports', headers: auth(tokenB) })
     expect(other.json().data.length).toBe(0)
+    closeDb()
+  })
+})
+
+describe('账号自助删除 DELETE /me/account', () => {
+  beforeEach(() => closeDb())
+
+  it('无登录返回 401', async () => {
+    const app = makeApp()
+    const r = await app.inject({ method: 'DELETE', url: '/me/account' })
+    expect(r.json().code).toBe(401)
+    closeDb()
+  })
+
+  it('删除后全部业务数据清空，重复调用幂等', async () => {
+    const app = makeApp()
+    const token = await login(app, '13900000005')
+    await finishOneInterview(app, token)
+
+    const db = (app as any).db
+    const count = (sql: string, ...args: unknown[]): number =>
+      (db.prepare(sql).get(...args) as any).c as number
+
+    expect(count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(1)
+    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBeGreaterThan(0)
+    expect(count('SELECT COUNT(*) AS c FROM answers')).toBeGreaterThan(0)
+    expect(count('SELECT COUNT(*) AS c FROM session_asked')).toBeGreaterThan(0)
+    expect(count('SELECT COUNT(*) AS c FROM reports')).toBeGreaterThan(0)
+
+    const r1 = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
+    expect(r1.json().code).toBe(0)
+
+    expect(count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM answers')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM session_asked')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM reports')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM resumes')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM orders')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM tracking_events')).toBe(0)
+    expect(count('SELECT COUNT(*) AS c FROM sms_codes WHERE phone = ?', '13900000005')).toBe(0)
+
+    // 幂等：同 token 再删仍返回 ok
+    const r2 = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
+    expect(r2.json().code).toBe(0)
+    closeDb()
+  })
+
+  it('删除用户间隔离：只删自己的数据', async () => {
+    const app = makeApp()
+    const tokenA = await login(app, '13900000006')
+    const tokenB = await login(app, '13900000007')
+    await finishOneInterview(app, tokenA)
+    await finishOneInterview(app, tokenB)
+
+    const r = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(tokenA) })
+    expect(r.json().code).toBe(0)
+
+    const db = (app as any).db
+    const count = (sql: string): number => (db.prepare(sql).get() as any).c as number
+    expect(count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000006'")).toBe(0)
+    expect(count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000007'")).toBe(1)
+    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBe(1)
+    closeDb()
+  })
+
+  it('删除磁盘简历文件（original_url 为 resumes/ 前缀时）', async () => {
+    const env = loadEnv()
+    env.dbPath = './data/test-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.db'
+    env.uploadDir = './data/test-uploads-' + Math.random().toString(36).slice(2, 8)
+    const app = await buildApp({ env })
+
+    const token = await login(app, '13900000008')
+    const db = (app as any).db
+    mkdirSync(env.uploadDir, { recursive: true })
+    const rel = 'u_000008_' + Date.now() + '_resume.pdf'
+    writeFileSync(env.uploadDir + '/' + rel, 'fake-pdf')
+    db.prepare(
+      `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
+       VALUES ((SELECT id FROM users WHERE uid = (SELECT uid FROM users WHERE phone = '13900000008')), ?, NULL, NULL, ?)`
+    ).run('resumes/' + rel, Date.now())
+
+    const filePath = env.uploadDir + '/' + rel
+    expect(existsSync(filePath)).toBe(true)
+
+    const r = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
+    expect(r.json().code).toBe(0)
+    expect(existsSync(filePath)).toBe(false)
+    expect((db.prepare('SELECT COUNT(*) AS c FROM resumes').get() as any).c).toBe(0)
     closeDb()
   })
 })

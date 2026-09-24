@@ -143,11 +143,15 @@ export function makeOptions(
   return { method: method, data: data, header: header } as RequestOptions
 }
 
-// 便捷方法：GET/POST
+// 便捷方法：GET/POST/DELETE
 export function get(path: string, query: { [key: string]: any } | null = null): Promise<ApiResult> {
   return request(path, makeOptions('GET', null), query)
 }
 
 export function post(path: string, data: any): Promise<ApiResult> {
   return request(path, makeOptions('POST', data))
+}
+
+export function del(path: string): Promise<ApiResult> {
+  return request(path, makeOptions('DELETE', null))
 }

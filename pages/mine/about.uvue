@@ -39,6 +39,7 @@
             :key="s.text"
             class="flex-row items-center px-4 h-[56px]"
             :class="i < rows.length - 1 ? 'border-b border-line' : ''"
+            @click="openRow(s)"
           >
             <view
               class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
@@ -64,8 +65,17 @@
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import { AGREEMENT_URL, PRIVACY_URL } from '../../api/env.uts'
 
-type AboutRow = { icon: string; color: string; tint: string; text: string; desc: string; soon: boolean }
+type AboutRow = {
+  icon: string
+  color: string
+  tint: string
+  text: string
+  desc: string
+  soon: boolean
+  url: string
+}
 const rows: AboutRow[] = [
   {
     icon: 'file-text',
@@ -73,7 +83,8 @@ const rows: AboutRow[] = [
     tint: '#EEF1FF',
     text: '用户协议',
     desc: '使用条款与服务约定',
-    soon: true
+    soon: false,
+    url: AGREEMENT_URL
   } as AboutRow,
   {
     icon: 'shield',
@@ -81,7 +92,8 @@ const rows: AboutRow[] = [
     tint: '#E6F7F4',
     text: '隐私政策',
     desc: '数据收集、使用与删除说明',
-    soon: true
+    soon: false,
+    url: PRIVACY_URL
   } as AboutRow,
   {
     icon: 'message-square',
@@ -89,7 +101,8 @@ const rows: AboutRow[] = [
     tint: '#FFF3E0',
     text: '意见反馈',
     desc: '告诉我们你的想法与问题',
-    soon: true
+    soon: true,
+    url: ''
   } as AboutRow,
   {
     icon: 'sparkles',
@@ -97,7 +110,26 @@ const rows: AboutRow[] = [
     tint: '#F0EBFF',
     text: '候选岗位',
     desc: '前端 / Go 后端 / 产品经理',
-    soon: true
+    soon: true,
+    url: ''
   } as AboutRow
 ]
+
+function openRow(s: AboutRow) {
+  if (s.soon) {
+    uni.showToast({ title: '即将上线', icon: 'none' })
+    return
+  }
+  if (s.url.length === 0) {
+    uni.showToast({ title: s.text + '即将上线', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url:
+      '/pages/mine/webview?url=' +
+      encodeURIComponent(s.url) +
+      '&title=' +
+      encodeURIComponent(s.text)
+  })
+}
 </script>

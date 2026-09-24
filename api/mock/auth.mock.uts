@@ -26,3 +26,8 @@ export function mockLoginByWechat(code: string): Promise<AuthResult> {
     token: 'wx-mock-token-' + Date.now()
   } as AuthResult)
 }
+
+// 注销账号（mock）：本地直接成功，清态由调用方完成
+export function mockDeleteAccount(): Promise<boolean> {
+  return Promise.resolve(true)
+}
