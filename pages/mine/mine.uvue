@@ -307,7 +307,7 @@ function goPaywall() {
 }
 
 function editProfile() {
-  uni.showToast({ title: '资料编辑即将上线', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/prefs' })
 }
 
 function goReport() {
@@ -354,23 +354,23 @@ function logout() {
 }
 
 function notify() {
-  uni.showToast({ title: '消息通知设置', icon: 'none' })
+  uni.showToast({ title: '消息通知即将上线', icon: 'none' })
 }
 
 function security() {
-  uni.showToast({ title: '账号与安全', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/security' })
 }
 
 function prefs() {
-  uni.showToast({ title: '面试偏好设置', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/prefs' })
 }
 
 function privacy() {
-  uni.showToast({ title: '可在此提交数据删除申请', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/privacy' })
 }
 
 function about() {
-  uni.showToast({ title: 'MentorLoop · 学面一体智能导师', icon: 'none' })
+  uni.navigateTo({ url: '/pages/mine/about' })
 }
 </script>
 

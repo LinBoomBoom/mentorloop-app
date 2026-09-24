@@ -1,0 +1,173 @@
+<template>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-4 pb-8">
+      <!-- 数据清单 -->
+      <ml-card>
+        <view class="flex-row items-center">
+          <ml-icon name="shield" :size="14" color="#5B6CFF"></ml-icon>
+          <text class="text-sm font-semibold text-ink ml-1.5">本地数据</text>
+          <text class="text-xs text-ink-soft ml-2">所有数据仅存储在本机</text>
+        </view>
+        <view class="mt-3">
+          <view
+            v-for="(r, i) in dataRows"
+            :key="r.text"
+            class="flex-row items-center py-2.5"
+            :class="i < dataRows.length - 1 ? 'border-b border-line' : ''"
+          >
+            <view
+              class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
+              :style="{ backgroundColor: r.tint }"
+            >
+              <ml-icon :name="r.icon" :size="15" :color="r.color"></ml-icon>
+            </view>
+            <text class="text-sm text-ink flex-1">{{ r.text }}</text>
+            <text class="text-xs text-ink-soft">{{ r.value }}</text>
+          </view>
+        </view>
+      </ml-card>
+
+      <!-- 清除 -->
+      <view class="mt-3">
+        <ml-button
+          text="清除本地数据"
+          type="danger"
+          block
+          :disabled="clearing"
+          @click="confirmClear"
+        ></ml-button>
+        <text class="text-[11px] text-mist mt-2.5 text-center leading-4">
+          清除后将删除本机的报告、训练记录、简历草稿与额度账本，且无法恢复；登录状态与账户数据来自服务端，不受影响
+        </text>
+      </view>
+
+      <!-- 隐私说明 -->
+      <view class="mt-5">
+        <ml-section-header
+          title="数据说明"
+          caption="录音、简历与转写的处理方式"
+        ></ml-section-header>
+        <ml-card>
+          <view v-for="s in notices" :key="s" class="flex-row items-start py-1.5">
+            <view class="w-1.5 h-1.5 rounded-full bg-smart mt-1.5 mr-2"></view>
+            <text class="text-xs text-ink-soft flex-1 leading-5">{{ s }}</text>
+          </view>
+        </ml-card>
+        <text class="text-[11px] text-mist mt-3 text-center">
+          申请删除服务端账号数据请联系客服（服务端上线后开放），正式响应用户删除请求
+        </text>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import mlSectionHeader from '../../components/ml-section-header.uvue'
+import { reportHistory } from '../../store/report-history.uts'
+import { trainingHistory } from '../../store/training-history.uts'
+import { resumeDraft } from '../../store/resume-draft.uts'
+import { interviewSession } from '../../store/interview-session.uts'
+import { trackEvent } from '../../api/tracking.uts'
+
+type DataRow = { icon: string; color: string; tint: string; text: string; value: string }
+
+const reportCount = ref(0)
+const trainingCount = ref(0)
+const draftCount = ref(0)
+const clearing = ref(false)
+
+onShow(() => {
+  refresh()
+})
+
+function refresh() {
+  reportHistory.load()
+  trainingHistory.load()
+  resumeDraft.load()
+  reportCount.value = reportHistory.all().length
+  trainingCount.value = trainingHistory.all().length
+  const last = resumeDraft.latest()
+  draftCount.value = last != null ? last.versions.length : 0
+}
+
+const dataRows = computed((): DataRow[] => {
+  return [
+    {
+      icon: 'file-text',
+      color: '#5B6CFF',
+      tint: '#EEF1FF',
+      text: '面试报告',
+      value: reportCount.value + ' 份'
+    } as DataRow,
+    {
+      icon: 'dumbbell',
+      color: '#1FB6A6',
+      tint: '#E6F7F4',
+      text: '训练记录',
+      value: trainingCount.value + ' 条'
+    } as DataRow,
+    {
+      icon: 'file-check',
+      color: '#E08A00',
+      tint: '#FFF3E0',
+      text: '简历草稿与导出版本',
+      value: draftCount.value + ' 个版本'
+    } as DataRow,
+    {
+      icon: 'database',
+      color: '#7C5CFF',
+      tint: '#F0EBFF',
+      text: '额度账本与埋点队列',
+      value: '本地'
+    } as DataRow,
+    {
+      icon: 'user',
+      color: '#0EA5B7',
+      tint: '#E0F5F8',
+      text: '账号与偏好',
+      value: '保留' // 账号数据以服务端为准，不随本地清除
+    } as DataRow
+  ]
+})
+
+const notices: string[] = [
+  '简历仅用于本次分析，不会上传至第三方',
+  '录音不用于训练；转写文本仅用于当次面试评分与报告',
+  '正式评分与报告生成由服务端完成（当前 Mock 环境为本地规则评分）',
+  '你可以在本页随时清除全部本地数据'
+]
+
+function confirmClear() {
+  uni.showModal({
+    title: '清除本地数据',
+    content: '将删除本机的报告、训练记录、简历草稿与额度账本，此操作不可恢复。确认继续？',
+    confirmColor: '#DC2626',
+    success: (r: any) => {
+      if (r.confirm) clearLocal()
+    }
+  })
+}
+
+function clearLocal() {
+  if (clearing.value) return
+  clearing.value = true
+  reportHistory.clear()
+  trainingHistory.clear()
+  resumeDraft.clear()
+  interviewSession.clearSnapshot()
+  try {
+    uni.removeStorageSync('ml_quota_state')
+  } catch (e: any) {
+    console.warn('[privacy] clear quota failed', e)
+  }
+  trackEvent('privacy_local_data_cleared')
+  refresh()
+  clearing.value = false
+  uni.showToast({ title: '本地数据已清除', icon: 'none' })
+}
+</script>

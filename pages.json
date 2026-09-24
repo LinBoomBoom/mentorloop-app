@@ -47,6 +47,22 @@
     {
       "path": "pages/membership/paywall",
       "style": { "navigationBarTitleText": "会员开通" }
+    },
+    {
+      "path": "pages/mine/prefs",
+      "style": { "navigationBarTitleText": "面试偏好" }
+    },
+    {
+      "path": "pages/mine/security",
+      "style": { "navigationBarTitleText": "账号与安全" }
+    },
+    {
+      "path": "pages/mine/privacy",
+      "style": { "navigationBarTitleText": "隐私与数据" }
+    },
+    {
+      "path": "pages/mine/about",
+      "style": { "navigationBarTitleText": "关于 MentorLoop" }
     }
   ],
   "tabBar": {

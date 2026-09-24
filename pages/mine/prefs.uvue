@@ -1,0 +1,172 @@
+<template>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="p-4 pb-8">
+      <!-- 昵称 -->
+      <ml-card>
+        <view class="flex-row items-center">
+          <ml-icon name="user" :size="14" color="#5B6CFF"></ml-icon>
+          <text class="text-sm font-semibold text-ink ml-1.5">昵称</text>
+        </view>
+        <input
+          class="mt-2 text-sm text-ink bg-bg-muted rounded-lg px-3 h-10"
+          v-model="nickname"
+          :maxlength="20"
+          placeholder="输入昵称（空则保存为访客）"
+          placeholder-class="text-mist"
+        />
+        <text class="text-[11px] text-mist mt-1.5">昵称用于面试总结与报告署名</text>
+      </ml-card>
+
+      <!-- 默认面试方向 -->
+      <view class="mt-3">
+        <ml-card>
+          <view class="flex-row items-center">
+            <ml-icon name="target" :size="14" color="#5B6CFF"></ml-icon>
+            <text class="text-sm font-semibold text-ink ml-1.5">默认面试方向</text>
+          </view>
+          <view class="flex-row flex-wrap mt-3">
+            <view
+              v-for="p in positionOptions"
+              :key="p.id"
+              class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
+              :class="
+                positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
+              "
+              hover-class="chip-pressed"
+              :hover-start-time="0"
+              @click="selectPosition(p)"
+            >
+              <text class="text-sm" :class="positionId === p.id ? 'text-white' : 'text-ink'">
+                {{ p.name }}
+              </text>
+              <text v-if="!p.available" class="text-xs text-mist ml-1">即将上线</text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 经验年限 -->
+      <view class="mt-3">
+        <ml-card>
+          <view class="flex-row items-center">
+            <ml-icon name="trending-up" :size="14" color="#5B6CFF"></ml-icon>
+            <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
+          </view>
+          <view class="flex-row flex-wrap mt-3">
+            <view
+              v-for="e in experienceOptions"
+              :key="e.id"
+              class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
+              :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
+              hover-class="chip-pressed"
+              :hover-start-time="0"
+              @click="experienceLevel = e.id"
+            >
+              <text class="text-sm" :class="experienceLevel === e.id ? 'text-white' : 'text-ink'">
+                {{ e.label }}
+              </text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 默认面试模式 -->
+      <view class="mt-3">
+        <ml-card>
+          <view class="flex-row items-center">
+            <ml-icon name="clock" :size="14" color="#5B6CFF"></ml-icon>
+            <text class="text-sm font-semibold text-ink ml-1.5">默认面试模式</text>
+            <text class="text-xs text-ink-soft ml-2">进入准备页时自动预选</text>
+          </view>
+          <view class="flex-row mt-3">
+            <view
+              v-for="m in modes"
+              :key="m.id"
+              class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
+              :class="mode === m.id ? 'bg-smart' : 'bg-line'"
+              hover-class="chip-pressed"
+              :hover-start-time="0"
+              @click="mode = m.id"
+            >
+              <text class="text-sm" :class="mode === m.id ? 'text-white' : 'text-ink'">
+                {{ m.label }}
+              </text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 说明 -->
+      <text class="text-[11px] text-mist mt-3 text-center">
+        偏好保存后，下次进入面试准备页自动采用默认方向、年限与模式
+      </text>
+
+      <view class="mt-4">
+        <ml-button text="保存偏好" type="primary" block @click="save"></ml-button>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import { userStore } from '../../store/user-profile.uts'
+import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
+import { PositionId, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
+import { trackEvent } from '../../api/tracking.uts'
+
+const positionOptions = POSITION_OPTIONS
+const experienceOptions = EXPERIENCE_OPTIONS
+
+const modes: { id: InterviewMode; label: string }[] = [
+  { id: 'quick', label: '快练 5min' } as { id: InterviewMode; label: string },
+  { id: 'standard', label: '标准 20min' } as { id: InterviewMode; label: string },
+  { id: 'deep', label: '深度 40min' } as { id: InterviewMode; label: string }
+]
+
+// 从用户档案回填当前值
+const nickname = ref(userStore.profile.nickname)
+const positionId = ref<PositionId>(userStore.profile.positionId)
+const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
+const mode = ref<InterviewMode>(userStore.profile.defaultMode)
+
+function selectPosition(p: PositionOption) {
+  if (!p.available) {
+    uni.showToast({ title: p.name + '题库建设中，敬请期待', icon: 'none' })
+    return
+  }
+  positionId.value = p.id
+}
+
+function save() {
+  const nick = nickname.value.trim()
+  userStore.setProfile({
+    uid: null,
+    nickname: nick.length > 0 ? nick : '访客',
+    plan: null,
+    positionId: positionId.value,
+    experienceLevel: experienceLevel.value,
+    defaultMode: mode.value,
+    token: null
+  })
+  userStore.persist()
+  trackEvent('prefs_saved', {
+    mode: mode.value,
+    positionId: positionId.value,
+    experienceLevel: experienceLevel.value
+  })
+  uni.showToast({ title: '偏好已保存', icon: 'none' })
+  setTimeout(() => {
+    uni.navigateBack()
+  }, 400)
+}
+</script>
+
+<style>
+.chip-pressed {
+  opacity: 0.8;
+}
+</style>

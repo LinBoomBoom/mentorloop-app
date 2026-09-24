@@ -1,0 +1,103 @@
+<template>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-4 pb-8">
+      <!-- 品牌卡 -->
+      <view class="bg-navy rounded-2xl p-5 flex-col items-center relative overflow-hidden">
+        <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+        <view
+          class="absolute -left-10 -bottom-12 w-24 h-24 rounded-full bg-reliable opacity-15"
+        ></view>
+        <view
+          class="w-16 h-16 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: 'rgba(91,108,255,0.3)' }"
+        >
+          <ml-icon name="sparkles" :size="30" color="#FFFFFF"></ml-icon>
+        </view>
+        <text class="text-xl font-bold text-white mt-3">MentorLoop</text>
+        <text class="text-xs text-mist mt-1.5">学面一体智能导师 · 让每次模拟都有证据</text>
+        <view class="flex-row items-center mt-3">
+          <ml-tag label="v0.9.0" bg="rgba(255,255,255,0.14)" color="#FFFFFF"></ml-tag>
+          <ml-tag label="内测版" bg="rgba(245,201,123,0.2)" color="#F5C97B"></ml-tag>
+        </view>
+      </view>
+
+      <!-- 说明 -->
+      <view class="mt-3">
+        <ml-card>
+          <text class="text-xs text-ink-soft leading-5">
+            MentorLoop 面向 1–3 年经验求职者，提供岗位化模拟面试、证据化评分报告与专项训练闭环。
+            当前为首发 Java 后端岗位的内测版本，更多岗位与平台能力陆续开放。
+          </text>
+        </ml-card>
+      </view>
+
+      <!-- 协议与改进 -->
+      <view class="mt-3">
+        <ml-card :padded="false">
+          <view
+            v-for="(s, i) in rows"
+            :key="s.text"
+            class="flex-row items-center px-4 h-[56px]"
+            :class="i < rows.length - 1 ? 'border-b border-line' : ''"
+          >
+            <view
+              class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
+              :style="{ backgroundColor: s.tint }"
+            >
+              <ml-icon :name="s.icon" :size="16" :color="s.color"></ml-icon>
+            </view>
+            <view class="flex-col flex-1">
+              <text class="text-sm text-ink">{{ s.text }}</text>
+              <text class="text-[11px] text-ink-soft mt-0.5">{{ s.desc }}</text>
+            </view>
+            <ml-tag v-if="s.soon" label="即将上线" bg="#F1F5F9" color="#AEB9CC"></ml-tag>
+          </view>
+        </ml-card>
+      </view>
+
+      <text class="text-[11px] text-mist mt-4 text-center"> MentorLoop · 学面一体智能导师 </text>
+    </view>
+  </scroll-view>
+</template>
+
+<script setup lang="uts">
+import mlCard from '../../components/ml-card.uvue'
+import mlTag from '../../components/ml-tag.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+
+type AboutRow = { icon: string; color: string; tint: string; text: string; desc: string; soon: boolean }
+const rows: AboutRow[] = [
+  {
+    icon: 'file-text',
+    color: '#5B6CFF',
+    tint: '#EEF1FF',
+    text: '用户协议',
+    desc: '使用条款与服务约定',
+    soon: true
+  } as AboutRow,
+  {
+    icon: 'shield',
+    color: '#1FB6A6',
+    tint: '#E6F7F4',
+    text: '隐私政策',
+    desc: '数据收集、使用与删除说明',
+    soon: true
+  } as AboutRow,
+  {
+    icon: 'message-square',
+    color: '#E08A00',
+    tint: '#FFF3E0',
+    text: '意见反馈',
+    desc: '告诉我们你的想法与问题',
+    soon: true
+  } as AboutRow,
+  {
+    icon: 'sparkles',
+    color: '#7C5CFF',
+    tint: '#F0EBFF',
+    text: '候选岗位',
+    desc: '前端 / Go 后端 / 产品经理',
+    soon: true
+  } as AboutRow
+]
+</script>

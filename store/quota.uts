@@ -138,6 +138,7 @@ class QuotaStore {
         nickname: null,
         positionId: null,
         experienceLevel: null,
+        defaultMode: null,
         token: null
       })
       userStore.persist()
@@ -151,6 +152,7 @@ class QuotaStore {
           nickname: null,
           positionId: null,
           experienceLevel: null,
+          defaultMode: null,
           token: null
         })
         userStore.persist()

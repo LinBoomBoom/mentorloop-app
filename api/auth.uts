@@ -34,7 +34,8 @@ export function applyAuth(r: AuthResult) {
     token: r.token,
     plan: null,
     positionId: null,
-    experienceLevel: null
+    experienceLevel: null,
+    defaultMode: null
   } as UserProfilePatch)
   userStore.persist()
 }

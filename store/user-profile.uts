@@ -2,7 +2,7 @@
 // 与文档 01 商业模式（free / single / member）对齐
 // 登录策略：App 端完整认证流程；小程序端静默登录（决策记录 D1）
 
-import { PositionId, ExperienceLevel } from '../types/interview.uts'
+import { PositionId, ExperienceLevel, InterviewMode } from '../types/interview.uts'
 
 export type UserPlan = 'free' | 'single' | 'member'
 
@@ -12,6 +12,7 @@ export type UserProfile = {
   plan: UserPlan
   positionId: PositionId
   experienceLevel: ExperienceLevel
+  defaultMode: InterviewMode // 面试偏好：默认模式（快练/标准/深度）
   token: string // 会话凭证；空串表示未登录
 }
 
@@ -43,6 +44,7 @@ export type UserProfilePatch = {
   plan: UserPlan | null
   positionId: PositionId | null
   experienceLevel: ExperienceLevel | null
+  defaultMode: InterviewMode | null
   token: string | null
 }
 
@@ -55,6 +57,7 @@ class UserStore {
     plan: 'free',
     positionId: 'java-backend',
     experienceLevel: 'junior',
+    defaultMode: 'standard',
     token: ''
   }
 
@@ -68,6 +71,7 @@ class UserStore {
     if (p.plan != null) this.profile.plan = p.plan
     if (p.positionId != null) this.profile.positionId = p.positionId
     if (p.experienceLevel != null) this.profile.experienceLevel = p.experienceLevel
+    if (p.defaultMode != null) this.profile.defaultMode = p.defaultMode
     if (p.token != null) this.profile.token = p.token
   }
 
@@ -91,6 +95,8 @@ class UserStore {
       if (raw == null || raw.length === 0) return false
       const p = JSON.parse(raw) as UserProfile
       if (p.token.length === 0) return false
+      // 兼容旧版缓存（升级前无 defaultMode 字段）
+      if (p.defaultMode == null) p.defaultMode = 'standard'
       // 兼容旧版（仅有 currentPosition 字符串）的快照
       this.profile = p
       return true
@@ -107,6 +113,7 @@ class UserStore {
       plan: 'free',
       positionId: 'java-backend',
       experienceLevel: 'junior',
+      defaultMode: 'standard',
       token: ''
     } as UserProfile
     try {

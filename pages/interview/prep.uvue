@@ -219,11 +219,13 @@ onShow(() => {
   experienceLevel.value = userStore.profile.experienceLevel
 })
 
-// 支持外部传入模式（首页快练/标准/深度直达）
+// 支持外部传入模式（首页快练/标准/深度直达）；无传参时使用档案默认偏好
 onLoad((q: OnLoadOption) => {
   const m = q != null && q['mode'] != null ? (q['mode'] as string) : ''
   if (m === 'quick' || m === 'standard' || m === 'deep') {
     mode.value = m as InterviewMode
+  } else {
+    mode.value = userStore.profile.defaultMode
   }
 })
 
@@ -410,6 +412,7 @@ function start() {
     plan: null,
     positionId: positionId.value,
     experienceLevel: experienceLevel.value,
+    defaultMode: null,
     token: null
   })
   userStore.persist()
