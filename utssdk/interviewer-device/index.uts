@@ -1,24 +1,195 @@
-// UTS 原生插件：interviewer-device
-// 职责：权限、网络、前后台、诊断（文档 04）
-// 真实实现为原生层；此处为契约与降级实现。
+// =====================================================
+// interviewer-device · 设备检测插件（P2-12）
+// 职责：权限、网络、前后台、诊断（文档 04 / framework-plan）
+// 结构：跨端 UTS 实现（uni API，App 与小程序通用）；
+//       Android 原生层（app-android/index.uts）可覆写以增强：
+//       - RECORD_AUDIO 运行时权限细粒度查询
+//       - AudioManager 麦克风可用性诊断
+// 契约（framework-plan §interviewer-device）：
+//   checkPermission() / onNetworkChange(cb) / onForeground(cb) / diagnose()
+// 降级策略：所有检测失败时返回明确 false / 'unknown'，不伪造通过
+// （prep 页据此给出解决路径，文档 05：未通过给出解决路径）。
 // 注意：UTS 不支持 interface，契约以类的公开方法为准。
+// =====================================================
+
+export type PermissionMap = {
+  record: boolean
+  network: boolean
+}
+
+export type DiagnoseMap = {
+  mic: string // ok | denied | unavailable | unknown
+  net: string // ok | none | unknown
+}
 
 export class DevicePlugin {
-  checkPermission(): Promise<Record<string, boolean>> {
-    return Promise.resolve({ record: true, network: true })
+  private netCb: ((online: boolean) => void) | null = null
+  private fgCb: ((foreground: boolean) => void) | null = null
+  private netWatched = false
+  private fgWatched = false
+
+  // ---------------- 权限 ----------------
+
+  // 录音授权 + 网络状态一次性检查（授权被拒返回 record:false，不弹窗——
+  // 弹窗与引导由 prep 页负责，插件只做只读检测）
+  checkPermission(): Promise<PermissionMap> {
+    return new Promise<PermissionMap>((resolve) => {
+      const result: PermissionMap = { record: false, network: false }
+      // 网络状态
+      try {
+        uni.getNetworkType({
+          success: (r: any) => {
+            const t = r != null && r.networkType != null ? String(r.networkType) : 'none'
+            result.network = t !== 'none'
+            this.resolvePermission(result, resolve)
+          },
+          fail: () => {
+            this.resolvePermission(result, resolve)
+          }
+        } as any)
+      } catch (_e: any) {
+        this.resolvePermission(result, resolve)
+      }
+      // 录音授权（只读 getSetting，不主动弹窗）
+      // #ifdef MP-WEIXIN || APP-PLUS || APP
+      try {
+        uni.getSetting({
+          success: (r: any) => {
+            const authSetting = r != null && r.authSetting != null ? r.authSetting : null
+            const scopeRecord = authSetting != null ? authSetting['scope.record'] : null
+            // true = 已授权；undefined = 未申请过（视为未授权，由 prep 页主动请求）
+            result.record = scopeRecord === true
+            this.resolvePermission(result, resolve)
+          },
+          fail: () => {
+            // 不支持 getSetting 的环境（H5 等）：交由 prep 页既有流程处理
+            this.resolvePermission(result, resolve)
+          }
+        } as any)
+      } catch (_e: any) {
+        this.resolvePermission(result, resolve)
+      }
+      // #endif
+      // #ifndef MP-WEIXIN || APP-PLUS || APP
+      result.record = true
+      this.resolvePermission(result, resolve)
+      // #endif
+    })
   }
 
+  // 两路异步都回来后再 resolve（record/network 各贡献一次）
+  private resolvePermission(result: PermissionMap, resolve: (r: PermissionMap) => void): void {
+    this.permSettled += 1
+    if (this.permSettled >= 2) {
+      this.permSettled = 0
+      resolve(result)
+    }
+  }
+
+  private permSettled = 0
+
+  // ---------------- 网络变化 ----------------
+
+  // 网络断连/恢复监听（uni.onNetworkStatusChange；重复注册只保留最新回调）
   onNetworkChange(cb: (online: boolean) => void): void {
-    console.warn('[device] onNetworkChange 未接入', cb)
+    this.netCb = cb
+    if (this.netWatched) return
+    this.netWatched = true
+    try {
+      uni.onNetworkStatusChange((r: any) => {
+        const online = r != null && r.isConnected === true
+        const c = this.netCb
+        if (c != null) c(online)
+      })
+    } catch (e: any) {
+      console.warn('[device] onNetworkStatusChange 不可用', e)
+    }
   }
 
+  // ---------------- 前后台 ----------------
+
+  // 前后台切换监听（App：onAppShow/onAppHide；小程序：onAppShow/onAppHide 同名）
   onForeground(cb: (foreground: boolean) => void): void {
-    console.warn('[device] onForeground 未接入', cb)
+    this.fgCb = cb
+    if (this.fgWatched) return
+    this.fgWatched = true
+    try {
+      uni.onAppShow(() => {
+        const c = this.fgCb
+        if (c != null) c(true)
+      })
+      uni.onAppHide(() => {
+        const c = this.fgCb
+        if (c != null) c(false)
+      })
+    } catch (e: any) {
+      console.warn('[device] onAppShow/onAppHide 不可用', e)
+    }
   }
 
-  diagnose(): Promise<Record<string, string>> {
-    return Promise.resolve({ mic: 'ok', net: 'ok' })
+  // ---------------- 诊断 ----------------
+
+  // 综合诊断：mic（ok/denied/unavailable/unknown）+ net（ok/none/unknown）
+  // prep 页据此给出解决路径文案；unknown 表示平台能力不足，不伪造结论
+  diagnose(): Promise<DiagnoseMap> {
+    return new Promise<DiagnoseMap>((resolve) => {
+      const result: DiagnoseMap = { mic: 'unknown', net: 'unknown' }
+      // 网络
+      try {
+        uni.getNetworkType({
+          success: (r: any) => {
+            const t = r != null && r.networkType != null ? String(r.networkType) : 'none'
+            result.net = t === 'none' ? 'none' : 'ok'
+            this.resolveDiagnose(result, resolve)
+          },
+          fail: () => {
+            this.resolveDiagnose(result, resolve)
+          }
+        } as any)
+      } catch (_e: any) {
+        this.resolveDiagnose(result, resolve)
+      }
+      // 麦克风：授权状态只读探测
+      // #ifdef MP-WEIXIN || APP-PLUS || APP
+      try {
+        uni.getSetting({
+          success: (r: any) => {
+            const authSetting = r != null && r.authSetting != null ? r.authSetting : null
+            const scopeRecord = authSetting != null ? authSetting['scope.record'] : null
+            if (scopeRecord === true) {
+              result.mic = 'ok'
+            } else if (scopeRecord === false) {
+              result.mic = 'denied'
+            } else {
+              // 未申请过：既非 ok 也非 denied，prep 页引导主动授权
+              result.mic = 'unavailable'
+            }
+            this.resolveDiagnose(result, resolve)
+          },
+          fail: () => {
+            this.resolveDiagnose(result, resolve)
+          }
+        } as any)
+      } catch (_e: any) {
+        this.resolveDiagnose(result, resolve)
+      }
+      // #endif
+      // #ifndef MP-WEIXIN || APP-PLUS || APP
+      result.mic = 'ok'
+      this.resolveDiagnose(result, resolve)
+      // #endif
+    })
   }
+
+  private resolveDiagnose(result: DiagnoseMap, resolve: (r: DiagnoseMap) => void): void {
+    this.diagSettled += 1
+    if (this.diagSettled >= 2) {
+      this.diagSettled = 0
+      resolve(result)
+    }
+  }
+
+  private diagSettled = 0
 }
 
 export const devicePlugin: DevicePlugin = new DevicePlugin()

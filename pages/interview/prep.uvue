@@ -173,6 +173,7 @@ import {
   ExperienceLevel,
   InterviewMode
 } from '../../types/interview.uts'
+import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 
 type CheckKey = 'mic' | 'net' | 'record'
 
@@ -217,7 +218,27 @@ onShow(() => {
   // 从用户 profile 恢复默认选择
   positionId.value = userStore.profile.positionId
   experienceLevel.value = userStore.profile.experienceLevel
+  // P2-12：插件快速预检（只读，不弹窗）——已授权/联网时直接点亮对应项
+  quickPrelight()
+  // P2-12：网络断连监听（面试前断网即时提示，给出解决路径）
+  devicePlugin.onNetworkChange((online: boolean) => {
+    if (!online) {
+      checkError.value = '网络已断开，请检查网络连接'
+      setCheck('net', false, false)
+    } else if (checkError.value.indexOf('网络已断开') >= 0) {
+      checkError.value = ''
+      setCheck('net', true, false)
+    }
+  })
 })
+
+// P2-12：进入页面即做只读预检（不弹权限窗），已满足的项直接置绿
+function quickPrelight() {
+  devicePlugin.checkPermission().then((p) => {
+    if (p.network) setCheck('net', true, false)
+    if (p.record) setCheck('record', true, false)
+  })
+}
 
 // 支持外部传入模式（首页快练/标准/深度直达）；无传参时使用档案默认偏好
 onLoad((q: OnLoadOption) => {
