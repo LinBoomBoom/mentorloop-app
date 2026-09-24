@@ -23,7 +23,7 @@
 
     <!-- 数字人舞台 -->
     <view class="flex-1">
-      <interviewer-avatar :state="avatarState"></interviewer-avatar>
+      <interviewer-avatar :state="avatarState" :speaking="ttsSpeaking"></interviewer-avatar>
     </view>
 
     <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
@@ -148,6 +148,18 @@ import { getPositionName, getExperienceRange } from '../../data/position-options
 import { decideFollowup, FollowupDecision } from '../../engine/followup-engine.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import {
+  SpeechRecorder,
+  RecordResult,
+  speak,
+  TtsHandle,
+  onTtsState,
+  startRealtimeAsr,
+  RealtimeAsrSession,
+  transcribe,
+  AsrResult,
+  speechCapability
+} from '../../api/speech.uts'
 
 const recording = ref(false)
 const remain = ref(1200)
@@ -155,8 +167,10 @@ const caption = ref('')
 const sessionId = ref('')
 // 当前追问话术（非空时显示追问而非原题）
 const followupPrompt = ref('')
-// 最近一次录音文件路径（供后续 ASR 上送；当前版本本地 mock 转写）
+// 最近一次录音文件路径（供 ASR 上送与证据存档）
 const lastAudioPath = ref('')
+// ASR 实时识别的中间文本（仅稳定文本进入转写链）
+const liveTranscript = ref('')
 // 面试模式（由 prep 页传入）
 const mode = ref<InterviewMode>('standard')
 // 当前会话的岗位蓝图（由 prep 页传入的 positionId + experienceLevel 构造）
@@ -182,9 +196,13 @@ const submittingText = ref(false)
 // 暂停状态（暂停时冻结倒计时与录音入口）
 const paused = ref(false)
 
-// 录音管理器（H5 端降级为不录音但不报错）
-let recorder: any = null
-let recorderReady = false
+// 感知层：录音器 + TTS 句柄 + 实时识别会话 + 平台能力
+const speech = new SpeechRecorder()
+let ttsHandle: TtsHandle | null = null
+let asrSession: RealtimeAsrSession | null = null
+const cap = speechCapability()
+// TTS 播放状态（驱动数字人口型同步）
+const ttsSpeaking = ref(false)
 
 const initialState: string = 'idle'
 const avatarState = ref(initialState)
@@ -280,40 +298,50 @@ onLoad((options: any) => {
 
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
-  // 页面卸载时若仍在录音，停止并释放
+  // 页面卸载时释放感知层资源（单活跃实例，退出即释放）
   try {
-    if (recorderReady && recording.value) {
-      recorder.stop()
+    if (speech.isRecording()) speech.stop()
+    if (asrSession != null) {
+      asrSession.stop()
+      asrSession = null
+    }
+    if (ttsHandle != null) {
+      ttsHandle.stop()
+      ttsHandle = null
     }
   } catch {
     // 忽略卸载阶段错误
   }
 })
 
-// 初始化录音管理器（注册 onStop/onError 回调）
+// 初始化录音器（回调统一走感知层；H5 降级为文字作答）
 function initRecorder() {
-  try {
-    // #ifdef MP-WEIXIN || APP-PLUS || APP
-    recorder = uni.getRecorderManager()
-    recorder.onStop((res: any) => {
-      const filePath = res != null ? (res.tempFilePath as string) : ''
-      lastAudioPath.value = filePath
-      handleRecordingStopped(filePath)
-    })
-    recorder.onError((err: any) => {
-      console.warn('[room] recorder error', err)
-      caption.value = '录音失败，请重试'
+  speech.init({
+    onStart: () => {},
+    onStop: (result: RecordResult) => {
+      lastAudioPath.value = result.audioPath
+      handleRecordingStopped(result)
+    },
+    onError: (errMsg: string) => {
+      console.warn('[room] recorder error', errMsg)
+      caption.value = '录音失败，请改用文字作答'
       recording.value = false
-      avatarState.value = 'idle'
-    })
-    recorderReady = true
-    // #endif
-    // #ifndef MP-WEIXIN || APP-PLUS || APP
-    recorderReady = false
-    // #endif
-  } catch {
-    recorderReady = false
-  }
+      avatarState.value = 'listening'
+    }
+  })
+  // TTS 播放状态 → 数字人口型同步
+  onTtsState((state: 'start' | 'end') => {
+    if (state === 'start') {
+      ttsSpeaking.value = true
+      avatarState.value = 'asking'
+    } else {
+      ttsSpeaking.value = false
+      // 播报结束进入倾听（仅当仍处于提问/追问状态）
+      if (avatarState.value === 'asking' || avatarState.value === 'followup') {
+        avatarState.value = 'listening'
+      }
+    }
+  })
 }
 
 async function init() {
@@ -360,11 +388,13 @@ async function ask() {
     goSummary()
     return
   }
-  // 数字人播报后进入倾听（真实播报由 realtime 插件驱动）
-  setTimeout(() => {
-    interviewSession.transition('LISTENING')
-    avatarState.value = 'listening'
-  }, 1500)
+  // 数字人 TTS 播报题目（真实感知层），播报结束进入倾听
+  interviewSession.transition('LISTENING')
+  avatarState.value = 'asking'
+  if (ttsHandle != null) {
+    ttsHandle.stop()
+  }
+  ttsHandle = speak(currentQuestion.value.content)
 }
 
 // 发起追问（不切题，depth+1，展示追问话术）
@@ -385,9 +415,11 @@ function askFollowup(decision: FollowupDecision) {
     text: decision.prompt,
     timestamp: Date.now()
   })
-  setTimeout(() => {
-    avatarState.value = 'listening'
-  }, 1000)
+  // TTS 播报追问话术
+  if (ttsHandle != null) {
+    ttsHandle.stop()
+  }
+  ttsHandle = speak(decision.prompt)
 }
 
 function toggleRecord() {
@@ -405,20 +437,27 @@ function toggleRecord() {
 function startRecord() {
   recording.value = true
   avatarState.value = 'listening'
-  caption.value = '正在聆听…'
   lastAudioPath.value = ''
-  if (recorderReady) {
-    try {
-      recorder.start({
-        format: 'mp3',
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        encodeBitRate: 48000
-      })
-    } catch {
-      console.warn('[room] start record failed')
-      // 启动失败仍允许走文字辅助流程
-    }
+  liveTranscript.value = ''
+  // 微信端：同步开启实时语音识别（边录边转，稳定文本进入字幕）
+  if (cap.platform === 'mp-weixin') {
+    asrSession = startRealtimeAsr((text: string, stable: boolean) => {
+      if (stable) {
+        // 稳定文本累积到 liveTranscript（仅稳定文本进入转写链）
+        if (text.length > 0) {
+          liveTranscript.value = liveTranscript.value + text
+        }
+      } else if (text.length > 0) {
+        caption.value = text
+      }
+    })
+  }
+  caption.value = asrSession != null ? '正在聆听，请开始作答…' : '正在聆听…'
+  if (speech.isReady()) {
+    speech.start()
+  } else {
+    // 平台不支持录音：提示文字作答
+    caption.value = '当前设备不支持录音，请切换文字作答'
   }
 }
 
@@ -426,16 +465,48 @@ function stopRecord(_auto: boolean) {
   if (!recording.value) return
   recording.value = false
   caption.value = '转写中…'
-  if (recorderReady) {
-    try {
-      recorder.stop()
-    } catch {
-      // H5/降级环境：直接处理
-      handleAnswer('（录音已保存，ASR 转写待接入）')
-    }
-  } else {
-    handleAnswer('（录音已保存，ASR 转写待接入）')
+  // 先停实时识别（微信端），再停录音
+  if (asrSession != null) {
+    asrSession.stop()
+    asrSession = null
   }
+  if (speech.isReady() && speech.isRecording()) {
+    speech.stop()
+  } else {
+    // 无录音能力：用已积累的实时文本或提示降级
+    finishTranscribe('')
+  }
+}
+
+// 录音结束：按平台路由转写（微信用实时文本，App 用云端转写）
+function handleRecordingStopped(result: RecordResult) {
+  if (cap.platform === 'mp-weixin') {
+    // 微信端：实时识别文本已积累
+    finishTranscribe(liveTranscript.value)
+    return
+  }
+  if (!result.ok || result.audioPath.length === 0) {
+    finishTranscribe('')
+    return
+  }
+  // App 端：云端 ASR
+  transcribe(result.audioPath).then((r: AsrResult) => {
+    finishTranscribe(r.ok ? r.text : '')
+  }).catch(() => {
+    finishTranscribe('')
+  })
+}
+
+// 转写收口：有文本走作答链，无文本提示文字降级（不静默丢答案）
+function finishTranscribe(text: string) {
+  const t = text.trim()
+  if (t.length === 0) {
+    caption.value = '没有听清你的回答，请重试或切换文字作答'
+    avatarState.value = 'listening'
+    trackEvent('interview_asr_fallback', { questionId: currentQuestion.value.id })
+    return
+  }
+  handleAnswer(t, 'voice')
 }
 
 // 录音结束 / 文字提交后的统一处理：写转写、决策追问/下一题
@@ -471,11 +542,6 @@ function handleAnswer(answerText: string, inputMode: string = 'voice') {
       if (ev != null) ask()
     }, 800)
   }
-}
-
-// 兼容 onStop 回调签名
-function handleRecordingStopped(_audioPath: string) {
-  handleAnswer('（录音已保存，ASR 转写待接入）')
 }
 
 function goSummary() {

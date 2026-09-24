@@ -73,15 +73,21 @@
         <text class="text-xs text-mist mt-1.5">文字答</text>
       </view>
 
-      <!-- 完成本题 -->
+      <!-- 完成本题 / 停止录音 -->
       <view class="flex-col items-center mx-6" @click="submitDone">
         <view
           class="w-16 h-16 rounded-full flex-row items-center justify-center"
-          :class="finished ? 'bg-warn' : 'bg-reliable'"
+          :class="finished ? 'bg-warn' : recording ? 'bg-danger' : 'bg-reliable'"
         >
-          <ml-icon :name="finished ? 'check' : 'mic'" :size="24" color="#FFFFFF"></ml-icon>
+          <ml-icon
+            :name="finished ? 'check' : recording ? 'square' : 'mic'"
+            :size="24"
+            color="#FFFFFF"
+          ></ml-icon>
         </view>
-        <text class="text-xs text-white mt-2">{{ finished ? '查看小结' : '完成本题' }}</text>
+        <text class="text-xs text-white mt-2">{{
+          finished ? '查看小结' : recording ? '停止并转写' : '语音作答'
+        }}</text>
       </view>
 
       <!-- 跳过 -->
@@ -140,6 +146,15 @@ import { selectNext } from '../../engine/question-selector.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
 import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
+import {
+  SpeechRecorder,
+  RecordResult,
+  startRealtimeAsr,
+  RealtimeAsrSession,
+  transcribe,
+  AsrResult,
+  speechCapability
+} from '../../api/speech.uts'
 
 // 训练任务参数（training 页传入）
 const taskId = ref('')
@@ -165,6 +180,13 @@ const remain = ref(180)
 const finished = ref(false)
 const hint = ref('')
 const askedIds = ref<string[]>([])
+
+// 语音作答状态
+const recording = ref(false)
+const liveTranscript = ref('')
+const cap = speechCapability()
+const speech = new SpeechRecorder()
+let asrSession: RealtimeAsrSession | null = null
 
 // 文字输入弹窗
 const textModalVisible = ref(false)
@@ -239,6 +261,7 @@ onLoad((options: any) => {
   } as PositionBlueprint
 
   nextQuestion()
+  initSpeech()
 
   timer = setInterval(() => {
     if (remain.value > 0) remain.value = remain.value - 1
@@ -250,7 +273,31 @@ onLoad((options: any) => {
 
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
+  // 释放感知层资源
+  try {
+    if (speech.isRecording()) speech.stop()
+    if (asrSession != null) {
+      asrSession.stop()
+      asrSession = null
+    }
+  } catch {
+    // 忽略卸载阶段错误
+  }
 })
+
+// 初始化录音器（语音作答）
+function initSpeech() {
+  speech.init({
+    onStart: () => {},
+    onStop: (result: RecordResult) => {
+      handleRecordingStopped(result)
+    },
+    onError: (_errMsg: string) => {
+      recording.value = false
+      hint.value = '录音失败，请改用文字作答'
+    }
+  })
+}
 
 // 从题库选下一题（复用题目选择器，训练模式不问收束题）
 function nextQuestion() {
@@ -302,13 +349,88 @@ function submitDone() {
     finishTraining()
     return
   }
-  // 无录音版本：直接以口头作答完成，进入反馈
-  hint.value = feedbackFor('（口头作答）')
+  if (recording.value) {
+    // 正在录音：停止并转写
+    stopVoice()
+    return
+  }
+  startVoice()
+}
+
+// 开始语音作答（微信端同步开启实时识别）
+function startVoice() {
+  recording.value = true
+  liveTranscript.value = ''
+  hint.value = ''
+  if (cap.platform === 'mp-weixin') {
+    asrSession = startRealtimeAsr((text: string, stable: boolean) => {
+      if (stable) {
+        if (text.length > 0) liveTranscript.value = liveTranscript.value + text
+      } else if (text.length > 0) {
+        hint.value = text
+      }
+    })
+  }
+  hint.value = asrSession != null ? '正在聆听，请开始作答…' : '正在聆听…'
+  if (speech.isReady()) {
+    speech.start()
+  } else {
+    recording.value = false
+    hint.value = '当前设备不支持录音，请切换文字作答'
+  }
+}
+
+// 停止录音并转写
+function stopVoice() {
+  recording.value = false
+  hint.value = '转写中…'
+  if (asrSession != null) {
+    asrSession.stop()
+    asrSession = null
+  }
+  if (speech.isReady() && speech.isRecording()) {
+    speech.stop()
+  } else {
+    finishTranscribe(liveTranscript.value)
+  }
+}
+
+// 录音结束：按平台路由转写
+function handleRecordingStopped(result: RecordResult) {
+  if (cap.platform === 'mp-weixin') {
+    finishTranscribe(liveTranscript.value)
+    return
+  }
+  if (!result.ok || result.audioPath.length === 0) {
+    finishTranscribe('')
+    return
+  }
+  transcribe(result.audioPath).then((r: AsrResult) => {
+    finishTranscribe(r.ok ? r.text : '')
+  }).catch(() => {
+    finishTranscribe('')
+  })
+}
+
+// 转写收口：有文本给即时反馈，无文本提示降级
+function finishTranscribe(text: string) {
+  const t = text.trim()
+  if (t.length === 0) {
+    hint.value = '没有听清你的回答，请重试或切换文字作答'
+    return
+  }
+  applyFeedback(t, 'voice')
+}
+
+// 即时反馈 + 推进（语音/文字共用）
+function applyFeedback(answerText: string, inputMode: string) {
+  hint.value = feedbackFor(answerText)
   doneCount.value = doneCount.value + 1
   trackEvent('training_task_complete', {
     taskId: taskId.value,
     source: source.value,
-    questionIndex: doneCount.value
+    questionIndex: doneCount.value,
+    inputMode: inputMode
   })
   if (doneCount.value >= totalQuestions.value) {
     finishTraining()
@@ -364,21 +486,8 @@ function submitText() {
   const t = textDraft.value.trim()
   if (t.length === 0) return
   textModalVisible.value = false
-  hint.value = feedbackFor(t)
-  doneCount.value = doneCount.value + 1
-  trackEvent('training_task_complete', {
-    taskId: taskId.value,
-    source: source.value,
-    questionIndex: doneCount.value,
-    inputMode: 'text'
-  })
-  if (doneCount.value >= totalQuestions.value) {
-    finishTraining()
-    return
-  }
-  setTimeout(() => {
-    nextQuestion()
-  }, 1200)
+  applyFeedback(t, 'text')
+  textDraft.value = ''
 }
 
 function confirmExit() {

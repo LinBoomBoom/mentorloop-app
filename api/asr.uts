@@ -1,0 +1,54 @@
+// ASR 云端转写通道（App 端）
+// 职责：上传录音文件 → 云端 ASR → 返回转写文本
+// Mock 优先：BASE_URL 为空时返回降级结果（不伪造转写内容，避免污染证据链）。
+// 接真后端：POST /interview/asr（multipart 音频上传），返回 { text, confidence }。
+
+import { useMock } from './client.uts'
+
+export type AsrResponse = {
+  text: string
+  confidence: number
+}
+
+// 上传录音并转写。失败抛错（调用方 catch 后提示文字作答降级）。
+export async function uploadAsr(audioPath: string): Promise<AsrResponse> {
+  if (useMock()) {
+    // Mock 环境：无真实转写能力，明确降级（不伪造文本污染证据链）
+    throw new Error('ASR_MOCK_UNAVAILABLE')
+  }
+  // 真后端：uni.uploadFile 上传音频，网关转 JSON
+  return new Promise<AsrResponse>((resolve, reject) => {
+    uni.uploadFile({
+      url: '/interview/asr',
+      filePath: audioPath,
+      name: 'audio',
+      success: (res: any) => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error('ASR_HTTP_' + res.statusCode))
+          return
+        }
+        try {
+          const body = JSON.parse(res.data as string) as {
+            code: number
+            data: AsrResponse | null
+            message: string
+          }
+          if (body.code === 0 || body.code === 200) {
+            const d = body.data
+            if (d != null) {
+              resolve(d)
+              return
+            }
+          }
+          reject(new Error(body.message.length > 0 ? body.message : 'ASR_BIZ_ERROR'))
+        } catch {
+          reject(new Error('ASR_PARSE_ERROR'))
+        }
+      },
+      fail: (err: any) => {
+        const msg = err != null && err.errMsg != null ? String(err.errMsg) : 'ASR_NETWORK_ERROR'
+        reject(new Error(msg))
+      }
+    } as any)
+  })
+}

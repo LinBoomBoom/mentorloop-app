@@ -2,8 +2,8 @@
   <view class="w-full h-full flex-col items-center justify-center" :style="{ backgroundColor: bg }">
     <view class="flex-col items-center">
       <view class="w-18 h-18 rounded-full bg-figure-head flex-row items-center justify-center">
-        <!-- 口型随状态机变化：原 .s-listening .avatar-mouth 后代选择器已改为扁平原子类 -->
-        <view :class="mouthClass"></view>
+        <!-- 口型随状态机 + TTS 播放状态变化（口型同步：speaking 时张合动画） -->
+        <view :class="mouthClass" :style="mouthStyle"></view>
       </view>
       <view
         class="w-28 h-12 bg-figure-body mt-2"
@@ -15,13 +15,17 @@
 </template>
 
 <script setup lang="uts">
-// 2.5D 数字人占位（状态驱动），真实 UTS 渲染（utssdk/interviewer-avatar）后续替换
+// 2.5D 数字人（状态驱动 + TTS 口型同步）
 // 状态：idle / asking / listening / followup / summary（文档 02 §4 / 文档 04）
-import { computed } from 'vue'
+// 口型同步：外部通过 speaking 属性驱动（TTS start/end），speaking 时口型张合动画
+// 性能约束（文档 04）：口型动画用 CSS keyframes（合成器线程），不进 JS 响应式状态
+import { computed, ref, onUnmounted } from 'vue'
 import { AVATAR_STATE_LABEL, StringMap } from '../styles/theme.uts'
 
 const props = defineProps({
-  state: { type: String, default: 'idle' }
+  state: { type: String, default: 'idle' },
+  // TTS 播放中（口型张合）；由房间页通过 onTtsState 驱动
+  speaking: { type: Boolean, default: false }
 })
 
 const LABELS: StringMap = AVATAR_STATE_LABEL
@@ -33,11 +37,68 @@ const label = computed(() => {
 
 const bg = computed(() => (props.state === 'idle' ? '#0F2C4C' : '#13294A'))
 
+// 口型动画开关（speaking 变化时启停 keyframes）
+const animOn = ref(false)
+let animTimer = 0
+
+// speaking 时开启口型张合动画（CSS 动画驱动，JS 只切换开关）
+// 用轻量定时器模拟张合相位，避免高频响应式更新（10–15 次/秒摘要同步）
+function syncAnim() {
+  const shouldOn = props.speaking && props.state !== 'listening'
+  if (shouldOn === animOn.value) return
+  animOn.value = shouldOn
+}
+
+// props 变化监听：用 watch 语义的 computed 副作用替代（uvue 组合式）
+// 简化实现：每次渲染时同步（computed 依赖 props.speaking）
+const mouthPhase = computed((): boolean => {
+  syncAnim()
+  return animOn.value
+})
+
+onUnmounted(() => {
+  if (animTimer > 0) {
+    clearInterval(animTimer)
+    animTimer = 0
+  }
+})
+
 const mouthClass = computed(() => {
-  const base = 'h-1.5 rounded-full mt-5 '
-  if (props.state === 'listening') return base + 'w-4 bg-reliable'
-  if (props.state === 'followup') return base + 'w-7 bg-smart'
-  if (props.state === 'summary') return base + 'w-5 bg-reliable'
-  return base + 'w-6 bg-smart'
+  const base = 'rounded-full mt-5 '
+  // speaking（TTS 播报中）：口型张开（椭圆），随动画张合
+  if (mouthPhase.value) return base + 'w-4 h-3 bg-smart mouth-anim'
+  if (props.state === 'listening') return base + 'w-4 h-1.5 bg-reliable'
+  if (props.state === 'followup') return base + 'w-7 h-1.5 bg-smart'
+  if (props.state === 'summary') return base + 'w-5 h-1.5 bg-reliable'
+  return base + 'w-6 h-1.5 bg-smart'
+})
+
+// 口型动画样式（CSS keyframes：mouth-anim 定义在 style）
+const mouthStyle = computed((): Map<string, any> => {
+  const m = new Map<string, any>()
+  if (mouthPhase.value) {
+    m.set('animation-duration', '0.35s')
+  }
+  return m
 })
 </script>
+
+<style>
+/* 口型张合动画： scaleY 变化模拟说话（合成器线程，不阻塞 JS） */
+@keyframes mouth-anim {
+  0% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(2.2);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+.mouth-anim {
+  animation-name: mouth-anim;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+</style>

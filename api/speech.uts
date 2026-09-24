@@ -1,0 +1,374 @@
+// 语音感知层统一入口（M1 真实感知层）
+// 职责：TTS 播放（面试官念题）、录音管理（作答采集）、ASR 转写、能力探测
+// 平台策略：
+//   - MP-WEIXIN：微信同声传译插件（WechatSI）做 TTS + 实时语音识别；RecorderManager 录音
+//   - APP（Android/iOS）：RecorderManager 录音 + 云端 ASR 通道（api/asr.uts）；
+//     TTS 优先系统引擎（plus.speech），不可用时降级字幕模式
+//   - H5：无原生录音/播放能力，降级为文字作答（不报错）
+// 约束（文档 04）：音频帧不进响应式状态；转写仅显示稳定文本；失败不静默丢答案。
+
+export type SpeechCapability = {
+  tts: boolean // 是否支持 TTS 播放
+  asr: boolean // 是否支持语音识别
+  record: boolean // 是否支持录音
+  platform: string // mp-weixin | app | h5
+}
+
+export type TtsHandle = {
+  stop: () => void
+}
+
+// ---------------- 能力探测 ----------------
+
+let cachedCapability: SpeechCapability | null = null
+
+export function speechCapability(): SpeechCapability {
+  if (cachedCapability != null) return cachedCapability
+  let platform = 'h5'
+  let tts = false
+  let asr = false
+  let record = false
+  // #ifdef MP-WEIXIN
+  platform = 'mp-weixin'
+  tts = true
+  asr = true
+  record = true
+  // #endif
+  // #ifdef APP-PLUS || APP
+  platform = 'app'
+  tts = true
+  asr = true
+  record = true
+  // #endif
+  cachedCapability = { tts: tts, asr: asr, record: record, platform: platform } as SpeechCapability
+  return cachedCapability
+}
+
+// ---------------- TTS 播放（面试官念题） ----------------
+
+// 播放状态回调（驱动数字人口型/状态）
+let ttsStateCb: ((state: 'start' | 'end') => void) | null = null
+
+export function onTtsState(cb: (state: 'start' | 'end') => void) {
+  ttsStateCb = cb
+}
+
+function emitTtsState(state: 'start' | 'end') {
+  const cb = ttsStateCb
+  if (cb != null) cb(state)
+}
+
+// 静默降级：无 TTS 引擎时按文本长度估算播报时长后结束（字幕承担全部信息，不阻塞流程）
+function speakSilent(text: string): TtsHandle {
+  console.warn('[speech] TTS 引擎未就绪，降级为字幕模式，长度', text.length)
+  emitTtsState('start')
+  const estimateMs = Math.min(12000, 1000 + text.length * 150)
+  setTimeout(() => {
+    emitTtsState('end')
+  }, estimateMs)
+  const handle: TtsHandle = {
+    stop: () => {}
+  } as TtsHandle
+  return handle
+}
+
+// 播放 TTS；返回句柄（可 stop）。不支持的平台静默降级。
+export function speak(text: string): TtsHandle {
+  let handle: TtsHandle | null = null
+  // #ifdef MP-WEIXIN
+  handle = speakWeixin(text)
+  // #endif
+  // #ifdef APP-PLUS || APP
+  handle = speakApp(text)
+  // #endif
+  // #ifndef MP-WEIXIN || APP-PLUS || APP
+  handle = speakSilent(text)
+  // #endif
+  if (handle == null) return speakSilent(text)
+  return handle
+}
+
+// #ifdef MP-WEIXIN
+let pluginTranslator: any = null
+let pluginRequireTried = false
+
+// 微信同声传译插件（需在 manifest mp-weixin.plugins 声明后通过 requirePlugin 加载）
+function getWechatSI(): any {
+  if (pluginTranslator != null) return pluginTranslator
+  if (pluginRequireTried) return null
+  pluginRequireTried = true
+  try {
+    const g = globalThis as any
+    const requirePluginFn = g.requirePlugin
+    if (requirePluginFn == null) {
+      console.warn('[speech] requirePlugin 不可用，TTS 降级')
+      return null
+    }
+    pluginTranslator = requirePluginFn('wechatSI')
+    return pluginTranslator
+  } catch {
+    console.warn('[speech] wechatSI 插件未声明，TTS 降级')
+    return null
+  }
+}
+
+function speakWeixin(text: string): TtsHandle {
+  const si = getWechatSI()
+  if (si == null) return speakSilent(text)
+  try {
+    const manager = si.createSpeechSynthesizer != null ? si.createSpeechSynthesizer() : si
+    let stopped = false
+    manager.onstart(() => {
+      if (!stopped) emitTtsState('start')
+    })
+    manager.oncomplete(() => {
+      if (!stopped) emitTtsState('end')
+    })
+    manager.onerror(() => {
+      // TTS 失败不阻塞面试流程（字幕仍显示题目）
+      if (!stopped) emitTtsState('end')
+    })
+    manager.start({ lang: 'zh_CN', content: text })
+    const handle: TtsHandle = {
+      stop: () => {
+        stopped = true
+        try {
+          manager.stop()
+        } catch {
+          // 忽略停止异常
+        }
+        emitTtsState('end')
+      }
+    } as TtsHandle
+    return handle
+  } catch {
+    return speakSilent(text)
+  }
+}
+// #endif
+
+// #ifdef APP-PLUS || APP
+function speakApp(text: string): TtsHandle {
+  const g = globalThis as any
+  const plus = g.plus
+  if (plus != null && plus.speech != null && plus.speech.startSpeak != null) {
+    try {
+      let stopped = false
+      emitTtsState('start')
+      plus.speech.startSpeak({
+        engine: 'system',
+        lang: 'zh-cn',
+        content: text
+      })
+      // HTML5+ 基线差异：startSpeak 无统一完成回调，按文本长度估算播报时长
+      const estimateMs = Math.min(12000, 1200 + text.length * 180)
+      setTimeout(() => {
+        if (!stopped) emitTtsState('end')
+      }, estimateMs)
+      const handle: TtsHandle = {
+        stop: () => {
+          stopped = true
+          try {
+            plus.speech.stopSpeak()
+          } catch {
+            // 忽略停止异常
+          }
+          emitTtsState('end')
+        }
+      } as TtsHandle
+      return handle
+    } catch {
+      // 系统引擎启动失败，走静默降级
+    }
+  }
+  return speakSilent(text)
+}
+// #endif
+
+// ---------------- 录音管理（作答采集） ----------------
+
+export type RecordResult = {
+  ok: boolean
+  audioPath: string
+  errMsg: string
+}
+
+export type RecordCallbacks = {
+  onStart: () => void
+  onStop: (result: RecordResult) => void
+  onError: (errMsg: string) => void
+}
+
+// 录音器封装：单例 RecorderManager，回调式 API
+export class SpeechRecorder {
+  private recorder: any = null
+  private ready = false
+  private cb: RecordCallbacks | null = null
+  private recording = false
+
+  isReady(): boolean {
+    return this.ready
+  }
+
+  isRecording(): boolean {
+    return this.recording
+  }
+
+  // 初始化（平台不支持时 ready=false，调用方走文字降级）
+  init(cb: RecordCallbacks) {
+    this.cb = cb
+    let inited = false
+    // #ifdef MP-WEIXIN || APP-PLUS || APP
+    try {
+      this.recorder = uni.getRecorderManager()
+      this.recorder.onStart(() => {
+        this.recording = true
+        const c = this.cb
+        if (c != null) c.onStart()
+      })
+      this.recorder.onStop((res: any) => {
+        this.recording = false
+        const filePath = res != null && res.tempFilePath != null ? (res.tempFilePath as string) : ''
+        const c = this.cb
+        if (c != null) {
+          c.onStop({ ok: filePath.length > 0, audioPath: filePath, errMsg: '' } as RecordResult)
+        }
+      })
+      this.recorder.onError((err: any) => {
+        this.recording = false
+        const msg = err != null && err.errMsg != null ? String(err.errMsg) : '录音失败'
+        const c = this.cb
+        if (c != null) c.onError(msg)
+      })
+      inited = true
+    } catch {
+      inited = false
+    }
+    // #endif
+    this.ready = inited
+  }
+
+  start() {
+    if (!this.ready || this.recording) return
+    try {
+      // 16k 单声道 mp3：云端 ASR 通用格式
+      this.recorder.start({
+        format: 'mp3',
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        encodeBitRate: 48000
+      })
+    } catch {
+      const c = this.cb
+      if (c != null) c.onError('录音启动失败')
+    }
+  }
+
+  stop() {
+    if (!this.ready || !this.recording) return
+    try {
+      this.recorder.stop()
+    } catch {
+      this.recording = false
+      const c = this.cb
+      if (c != null) c.onError('录音停止失败')
+    }
+  }
+}
+
+// ---------------- ASR 转写 ----------------
+
+export type AsrResult = {
+  ok: boolean
+  text: string
+  errMsg: string
+}
+
+// 录音文件 → 文本。微信端用实时识别（见 startRealtimeAsr），App 端走云端通道（api/asr.uts）。
+// 失败时返回 ok=false，调用方提示用户改用文字作答（不静默丢答案）。
+export async function transcribe(audioPath: string): Promise<AsrResult> {
+  let result: AsrResult = { ok: false, text: '', errMsg: '当前平台不支持语音识别' } as AsrResult
+  // #ifdef MP-WEIXIN
+  result = { ok: false, text: '', errMsg: '请使用实时识别' } as AsrResult
+  // #endif
+  // #ifdef APP-PLUS || APP
+  result = await transcribeCloud(audioPath)
+  // #endif
+  return result
+}
+
+// #ifdef APP-PLUS || APP
+async function transcribeCloud(audioPath: string): Promise<AsrResult> {
+  try {
+    const mod = await import('./asr.uts')
+    const r = await mod.uploadAsr(audioPath)
+    return { ok: true, text: r.text, errMsg: '' } as AsrResult
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : '转写服务不可用'
+    return { ok: false, text: '', errMsg: msg } as AsrResult
+  }
+}
+// #endif
+
+// ---------------- 微信端实时语音识别（流式） ----------------
+
+export type RealtimeAsrSession = {
+  stop: () => void
+}
+
+// 微信端实时语音识别：边录边转，稳定文本回调 onText(stable=true)
+// 仅 MP-WEIXIN 有效；其他平台返回 null（调用方走录音+文件转写或文字降级）
+export function startRealtimeAsr(
+  onText: (text: string, stable: boolean) => void
+): RealtimeAsrSession | null {
+  let session: RealtimeAsrSession | null = null
+  // #ifdef MP-WEIXIN
+  session = startRealtimeAsrWeixin(onText)
+  // #endif
+  // #ifndef MP-WEIXIN
+  console.warn('[speech] 实时识别仅微信端可用')
+  // #endif
+  return session
+}
+
+// #ifdef MP-WEIXIN
+function startRealtimeAsrWeixin(
+  onText: (text: string, stable: boolean) => void
+): RealtimeAsrSession | null {
+  const si = getWechatSI()
+  if (si == null) return null
+  try {
+    const manager = si.createSpeechRecognizer != null ? si.createSpeechRecognizer() : si
+    let stopped = false
+    manager.onStart(() => {})
+    manager.onRecognize((res: any) => {
+      if (stopped) return
+      const t = res != null && res.result != null ? String(res.result) : ''
+      if (t.length > 0) onText(t, false)
+    })
+    manager.onStop((res: any) => {
+      if (stopped) return
+      const t = res != null && res.result != null ? String(res.result) : ''
+      if (t.length > 0) onText(t, true)
+    })
+    manager.onerror(() => {
+      if (stopped) return
+      onText('', true)
+    })
+    manager.start({ lang: 'zh_CN' })
+    const session: RealtimeAsrSession = {
+      stop: () => {
+        stopped = true
+        try {
+          manager.stop()
+        } catch {
+          // 忽略停止异常
+        }
+      }
+    } as RealtimeAsrSession
+    return session
+  } catch {
+    return null
+  }
+}
+// #endif
