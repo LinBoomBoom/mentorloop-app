@@ -2,7 +2,7 @@
 // 美术资产先行原则（closure-development-plan P2-11）：资产就绪后在下方填入
 // 远程 URL 或本地静态路径；全部为空时组件自动降级为内置 CSS 形象。
 // 资产规格建议（交美术）：
-//   - 状态帧图：5 态各 1 张（idle/asking/listening/followup/summary），
+//   - 状态帧图：6 态各 1 张（idle/asking/listening/followup/thinking/summary），
 //     2.5D 半身像，PNG 透明底，建议 720×720；
 //   - Lottie（可选）：口型/表情/姿态状态机动画，优先于帧图，仅原生层消费。
 import { AvatarAssetSet, emptyAvatarAssets } from '../utssdk/interviewer-avatar/index.uts'

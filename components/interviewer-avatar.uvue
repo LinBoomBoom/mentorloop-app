@@ -20,7 +20,8 @@
 
 <script setup lang="uts">
 // 2.5D 数字人（渲染桥 + 状态驱动 + TTS 口型同步）
-// 状态：idle / asking / listening / followup / summary（文档 02 §4 / 文档 04）
+// 状态：idle / asking / listening / followup / thinking / summary（文档 02 §4 / 文档 04）
+// 权威状态集单一事实来源：styles/theme.uts 的 AvatarState（6 态）
 // P2-11：挂载时向渲染桥注入资产清单并预加载；有帧图则渲染帧图，
 //        无资产自动降级为内置 CSS 形象（当前形态，不阻塞流程）。
 // 口型同步：外部通过 speaking 属性驱动（TTS start/end），speaking 时口型张合动画
@@ -99,6 +100,7 @@ const mouthClass = computed(() => {
   if (mouthPhase.value) return base + 'w-4 h-3 bg-smart mouth-anim'
   if (props.state === 'listening') return base + 'w-4 h-1.5 bg-reliable'
   if (props.state === 'followup') return base + 'w-7 h-1.5 bg-smart'
+  if (props.state === 'thinking') return base + 'w-2 h-1.5 bg-mist'
   if (props.state === 'summary') return base + 'w-5 h-1.5 bg-reliable'
   return base + 'w-6 h-1.5 bg-smart'
 })
