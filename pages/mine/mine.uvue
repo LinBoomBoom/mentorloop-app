@@ -68,6 +68,39 @@
         </view>
       </view>
 
+      <!-- 会员卡（权益状态 + 购买入口） -->
+      <view
+        class="bg-navy rounded-2xl p-4 mt-3 flex-row items-center relative overflow-hidden"
+        hover-class="row-pressed"
+        :hover-start-time="0"
+        @click="goPaywall"
+      >
+        <view class="absolute -right-6 -top-8 w-24 h-24 rounded-full bg-warn opacity-15"></view>
+        <view
+          class="w-10 h-10 rounded-full flex-row items-center justify-center mr-3"
+          :style="{ backgroundColor: 'rgba(245,201,123,0.2)' }"
+        >
+          <ml-icon name="crown" :size="20" color="#F5C97B"></ml-icon>
+        </view>
+        <view class="flex-col flex-1">
+          <text class="text-sm font-semibold text-white">{{ planLabel }}权益</text>
+          <text class="text-[11px] text-mist mt-0.5">{{ quotaText }}</text>
+        </view>
+        <view
+          class="h-8 px-3 rounded-full flex-row items-center"
+          :style="{
+            backgroundColor: plan.value === 'member' ? 'rgba(255,255,255,0.14)' : '#F5C97B'
+          }"
+        >
+          <text
+            class="text-xs font-semibold"
+            :style="{ color: plan.value === 'member' ? '#FFFFFF' : '#0B2138' }"
+          >
+            {{ plan.value === 'member' ? '查看权益' : '立即开通' }}
+          </text>
+        </view>
+      </view>
+
       <!-- 功能宫格 -->
       <view class="mt-3">
         <ml-card :padded="false">
@@ -146,10 +179,29 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory } from '../../store/report-history.uts'
+import { quotaStore } from '../../store/quota.uts'
+import { trackEvent } from '../../api/tracking.uts'
 
 const nickname = ref(userStore.profile.nickname)
 const plan = ref(userStore.profile.plan)
 const loggedIn = ref(userStore.isLoggedIn())
+
+// 会员余量信息（免费额度/单次包余量/会员有效期）
+const quotaText = ref('')
+
+function refreshQuota() {
+  quotaStore.restore()
+  if (quotaStore.isMember()) {
+    const until = new Date(quotaStore.state.memberUntil)
+    const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+    quotaText.value =
+      '有效期至 ' + pad(until.getMonth() + 1) + '-' + pad(until.getDate()) + ' · 权益无限'
+  } else if (quotaStore.state.singleCreditsLeft > 0) {
+    quotaText.value = '单次包余量 ' + String(quotaStore.state.singleCreditsLeft) + ' 场'
+  } else {
+    quotaText.value = '免费额度 ' + String(quotaStore.state.freeInterviewsLeft) + ' 场面试'
+  }
+}
 
 const planLabel = computed((): string => {
   if (plan.value === 'member') return '会员'
@@ -239,6 +291,7 @@ onShow(() => {
   loggedIn.value = userStore.isLoggedIn()
   positionLabel.value = positionDisplay(userStore.profile)
   experienceLabel.value = experienceDisplay(userStore.profile)
+  refreshQuota()
 
   reportHistory.load()
   const all = reportHistory.all()
@@ -247,6 +300,11 @@ onShow(() => {
   const latest = reportHistory.latest()
   statTodos.value = latest != null ? latest.report.trainingPlan.length : 0
 })
+
+function goPaywall() {
+  trackEvent('paywall_view', { from: 'mine' })
+  uni.navigateTo({ url: '/pages/membership/paywall?from=mine' })
+}
 
 function editProfile() {
   uni.showToast({ title: '资料编辑即将上线', icon: 'none' })

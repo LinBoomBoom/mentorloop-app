@@ -1,0 +1,88 @@
+// 会员商品与权益配置（文档 01 §6 商业模式：免费层 / 单次包 / 订阅会员 / B 端席位）
+// 客户端侧 SKU 展示配置；价格以分（cent）为单位，展示时格式化。
+// B 端席位不在客户端售卖（M3+），此处不配置。
+
+export type SkuId = 'member_monthly' | 'member_yearly' | 'single_pack_3' | 'single_pack_10'
+
+export type Sku = {
+  id: SkuId
+  kind: 'member' | 'single' // member=订阅会员 single=单次包
+  name: string
+  desc: string
+  priceCent: number // 展示价（分）
+  originPriceCent: number // 划线原价（分），0 表示无
+  unit: string // 计价单位：月 / 年 / 次
+  badge: string // 角标（如「限时 7 折」），空串无角标
+  highlight: boolean // 是否主推 SKU
+}
+
+export type PlanBenefit = {
+  label: string
+  desc: string
+}
+
+// 会员权益（文档 02 §2 报告深度/训练计划等能力映射）
+export const MEMBER_BENEFITS: PlanBenefit[] = [
+  { label: '无限次模拟面试', desc: '快练/标准/深度模式不限次数' } as PlanBenefit,
+  { label: '深度报告 + 证据链', desc: '六维评分逐条引用原始转写证据' } as PlanBenefit,
+  { label: '追问深度解锁', desc: '单知识点深挖至 2 层（免费层 1 层）' } as PlanBenefit,
+  { label: '专项训练不限量', desc: '3/5/10 分钟碎片化训练不限次数' } as PlanBenefit,
+  { label: '成长档案长期追踪', desc: '历史报告对比与能力趋势' } as PlanBenefit,
+  { label: '简历优化建议稿', desc: '逐段 AI 改写并标注建议稿' } as PlanBenefit
+]
+
+// SKU 展示配置（价格与后端商品中心对齐；Mock 环境本地定义）
+export const SKUS: Sku[] = [
+  {
+    id: 'member_monthly',
+    kind: 'member',
+    name: '会员 · 连续包月',
+    desc: '全部会员权益，随时可取消',
+    priceCent: 3900,
+    originPriceCent: 5900,
+    unit: '月',
+    badge: '限时 7 折',
+    highlight: true
+  } as Sku,
+  {
+    id: 'member_yearly',
+    kind: 'member',
+    name: '会员 · 年卡',
+    desc: '折合 19 元/月，立省 480 元',
+    priceCent: 22800,
+    originPriceCent: 70800,
+    unit: '年',
+    badge: '最划算',
+    highlight: false
+  } as Sku,
+  {
+    id: 'single_pack_3',
+    kind: 'single',
+    name: '单次包 · 3 场',
+    desc: '标准模式 3 场，有效期 90 天',
+    priceCent: 2900,
+    originPriceCent: 0,
+    unit: '包',
+    badge: '',
+    highlight: false
+  } as Sku,
+  {
+    id: 'single_pack_10',
+    kind: 'single',
+    name: '单次包 · 10 场',
+    desc: '标准模式 10 场，有效期 180 天',
+    priceCent: 7900,
+    originPriceCent: 9900,
+    unit: '包',
+    badge: '',
+    highlight: false
+  } as Sku
+]
+
+// 价格格式化：分 → 元字符串
+export function formatPrice(cent: number): string {
+  if (cent % 100 === 0) return String(cent / 100)
+  const yuan = Math.floor(cent / 100)
+  const fen = cent % 100
+  return String(yuan) + '.' + (fen < 10 ? '0' + String(fen) : String(fen))
+}

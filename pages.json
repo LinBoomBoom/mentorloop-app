@@ -43,6 +43,10 @@
     {
       "path": "pages/login/login",
       "style": { "navigationStyle": "custom", "navigationBarTitleText": "登录" }
+    },
+    {
+      "path": "pages/membership/paywall",
+      "style": { "navigationBarTitleText": "会员开通" }
     }
   ],
   "tabBar": {

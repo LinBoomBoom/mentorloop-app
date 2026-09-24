@@ -1,0 +1,89 @@
+// 会员与支付 API（M2「支付与会员」；文档 01 §6 商业模式）
+// Mock 优先：BASE_URL 为空时本地发放权益（store/quota.uts）；接真后端走微信支付。
+// 契约（待后端双签）：
+//   POST /membership/order        创建订单 → { orderId, payParams }
+//   GET  /membership/quota        查询权益与余量 → QuotaState
+//   POST /membership/order/notify 服务端回调（客户端不直接调用）
+
+import { post, get, useMock } from './client.uts'
+import { quotaStore } from '../store/quota.uts'
+import { SkuId } from '../data/membership.uts'
+import { trackEvent } from './tracking.uts'
+
+export type PayParams = {
+  // 微信小程序：wx.requestPayment 参数；App：uni.requestPayment（微信 App 支付）参数
+  provider: string // 'wxpay'
+  orderId: string
+  prepayId: string
+  nonceStr: string
+  timeStamp: string
+  sign: string
+}
+
+export type OrderResult = {
+  orderId: string
+  payParams: PayParams | null // Mock 环境为 null（直接发放）
+}
+
+// 创建订单并发起支付。成功后本地发放权益（Mock）或等待服务端回调（真后端）。
+export async function purchase(skuId: SkuId, skuKind: 'member' | 'single'): Promise<OrderResult> {
+  if (useMock()) {
+    // Mock：模拟 800ms 支付延迟后直接发放
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, 800)
+    })
+    quotaStore.grant(skuKind, skuId)
+    trackEvent('payment_success', { sku: skuId, amount: 0, mock: true })
+    return { orderId: 'mock_' + Date.now().toString(), payParams: null } as OrderResult
+  }
+  // 真后端：创建订单 → 拉起微信支付
+  const res = await post('/membership/order', { skuId: skuId })
+  const data = res.data as { orderId: string; payParams: PayParams } | null
+  if (data == null) {
+    throw new Error('订单创建失败')
+  }
+  await requestWxPay(data.payParams)
+  trackEvent('payment_success', { sku: skuId, orderId: data.orderId })
+  return { orderId: data.orderId, payParams: data.payParams } as OrderResult
+}
+
+// 拉起微信支付（小程序 + App 微信支付统一封装）
+function requestWxPay(p: PayParams): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      orderInfo: p.prepayId,
+      timeStamp: p.timeStamp,
+      nonceStr: p.nonceStr,
+      package: 'prepay_id=' + p.prepayId,
+      signType: 'RSA',
+      paySign: p.sign,
+      success: () => {
+        resolve()
+      },
+      fail: (err: any) => {
+        const msg = err != null && err.errMsg != null ? String(err.errMsg) : '支付未完成'
+        reject(new Error(msg))
+      }
+    } as any)
+  })
+}
+
+// 查询权益与余量（真后端以服务端为准；Mock 返回本地账本）
+export async function fetchQuota(): Promise<void> {
+  if (useMock()) return
+  const res = await get('/membership/quota')
+  const data = res.data as {
+    freeInterviewsLeft: number
+    singleCreditsLeft: number
+    memberUntil: number
+  } | null
+  if (data != null) {
+    quotaStore.state.freeInterviewsLeft = data.freeInterviewsLeft
+    quotaStore.state.singleCreditsLeft = data.singleCreditsLeft
+    quotaStore.state.memberUntil = data.memberUntil
+    quotaStore.persist()
+  }
+}

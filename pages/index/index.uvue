@@ -258,6 +258,8 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { quotaStore } from '../../store/quota.uts'
+import { trackEvent } from '../../api/tracking.uts'
 import { InterviewReport } from '../../types/scoring.uts'
 
 // 安全区内边距（onShow 从窗口信息读取）
@@ -443,6 +445,23 @@ onShow(() => {
 })
 
 function startInterview() {
+  // 权益门控：免费层额度用尽 → 引导购买（额度在完成面试时扣减）
+  quotaStore.restore()
+  if (!quotaStore.canStartInterview()) {
+    trackEvent('quota_exceeded', { scene: 'interview' })
+    uni.showModal({
+      title: '免费额度已用完',
+      content: '开通会员可无限次模拟面试，或购买单次包继续练习',
+      confirmText: '去开通',
+      cancelText: '暂不需要',
+      success: (r: any) => {
+        if (r.confirm) {
+          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
+        }
+      }
+    })
+    return
+  }
   uni.navigateTo({ url: '/pages/interview/prep?mode=' + mode.value })
 }
 

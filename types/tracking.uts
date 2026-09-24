@@ -91,6 +91,21 @@ export const TRACKING_EVENTS: TrackingEventDef[] = [
     name: 'payment_success',
     description: '支付成功（sku、amount）',
     northStar: true
+  } as TrackingEventDef,
+  {
+    name: 'paywall_view',
+    description: '会员购买页曝光（from=mine|gating|index）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'paywall_click',
+    description: '点击开通（sku、from）',
+    northStar: false
+  } as TrackingEventDef,
+  {
+    name: 'quota_exceeded',
+    description: '免费额度用尽触发拦截（scene=interview|training）',
+    northStar: false
   } as TrackingEventDef
 ]
 

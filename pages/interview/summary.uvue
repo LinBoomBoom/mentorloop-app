@@ -61,6 +61,7 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
 import { reportHistory } from '../../store/report-history.uts'
+import { quotaStore } from '../../store/quota.uts'
 import { scoreInterview } from '../../engine/scorer.uts'
 import { trackEvent } from '../../api/tracking.uts'
 
@@ -109,6 +110,8 @@ function genReport() {
   reportHistory.push(interviewSession.sessionId, report)
   // 北极星：完成一次正式模拟面试
   trackEvent('interview_complete', { questionCount: qs.length, followupCount: followupTotal.value })
+  // 额度扣减：完成一场面试后消耗（会员不扣）
+  quotaStore.consumeInterview()
 
   // 清掉会话快照（已转为报告）
   interviewSession.clearSnapshot()

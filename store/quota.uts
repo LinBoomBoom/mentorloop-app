@@ -1,0 +1,163 @@
+// 配额与权益门控（文档 01 §6 免费层额度控制 / 推进计划 M2「支付与会员」）
+// 职责：本地配额账本（免费层额度、单次包余量）+ 权益判定（是否会员）
+// 设计原则：
+//   - 权威账本在服务端；本地账本仅用于 Mock 环境与离线快速判定，接真后端以 /membership/quota 为准
+//   - 额度消耗在「完成一场面试」时扣减（开始不扣，失败不扣，与文档 04「异常不丢答案」一致）
+//   - 所有额度事件可审计（persist 到 storage）
+
+import { userStore, UserPlan } from './user-profile.uts'
+
+// 免费层额度（文档 01 §6：免费层额度控制）
+export const FREE_QUOTA = {
+  interviews: 1, // 正式模拟面试 1 场
+  deepReports: 1, // 深度报告 1 份
+  trainingsPerDay: 3 // 每日专项训练 3 次
+}
+
+export type QuotaState = {
+  freeInterviewsLeft: number
+  singleCreditsLeft: number // 单次包余量（场）
+  trainingsToday: number
+  trainingsDate: string // YYYY-MM-DD（每日重置）
+  memberUntil: number // 会员到期时间戳（0=非会员）
+}
+
+const QUOTA_KEY = 'ml_quota_state'
+
+function todayStr(): string {
+  const d = new Date()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  return (
+    String(d.getFullYear()) +
+    '-' +
+    (m < 10 ? '0' + String(m) : String(m)) +
+    '-' +
+    (day < 10 ? '0' + String(day) : String(day))
+  )
+}
+
+function defaultState(): QuotaState {
+  return {
+    freeInterviewsLeft: FREE_QUOTA.interviews,
+    singleCreditsLeft: 0,
+    trainingsToday: 0,
+    trainingsDate: todayStr(),
+    memberUntil: 0
+  } as QuotaState
+}
+
+class QuotaStore {
+  state: QuotaState = defaultState()
+
+  // 启动时恢复；跨日重置训练额度
+  restore() {
+    try {
+      const raw = uni.getStorageSync(QUOTA_KEY) as string
+      if (raw != null && raw.length > 0) {
+        const s = JSON.parse(raw) as QuotaState
+        if (s.trainingsDate !== todayStr()) {
+          s.trainingsToday = 0
+          s.trainingsDate = todayStr()
+        }
+        this.state = s
+      }
+    } catch (e: any) {
+      console.warn('[quota] restore failed', e)
+      this.state = defaultState()
+    }
+  }
+
+  persist() {
+    try {
+      uni.setStorageSync(QUOTA_KEY, JSON.stringify(this.state))
+    } catch (e: any) {
+      console.warn('[quota] persist failed', e)
+    }
+  }
+
+  isMember(): boolean {
+    if (userStore.profile.plan === 'member') return true
+    return this.state.memberUntil > Date.now()
+  }
+
+  currentPlan(): UserPlan {
+    if (this.isMember()) return 'member'
+    if (this.state.singleCreditsLeft > 0) return 'single'
+    return userStore.profile.plan
+  }
+
+  // 是否可以开始一场正式面试（会员无限；单次包余量优先；免费层额度兜底）
+  canStartInterview(): boolean {
+    if (this.isMember()) return true
+    if (this.state.singleCreditsLeft > 0) return true
+    return this.state.freeInterviewsLeft > 0
+  }
+
+  // 完成一场面试后扣减（优先扣单次包，再扣免费额度）
+  consumeInterview() {
+    if (this.isMember()) return
+    if (this.state.singleCreditsLeft > 0) {
+      this.state.singleCreditsLeft = this.state.singleCreditsLeft - 1
+    } else if (this.state.freeInterviewsLeft > 0) {
+      this.state.freeInterviewsLeft = this.state.freeInterviewsLeft - 1
+    }
+    this.persist()
+  }
+
+  // 每日训练额度（会员不限）
+  canStartTraining(): boolean {
+    if (this.isMember()) return true
+    if (this.state.trainingsDate !== todayStr()) {
+      this.state.trainingsToday = 0
+      this.state.trainingsDate = todayStr()
+    }
+    return this.state.trainingsToday < FREE_QUOTA.trainingsPerDay
+  }
+
+  consumeTraining() {
+    if (this.isMember()) return
+    if (this.state.trainingsDate !== todayStr()) {
+      this.state.trainingsToday = 0
+      this.state.trainingsDate = todayStr()
+    }
+    this.state.trainingsToday = this.state.trainingsToday + 1
+    this.persist()
+  }
+
+  // 支付成功后发放权益
+  grant(skuKind: 'member' | 'single', skuId: string) {
+    if (skuKind === 'member') {
+      // Mock 环境：月卡 30 天 / 年卡 365 天（真后端以 memberUntil 服务端下发为准）
+      const days = skuId === 'member_yearly' ? 365 : 30
+      const base = this.state.memberUntil > Date.now() ? this.state.memberUntil : Date.now()
+      this.state.memberUntil = base + days * 24 * 3600 * 1000
+      userStore.setProfile({
+        plan: 'member',
+        uid: null,
+        nickname: null,
+        positionId: null,
+        experienceLevel: null,
+        token: null
+      })
+      userStore.persist()
+    } else {
+      const credits = skuId === 'single_pack_10' ? 10 : 3
+      this.state.singleCreditsLeft = this.state.singleCreditsLeft + credits
+      if (userStore.profile.plan === 'free') {
+        userStore.setProfile({
+          plan: 'single',
+          uid: null,
+          nickname: null,
+          positionId: null,
+          experienceLevel: null,
+          token: null
+        })
+        userStore.persist()
+      }
+    }
+    this.persist()
+  }
+}
+
+export const quotaStore = new QuotaStore()

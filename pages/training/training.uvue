@@ -163,6 +163,8 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
+import { quotaStore } from '../../store/quota.uts'
+import { trackEvent } from '../../api/tracking.uts'
 import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
 
 type TrainingEntry = {
@@ -306,6 +308,24 @@ function startTaskEntry(id: string, title: string, durationMin: number) {
 
 // 进入训练房间（3/5/10 分钟碎片化训练；推荐任务标记来源=报告薄弱项）
 function startTask(task: TrainingEntry | null = null) {
+  // 权益门控：免费层每日训练额度（会员不限）
+  quotaStore.restore()
+  if (!quotaStore.canStartTraining()) {
+    trackEvent('quota_exceeded', { scene: 'training' })
+    uni.showModal({
+      title: '今日训练次数已用完',
+      content: '免费版每日 3 次训练，开通会员不限次数',
+      confirmText: '去开通',
+      cancelText: '明天再练',
+      success: (r: any) => {
+        if (r.confirm) {
+          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
+        }
+      }
+    })
+    return
+  }
+  quotaStore.consumeTraining()
   const id = task != null ? task.id : 't_custom'
   const title = task != null ? task.title : '专项训练'
   const dur = task != null ? task.durationMin : 5

@@ -1,0 +1,203 @@
+<template>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-4 pb-8">
+      <!-- 头部品牌面 -->
+      <view class="bg-navy rounded-2xl p-5 relative overflow-hidden">
+        <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+        <view class="flex-row items-center">
+          <view
+            class="w-11 h-11 rounded-full flex-row items-center justify-center"
+            :style="{ backgroundColor: 'rgba(245,201,123,0.2)' }"
+          >
+            <ml-icon name="crown" :size="22" color="#F5C97B"></ml-icon>
+          </view>
+          <view class="flex-col flex-1 ml-3">
+            <text class="text-lg font-bold text-white">MentorLoop 会员</text>
+            <text class="text-xs text-mist mt-0.5">学面一体，练到上岗</text>
+          </view>
+        </view>
+        <text class="text-[13px] text-mist leading-5 mt-3">
+          会员解锁无限次模拟面试、深度证据报告与完整训练计划
+        </text>
+      </view>
+
+      <!-- SKU 选择 -->
+      <view class="mt-4">
+        <text class="text-sm font-semibold text-ink">选择套餐</text>
+        <view class="mt-2.5">
+          <view
+            v-for="s in skus"
+            :key="s.id"
+            class="rounded-2xl border p-4 mb-2.5 relative"
+            :style="skuStyle(s)"
+            hover-class="sku-pressed"
+            :hover-start-time="0"
+            @click="selected = s.id"
+          >
+            <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
+              <view
+                class="h-5 px-2 rounded-full flex-row items-center"
+                :style="{ backgroundColor: s.highlight ? '#5B6CFF' : '#E6F7F4' }"
+              >
+                <text class="text-[10px]" :style="{ color: s.highlight ? '#FFFFFF' : '#1FB6A6' }">
+                  {{ s.badge }}
+                </text>
+              </view>
+            </view>
+            <view class="flex-row items-center">
+              <view
+                class="w-5 h-5 rounded-full flex-row items-center justify-center mr-3"
+                :style="{
+                  backgroundColor: selected === s.id ? '#5B6CFF' : 'transparent',
+                  border: selected === s.id ? '1px solid #5B6CFF' : '1.5px solid #C9D2E3'
+                }"
+              >
+                <ml-icon v-if="selected === s.id" name="check" :size="12" color="#FFFFFF"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-[15px] font-semibold text-ink">{{ s.name }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
+              </view>
+              <view class="flex-col items-end ml-2">
+                <view class="flex-row items-baseline">
+                  <text class="text-xs text-ink">¥</text>
+                  <text class="text-xl font-bold text-ink">{{ formatPrice(s.priceCent) }}</text>
+                  <text class="text-[11px] text-ink-soft ml-0.5">/{{ s.unit }}</text>
+                </view>
+                <text
+                  v-if="s.originPriceCent > 0"
+                  class="text-[11px] text-mist line-through mt-0.5"
+                >
+                  ¥{{ formatPrice(s.originPriceCent) }}
+                </text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 会员权益 -->
+      <view class="mt-4">
+        <ml-card :padded="false">
+          <view class="p-4">
+            <text class="text-sm font-semibold text-ink">会员权益</text>
+            <view v-for="(b, i) in benefits" :key="b.label" class="flex-col mt-3">
+              <view class="flex-row items-start" :class="i > 0 ? 'mt-0' : ''">
+                <view
+                  class="w-5 h-5 rounded-full flex-row items-center justify-center mr-2 mt-0.5"
+                  :style="{ backgroundColor: '#E6F7F4' }"
+                >
+                  <ml-icon name="check" :size="11" color="#1FB6A6"></ml-icon>
+                </view>
+                <view class="flex-col flex-1">
+                  <text class="text-[13px] font-medium text-ink">{{ b.label }}</text>
+                  <text class="text-[11px] text-ink-soft mt-0.5 leading-4">{{ b.desc }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 支付按钮 -->
+      <view class="mt-5">
+        <ml-button
+          :text="paying ? '支付中…' : payButtonText"
+          type="primary"
+          block
+          :disabled="paying"
+          @tap="doPay"
+        ></ml-button>
+      </view>
+
+      <!-- 协议与说明 -->
+      <view class="flex-row items-center justify-center mt-3">
+        <text class="text-[11px] text-mist">支付即同意</text>
+        <text class="text-[11px] text-smart ml-0.5" @click="showAgreement">《会员服务协议》</text>
+        <text class="text-[11px] text-mist">· 连续包月可随时取消</text>
+      </view>
+      <view class="flex-col items-center mt-2">
+        <text class="text-[10px] text-mist">Mock 环境：支付为模拟流程，权益即时发放</text>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import { SKUS, MEMBER_BENEFITS, Sku, SkuId, formatPrice } from '../../data/membership.uts'
+import { purchase } from '../../api/membership.uts'
+import { trackEvent } from '../../api/tracking.uts'
+
+const skus = SKUS
+const benefits = MEMBER_BENEFITS
+const selected = ref<SkuId>('member_monthly')
+const paying = ref(false)
+
+// 入口来源（mine=我的页 / gating=权益拦截 / index=首页）
+const from = ref('mine')
+
+onLoad((opts: any) => {
+  if (opts != null && opts['from'] != null) {
+    from.value = String(opts['from'])
+  }
+  trackEvent('paywall_view', { from: from.value })
+})
+
+const selectedSku = computed((): Sku => {
+  for (let i = 0; i < skus.length; i++) {
+    if (skus[i].id === selected.value) return skus[i]
+  }
+  return skus[0]
+})
+
+const payButtonText = computed((): string => {
+  const s = selectedSku.value
+  return '立即开通 · ¥' + formatPrice(s.priceCent)
+})
+
+function skuStyle(s: Sku): Map<string, any> {
+  const m = new Map<string, any>()
+  if (selected.value === s.id) {
+    m.set('borderColor', '#5B6CFF')
+    m.set('backgroundColor', '#F5F6FF')
+  } else {
+    m.set('borderColor', '#E4E9F2')
+    m.set('backgroundColor', '#FFFFFF')
+  }
+  return m
+}
+
+async function doPay() {
+  if (paying.value) return
+  const s = selectedSku.value
+  trackEvent('paywall_click', { sku: s.id, from: from.value })
+  paying.value = true
+  try {
+    await purchase(s.id, s.kind)
+    uni.showToast({ title: '开通成功', icon: 'success' })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1200)
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : '支付未完成'
+    uni.showToast({ title: msg, icon: 'none' })
+  } finally {
+    paying.value = false
+  }
+}
+
+function showAgreement() {
+  uni.showToast({ title: '会员服务协议即将上线', icon: 'none' })
+}
+</script>
+
+<style>
+.sku-pressed {
+  opacity: 0.85;
+}
+</style>
