@@ -81,6 +81,11 @@ async function main() {
   step('报告含六维', r1.code === 0 && r1.data.dimensions.length === 6)
   const q1 = await api('/membership/quota', { token })
   step('完成面试后免费额度 3 → 2', q1.code === 0 && q1.data.freeInterviewsLeft === 2)
+  const my = await api('/me/reports', { token })
+  step(
+    '我的报告历史含本场且 overall 非空',
+    my.code === 0 && my.data.length >= 1 && my.data[0].report.overall.length > 0
+  )
 
   // 4. 简历
   const parse = await api('/resume/parse', {

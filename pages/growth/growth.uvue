@@ -233,6 +233,7 @@ import mlEmpty from '../../components/ml-empty.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { trainingHistory, TrainingItem } from '../../store/training-history.uts'
+import { useMock } from '../../api/env.uts'
 import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT, ScoreLevel } from '../../types/scoring.uts'
 
 const records = ref<ReportRecord[]>([])
@@ -246,6 +247,14 @@ onShow(() => {
   if (showIdx.value >= all.length) showIdx.value = 0
   trainingHistory.load()
   trainings.value = trainingHistory.recent(5)
+  // 真后端：异步同步云端报告历史（跨设备），先展示本地再刷新
+  if (!useMock()) {
+    reportHistory.fetchFromServer().then(() => {
+      const sync = reportHistory.recent(6)
+      records.value = sync
+      if (showIdx.value >= sync.length) showIdx.value = 0
+    })
+  }
 })
 
 const activeDimensions = computed((): DimensionScore[] => {

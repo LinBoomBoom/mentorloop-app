@@ -259,6 +259,7 @@ import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
+import { useMock } from '../../api/env.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { InterviewReport } from '../../types/scoring.uts'
 
@@ -439,6 +440,13 @@ onShow(() => {
 
   reportHistory.load()
   records.value = reportHistory.all()
+  // 真后端：异步同步云端报告历史（跨设备），先展示本地再刷新
+  if (!useMock()) {
+    reportHistory.fetchFromServer().then(() => {
+      reportHistory.load()
+      records.value = reportHistory.all()
+    })
+  }
 
   const idx = Math.floor(Math.random() * bubbleTexts.length)
   bubbleText.value = bubbleTexts[idx]

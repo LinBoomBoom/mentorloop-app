@@ -1,7 +1,11 @@
 // 报告历史（成长页 & 首页"最近报告"的数据来源）
 // 文档 02 §2.5 成长档案：保留最近 N 场面试报告，供维度对比与训练计划追踪。
+// P1 第 8 项（跨设备数据同步）：真后端模式下先从服务端拉取本账号报告历史，
+// 以服务端为准覆盖本地缓存；Mock 模式保持纯本地。
 
 import { InterviewReport } from '../types/scoring.uts'
+import { get, useMock } from '../api/client.uts'
+import { userStore } from './user-profile.uts'
 
 const HISTORY_KEY = 'ml_report_history'
 const MAX_KEEP = 10
@@ -64,6 +68,27 @@ class ReportHistory {
   recent(n: number): ReportRecord[] {
     if (n >= this.list.length) return this.list
     return this.list.slice(0, n)
+  }
+
+  // 从服务端拉取本账号报告历史并覆盖本地缓存（跨设备同步）
+  // Mock 或未登录直接跳过；失败时保留本地数据（静默降级，不阻断页面）
+  async fetchFromServer(): Promise<void> {
+    if (useMock()) return
+    if (!userStore.isLoggedIn()) return
+    try {
+      const res = await get('/me/reports')
+      const arr = res.data as any[] | null
+      if (arr == null) return
+      const recs: ReportRecord[] = []
+      for (let i = 0; i < arr.length; i++) {
+        const it = arr[i]
+        recs.push({ sessionId: it.sessionId, at: it.at, report: it.report } as ReportRecord)
+      }
+      this.list = recs
+      this.persist()
+    } catch (e: any) {
+      console.warn('[report-history] fetchFromServer failed, keep local', e)
+    }
   }
 
   clear() {
