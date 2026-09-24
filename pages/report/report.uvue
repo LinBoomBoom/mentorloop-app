@@ -235,6 +235,14 @@ const DIM_EXAMPLES: { [key: string]: string } = {
 }
 
 function exampleFor(key: string): string {
+  // 优先使用 LLM 生成的优秀示例（P1.2）；未生成时回退本地结构化示例
+  const dims = report.value.dimensions
+  for (let i = 0; i < dims.length; i++) {
+    const d = dims[i]
+    if (d.dimension === key && d.exampleAnswer != null && d.exampleAnswer.length > 0) {
+      return d.exampleAnswer
+    }
+  }
   const v = DIM_EXAMPLES[key]
   return v != null ? v : '参考结构：结论 → 依据 → 量化指标 → 边界条件。'
 }

@@ -12,6 +12,7 @@ export type DimensionScore = {
   evidence: string
   missingEvidence: string
   suggestQuestions: string[]
+  exampleAnswer: string // 优秀回答示例（P1.2：LLM 生成；空串时前端本地示例兜底）
 }
 
 export type TrainingTask = {

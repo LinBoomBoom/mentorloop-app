@@ -414,7 +414,8 @@ export function scoreInterview(
       confidence: r.confidence,
       evidence: r.evidence,
       missingEvidence: r.missingEvidence + suffix,
-      suggestQuestions: suggestQIds
+      suggestQuestions: suggestQIds,
+      exampleAnswer: ''
     } as DimensionScore)
   }
 

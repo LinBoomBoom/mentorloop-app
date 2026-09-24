@@ -8,6 +8,11 @@ export type Env = {
   uploadDir: string
   mockSmsCode: string
   smsTtlMs: number
+  llmEnabled: boolean
+  llmBaseUrl: string
+  llmApiKey: string
+  llmModel: string
+  llmTimeoutMs: number
 }
 
 const DEFAULT_ENV: Env = {
@@ -16,7 +21,12 @@ const DEFAULT_ENV: Env = {
   jwtSecret: 'dev-only-change-me',
   uploadDir: './data/uploads',
   mockSmsCode: '123456',
-  smsTtlMs: 300000
+  smsTtlMs: 300000,
+  llmEnabled: false, // P1.2：默认关闭，报告回退纯规则；开启后 LLM 仅生成解释与优秀示例
+  llmBaseUrl: '',
+  llmApiKey: '',
+  llmModel: '',
+  llmTimeoutMs: 30000
 }
 
 export function loadEnv(): Env {
@@ -27,7 +37,12 @@ export function loadEnv(): Env {
     jwtSecret: e.JWT_SECRET ?? DEFAULT_ENV.jwtSecret,
     uploadDir: e.UPLOAD_DIR ?? DEFAULT_ENV.uploadDir,
     mockSmsCode: e.MOCK_SMS_CODE ?? DEFAULT_ENV.mockSmsCode,
-    smsTtlMs: parseInt(e.SMS_TTL_MS ?? '', 10) || DEFAULT_ENV.smsTtlMs
+    smsTtlMs: parseInt(e.SMS_TTL_MS ?? '', 10) || DEFAULT_ENV.smsTtlMs,
+    llmEnabled: e.LLM_ENABLED === 'true',
+    llmBaseUrl: e.LLM_BASE_URL ?? DEFAULT_ENV.llmBaseUrl,
+    llmApiKey: e.LLM_API_KEY ?? DEFAULT_ENV.llmApiKey,
+    llmModel: e.LLM_MODEL ?? DEFAULT_ENV.llmModel,
+    llmTimeoutMs: parseInt(e.LLM_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.llmTimeoutMs
   }
 }
 

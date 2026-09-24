@@ -11,6 +11,7 @@ import { ok, okData, fail } from '../util.js'
 
 export default async function (app: FastifyInstance): Promise<void> {
   const db = (app as any).db as import('../db.js').Db
+  const env = (app as any).env as import('../config.js').Env
 
   // ---- 报告 ----
   app.get(
@@ -28,7 +29,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const { sessionId } = request.query as { sessionId: string }
       try {
-        return okData(getReport(db, sessionId))
+        return okData(await getReport(db, sessionId, env))
       } catch {
         return reply.code(500).send(fail(500, '报告生成失败'))
       }

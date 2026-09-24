@@ -105,7 +105,11 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      'no-console': 'off'
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ]
     }
   },
 

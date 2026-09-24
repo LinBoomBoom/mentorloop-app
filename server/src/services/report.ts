@@ -1,11 +1,13 @@
 // 报告服务：由服务端答案生成评分报告（幂等缓存）并扣减面试额度
 import { Db } from '../db.js'
 import { now } from '../util.js'
+import { Env } from '../config.js'
 import { scoreInterview } from '../rules/scorer.js'
 import { getQuestionById } from '../data/question-bank.js'
 import { QuestionItem, TranscriptEntry } from '../types/interview.js'
 import { InterviewReport } from '../types/scoring.js'
 import { consumeInterview } from './quota.js'
+import { interpretReport, mergeInterpretation } from '../llm/report-enhancer.js'
 
 type AnswerRow = {
   question_id: string
@@ -23,7 +25,8 @@ function sessionUserId(db: Db, sessionId: string): string | null {
 }
 
 // 幂等重算评分报告：已存在则返回缓存；首次生成时扣减一次面试额度
-export function getReport(db: Db, sessionId: string): InterviewReport {
+// P1.2：规则评分为锚点；启用 LLM 时仅覆盖解释与优秀示例，失败回退纯规则。
+export async function getReport(db: Db, sessionId: string, env?: Env): Promise<InterviewReport> {
   const cached = db.prepare('SELECT payload FROM reports WHERE session_id = ?').get(sessionId) as
     { payload: string } | undefined
   const uid = sessionUserId(db, sessionId)
@@ -58,6 +61,24 @@ export function getReport(db: Db, sessionId: string): InterviewReport {
   }
 
   const report = scoreInterview(questions, transcript)
+
+  // 规则分锚点不变；LLM 只补充解释与优秀示例（失败/关闭时保持纯规则）
+  if (env != null && env.llmEnabled) {
+    try {
+      const interp = await interpretReport(
+        {
+          baseUrl: env.llmBaseUrl,
+          apiKey: env.llmApiKey,
+          model: env.llmModel,
+          timeoutMs: env.llmTimeoutMs
+        },
+        report
+      )
+      if (interp != null) mergeInterpretation(report, interp)
+    } catch {
+      // LLM 失败不回滚规则报告，不阻断接口
+    }
+  }
 
   if (uid != null) {
     db.prepare(
