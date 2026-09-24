@@ -21,6 +21,12 @@ export type Env = {
   wxMchPrivateKey: string
   wxPlatformPublicKey: string
   wxNotifyUrl: string
+  asrProvider: 'stub' | 'aliyun'
+  asrTimeoutMs: number
+  asrAliyunAccessKeyId: string
+  asrAliyunAccessKeySecret: string
+  asrAliyunAppKey: string
+  asrAliyunRegion: string
 }
 
 const DEFAULT_ENV: Env = {
@@ -42,7 +48,13 @@ const DEFAULT_ENV: Env = {
   wxApiV3Key: '',
   wxMchPrivateKey: '',
   wxPlatformPublicKey: '',
-  wxNotifyUrl: ''
+  wxNotifyUrl: '',
+  asrProvider: 'stub', // P2-13：默认 stub（明确降级，不伪造转写）；'aliyun' 需 ASR_ALIYUN_* 齐全
+  asrTimeoutMs: 30000,
+  asrAliyunAccessKeyId: '',
+  asrAliyunAccessKeySecret: '',
+  asrAliyunAppKey: '',
+  asrAliyunRegion: 'cn-shanghai'
 }
 
 export function loadEnv(): Env {
@@ -66,7 +78,14 @@ export function loadEnv(): Env {
     wxApiV3Key: e.WX_API_V3_KEY ?? DEFAULT_ENV.wxApiV3Key,
     wxMchPrivateKey: e.WX_MCH_PRIVATE_KEY ?? DEFAULT_ENV.wxMchPrivateKey,
     wxPlatformPublicKey: e.WX_PLATFORM_PUBLIC_KEY ?? DEFAULT_ENV.wxPlatformPublicKey,
-    wxNotifyUrl: e.WX_NOTIFY_URL ?? DEFAULT_ENV.wxNotifyUrl
+    wxNotifyUrl: e.WX_NOTIFY_URL ?? DEFAULT_ENV.wxNotifyUrl,
+    asrProvider: e.ASR_PROVIDER === 'aliyun' ? 'aliyun' : 'stub',
+    asrTimeoutMs: parseInt(e.ASR_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.asrTimeoutMs,
+    asrAliyunAccessKeyId: e.ASR_ALIYUN_ACCESS_KEY_ID ?? DEFAULT_ENV.asrAliyunAccessKeyId,
+    asrAliyunAccessKeySecret:
+      e.ASR_ALIYUN_ACCESS_KEY_SECRET ?? DEFAULT_ENV.asrAliyunAccessKeySecret,
+    asrAliyunAppKey: e.ASR_ALIYUN_APPKEY ?? DEFAULT_ENV.asrAliyunAppKey,
+    asrAliyunRegion: e.ASR_ALIYUN_REGION ?? DEFAULT_ENV.asrAliyunRegion
   }
 }
 

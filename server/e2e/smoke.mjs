@@ -87,6 +87,17 @@ async function main() {
     my.code === 0 && my.data.length >= 1 && my.data[0].report.overall.length > 0
   )
 
+  // 3.6 ASR 上传链路（P2-13；默认 stub 明确降级，不伪造转写）
+  const fd = new FormData()
+  fd.append('audio', new Blob(['fakem4abytes'], { type: 'audio/mp4' }), 'answer.m4a')
+  const asrRes = await fetch(base + '/interview/asr', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token },
+    body: fd
+  })
+  const asrJson = await asrRes.json()
+  step('ASR 上传链路可用（stub 返回空转写）', asrJson.code === 0 && asrJson.data.text === '')
+
   // 4. 简历
   const parse = await api('/resume/parse', {
     method: 'POST',
