@@ -1,12 +1,12 @@
 /* Tailwind CSS 4 入口（uni-app x）
    注意：CSS 生成由 weapp-tailwindcss 接管，不要再注册 tailwindcss / @tailwindcss/postcss / @tailwindcss/vite
-   所有 @import 必须连续置于顶部；随后用 @source none 关闭默认扫描，再显式指定候选文件 */
+   所有 @import 必须连续置于顶部；用 @import 的 source(none) 关闭默认扫描（裸的 @source none 在
+   weapp-tailwindcss 管线会触发「Unterminated string / paths must be quoted」），再显式指定候选文件 */
 
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 /* 图标字体（Lucide 子集；条件编译见该文件） */
 @import './styles/icons.css';
 
-@source none;
 @source './App.uvue';
 @source './pages/**/*.uvue';
 @source './components/**/*.uvue';

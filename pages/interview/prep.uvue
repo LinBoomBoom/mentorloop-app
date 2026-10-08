@@ -166,13 +166,8 @@ import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
-import { POSITION_OPTIONS, EXPERIENCE_OPTIONS } from '../../data/position-options.uts'
-import {
-  PositionId,
-  PositionOption,
-  ExperienceLevel,
-  InterviewMode
-} from '../../types/interview.uts'
+import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
+import { PositionId, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 
 type CheckKey = 'mic' | 'net' | 'record'

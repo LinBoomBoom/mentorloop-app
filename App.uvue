@@ -6,9 +6,16 @@ import { reportHistory } from './store/report-history.uts'
 import { interviewSession } from './store/interview-session.uts'
 import { loginByWechat, applyAuth } from './api/auth.uts'
 import { trackEvent, flushTrackingQueue } from './api/tracking.uts'
+import { initCloud } from './api/client.uts'
 
 onLaunch(() => {
   console.log('[MentorLoop] app launch')
+
+  // #ifdef MP-WEIXIN
+  // 云托管链路：初始化 wx.cloud（callContainer 前置，静默登录/业务请求都走云链路）
+  initCloud()
+  // #endif
+
   // 启动时恢复会话（App 与小程序通用）
   userStore.restore()
   // 启动埋点 + 补传上次未发出的埋点
@@ -69,5 +76,9 @@ onHide(() => {
 
 <style>
 /* Tailwind CSS 4 入口（weapp-tailwindcss 的 cssEntries 需指向同一个文件） */
+/* 小程序端不引入：uts 编译器会误解析 style 块中的 @import 字符串，报 Unterminated string；
+   小程序端样式由 weapp-tailwindcss cssEntries 注入，无需此处 @import */
+/* #ifdef APP */
 @import './main.css';
+/* #endif */
 </style>

@@ -1,9 +1,9 @@
-// 统一请求客户端（封装 uni.request）
-// Mock 优先：BASE_URL 为空时走 mock 模块，接真后端只改此处。
+// 统一请求客户端（双通道：MP-WEIXIN 走 wx.cloud.callContainer 云链路，其余 uni.request）
+// Mock 优先：useMock() 为 true 时各 api 模块走 mock，不进此文件。
 // 能力：token 注入、超时、统一业务码/HTTP 错误处理、401 自动登出、GET 参数序列化、失败事件入队（供补传）。
 
 import { userStore } from '../store/user-profile.uts'
-import { API_BASE_URL, useMock } from './env.uts'
+import { API_BASE_URL, CLOUD_ENV_ID, useMock } from './env.uts'
 
 // 网关地址与 Mock 判定统一取自 api/env.uts（单一切换点）
 export const BASE_URL: string = API_BASE_URL
@@ -66,15 +66,100 @@ function handleUnauthorized() {
   // #endif
 }
 
-export function request(
+// 双通道共享的响应映射（冻结 §4.1：callContainer 与 uni.request 行为一致）
+function handleResponse(res: any, resolve: (r: ApiResult) => void, reject: (e: Error) => void) {
+  const statusCode = res.statusCode as number
+
+  // HTTP 401 → 清态
+  if (statusCode === 401) {
+    handleUnauthorized()
+    reject(new Error('UNAUTHORIZED'))
+    return
+  }
+  if (statusCode < 200 || statusCode >= 300) {
+    const msg = '网络异常（' + statusCode + '）'
+    uni.showToast({ title: msg, icon: 'none' })
+    reject(new Error(msg))
+    return
+  }
+
+  const body = res.data as ApiResult | null
+  if (body == null) {
+    const msg = '响应为空'
+    uni.showToast({ title: msg, icon: 'none' })
+    reject(new Error(msg))
+    return
+  }
+
+  // 业务码：0/200 成功；其余按业务错误处理
+  if (body.code === 0 || body.code === 200) {
+    resolve(body)
+    return
+  }
+  // 业务 401（网关可能以 body 返回）
+  if (body.code === 401 || body.code === 40001) {
+    handleUnauthorized()
+    reject(new Error('UNAUTHORIZED'))
+    return
+  }
+  const msg = body.message.length > 0 ? body.message : '请求失败（' + body.code + '）'
+  uni.showToast({ title: msg, icon: 'none' })
+  reject(new Error(msg))
+}
+
+// 双通道共享的失败处理
+function handleFail(err: any, reject: (e: Error) => void) {
+  const errMsg = err != null && err.errMsg != null ? String(err.errMsg) : '网络不可用'
+  // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
+  uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
+  reject(new Error(errMsg))
+}
+
+// 云链路：wx.cloud.callContainer（仅 MP-WEIXIN 非 mock）
+// path 无 /api 前缀（服务端 Fastify 根路径）；callContainer 私有链路自动注入
+// X-WX-OPENID 等请求头（冻结 §2.2），无需客户端传 openid。
+// #ifdef MP-WEIXIN
+function requestCloud(
   path: string,
   options: RequestOptions,
-  query: { [key: string]: any } | null = null
+  query: { [key: string]: any } | null
+): Promise<ApiResult> {
+  return new Promise<ApiResult>((resolve, reject) => {
+    const g = globalThis as any
+    const wxApi = g.wx
+    if (wxApi == null || wxApi.cloud == null || wxApi.cloud.callContainer == null) {
+      const msg = '微信云能力不可用，请升级微信后重试'
+      uni.showToast({ title: msg, icon: 'none' })
+      reject(new Error(msg))
+      return
+    }
+    wxApi.cloud.callContainer({
+      config: { env: CLOUD_ENV_ID },
+      path: path + serializeQuery(query),
+      method: options.method,
+      data: options.data,
+      header: buildHeaders(options.header),
+      timeout: REQUEST_TIMEOUT,
+      success: (res: any) => {
+        handleResponse(res, resolve, reject)
+      },
+      fail: (err: any) => {
+        handleFail(err, reject)
+      }
+    })
+  })
+}
+// #endif
+
+// HTTP 链路：uni.request（App/H5；MP-WEIXIN mock 联调可临时切回）
+function requestHttp(
+  path: string,
+  options: RequestOptions,
+  query: { [key: string]: any } | null
 ): Promise<ApiResult> {
   return new Promise<ApiResult>((resolve, reject) => {
     const url = BASE_URL + path + serializeQuery(query)
     const header = buildHeaders(options.header)
-    let settled = false
 
     uni.request({
       url: url,
@@ -83,56 +168,41 @@ export function request(
       header: header,
       timeout: REQUEST_TIMEOUT,
       success: (res: any) => {
-        if (settled) return
-        settled = true
-        const statusCode = res.statusCode as number
-
-        // HTTP 401 → 清态
-        if (statusCode === 401) {
-          handleUnauthorized()
-          reject(new Error('UNAUTHORIZED'))
-          return
-        }
-        if (statusCode < 200 || statusCode >= 300) {
-          const msg = '网络异常（' + statusCode + '）'
-          uni.showToast({ title: msg, icon: 'none' })
-          reject(new Error(msg))
-          return
-        }
-
-        const body = res.data as ApiResult | null
-        if (body == null) {
-          const msg = '响应为空'
-          uni.showToast({ title: msg, icon: 'none' })
-          reject(new Error(msg))
-          return
-        }
-
-        // 业务码：0/200 成功；其余按业务错误处理
-        if (body.code === 0 || body.code === 200) {
-          resolve(body)
-          return
-        }
-        // 业务 401（网关可能以 body 返回）
-        if (body.code === 401 || body.code === 40001) {
-          handleUnauthorized()
-          reject(new Error('UNAUTHORIZED'))
-          return
-        }
-        const msg = body.message.length > 0 ? body.message : '请求失败（' + body.code + '）'
-        uni.showToast({ title: msg, icon: 'none' })
-        reject(new Error(msg))
+        handleResponse(res, resolve, reject)
       },
       fail: (err: any) => {
-        if (settled) return
-        settled = true
-        const errMsg = err != null && err.errMsg != null ? String(err.errMsg) : '网络不可用'
-        // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
-        uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
-        reject(new Error(errMsg))
+        handleFail(err, reject)
       }
     })
   })
+}
+
+export function request(
+  path: string,
+  options: RequestOptions,
+  query: { [key: string]: any } | null = null
+): Promise<ApiResult> {
+  // #ifdef MP-WEIXIN
+  if (!useMock()) {
+    return requestCloud(path, options, query)
+  }
+  // #endif
+  return requestHttp(path, options, query)
+}
+
+// 微信云能力初始化（App.uvue onLaunch 首位调用；非 MP-WEIXIN 空实现）
+export function initCloud(): void {
+  // #ifdef MP-WEIXIN
+  const g = globalThis as any
+  if (g.wx != null && g.wx.cloud != null && g.wx.cloud.init != null) {
+    try {
+      g.wx.cloud.init({ env: CLOUD_ENV_ID, traceUser: false })
+      console.log('[client] wx.cloud.init ok, env =', CLOUD_ENV_ID)
+    } catch (e) {
+      console.warn('[client] wx.cloud.init failed', e)
+    }
+  }
+  // #endif
 }
 
 export function makeOptions(

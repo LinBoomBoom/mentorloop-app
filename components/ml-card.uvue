@@ -12,8 +12,6 @@
 </template>
 
 <script setup lang="uts">
-import { defineEmits } from 'vue'
-
 defineProps({
   // raised：带卡片阴影（默认 true）；flat 场景（嵌套/分隔区域）传 false
   raised: { type: Boolean, default: true },
