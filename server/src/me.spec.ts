@@ -124,27 +124,29 @@ describe('账号自助删除 DELETE /me/account', () => {
     await finishOneInterview(app, token)
 
     const db = (app as any).db
-    const count = (sql: string, ...args: unknown[]): number =>
-      (db.prepare(sql).get(...args) as any).c as number
+    const count = async (sql: string, ...args: unknown[]): Promise<number> =>
+      ((await db.prepare(sql).get(...args)) as any).c as number
 
-    expect(count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(1)
-    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBeGreaterThan(0)
-    expect(count('SELECT COUNT(*) AS c FROM answers')).toBeGreaterThan(0)
-    expect(count('SELECT COUNT(*) AS c FROM session_asked')).toBeGreaterThan(0)
-    expect(count('SELECT COUNT(*) AS c FROM reports')).toBeGreaterThan(0)
+    expect(await count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(1)
+    expect(await count('SELECT COUNT(*) AS c FROM sessions')).toBeGreaterThan(0)
+    expect(await count('SELECT COUNT(*) AS c FROM answers')).toBeGreaterThan(0)
+    expect(await count('SELECT COUNT(*) AS c FROM session_asked')).toBeGreaterThan(0)
+    expect(await count('SELECT COUNT(*) AS c FROM reports')).toBeGreaterThan(0)
 
     const r1 = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
     expect(r1.json().code).toBe(0)
 
-    expect(count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM answers')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM session_asked')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM reports')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM resumes')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM orders')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM tracking_events')).toBe(0)
-    expect(count('SELECT COUNT(*) AS c FROM sms_codes WHERE phone = ?', '13900000005')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM sessions')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM answers')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM session_asked')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM reports')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM resumes')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM orders')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM tracking_events')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM sms_codes WHERE phone = ?', '13900000005')).toBe(
+      0
+    )
 
     // 幂等：同 token 再删仍返回 ok
     const r2 = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
@@ -163,10 +165,11 @@ describe('账号自助删除 DELETE /me/account', () => {
     expect(r.json().code).toBe(0)
 
     const db = (app as any).db
-    const count = (sql: string): number => (db.prepare(sql).get() as any).c as number
-    expect(count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000006'")).toBe(0)
-    expect(count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000007'")).toBe(1)
-    expect(count('SELECT COUNT(*) AS c FROM sessions')).toBe(1)
+    const count = async (sql: string): Promise<number> =>
+      ((await db.prepare(sql).get()) as any).c as number
+    expect(await count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000006'")).toBe(0)
+    expect(await count("SELECT COUNT(*) AS c FROM users WHERE phone = '13900000007'")).toBe(1)
+    expect(await count('SELECT COUNT(*) AS c FROM sessions')).toBe(1)
     closeDb()
   })
 
@@ -181,10 +184,12 @@ describe('账号自助删除 DELETE /me/account', () => {
     mkdirSync(env.uploadDir, { recursive: true })
     const rel = 'u_000008_' + Date.now() + '_resume.pdf'
     writeFileSync(env.uploadDir + '/' + rel, 'fake-pdf')
-    db.prepare(
-      `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
+    await db
+      .prepare(
+        `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
        VALUES ((SELECT id FROM users WHERE uid = (SELECT uid FROM users WHERE phone = '13900000008')), ?, NULL, NULL, ?)`
-    ).run('resumes/' + rel, Date.now())
+      )
+      .run('resumes/' + rel, Date.now())
 
     const filePath = env.uploadDir + '/' + rel
     expect(existsSync(filePath)).toBe(true)
@@ -192,7 +197,7 @@ describe('账号自助删除 DELETE /me/account', () => {
     const r = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
     expect(r.json().code).toBe(0)
     expect(existsSync(filePath)).toBe(false)
-    expect((db.prepare('SELECT COUNT(*) AS c FROM resumes').get() as any).c).toBe(0)
+    expect(((await db.prepare('SELECT COUNT(*) AS c FROM resumes').get()) as any).c).toBe(0)
     closeDb()
   })
 })

@@ -18,7 +18,7 @@ export default async function (app: FastifyInstance): Promise<void> {
 
   // 服务端权威配额
   app.get('/membership/quota', { preHandler: requireAuth }, async (request, reply) => {
-    const user = getUserByUid(db, (request.user as any).uid as string)
+    const user = await getUserByUid(db, (request.user as any).uid as string)
     if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
     return okData(getQuota(user))
   })
@@ -38,13 +38,13 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const uid = (request.user as any).uid as string
-      const user = getUserByUid(db, uid)
+      const user = await getUserByUid(db, uid)
       if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
       const { skuId } = request.body as { skuId: string }
 
       if (env.payMode === 'wx') {
         try {
-          const order = createOrder(db, user.id, skuId)
+          const order = await createOrder(db, user.id, skuId)
           const payParams = await createJsapiOrder(
             env,
             order.id,
@@ -61,7 +61,7 @@ export default async function (app: FastifyInstance): Promise<void> {
         }
       }
       try {
-        const r = payOrderMock(db, user.id, skuId)
+        const r = await payOrderMock(db, user.id, skuId)
         return okData({ orderId: r.orderId, payParams: null })
       } catch (e: any) {
         if (e?.message === 'SKU_NOT_FOUND') return reply.code(400).send(fail(400, '商品不存在'))
@@ -102,7 +102,7 @@ export default async function (app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ code: 'FAIL', message: 'invalid detail' })
     }
 
-    const order = requireOrder(db, orderId)
+    const order = await requireOrder(db, orderId)
     if (order == null) return reply.code(404).send({ code: 'FAIL', message: 'order not found' })
     if (order.amount !== total) {
       console.warn(
@@ -114,12 +114,12 @@ export default async function (app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ code: 'FAIL', message: 'amount mismatch' })
     }
 
-    settleOrder(db, orderId, txId) // 幂等：重复回调不重复发放
+    await settleOrder(db, orderId, txId) // 幂等：重复回调不重复发放
     return { code: 'SUCCESS', message: '成功' }
   })
 }
 
-function requireOrder(db: import('../db.js').Db, orderId: string) {
-  const row = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId)
+async function requireOrder(db: import('../db.js').Db, orderId: string) {
+  const row = await db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId)
   return row != null ? (row as any) : null
 }

@@ -19,29 +19,36 @@ export type NewSessionInput = {
   experienceRange: string
 }
 
-export function createSession(db: Db, uid: string, mode: string, body: NewSessionInput): string {
+export async function createSession(
+  db: Db,
+  uid: string,
+  mode: string,
+  body: NewSessionInput
+): Promise<string> {
   const sessionId = newId('s')
   const t = now()
-  db.prepare(
-    `INSERT INTO sessions (id, user_id, position_id, position_name, experience_level, experience_range, mode, status, question_seq, created_at)
+  await db
+    .prepare(
+      `INSERT INTO sessions (id, user_id, position_id, position_name, experience_level, experience_range, mode, status, question_seq, created_at)
      VALUES (?, (SELECT id FROM users WHERE uid = ?), ?, ?, ?, ?, ?, 'CREATED', 0, ?)`
-  ).run(
-    sessionId,
-    uid,
-    body.positionId,
-    body.position,
-    body.experienceLevel,
-    body.experienceRange,
-    mode,
-    t
-  )
+    )
+    .run(
+      sessionId,
+      uid,
+      body.positionId,
+      body.position,
+      body.experienceLevel,
+      body.experienceRange,
+      mode,
+      t
+    )
   return sessionId
 }
 
-function getSession(
+async function getSession(
   db: Db,
   sessionId: string
-): {
+): Promise<{
   id: string
   user_id: number
   position_id: string
@@ -49,17 +56,17 @@ function getSession(
   experience_level: string
   experience_range: string | null
   mode: string
-} | null {
-  const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId)
+} | null> {
+  const row = await db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId)
   return row != null ? (row as any) : null
 }
 
 // 该会话已出过的题目（出题即记录，去重；收束题不在 QUESTION_BANK，
 // 还原失败时以仅含 id 的最小桩参与去重）
-function askedQuestions(db: Db, sessionId: string): QuestionItem[] {
-  const rows = db
+async function askedQuestions(db: Db, sessionId: string): Promise<QuestionItem[]> {
+  const rows = (await db
     .prepare('SELECT question_id FROM session_asked WHERE session_id = ?')
-    .all(sessionId) as { question_id: string }[]
+    .all(sessionId)) as { question_id: string }[]
   const out: QuestionItem[] = []
   for (const r of rows) {
     const q = getQuestionById(r.question_id)
@@ -94,11 +101,11 @@ export type NextQuestionParams = {
   resumeRiskTopicsComma: string
 }
 
-export function nextQuestion(db: Db, p: NextQuestionParams): QuestionItem {
-  const session = getSession(db, p.sessionId)
+export async function nextQuestion(db: Db, p: NextQuestionParams): Promise<QuestionItem> {
+  const session = await getSession(db, p.sessionId)
   if (session == null) throw new Error('SESSION_NOT_FOUND')
 
-  const asked = askedQuestions(db, p.sessionId)
+  const asked = await askedQuestions(db, p.sessionId)
   // 出题权威以服务端 answers 为准；客户端传入的 asked 仅作参考，忽略不合并（避免状态分叉）
 
   const blueprint: PositionBlueprint = {
@@ -133,19 +140,21 @@ export function nextQuestion(db: Db, p: NextQuestionParams): QuestionItem {
   const out = selectNext(input)
   if (out == null) throw new Error('NO_MORE_QUESTIONS')
 
-  db.prepare(
-    `UPDATE sessions SET current_question_id = ?, question_seq = question_seq + 1 WHERE id = ?`
-  ).run(out.question.id, p.sessionId)
+  await db
+    .prepare(
+      `UPDATE sessions SET current_question_id = ?, question_seq = question_seq + 1 WHERE id = ?`
+    )
+    .run(out.question.id, p.sessionId)
   // 出题即记录（服务端权威去重；UNIQUE 防并发重复）
-  const seq = db.prepare('SELECT question_seq FROM sessions WHERE id = ?').get(p.sessionId) as {
+  const seq = (await db
+    .prepare('SELECT question_seq FROM sessions WHERE id = ?')
+    .get(p.sessionId)) as {
     question_seq: number
   }
   try {
-    db.prepare('INSERT INTO session_asked (session_id, question_id, seq) VALUES (?, ?, ?)').run(
-      p.sessionId,
-      out.question.id,
-      seq.question_seq
-    )
+    await db
+      .prepare('INSERT INTO session_asked (session_id, question_id, seq) VALUES (?, ?, ?)')
+      .run(p.sessionId, out.question.id, seq.question_seq)
   } catch {
     // 并发重复出题：忽略
   }
@@ -155,24 +164,26 @@ export function nextQuestion(db: Db, p: NextQuestionParams): QuestionItem {
 // 与服务端 mock 层一致的默认简历关键词（详见 api/mock/interview.mock.uts）
 const DEFAULT_TOPICS: string[] = ['订单系统', '性能优化', '架构设计']
 
-export function submitAnswer(
+export async function submitAnswer(
   db: Db,
   sessionId: string,
   questionId: string,
   text: string,
   isFollowup: boolean
-): boolean {
+): Promise<boolean> {
   const t = now()
-  const idxRow = db
+  const idxRow = (await db
     .prepare('SELECT COUNT(*) AS c FROM answers WHERE session_id = ? AND question_id = ?')
-    .get(sessionId, questionId) as { c: number }
+    .get(sessionId, questionId)) as { c: number }
   const userAnswerIndex = idxRow.c
   const idemKey = `${sessionId}:${questionId}:${userAnswerIndex}`
   try {
-    db.prepare(
-      `INSERT INTO answers (session_id, question_id, user_answer_index, is_followup, speaker, text, idempotency_key, created_at)
+    await db
+      .prepare(
+        `INSERT INTO answers (session_id, question_id, user_answer_index, is_followup, speaker, text, idempotency_key, created_at)
        VALUES (?, ?, ?, ?, 'user', ?, ?, ?)`
-    ).run(sessionId, questionId, userAnswerIndex, isFollowup ? 1 : 0, text, idemKey, t)
+      )
+      .run(sessionId, questionId, userAnswerIndex, isFollowup ? 1 : 0, text, idemKey, t)
   } catch {
     // UNIQUE 冲突 → 幂等重放，不报错
     return true

@@ -6,12 +6,12 @@ import { now } from '../util.js'
 import { ResumeParseResult, ResumeSuggestion } from '../types/domain.js'
 
 // 解析（规则版）：以文件名与固定字段生成结构化结果（Mock 后接真实文档解析）
-export function parseResumeFile(
+export async function parseResumeFile(
   db: Db,
   uid: string,
   originalUrl: string,
   fileName: string
-): ResumeParseResult {
+): Promise<ResumeParseResult> {
   const ext =
     fileName.toLowerCase().endsWith('.png') ||
     fileName.toLowerCase().endsWith('.jpg') ||
@@ -26,10 +26,12 @@ export function parseResumeFile(
     gaps: ['缺少量化成果', '空档期未说明'],
     formatRisks: ['一页超过 2 屏']
   }
-  db.prepare(
-    `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
+  await db
+    .prepare(
+      `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
      VALUES ((SELECT id FROM users WHERE uid = ?), ?, ?, NULL, ?)`
-  ).run(uid, originalUrl, JSON.stringify(result), now())
+    )
+    .run(uid, originalUrl, JSON.stringify(result), now())
   void ext
   return result
 }

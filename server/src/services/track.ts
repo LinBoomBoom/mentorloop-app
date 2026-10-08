@@ -2,7 +2,7 @@
 import { Db } from '../db.js'
 import { now } from '../util.js'
 
-export function ingestEvents(db: Db, events: string[]): number {
+export async function ingestEvents(db: Db, events: string[]): Promise<number> {
   let ok = 0
   const stmt = db.prepare(
     `INSERT OR IGNORE INTO tracking_events (user_id, session_id, event, payload, platform, client_ts, server_ts)
@@ -19,7 +19,7 @@ export function ingestEvents(db: Db, events: string[]): number {
       delete props.platform
       delete props.timestamp
       try {
-        stmt.run(
+        await stmt.run(
           typeof body.userId === 'string' && body.userId.length > 0 ? body.userId : null,
           typeof body.sessionId === 'string' ? body.sessionId : '',
           body.event,

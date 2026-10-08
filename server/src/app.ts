@@ -16,7 +16,19 @@ export type BuildOptions = {
 export function buildApp(opts: BuildOptions = {}): FastifyInstance {
   const env = opts.env ?? loadEnv()
   ensureDataDirs(env)
-  const db = getDb(opts.dbPath ?? env.dbPath)
+  // 双驱动：云端注入 MYSQL_HOST → mysql2 池（schema 由 baseline SQL 外部建库）；否则本地 node:sqlite
+  const mysql =
+    env.mysqlHost.length > 0
+      ? {
+          host: env.mysqlHost,
+          port: env.mysqlPort,
+          user: env.mysqlUser,
+          password: env.mysqlPassword,
+          database: env.mysqlDatabase,
+          poolSize: env.mysqlPoolSize
+        }
+      : null
+  const db = getDb(opts.dbPath ?? env.dbPath, mysql)
 
   const app = Fastify({ logger: false })
 

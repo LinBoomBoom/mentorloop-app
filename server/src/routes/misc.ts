@@ -11,6 +11,15 @@ export default async function (app: FastifyInstance): Promise<void> {
   const db = (app as any).db as import('../db.js').Db
   const env = (app as any).env as import('../config.js').Env
 
+  // 健康检查（云托管探活/发布验证）
+  app.get('/healthz', async () =>
+    okData({
+      ok: true,
+      driver: db.driver,
+      ts: Date.now()
+    })
+  )
+
   // ---- 报告 ----
   app.get(
     '/report',
@@ -51,7 +60,7 @@ export default async function (app: FastifyInstance): Promise<void> {
       const { fileUrl } = request.body as { fileUrl: string }
       const uid = (request.user as any).uid as string
       const name = basename(fileUrl)
-      return okData(parseResumeFile(db, uid, fileUrl, name))
+      return okData(await parseResumeFile(db, uid, fileUrl, name))
     }
   )
 
@@ -87,7 +96,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const { events } = request.body as { events: string[] }
-      ingestEvents(db, events ?? [])
+      await ingestEvents(db, events ?? [])
       return ok()
     }
   )

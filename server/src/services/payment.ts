@@ -21,31 +21,39 @@ export type OrderRow = {
 
 const DAY_MS = 86400000
 
-export function createOrder(db: Db, userId: number, skuId: string): OrderRow {
+export async function createOrder(db: Db, userId: number, skuId: string): Promise<OrderRow> {
   const sku = getSku(skuId)
   if (sku == null) throw new Error('SKU_NOT_FOUND')
   const orderId = newId('o')
-  db.prepare(
-    `INSERT INTO orders (id, user_id, sku_id, sku_kind, amount, status, created_at)
+  await db
+    .prepare(
+      `INSERT INTO orders (id, user_id, sku_id, sku_kind, amount, status, created_at)
      VALUES (?, ?, ?, ?, ?, 'CREATED', ?)`
-  ).run(orderId, userId, sku.id, sku.kind, sku.priceCent, now())
-  return getOrder(db, orderId) as OrderRow
+    )
+    .run(orderId, userId, sku.id, sku.kind, sku.priceCent, now())
+  return (await getOrder(db, orderId)) as OrderRow
 }
 
-export function getOrder(db: Db, orderId: string): OrderRow | null {
-  const row = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId)
+export async function getOrder(db: Db, orderId: string): Promise<OrderRow | null> {
+  const row = await db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId)
   return row != null ? (row as OrderRow) : null
 }
 
 // 用户可见订单状态（含归属校验）
-export function getOrderForUser(db: Db, userId: number, orderId: string): OrderRow | null {
-  const row = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(orderId, userId)
+export async function getOrderForUser(
+  db: Db,
+  userId: number,
+  orderId: string
+): Promise<OrderRow | null> {
+  const row = await db
+    .prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?')
+    .get(orderId, userId)
   return row != null ? (row as OrderRow) : null
 }
 
 // 发放权益（member 叠加 member_until；single 累加剩余场次）
-function grantBenefit(db: Db, order: OrderRow): void {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(order.user_id) as
+async function grantBenefit(db: Db, order: OrderRow): Promise<void> {
+  const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get(order.user_id)) as
     UserRow | undefined
   if (user == null) return
   const sku = getSku(order.sku_id)
@@ -53,59 +61,51 @@ function grantBenefit(db: Db, order: OrderRow): void {
   const t = now()
   if (sku.kind === 'member') {
     const base = isMember(user) && user.member_until != null ? user.member_until : t
-    db.prepare('UPDATE users SET member_until = ?, updated_at = ? WHERE id = ?').run(
-      base + sku.memberDays * DAY_MS,
-      t,
-      order.user_id
-    )
+    await db
+      .prepare('UPDATE users SET member_until = ?, updated_at = ? WHERE id = ?')
+      .run(base + sku.memberDays * DAY_MS, t, order.user_id)
   } else {
-    db.prepare(
-      'UPDATE users SET single_quota_total = single_quota_total + ?, updated_at = ? WHERE id = ?'
-    ).run(sku.singleCount, t, order.user_id)
+    await db
+      .prepare(
+        'UPDATE users SET single_quota_total = single_quota_total + ?, updated_at = ? WHERE id = ?'
+      )
+      .run(sku.singleCount, t, order.user_id)
   }
 }
 
 // mock 支付：下单即支付成功并发放（本地零配置可跑）
-export function payOrderMock(
+export async function payOrderMock(
   db: Db,
   userId: number,
   skuId: string
-): { orderId: string; amount: number } {
-  const order = createOrder(db, userId, skuId)
-  db.exec('BEGIN')
-  try {
-    const r = db
+): Promise<{ orderId: string; amount: number }> {
+  const order = await createOrder(db, userId, skuId)
+  // 事务：状态迁移与发放原子完成（双驱动：本地手工 BEGIN/COMMIT，云端 ALS 绑定同连接）
+  await db.transaction(async () => {
+    const r = await db
       .prepare("UPDATE orders SET status='PAID', paid_at = ? WHERE id = ? AND status = 'CREATED'")
       .run(now(), order.id)
-    if (r.changes > 0) grantBenefit(db, order)
-    db.exec('COMMIT')
-  } catch (e) {
-    db.exec('ROLLBACK')
-    throw e
-  }
+    if (r.changes > 0) await grantBenefit(db, order)
+  })()
   return { orderId: order.id, amount: order.amount }
 }
 
 // 微信回调结算：原子迁移 CREATED→PAID，成功后发放；重复回调返回 false（不重复发放）
 // 返回 true 表示本次完成发放；false 表示订单已处理（幂等）。
-export function settleOrder(db: Db, orderId: string, transactionId: string): boolean {
-  db.exec('BEGIN')
-  try {
-    const r = db
+export async function settleOrder(
+  db: Db,
+  orderId: string,
+  transactionId: string
+): Promise<boolean> {
+  return await db.transaction(async () => {
+    const r = await db
       .prepare(
         "UPDATE orders SET status='PAID', paid_at = ?, transaction_id = ? WHERE id = ? AND status = 'CREATED'"
       )
       .run(now(), transactionId, orderId)
-    if (r.changes === 0) {
-      db.exec('COMMIT')
-      return false
-    }
-    const order = getOrder(db, orderId)
-    if (order != null) grantBenefit(db, order)
-    db.exec('COMMIT')
+    if (r.changes === 0) return false
+    const order = await getOrder(db, orderId)
+    if (order != null) await grantBenefit(db, order)
     return true
-  } catch (e) {
-    db.exec('ROLLBACK')
-    throw e
-  }
+  })()
 }

@@ -21,7 +21,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const { phone } = request.body as { phone: string }
-      const okSend = sendSmsCode(db, env, phone)
+      const okSend = await sendSmsCode(db, env, phone)
       return okSend ? ok() : fail(400, '手机号格式不正确')
     }
   )
@@ -39,7 +39,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const { phone, code } = request.body as { phone: string; code: string }
-      const auth = loginByPhone(db, env, phone, code)
+      const auth = await loginByPhone(db, env, phone, code)
       if (auth == null) {
         return reply.code(400).send(fail(400, '验证码不正确或已过期'))
       }
@@ -48,16 +48,30 @@ export default async function (app: FastifyInstance): Promise<void> {
     }
   )
 
+  // 微信静默登录（冻结 §2.2 鉴权源扩展）：
+  // - 云托管 callContainer 私有链路自动注入 X-WX-OPENID 头 → 直接采信（免 code2session）
+  // - 头缺失时走 body.code（本地/联调 mock：'wx_' + code 作 openid）
+  // 出参 { uid, nickname, token } 不变
   app.post(
     '/auth/wechat',
     {
       schema: {
-        body: { type: 'object', required: ['code'], properties: { code: { type: 'string' } } }
+        body: { type: 'object', properties: { code: { type: 'string' } } }
       }
     },
-    async (request) => {
-      const { code } = request.body as { code: string }
-      const auth = loginByWechat(db, env, code)
+    async (request, reply) => {
+      const body = (request.body ?? {}) as { code?: string }
+      const headerOpenid = request.headers['x-wx-openid']
+      const openid =
+        typeof headerOpenid === 'string' && headerOpenid.length > 0
+          ? headerOpenid
+          : body.code != null && body.code.length > 0
+            ? 'wx_' + body.code
+            : ''
+      if (openid.length === 0) {
+        return reply.code(400).send(fail(400, '缺少微信身份凭证'))
+      }
+      const auth = await loginByWechat(db, env, openid)
       const token = app.jwt.sign({ uid: auth.uid })
       return okData({ uid: auth.uid, nickname: auth.nickname, token })
     }
@@ -70,7 +84,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     } catch {
       return reply.code(401).send(fail(401, '未登录或登录已过期'))
     }
-    const user = getUserByUid(db, (request.user as any).uid as string)
+    const user = await getUserByUid(db, (request.user as any).uid as string)
     if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
     const q = getQuota(user)
     return okData({ uid: user.uid, nickname: user.nickname, quota: q })

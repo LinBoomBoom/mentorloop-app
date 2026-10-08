@@ -40,7 +40,7 @@ export default async function (app: FastifyInstance): Promise<void> {
       const body = request.body as any
       const q = request.query as any
       const mode = typeof q?.mode === 'string' && q.mode.length > 0 ? q.mode : 'standard'
-      const sessionId = createSession(db, uid, mode, {
+      const sessionId = await createSession(db, uid, mode, {
         positionId: body.positionId,
         position: body.position ?? '',
         experienceLevel: body.experienceLevel,
@@ -79,7 +79,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const q = request.query as any
       try {
-        const question = svcNext(db, {
+        const question = await svcNext(db, {
           sessionId: q.sessionId,
           mode: q.mode ?? 'standard',
           askedComma: q.asked ?? '',
@@ -121,7 +121,7 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const body = request.body as any
-      submitAnswer(db, body.sessionId, body.questionId, body.text, body.isFollowup === true)
+      await submitAnswer(db, body.sessionId, body.questionId, body.text, body.isFollowup === true)
       return ok()
     }
   )

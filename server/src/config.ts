@@ -6,6 +6,12 @@ export type Env = {
   dbPath: string
   jwtSecret: string
   uploadDir: string
+  mysqlHost: string // 云托管注入；为空走本地 node:sqlite
+  mysqlPort: number
+  mysqlUser: string
+  mysqlPassword: string
+  mysqlDatabase: string
+  mysqlPoolSize: number
   mockSmsCode: string
   smsTtlMs: number
   llmEnabled: boolean
@@ -34,6 +40,12 @@ const DEFAULT_ENV: Env = {
   dbPath: './data/mentorloop.db',
   jwtSecret: 'dev-only-change-me',
   uploadDir: './data/uploads',
+  mysqlHost: '',
+  mysqlPort: 3306,
+  mysqlUser: '',
+  mysqlPassword: '',
+  mysqlDatabase: 'mentorloop_mp',
+  mysqlPoolSize: 10,
   mockSmsCode: '123456',
   smsTtlMs: 300000,
   llmEnabled: false, // P1.2：默认关闭，报告回退纯规则；开启后 LLM 仅生成解释与优秀示例
@@ -64,6 +76,12 @@ export function loadEnv(): Env {
     dbPath: e.DB_PATH ?? DEFAULT_ENV.dbPath,
     jwtSecret: e.JWT_SECRET ?? DEFAULT_ENV.jwtSecret,
     uploadDir: e.UPLOAD_DIR ?? DEFAULT_ENV.uploadDir,
+    mysqlHost: e.MYSQL_HOST ?? '',
+    mysqlPort: parseInt(e.MYSQL_PORT ?? '', 10) || DEFAULT_ENV.mysqlPort,
+    mysqlUser: e.MYSQL_USER ?? '',
+    mysqlPassword: e.MYSQL_PASSWORD ?? '',
+    mysqlDatabase: e.MYSQL_DATABASE || DEFAULT_ENV.mysqlDatabase,
+    mysqlPoolSize: parseInt(e.MYSQL_POOL_SIZE ?? '', 10) || DEFAULT_ENV.mysqlPoolSize,
     mockSmsCode: e.MOCK_SMS_CODE ?? DEFAULT_ENV.mockSmsCode,
     smsTtlMs: parseInt(e.SMS_TTL_MS ?? '', 10) || DEFAULT_ENV.smsTtlMs,
     llmEnabled: e.LLM_ENABLED === 'true',

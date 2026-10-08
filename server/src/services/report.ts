@@ -17,26 +17,27 @@ type AnswerRow = {
   created_at: number
 }
 
-function sessionUserId(db: Db, sessionId: string): string | null {
-  const row = db
+async function sessionUserId(db: Db, sessionId: string): Promise<string | null> {
+  const row = (await db
     .prepare(`SELECT u.uid AS uid FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`)
-    .get(sessionId) as { uid: string } | undefined
+    .get(sessionId)) as { uid: string } | undefined
   return row != null ? row.uid : null
 }
 
 // 幂等重算评分报告：已存在则返回缓存；首次生成时扣减一次面试额度
 // P1.2：规则评分为锚点；启用 LLM 时仅覆盖解释与优秀示例，失败回退纯规则。
 export async function getReport(db: Db, sessionId: string, env?: Env): Promise<InterviewReport> {
-  const cached = db.prepare('SELECT payload FROM reports WHERE session_id = ?').get(sessionId) as
-    { payload: string } | undefined
-  const uid = sessionUserId(db, sessionId)
+  const cached = (await db
+    .prepare('SELECT payload FROM reports WHERE session_id = ?')
+    .get(sessionId)) as { payload: string } | undefined
+  const uid = await sessionUserId(db, sessionId)
   if (cached != null) {
     return JSON.parse(cached.payload) as InterviewReport
   }
 
-  const rows = db
+  const rows = (await db
     .prepare('SELECT * FROM answers WHERE session_id = ? ORDER BY created_at ASC')
-    .all(sessionId) as unknown[]
+    .all(sessionId)) as unknown[]
   const answers = rows.map((r) => r as AnswerRow)
 
   // 恢复题目对象 + 构造转写（面试官发语句=题面）
@@ -81,11 +82,13 @@ export async function getReport(db: Db, sessionId: string, env?: Env): Promise<I
   }
 
   if (uid != null) {
-    db.prepare(
-      `INSERT INTO reports (session_id, user_id, payload, generated_at) VALUES (?, (SELECT id FROM users WHERE uid = ?), ?, ?)`
-    ).run(sessionId, uid, JSON.stringify(report), now())
+    await db
+      .prepare(
+        `INSERT INTO reports (session_id, user_id, payload, generated_at) VALUES (?, (SELECT id FROM users WHERE uid = ?), ?, ?)`
+      )
+      .run(sessionId, uid, JSON.stringify(report), now())
     // 完成一场面试 → 扣减额度（会员不扣，单次包优先；幂等：仅在首次生成时）
-    consumeInterview(db, uid)
+    await consumeInterview(db, uid)
   }
   return report
 }
