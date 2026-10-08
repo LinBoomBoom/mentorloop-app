@@ -18,6 +18,7 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.hbuilderx/
 *.swp
 
 # 系统
