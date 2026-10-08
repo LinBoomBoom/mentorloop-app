@@ -1,6 +1,10 @@
 ---
 name: mentorloop-server-conventions
 description: Apply MentorLoop server conventions for routes, services, unified responses, idempotency and config. Use when writing or reviewing the server subpackage. 中文触发 服务端 后端 Fastify 统一响应 幂等 配置. Do not use for client-only work.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Server Conventions

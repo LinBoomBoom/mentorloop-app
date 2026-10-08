@@ -1,6 +1,10 @@
 ---
 name: mentorloop-role-miniprogram-pm
 description: Act as the MentorLoop mini-program product manager covering WeChat platform requirements, package size, review compliance and login paths. Use when planning or reviewing mini-program features. 中文触发 小程序 产品经理 微信 包体积 审核 登录. Do not use for backend-only work.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Role · 小程序产品经理 (MP-PM)

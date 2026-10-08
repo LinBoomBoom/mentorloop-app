@@ -1,6 +1,10 @@
 ---
 name: mentorloop-task-card
 description: Create and validate a MentorLoop task card with the eight required fields before starting work. Use when a new task, gap or feature request is accepted. 中文触发 任务卡 新任务 需求 缺口 八要素 角色. Do not use for routine fixes that already have a card.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Task Card

@@ -1,6 +1,10 @@
 ---
 name: mentorloop-role-feasibility-analyst
 description: Act as MentorLoop feasibility analyst verifying framework and platform capability claims against official docs. Use when a decision depends on framework support, version compatibility or a POC. 中文触发 可行性 是否支持 版本兼容 POC 官方文档. Do not use for routine feature work.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Role · 可行性分析师 (FA)

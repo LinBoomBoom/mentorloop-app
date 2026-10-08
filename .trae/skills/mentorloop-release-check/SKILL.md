@@ -1,6 +1,10 @@
 ---
 name: mentorloop-release-check
 description: Run the MentorLoop G4 release gate and compliance checklist before shipping. Use when preparing a milestone release, app submission or version bump. 中文触发 发布准入 提审 打包 合规 里程碑. Do not use for mid-iteration commits.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Release Check (G4)

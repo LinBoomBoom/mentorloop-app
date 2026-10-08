@@ -1,3 +1,11 @@
+---
+编号: SOP-01
+名称: 角色体系与协作
+适用范围: docs/sop/roles-sop.md 全部角色定义、RACI、门禁职责与交接接口
+版本: 1.0.0
+最后更新: 2026-10-08
+---
+
 # 角色体系与协作 SOP
 
 生成日期：2026-09-24
@@ -104,3 +112,15 @@ LC ──合规台账──▶ QA（G4 核验）
 | CO    | `mentorloop-content-review`                                                                                                                    |
 | QA    | `mentorloop-quality-gate`、`mentorloop-release-check`、`TRAE-code-review` / `TRAE-security-review`                                             |
 | PO    | `mentorloop-role-product-owner`、`mentorloop-task-card`、`mentorloop-contract-freeze`                                                          |
+
+---
+
+## 9. 更新触发条件
+
+| 触发事件                 | 更新内容                                 | 版本  |
+| ------------------------ | ---------------------------------------- | ----- |
+| 新增 / 移除角色          | 角色目录表、RACI、门禁职责、交接接口同步 | major |
+| 角色代号或职责变更       | 角色目录、RACI、相关 SOP 角色字段        | minor |
+| 门禁归属角色变更         | 角色 × 门禁职责表                        | minor |
+| 角色新增承载 skill       | §8 承载 skill 表                         | patch |
+| 兼任规则或不可省略项调整 | §7                                       | minor |

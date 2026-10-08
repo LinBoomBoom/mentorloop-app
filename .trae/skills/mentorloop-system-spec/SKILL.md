@@ -1,6 +1,10 @@
 ---
 name: mentorloop-system-spec
 description: Apply MentorLoop client hard constraints for uvue, UTS, Tailwind and privacy red lines before editing. Use when writing or reviewing pages, components, engine or api. 中文触发 客户端 页面 组件 uvue UTS Tailwind 硬约束 隐私红线. Do not use for backend-only work.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop System Spec

@@ -1,6 +1,10 @@
 ---
 name: mentorloop-role-uiux-designer
 description: Act as MentorLoop UI/UX designer for information architecture, interaction, visual system, accessibility and design walkthroughs. Use when designing or reviewing pages and components. 中文触发 UI UX 设计 交互 视觉 无障碍 设计走查. Do not use for engineering-only changes.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Role · UI/UX 设计师 (UX)

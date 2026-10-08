@@ -1,6 +1,10 @@
 ---
 name: mentorloop-lipsync-spec
 description: Define the MentorLoop lip sync spec as a design-to-engineering contract, covering the viseme set, phoneme mapping, switch rate, TTS timing and fallback. Use when implementing or changing avatar lip sync or TTS timing. 中文触发 口型 口型同步 唇形 viseme 音素 TTS 时序. Do not use for general avatar styling.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Lip Sync Spec

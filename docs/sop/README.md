@@ -107,22 +107,50 @@
 
 ---
 
-## 8. SOP 文档与产物模板
+## 8. SOP 登记索引（权威）
 
-| SOP 文档                 | 覆盖                                          |
-| ------------------------ | --------------------------------------------- |
-| `roles-sop.md`           | 角色体系：目录 / RACI / 门禁职责 / 交接接口   |
-| `pipeline-sop.md`        | 链式流水线：链型裁剪 / 挂链位 / 瘦模式 / 节流 |
-| `task-card-sop.md`       | 任务卡八要素 + G1 入口                        |
-| `quality-gate-sop.md`    | G2 质量门                                     |
-| `contract-freeze-sop.md` | G1 契约冻结与双签                             |
-| `domain-server-sop.md`   | 服务端领域约定                                |
-| `domain-content-sop.md`  | 内容领域审核与变更                            |
-| `domain-design-sop.md`   | 设计系统：token / 双表面 / 图标 / 无障碍      |
-| `domain-native-sop.md`   | 原生插件：契约降级 / 性能 / 真机验证          |
-| `admission-sop.md`       | G3 准入门：审查 + 验收 + 红线复核             |
-| `release-sop.md`         | G4 发布准入                                   |
-| `compliance-sop.md`      | 上线合规清单                                  |
+> 本索引是 SOP 与 skill 的**权威元数据登记处**。任何 skill / SOP 内容变更，必须同步更新对应行的版本号；漏同步 = 更新未完成（由 `scripts/check-sop-registry.mjs` 机检）。
+> 体系总览与完整详解见 [HANDBOOK.md](./HANDBOOK.md)（导出视图，与正本冲突时以各 SOP / skill 正本为准）。
+
+### 8.1 SOP 表
+
+| SOP                                                     | 版本  | 覆盖                                      |
+| ------------------------------------------------------- | ----- | ----------------------------------------- |
+| [SOP-01 角色体系与协作](./roles-sop.md)                 | 1.0.0 | 角色目录 / RACI / 门禁职责 / 交接接口     |
+| [SOP-02 链式流水线](./pipeline-sop.md)                  | 1.0.0 | 链型裁剪 / 挂链位 / 瘦模式 / 节流         |
+| [SOP-03 任务卡（G1 入口）](./task-card-sop.md)          | 1.0.0 | 八要素 + G1 检查清单                      |
+| [SOP-04 契约冻结与双签（G1）](./contract-freeze-sop.md) | 1.0.0 | 冻结触发条件 / 双签 / 冻结后纪律          |
+| [SOP-05 G2 质量门](./quality-gate-sop.md)               | 1.1.0 | lint / format / test / uvue 守卫 / server |
+| [SOP-06 G3 验收准入](./admission-sop.md)                | 1.0.0 | 代码审查 / 安全审查 / 验收 / 红线复核     |
+| [SOP-07 G4 发布准入](./release-sop.md)                  | 1.0.0 | 前置条件 / 准入单 / 灰度回滚              |
+| [SOP-08 服务端领域](./domain-server-sop.md)             | 1.0.0 | Fastify 分层 / 统一响应 / 鉴权 / 幂等     |
+| [SOP-09 内容领域](./domain-content-sop.md)              | 1.0.0 | 题库 / 图谱 / 量表结构 + 审核留痕         |
+| [SOP-10 设计系统领域](./domain-design-sop.md)           | 1.0.0 | token 三方一致 / 双表面 / uvue 硬约束     |
+| [SOP-11 原生插件领域](./domain-native-sop.md)           | 1.0.0 | utssdk 契约 / 降级 / 性能 / 真机验证      |
+| [SOP-12 上线合规](./compliance-sop.md)                  | 1.0.0 | 合规清单 / 隐私红线 / 数据删除入口        |
+
+### 8.2 Skill 表
+
+| Skill                                                                                                  | 版本  | 职责                                |
+| ------------------------------------------------------------------------------------------------------ | ----- | ----------------------------------- |
+| [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.0.0 | 任务卡八要素 + G1 入口校验          |
+| [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.0.0 | 契约变更检测与双签记录              |
+| [mentorloop-system-spec](../../.trae/skills/mentorloop-system-spec/SKILL.md)                           | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束 |
+| [mentorloop-server-conventions](../../.trae/skills/mentorloop-server-conventions/SKILL.md)             | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置   |
+| [mentorloop-content-review](../../.trae/skills/mentorloop-content-review/SKILL.md)                     | 1.0.0 | 题库/图谱/量表人工审核准备          |
+| [mentorloop-quality-gate](../../.trae/skills/mentorloop-quality-gate/SKILL.md)                         | 1.0.0 | G2 质量门命令执行                   |
+| [mentorloop-release-check](../../.trae/skills/mentorloop-release-check/SKILL.md)                       | 1.0.0 | G4 发布准入与合规清单               |
+| [mentorloop-pipeline](../../.trae/skills/mentorloop-pipeline/SKILL.md)                                 | 1.0.0 | 链式流水线推进与链长裁剪            |
+| [mentorloop-role-ai-engineer](../../.trae/skills/mentorloop-role-ai-engineer/SKILL.md)                 | 1.0.0 | AI 引擎：选题/追问/评分/评测集      |
+| [mentorloop-role-feasibility-analyst](../../.trae/skills/mentorloop-role-feasibility-analyst/SKILL.md) | 1.0.0 | 框架能力/版本兼容/POC 可行性        |
+| [mentorloop-role-miniprogram-pm](../../.trae/skills/mentorloop-role-miniprogram-pm/SKILL.md)           | 1.0.0 | 小程序端需求/包体积/审核/登录       |
+| [mentorloop-role-product-owner](../../.trae/skills/mentorloop-role-product-owner/SKILL.md)             | 1.0.0 | 优先级/范围裁剪/冻结决策            |
+| [mentorloop-role-uiux-designer](../../.trae/skills/mentorloop-role-uiux-designer/SKILL.md)             | 1.0.0 | UI/UX 信息架构/交互/视觉/无障碍     |
+| [mentorloop-avatar-design](../../.trae/skills/mentorloop-avatar-design/SKILL.md)                       | 1.0.0 | 2.5D 数字人资产与状态集             |
+| [mentorloop-lipsync-spec](../../.trae/skills/mentorloop-lipsync-spec/SKILL.md)                         | 1.0.0 | 口型同步 viseme/音素/TTS 时序       |
+| [mentorloop-interview-room-ux](../../.trae/skills/mentorloop-interview-room-ux/SKILL.md)               | 1.0.0 | 面试房间布局/状态色/字幕/动效       |
+
+### 8.3 产物模板
 
 | 产物               | 产出路径                                      |
 | ------------------ | --------------------------------------------- |
@@ -134,6 +162,16 @@
 | 发布准入单         | `docs/releases/YYYY-MM-DD-<version>.md`       |
 | 评测报告（AI）     | `docs/evals/YYYY-MM-DD-<范围>.md`             |
 | 复盘报告           | `docs/releases/YYYY-MM-DD-<version>.retro.md` |
+
+### 8.4 版本规则（skill 与 SOP 共用）
+
+| 升级类型 | 判定标准                                      | 示例          |
+| -------- | --------------------------------------------- | ------------- |
+| `patch`  | 笔误、失效链接、示例微调，不改变清单/流程     | 1.0.0 → 1.0.1 |
+| `minor`  | 清单增删行、新增章节、新增触发条件            | 1.0.0 → 1.1.0 |
+| `major`  | 流程步骤变更、文件/目录结构变更、破坏已有约定 | 1.x → 2.0.0   |
+
+**硬纪律**：任何 skill / SOP 内容变更，版本号必须动（哪怕只改一行）；版本不动 = 变更无效。变更后必须同步本索引对应行。
 
 ---
 

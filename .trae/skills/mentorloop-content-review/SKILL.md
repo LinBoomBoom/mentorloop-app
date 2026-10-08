@@ -1,6 +1,10 @@
 ---
 name: mentorloop-content-review
 description: Prepare and validate MentorLoop ability maps, question banks and scoring rubrics for human review. Use when adding or changing questions, ability maps or scoring anchors. 中文触发 题库 能力图谱 评分量表 评分锚点 内容审核. Do not use for runtime code changes.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Content Review

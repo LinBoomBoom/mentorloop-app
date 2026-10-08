@@ -1,6 +1,10 @@
 ---
 name: mentorloop-interview-room-ux
 description: Design the MentorLoop interview room experience, covering layout, state colour and motion, live captions, interruption rhythm, multimodal feedback and performance budget. Use when designing or reviewing the interview room. 中文触发 面试房间 房间布局 实时字幕 状态色 动效 打断 多模态. Do not use for avatar asset design.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Interview Room UX

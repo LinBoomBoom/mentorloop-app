@@ -1,6 +1,10 @@
 ---
 name: mentorloop-role-product-owner
 description: Act as the MentorLoop product owner deciding priority, scope cuts, milestone exits and frozen-decision changes. Use when scoping a task, cutting scope, or revising a frozen decision. 中文触发 产品负责人 优先级 范围裁剪 里程碑 北极星 冻结决策. Do not use for engineering implementation.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Role · 产品负责人 (PO)

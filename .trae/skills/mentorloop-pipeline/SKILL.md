@@ -1,6 +1,10 @@
 ---
 name: mentorloop-pipeline
 description: Drive a MentorLoop task through the chained pipeline with risk-based chain length and artifact handoff. Use when advancing a task, walking the process, or asking for the next step. 中文触发 推进任务 走流程 下一步 链式 流水线 链长. Do not use for architectural decisions or scope disputes.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Pipeline

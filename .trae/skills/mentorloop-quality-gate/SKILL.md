@@ -1,6 +1,10 @@
 ---
 name: mentorloop-quality-gate
 description: Run the MentorLoop G2 quality gate commands and report pass or fail before committing. Use when finishing client or server code changes. 中文触发 质量门 门禁 提交前 自检 跑测试. Do not use for planning or documentation-only edits.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Quality Gate (G2)

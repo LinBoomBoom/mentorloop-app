@@ -1,6 +1,10 @@
 ---
 name: mentorloop-avatar-design
 description: Design the MentorLoop 2.5D interviewer avatar as a character and asset set, including the authoritative state set, expression library, asset specs and subpackaging. Use when designing or changing the digital human avatar. 中文触发 数字人 数字人设计 虚拟形象 面试官形象 资产规格 状态集. Do not use for room layout or interaction design.
+metadata:
+  version: '1.0.0'
+  domain: mentorloop-app
+  last_updated: '2026-10-08'
 ---
 
 # MentorLoop Avatar Design
