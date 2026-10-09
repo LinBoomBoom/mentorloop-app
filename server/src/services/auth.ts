@@ -3,6 +3,7 @@ import { Db } from '../db.js'
 import { Env } from '../config.js'
 import { newId, now } from '../util.js'
 import { AuthResult } from '../types/domain.js'
+import { createDesktopGateway, syncDesktopLink } from './desktop-link.js'
 
 export type UserRow = {
   id: number
@@ -16,6 +17,7 @@ export type UserRow = {
   single_quota_total: number
   single_quota_used: number
   member_until: number | null
+  desktop_user_id: string | null
   created_at: number
   updated_at: number
 }
@@ -84,13 +86,15 @@ export async function loginByPhone(
     await db.prepare('UPDATE sms_codes SET consumed = 1 WHERE phone = ?').run(phone)
   }
   const user = await findOrCreateUser(db, 'phone', 'phone', phone)
+  await syncDesktopLink(db, createDesktopGateway(db, env), user) // 桌面账号互通（关闭时零开销）
   return { uid: user.uid, nickname: user.nickname, token: '' }
 }
 
 // 微信登录：openid 由路由层归一（callContainer 私有链路注入 X-WX-OPENID 优先，
 // body.code code2session 兜底），见契约冻结 §2.2
-export async function loginByWechat(db: Db, _env: Env, openid: string): Promise<AuthResult> {
+export async function loginByWechat(db: Db, env: Env, openid: string): Promise<AuthResult> {
   const user = await findOrCreateUser(db, 'wechat', 'openid', openid)
+  await syncDesktopLink(db, createDesktopGateway(db, env), user) // openid → 桌面 auth_identities 预留
   return { uid: user.uid, nickname: user.nickname, token: '' }
 }
 

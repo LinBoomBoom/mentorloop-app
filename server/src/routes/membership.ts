@@ -3,6 +3,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { requireAuth } from './auth-guard.js'
 import { getUserByUid } from '../services/auth.js'
 import { getQuota } from '../services/quota.js'
+import { createDesktopGateway, syncDesktopLink } from '../services/desktop-link.js'
 import { createOrder, payOrderMock, settleOrder } from '../services/payment.js'
 import {
   createJsapiOrder,
@@ -16,10 +17,11 @@ export default async function (app: FastifyInstance): Promise<void> {
   const db = (app as any).db as import('../db.js').Db
   const env = (app as any).env as import('../config.js').Env
 
-  // 服务端权威配额
+  // 服务端权威配额（含桌面权益单向同步：已绑定/可绑定用户每次读取都刷新，未配置互通时零开销）
   app.get('/membership/quota', { preHandler: requireAuth }, async (request, reply) => {
     const user = await getUserByUid(db, (request.user as any).uid as string)
     if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
+    await syncDesktopLink(db, createDesktopGateway(db, env), user)
     return okData(getQuota(user))
   })
 

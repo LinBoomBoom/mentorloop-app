@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   single_quota_total INTEGER NOT NULL DEFAULT 0,
   single_quota_used  INTEGER NOT NULL DEFAULT 0,
   member_until       INTEGER,                         -- epoch ms；NULL=非会员
+  desktop_user_id    TEXT,                            -- 桌面端 mentorloop.users.id（账号互通绑定，可空）
   created_at         INTEGER NOT NULL,
   updated_at         INTEGER NOT NULL
 );

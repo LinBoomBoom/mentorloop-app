@@ -49,6 +49,11 @@ export class Db {
     } catch {
       // 列已存在，忽略
     }
+    try {
+      raw.exec('ALTER TABLE users ADD COLUMN desktop_user_id TEXT')
+    } catch {
+      // 列已存在，忽略
+    }
   }
 
   prepare(sql: string) {

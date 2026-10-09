@@ -12,6 +12,7 @@ export type Env = {
   mysqlPassword: string
   mysqlDatabase: string
   mysqlPoolSize: number
+  desktopDbName: string // 桌面端库名（同实例跨库只读）；为空=关闭账号互通，零跨库查询
   mockSmsCode: string
   smsTtlMs: number
   llmEnabled: boolean
@@ -46,6 +47,7 @@ const DEFAULT_ENV: Env = {
   mysqlPassword: '',
   mysqlDatabase: 'mentorloop_mp',
   mysqlPoolSize: 10,
+  desktopDbName: '', // 默认关闭：互通是增强项，零配置必须可跑
   mockSmsCode: '123456',
   smsTtlMs: 300000,
   llmEnabled: false, // P1.2：默认关闭，报告回退纯规则；开启后 LLM 仅生成解释与优秀示例
@@ -82,6 +84,7 @@ export function loadEnv(): Env {
     mysqlPassword: e.MYSQL_PASSWORD ?? '',
     mysqlDatabase: e.MYSQL_DATABASE || DEFAULT_ENV.mysqlDatabase,
     mysqlPoolSize: parseInt(e.MYSQL_POOL_SIZE ?? '', 10) || DEFAULT_ENV.mysqlPoolSize,
+    desktopDbName: e.DESKTOP_DB_NAME ?? DEFAULT_ENV.desktopDbName,
     mockSmsCode: e.MOCK_SMS_CODE ?? DEFAULT_ENV.mockSmsCode,
     smsTtlMs: parseInt(e.SMS_TTL_MS ?? '', 10) || DEFAULT_ENV.smsTtlMs,
     llmEnabled: e.LLM_ENABLED === 'true',

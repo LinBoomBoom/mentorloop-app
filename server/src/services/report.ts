@@ -88,7 +88,7 @@ export async function getReport(db: Db, sessionId: string, env?: Env): Promise<I
       )
       .run(sessionId, uid, JSON.stringify(report), now())
     // 完成一场面试 → 扣减额度（会员不扣，单次包优先；幂等：仅在首次生成时）
-    await consumeInterview(db, uid)
+    await consumeInterview(db, env, uid)
   }
   return report
 }

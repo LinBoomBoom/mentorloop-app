@@ -1,7 +1,9 @@
 // 配额与权益服务（服务端权威账本；字段与前端 fetchQuota 对齐）
 // 扣减规则与前端 store/quota.uts 一致：会员不扣 → 先扣单次包 → 再扣免费额度。
 import { Db } from '../db.js'
+import { Env } from '../config.js'
 import { UserRow } from './auth.js'
+import { createDesktopGateway, syncDesktopLink } from './desktop-link.js'
 
 export type QuotaView = {
   freeInterviewsLeft: number
@@ -23,9 +25,13 @@ export function getQuota(u: UserRow): QuotaView {
 }
 
 // 完成一场面试后扣减（报告生成时由 report 服务调用）
-export async function consumeInterview(db: Db, uid: string): Promise<void> {
+// env 传入时先做桌面权益同步：防止桌面新购 VIP 后 MP 侧账本滞后导致误扣免费额度
+export async function consumeInterview(db: Db, env: Env | undefined, uid: string): Promise<void> {
   const u = (await db.prepare('SELECT * FROM users WHERE uid = ?').get(uid)) as UserRow | undefined
   if (u == null) return
+  if (env != null) {
+    await syncDesktopLink(db, createDesktopGateway(db, env), u)
+  }
   if (isMember(u)) return
   const singleLeft = Math.max(0, u.single_quota_total - u.single_quota_used)
   if (singleLeft > 0) {

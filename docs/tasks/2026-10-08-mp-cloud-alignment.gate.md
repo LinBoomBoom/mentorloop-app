@@ -47,10 +47,11 @@
 
 1. **建库**：云 MySQL（实例 cynosdbmysql-gjsimu6g，建议外网开关保持关闭、用内网/临时开外网执行）新建库 `mentorloop_mp`，执行 `deploy/cloud/baseline-mp-mysql.sql`（幂等可重跑）
 2. **建服务**：云托管控制台 prod-d6gaa83ds8accb61b 新建服务 `mentorloop-mp-api`
-3. **版本配置环境变量**（控制台填，CLI EnvParams 空且不继承——M1 前科）：`MYSQL_HOST/PORT/USER/PASSWORD/DATABASE=mentorloop_mp`（HOST 用**内网地址**）、`JWT_SECRET`（新随机值，勿复用桌面端）、`MOCK_SMS_CODE=123456`、`PORT=8787`；监听端口与 PORT 一致
+3. **版本配置环境变量**（控制台填，CLI EnvParams 空且不继承——M1 前科）：`MYSQL_HOST/PORT/USER/PASSWORD/DATABASE=mentorloop_mp`（HOST 用**内网地址**）、`JWT_SECRET`（新随机值，勿复用桌面端）、`MOCK_SMS_CODE=123456`、`PORT=8787`；账号互通（2026-10-09 任务卡）加 `DESKTOP_DB_NAME=mentorloop`（连接账号需对 mentorloop 库有 SELECT，root 现状满足）；监听端口与 PORT 一致
 4. **部署**：`docker build` 上下文 = `server/` 目录（`docker build -t <registry>/mentorloop-mp-api:<tag> server/`），推镜像或控制台上传；发布
 5. **smoke**（全部走 callContainer/云链路）：
    - [ ] `GET /healthz` → code 0 且 `driver==='mysql'`
+   - [ ] **账号互通（2026-10-09）**：桌面端 mentorloop 库造一个 vip JSON `{level:1,expireAt:<未来>}` 且 phone 与 MP 登录号相同的用户 → MP 短信登录 → `GET /membership/quota` 返回该 expireAt；`users.desktop_user_id` 已写
    - [ ] `POST /auth/wechat`（带 X-WX-OPENID 头或 body.code）→ token 可用
    - [ ] 建会话 → 出题 → 答题 → 报告 全链路
    - [ ] `POST /track/batch` 埋点落库（同参数重复 → 去重不重复计数）
