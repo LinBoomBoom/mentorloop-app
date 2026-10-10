@@ -8,7 +8,8 @@ import { API_BASE_URL, CLOUD_ENV_ID, useMock } from './env.uts'
 // 网关地址与 Mock 判定统一取自 api/env.uts（单一切换点）
 export const BASE_URL: string = API_BASE_URL
 export { useMock }
-export const REQUEST_TIMEOUT: number = 15000
+// 30s：云托管实例缩容到零后冷启动可能超过 15s，给首启请求留余量
+export const REQUEST_TIMEOUT: number = 30000
 
 export type RequestOptions = {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -67,7 +68,13 @@ function handleUnauthorized() {
 }
 
 // 双通道共享的响应映射（冻结 §4.1：callContainer 与 uni.request 行为一致）
-function handleResponse(res: any, resolve: (r: ApiResult) => void, reject: (e: Error) => void) {
+// silent=true 时不弹任何 toast（埋点等后台任务用），错误仍通过 reject 传递
+function handleResponse(
+  res: any,
+  resolve: (r: ApiResult) => void,
+  reject: (e: Error) => void,
+  silent: boolean
+) {
   const statusCode = res.statusCode as number
 
   // HTTP 401 → 清态
@@ -78,7 +85,7 @@ function handleResponse(res: any, resolve: (r: ApiResult) => void, reject: (e: E
   }
   if (statusCode < 200 || statusCode >= 300) {
     const msg = '网络异常（' + statusCode + '）'
-    uni.showToast({ title: msg, icon: 'none' })
+    if (!silent) uni.showToast({ title: msg, icon: 'none' })
     reject(new Error(msg))
     return
   }
@@ -86,7 +93,7 @@ function handleResponse(res: any, resolve: (r: ApiResult) => void, reject: (e: E
   const body = res.data as ApiResult | null
   if (body == null) {
     const msg = '响应为空'
-    uni.showToast({ title: msg, icon: 'none' })
+    if (!silent) uni.showToast({ title: msg, icon: 'none' })
     reject(new Error(msg))
     return
   }
@@ -103,15 +110,17 @@ function handleResponse(res: any, resolve: (r: ApiResult) => void, reject: (e: E
     return
   }
   const msg = body.message.length > 0 ? body.message : '请求失败（' + body.code + '）'
-  uni.showToast({ title: msg, icon: 'none' })
+  if (!silent) uni.showToast({ title: msg, icon: 'none' })
   reject(new Error(msg))
 }
 
-// 双通道共享的失败处理
-function handleFail(err: any, reject: (e: Error) => void) {
+// 双通道共享的失败处理（silent=true 时静默：埋点失败只入队，不打扰用户）
+function handleFail(err: any, reject: (e: Error) => void, silent: boolean) {
   const errMsg = err != null && err.errMsg != null ? String(err.errMsg) : '网络不可用'
-  // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
-  uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
+  if (!silent) {
+    // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
+    uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
+  }
   reject(new Error(errMsg))
 }
 
@@ -122,14 +131,15 @@ function handleFail(err: any, reject: (e: Error) => void) {
 function requestCloud(
   path: string,
   options: RequestOptions,
-  query: { [key: string]: any } | null
+  query: { [key: string]: any } | null,
+  silent: boolean
 ): Promise<ApiResult> {
   return new Promise<ApiResult>((resolve, reject) => {
     const g = globalThis as any
     const wxApi = g.wx
     if (wxApi == null || wxApi.cloud == null || wxApi.cloud.callContainer == null) {
       const msg = '微信云能力不可用，请升级微信后重试'
-      uni.showToast({ title: msg, icon: 'none' })
+      if (!silent) uni.showToast({ title: msg, icon: 'none' })
       reject(new Error(msg))
       return
     }
@@ -141,10 +151,10 @@ function requestCloud(
       header: buildHeaders(options.header),
       timeout: REQUEST_TIMEOUT,
       success: (res: any) => {
-        handleResponse(res, resolve, reject)
+        handleResponse(res, resolve, reject, silent)
       },
       fail: (err: any) => {
-        handleFail(err, reject)
+        handleFail(err, reject, silent)
       }
     })
   })
@@ -155,7 +165,8 @@ function requestCloud(
 function requestHttp(
   path: string,
   options: RequestOptions,
-  query: { [key: string]: any } | null
+  query: { [key: string]: any } | null,
+  silent: boolean
 ): Promise<ApiResult> {
   return new Promise<ApiResult>((resolve, reject) => {
     const url = BASE_URL + path + serializeQuery(query)
@@ -168,10 +179,10 @@ function requestHttp(
       header: header,
       timeout: REQUEST_TIMEOUT,
       success: (res: any) => {
-        handleResponse(res, resolve, reject)
+        handleResponse(res, resolve, reject, silent)
       },
       fail: (err: any) => {
-        handleFail(err, reject)
+        handleFail(err, reject, silent)
       }
     })
   })
@@ -184,10 +195,24 @@ export function request(
 ): Promise<ApiResult> {
   // #ifdef MP-WEIXIN
   if (!useMock()) {
-    return requestCloud(path, options, query)
+    return requestCloud(path, options, query, false)
   }
   // #endif
-  return requestHttp(path, options, query)
+  return requestHttp(path, options, query, false)
+}
+
+// 静默请求：不弹任何 toast（埋点等后台任务用），错误仍 reject
+export function requestSilent(
+  path: string,
+  options: RequestOptions,
+  query: { [key: string]: any } | null = null
+): Promise<ApiResult> {
+  // #ifdef MP-WEIXIN
+  if (!useMock()) {
+    return requestCloud(path, options, query, true)
+  }
+  // #endif
+  return requestHttp(path, options, query, true)
 }
 
 // 微信云能力初始化（App.uvue onLaunch 首位调用；非 MP-WEIXIN 空实现）

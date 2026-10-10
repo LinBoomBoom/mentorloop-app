@@ -4,7 +4,7 @@
 
 import { userStore } from '../store/user-profile.uts'
 import { interviewSession } from '../store/interview-session.uts'
-import { BASE_URL, useMock } from './client.uts'
+import { requestSilent, makeOptions, useMock } from './client.uts'
 
 const QUEUE_KEY = 'ml_tracking_queue'
 const MAX_QUEUE = 200
@@ -88,27 +88,40 @@ function enqueue(payload: string) {
   saveQueue(queue)
 }
 
-// 静默上报（不走 client.request，避免失败 toast 打扰用户）
-function sendBatch(events: string[], onDone: () => void) {
-  uni.request({
-    url: BASE_URL + '/track/batch',
-    method: 'POST',
-    data: { events: events },
-    header: { 'Content-Type': 'application/json' },
-    timeout: 8000,
-    success: () => {
-      onDone()
-    },
-    fail: () => {
-      // 上报失败：放回队列头部，等待下次补传
-      onDone()
-    }
-  })
+// 静默批量上报：走统一双通道（MP-WEIXIN 为 wx.cloud.callContainer，与业务请求同链路）。
+// 全程无 toast（requestSilent）；成功回调 onDone 继续补传，失败静默放回队列等下次时机。
+let sending = false
+
+function requeue(events: string[]) {
+  if (events.length === 0) return
+  const queue = loadQueue()
+  // 放回队列头部（events 保持原时间序），超限丢最旧，与 enqueue 语义一致
+  const merged = events.concat(queue)
+  while (merged.length > MAX_QUEUE) {
+    merged.shift()
+  }
+  saveQueue(merged)
 }
 
-// 补传本地队列（App 启动 / 网络恢复时调用）
+function sendBatch(events: string[], onDone: () => void) {
+  if (sending) return
+  sending = true
+  requestSilent('/track/batch', makeOptions('POST', { events: events } as any))
+    .then(() => {
+      sending = false
+      onDone()
+    })
+    .catch(() => {
+      // 上报失败：放回队列头部，等待下次补传（不自动重试，避免失败循环）
+      sending = false
+      requeue(events)
+    })
+}
+
+// 补传本地队列（App 启动 / 网络恢复 / 新事件入队时调用）
 export function flushTrackingQueue() {
   if (useMock()) return
+  if (sending) return
   const queue = loadQueue()
   if (queue.length === 0) return
   const batch = queue.splice(0, 20)
@@ -121,6 +134,7 @@ export function flushTrackingQueue() {
 }
 
 // 埋点主入口：trackEvent('interview_start', { mode: 'standard' })
+// 真实模式统一「先入队再 flush」：发送/补传同一条队列路径，失败不丢事件
 export function trackEvent(eventName: string, props: { [key: string]: any } | null = null) {
   const payload = buildPayload(eventName, props)
   if (useMock()) {
@@ -129,18 +143,6 @@ export function trackEvent(eventName: string, props: { [key: string]: any } | nu
     enqueue(payload)
     return
   }
-  // 真实模式：先带上未补传的历史事件一起发
-  const backlog = loadQueue()
-  if (backlog.length > 0) {
-    backlog.push(payload)
-    const batch = backlog.splice(0, 20)
-    saveQueue(backlog)
-    sendBatch(batch, () => {
-      if (loadQueue().length > 0) {
-        flushTrackingQueue()
-      }
-    })
-    return
-  }
-  sendBatch([payload], () => {})
+  enqueue(payload)
+  flushTrackingQueue()
 }
