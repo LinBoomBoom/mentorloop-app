@@ -65,6 +65,11 @@ class UserStore {
     return this.profile.token.length > 0
   }
 
+  // mock 时代遗留的本地会话（真 JWT 不可能含 'mock-token-' 子串）
+  isMockSession(): boolean {
+    return this.profile.token.indexOf('mock-token-') >= 0
+  }
+
   setProfile(p: UserProfilePatch) {
     if (p.uid != null) this.profile.uid = p.uid
     if (p.nickname != null) this.profile.nickname = p.nickname
