@@ -1,4 +1,4 @@
-﻿// Java 后端首批题目卡（文档 02 §2.3 题目组织规范）
+// Java 后端首批题目卡（文档 02 §2.3 题目组织规范）
 // 来源说明：历史题库素材经人工审核、去重、重构后使用（文档 01 §2）；
 // 每题含知识点、常见误区、期望证据与预设追问话术。变更须经内容运营审核（文档 05 §4）。
 
@@ -19,7 +19,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '指标、假设、验证、结果',
     followupPrompts: ['当时的堆内存指标是多少？', '你做了哪些假设，如何验证的？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-k02',
@@ -34,7 +34,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '任务类型、压测数据、调整过程',
     followupPrompts: ['参数调整后观察了哪些指标？', '如果任务突增会发生什么？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-k03',
@@ -49,7 +49,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '现象、根因、方案、回归验证',
     followupPrompts: ['你是怎么复现这个问题的？', '方案上线后如何确认修复？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 基础知识 · Java核心 ----------
@@ -66,7 +66,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '具体使用场景、并发需求、性能考量',
     followupPrompts: ['有没有遇到过因为集合选型导致的问题？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-k05',
@@ -81,7 +81,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '统一异常处理、try-with-resources、日志规范',
     followupPrompts: ['举一个你们统一异常处理的实际例子。'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 基础知识 · 中间件 ----------
@@ -98,7 +98,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '缓存场景、过期策略、一致性处理',
     followupPrompts: ['缓存和数据库不一致时你们怎么处理？', '热点 key 失效瞬间会发生什么？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-k07',
@@ -113,7 +113,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '业务场景、可靠性处理、量化收益',
     followupPrompts: ['消息重复消费你们怎么防？', '如果消息积压了怎么办？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-k08',
@@ -128,7 +128,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: 'explain 分析、优化前后对比',
     followupPrompts: ['优化前后的耗时对比是多少？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 工程能力 · 项目个人贡献 ----------
@@ -145,7 +145,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '个人贡献、决策依据、结果',
     followupPrompts: ['这个决策是你提出的还是团队决定的？', '当时有没有其他备选方案？'],
     resumeRisk: true,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-e02',
@@ -160,7 +160,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '指标定义、采集方式、对比基线',
     followupPrompts: ['这个数据是从哪个监控或报表看到的？', '优化前的基线是多少？'],
     resumeRisk: true,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-e03',
@@ -175,7 +175,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '具体模块、交付内容、协作方式',
     followupPrompts: ['这个模块的代码评审是谁做的？', '遇到跨模块问题时你怎么推动？'],
     resumeRisk: true,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-e04',
@@ -190,7 +190,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '问题定义、排查路径、最终验证',
     followupPrompts: ['排查过程中走过哪些弯路？', '如果重来一次你会怎么做？'],
     resumeRisk: true,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 工程能力 · 代码质量 ----------
@@ -207,7 +207,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '测试类型、覆盖重点、实际案例',
     followupPrompts: ['哪部分逻辑你们认为最值得测？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-e06',
@@ -222,7 +222,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '问题、发现方式、处理结果',
     followupPrompts: ['这个问题如果流到线上会怎样？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 系统设计 · 容量与权衡 ----------
@@ -239,7 +239,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '约束、估算过程、备选方案、取舍',
     followupPrompts: ['如果读流量是写的 100 倍，设计会有什么变化？', '发号器你会怎么选型？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-a02',
@@ -254,7 +254,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '限流、降级、超时、监控的优先级与理由',
     followupPrompts: ['预算有限时你先做哪一项？为什么？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-a03',
@@ -269,7 +269,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '数据量、团队能力、迁移成本的权衡',
     followupPrompts: ['分库分表后跨库查询怎么办？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 系统设计 · 问题分析 ----------
@@ -286,7 +286,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '从监控到代码的分层排查路径',
     followupPrompts: ['如果应用层指标正常，你下一步看什么？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-a05',
@@ -301,7 +301,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '时间线、止血动作、根因、改进项',
     followupPrompts: ['复盘后落地了哪些改进？', '如何避免同类故障再次发生？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 沟通表达 · 结构化叙述 ----------
@@ -318,7 +318,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '结论、证据、反思',
     followupPrompts: ['如果重来，你会在哪个环节做得不一样？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-c02',
@@ -333,7 +333,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '业务价值表述、类比能力',
     followupPrompts: ['对方最可能追问什么？你怎么回答？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 学习与复盘 ----------
@@ -350,7 +350,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '失败案例、纠偏动作、成长路径',
     followupPrompts: ['这个教训后来在哪个场景帮到了你？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
   {
     id: 'q-l02',
@@ -365,7 +365,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '学习路径、实践产出',
     followupPrompts: ['学完后在项目中用上了吗？效果如何？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 职业动机 ----------
@@ -382,7 +382,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '目标与岗位的一致性',
     followupPrompts: ['你了解我们这个岗位的日常工作吗？'],
     resumeRisk: false,
-    positionId: 'java-backend'
+    positionId: 'backend'
   } as QuestionItem,
 
   // ---------- 前端岗位题库（P0-2.3 题库与岗位补齐，岗位隔离展示） ----------
@@ -609,7 +609,7 @@ export const WRAPUP_QUESTION: QuestionItem = {
   expectedEvidence: '自我评估的准确性',
   followupPrompts: [],
   resumeRisk: false,
-  positionId: 'java-backend'
+  positionId: 'backend'
 } as QuestionItem
 
 // 前端岗位收束题（岗位化收束，避免跨岗位借用 Java 收束题）

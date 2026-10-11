@@ -1,6 +1,7 @@
-// Java 后端岗位能力图谱 v1（文档 02 §3.1）
+// 后端方向能力图谱 v1（文档 02 §3.1；方向体系 v2：对齐桌面端 frontend/backend/devops/ai）
 // 每个岗位由能力域、子能力、可观测行为、题目簇、评分锚点组成。
 // 本文件为 M0 产物，供题目选择器与评分引擎引用；变更须经产品与内容审核确认（文档 05 §3）。
+// 注：当前题库内容覆盖 backend 方向的 Java 技术栈，Go/Python 等栈题目补齐另立卡。
 
 export type SubAbility = {
   id: string
@@ -17,7 +18,7 @@ export type AbilityDomain = {
   subAbilities: SubAbility[]
 }
 
-export const JAVA_BACKEND_MAP: AbilityDomain[] = [
+export const BACKEND_MAP: AbilityDomain[] = [
   {
     id: 'knowledge',
     name: '基础知识',
@@ -147,8 +148,8 @@ export const DOMAIN_LABEL: DomainLabelMap = {
 // 图谱覆盖的能力域列表（选择器用于覆盖率判断）
 export function getDomainIds(): string[] {
   const ids: string[] = []
-  for (let i = 0; i < JAVA_BACKEND_MAP.length; i++) {
-    ids.push(JAVA_BACKEND_MAP[i].id)
+  for (let i = 0; i < BACKEND_MAP.length; i++) {
+    ids.push(BACKEND_MAP[i].id)
   }
   return ids
 }

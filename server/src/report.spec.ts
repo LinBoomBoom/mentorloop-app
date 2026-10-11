@@ -66,7 +66,7 @@ describe('报告与配额', () => {
       method: 'POST',
       url: '/interview/session?mode=standard',
       headers: { authorization: 'Bearer ' + token },
-      payload: { positionId: 'java-backend', experienceLevel: 'junior' }
+      payload: { positionId: 'backend', experienceLevel: 'junior' }
     })
     const sessionId = s.json().data.sessionId
     const n = await app.inject({
@@ -104,7 +104,7 @@ describe('报告与配额', () => {
       method: 'POST',
       url: '/interview/session?mode=standard',
       headers: { authorization: 'Bearer ' + token },
-      payload: { positionId: 'java-backend', experienceLevel: 'junior' }
+      payload: { positionId: 'backend', experienceLevel: 'junior' }
     })
     const sessionId = s.json().data.sessionId
 
@@ -164,7 +164,7 @@ describe('报告与配额', () => {
       method: 'POST',
       url: '/interview/session?mode=quick',
       headers: { authorization: 'Bearer ' + token },
-      payload: { positionId: 'java-backend', experienceLevel: 'junior' }
+      payload: { positionId: 'backend', experienceLevel: 'junior' }
     })
     const sessionId = s.json().data.sessionId
     const n = await app.inject({

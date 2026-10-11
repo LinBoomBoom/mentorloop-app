@@ -64,9 +64,9 @@ export type EvalCase = {
   expect: EvalExpect
 }
 
-const JAVA: EvalBlueprint = {
-  positionId: 'java-backend',
-  position: 'Java 后端',
+const BACKEND: EvalBlueprint = {
+  positionId: 'backend',
+  position: '后端',
   experienceLevel: 'junior',
   experienceRange: '1-3年',
   companyType: '互联网',
@@ -95,7 +95,7 @@ export const EVAL_CASES: EvalCase[] = [
     id: 'sel-001',
     layer: 'selection',
     title: '首题非收束、属岗位、覆盖首个未触达能力域',
-    blueprint: JAVA,
+    blueprint: BACKEND,
     mode: 'standard',
     askedIds: [],
     remainSeconds: 1200,
@@ -105,7 +105,7 @@ export const EVAL_CASES: EvalCase[] = [
     expect: {
       notNull: true,
       isWrapup: false,
-      questionPositionId: 'java-backend',
+      questionPositionId: 'backend',
       questionAbilityDomain: 'knowledge'
     }
   },
@@ -113,7 +113,7 @@ export const EVAL_CASES: EvalCase[] = [
     id: 'sel-002',
     layer: 'selection',
     title: '剩余时间不足一题 → 直接收束（规则5）',
-    blueprint: JAVA,
+    blueprint: BACKEND,
     mode: 'standard',
     askedIds: [],
     remainSeconds: 60,
@@ -126,7 +126,7 @@ export const EVAL_CASES: EvalCase[] = [
     id: 'sel-003',
     layer: 'selection',
     title: '题量达上限 → 返回收束题（规则4）',
-    blueprint: JAVA,
+    blueprint: BACKEND,
     mode: 'standard',
     askedIds: ['q-k01'],
     remainSeconds: 9999,
@@ -139,7 +139,7 @@ export const EVAL_CASES: EvalCase[] = [
     id: 'sel-004',
     layer: 'selection',
     title: '训练定向 → 只出目标能力域的题（规则0b）',
-    blueprint: JAVA,
+    blueprint: BACKEND,
     mode: 'standard',
     askedIds: [],
     remainSeconds: 9999,

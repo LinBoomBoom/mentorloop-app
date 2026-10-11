@@ -176,8 +176,8 @@ let skippedCount = 0
 
 // 训练用岗位蓝图（取用户档案默认方向）
 const blueprint = ref<PositionBlueprint>({
-  positionId: 'java-backend',
-  position: 'Java 后端',
+  positionId: 'backend',
+  position: '后端',
   experienceLevel: 'junior',
   experienceRange: '1-3年',
   companyType: '互联网',
@@ -206,7 +206,7 @@ const textDraft = ref('')
 
 const emptyQuestion: QuestionItem = {
   id: '',
-  positionId: 'java-backend',
+  positionId: 'backend',
   abilityDomain: '',
   subAbility: '',
   knowledgePoint: '',

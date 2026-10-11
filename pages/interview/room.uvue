@@ -175,8 +175,8 @@ const liveTranscript = ref('')
 const mode = ref<InterviewMode>('standard')
 // 当前会话的岗位蓝图（由 prep 页传入的 positionId + experienceLevel 构造）
 const blueprint = ref<PositionBlueprint>({
-  positionId: 'java-backend',
-  position: 'Java 后端',
+  positionId: 'backend',
+  position: '后端',
   experienceLevel: 'junior',
   experienceRange: '1-3年',
   companyType: '互联网',
@@ -209,7 +209,7 @@ const avatarState = ref(initialState)
 
 const emptyQuestion: QuestionItem = {
   id: '',
-  positionId: 'java-backend',
+  positionId: 'backend',
   abilityDomain: '',
   subAbility: '',
   knowledgePoint: '',
@@ -262,12 +262,12 @@ onLoad((options: any) => {
         remain.value = 1200
       }
     }
-    const posId = options.positionId != null ? (options.positionId as string) : 'java-backend'
+    const posId = options.positionId != null ? (options.positionId as string) : 'backend'
     const expLv = options.experienceLevel != null ? (options.experienceLevel as string) : 'junior'
-    // 简单校验枚举值
-    const validPos: string[] = ['java-backend', 'frontend', 'golang-backend', 'pm']
+    // 简单校验枚举值（方向体系 v2：frontend/backend/devops/ai）
+    const validPos: string[] = ['frontend', 'backend', 'devops', 'ai']
     const validExp: string[] = ['fresh', 'junior', 'mid', 'senior']
-    const finalPos: PositionId = validPos.includes(posId) ? (posId as PositionId) : 'java-backend'
+    const finalPos: PositionId = validPos.includes(posId) ? (posId as PositionId) : 'backend'
     const finalExp: ExperienceLevel = validExp.includes(expLv)
       ? (expLv as ExperienceLevel)
       : 'junior'

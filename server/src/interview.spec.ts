@@ -39,7 +39,7 @@ describe('面试会话链路', () => {
       method: 'POST',
       url: '/interview/session?mode=quick',
       headers: auth(token),
-      payload: { positionId: 'java-backend', experienceLevel: 'junior', position: 'Java 后端' }
+      payload: { positionId: 'backend', experienceLevel: 'junior', position: '后端' }
     })
     const sessionId = s.json().data.sessionId
     expect(typeof sessionId).toBe('string')
@@ -53,7 +53,7 @@ describe('面试会话链路', () => {
       })
       const body = r.json()
       expect(body.code).toBe(0)
-      expect(body.data.positionId).toBe('java-backend')
+      expect(body.data.positionId).toBe('backend')
       expect(typeof body.data.content).toBe('string')
       expect(Array.isArray(body.data.misconceptions)).toBe(true)
       expect(body.data.misconceptions.length).toBeGreaterThan(0)
@@ -85,7 +85,7 @@ describe('面试会话链路', () => {
       method: 'POST',
       url: '/interview/session?mode=standard',
       headers: auth(token),
-      payload: { positionId: 'java-backend', experienceLevel: 'junior' }
+      payload: { positionId: 'backend', experienceLevel: 'junior' }
     })
     const sessionId = s.json().data.sessionId
     const n = await app.inject({

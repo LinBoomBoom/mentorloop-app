@@ -75,7 +75,7 @@ async function askedQuestions(db: Db, sessionId: string): Promise<QuestionItem[]
     } else {
       out.push({
         id: r.question_id,
-        positionId: 'java-backend',
+        positionId: 'backend',
         abilityDomain: '',
         subAbility: '',
         knowledgePoint: '',

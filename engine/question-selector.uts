@@ -19,7 +19,7 @@ import {
   ExperienceLevel
 } from '../types/interview.uts'
 import { QUESTION_BANK, getWrapupForPosition } from '../data/question-bank.uts'
-import { getDomainIds } from '../data/java-backend-map.uts'
+import { getDomainIds } from '../data/backend-map.uts'
 import { DIFFICULTY_PRIORITY, getExperienceOption } from '../data/position-options.uts'
 
 export type SelectorInput = {

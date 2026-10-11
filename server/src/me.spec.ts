@@ -33,7 +33,7 @@ async function finishOneInterview(app: any, token: string): Promise<string> {
     method: 'POST',
     url: '/interview/session?mode=standard',
     headers: auth(token),
-    payload: { positionId: 'java-backend', experienceLevel: 'junior' }
+    payload: { positionId: 'backend', experienceLevel: 'junior' }
   })
   const sessionId = s.json().data.sessionId
   const n = await app.inject({

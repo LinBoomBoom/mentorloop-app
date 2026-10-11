@@ -3,7 +3,7 @@
 
 export type InterviewMode = 'quick' | 'standard' | 'deep'
 export type Difficulty = 'junior' | 'mid' | 'senior'
-export type PositionId = 'java-backend' | 'frontend' | 'golang-backend' | 'pm'
+export type PositionId = 'frontend' | 'backend' | 'devops' | 'ai'
 export type ExperienceLevel = 'fresh' | 'junior' | 'mid' | 'senior'
 export type QuestionType = 'concept' | 'scenario' | 'project' | 'design' | 'behavioral'
 

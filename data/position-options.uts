@@ -16,10 +16,10 @@ export type ExperienceOption = {
 }
 
 export const POSITION_OPTIONS: PositionOption[] = [
-  { id: 'java-backend', name: 'Java 后端', available: true } as PositionOption,
   { id: 'frontend', name: '前端', available: true } as PositionOption,
-  { id: 'golang-backend', name: 'Go 后端', available: false } as PositionOption,
-  { id: 'pm', name: '产品经理', available: false } as PositionOption
+  { id: 'backend', name: '后端', available: true } as PositionOption,
+  { id: 'devops', name: '运维', available: false } as PositionOption,
+  { id: 'ai', name: 'AI 工程', available: false } as PositionOption
 ]
 
 // 经验档位 → 题目难度白名单（用于选题器过滤）
@@ -66,7 +66,7 @@ export function getPositionName(id: PositionId): string {
   for (let i = 0; i < POSITION_OPTIONS.length; i++) {
     if (POSITION_OPTIONS[i].id === id) return POSITION_OPTIONS[i].name
   }
-  return 'Java 后端'
+  return '后端'
 }
 
 export function getExperienceRange(level: ExperienceLevel): string {

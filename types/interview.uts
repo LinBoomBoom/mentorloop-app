@@ -5,8 +5,9 @@
 export type InterviewMode = 'quick' | 'standard' | 'deep' // 快练5min / 标准20 / 深度40
 export type Difficulty = 'junior' | 'mid' | 'senior'
 
-// 目标岗位方向 id（用于题目过滤；题库未覆盖的方向在 prep 页显示"敬请期待"）
-export type PositionId = 'java-backend' | 'frontend' | 'golang-backend' | 'pm'
+// 目标岗位方向 id（方向体系 v2：对齐桌面端 track frontend/backend/devops/ai，Java/Go 为 backend 内技术栈；
+// 题库未覆盖的方向在 prep 页显示"敬请期待"）
+export type PositionId = 'frontend' | 'backend' | 'devops' | 'ai'
 
 // 经验档位 id（决定抽题难度区间）
 export type ExperienceLevel = 'fresh' | 'junior' | 'mid' | 'senior'

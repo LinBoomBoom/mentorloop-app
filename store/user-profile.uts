@@ -20,12 +20,12 @@ export type UserProfile = {
 // 便捷展示文本
 export function positionDisplay(p: UserProfile): string {
   const map: Record<string, string> = {
-    'java-backend': 'Java 后端',
     frontend: '前端',
-    'golang-backend': 'Go 后端',
-    pm: '产品经理'
+    backend: '后端',
+    devops: '运维',
+    ai: 'AI 工程'
   }
-  return map[p.positionId] != null ? map[p.positionId] : 'Java 后端'
+  return map[p.positionId] != null ? map[p.positionId] : '后端'
 }
 
 export function experienceDisplay(p: UserProfile): string {
@@ -57,7 +57,7 @@ class UserStore {
     uid: '',
     nickname: '访客',
     plan: 'free',
-    positionId: 'java-backend',
+    positionId: 'backend',
     experienceLevel: 'junior',
     defaultMode: 'standard',
     token: '',
@@ -113,6 +113,14 @@ class UserStore {
       if (p.defaultMode == null) p.defaultMode = 'standard'
       // 兼容旧版缓存（升级前无 phone 字段）
       if (p.phone == null) p.phone = ''
+      // 方向体系 v2 迁移：旧缓存值（java-backend/golang-backend/pm）归一化为 backend
+      if (p.positionId == null) p.positionId = 'backend'
+      const legacyPos: Record<string, PositionId> = {
+        'java-backend': 'backend',
+        'golang-backend': 'backend',
+        pm: 'backend'
+      } as Record<string, PositionId>
+      if (legacyPos[p.positionId] != null) p.positionId = legacyPos[p.positionId]
       // 兼容旧版（仅有 currentPosition 字符串）的快照
       this.profile = p
       return true
@@ -127,7 +135,7 @@ class UserStore {
       uid: '',
       nickname: '访客',
       plan: 'free',
-      positionId: 'java-backend',
+      positionId: 'backend',
       experienceLevel: 'junior',
       defaultMode: 'standard',
       token: '',

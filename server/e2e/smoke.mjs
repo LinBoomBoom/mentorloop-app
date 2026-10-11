@@ -44,7 +44,7 @@ async function main() {
   const s = await api('/interview/session?mode=quick', {
     method: 'POST',
     token,
-    body: { positionId: 'java-backend', experienceLevel: 'junior', position: 'Java 后端' }
+    body: { positionId: 'backend', experienceLevel: 'junior', position: '后端' }
   })
   step('创建会话', s.code === 0 && typeof s.data.sessionId === 'string')
   const sessionId = s.data.sessionId
@@ -54,7 +54,7 @@ async function main() {
     const n = await api(`/interview/next?sessionId=${sessionId}&mode=quick&remainSeconds=600`, {
       token
     })
-    step(`第 ${i + 1} 题岗位匹配`, n.code === 0 && n.data.positionId === 'java-backend')
+    step(`第 ${i + 1} 题岗位匹配`, n.code === 0 && n.data.positionId === 'backend')
     ids.push(n.data.id)
     await api('/interview/answer', {
       method: 'POST',

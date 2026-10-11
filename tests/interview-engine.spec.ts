@@ -12,8 +12,8 @@ import { QUESTION_BANK, WRAPUP_QUESTION } from '../data/question-bank.uts'
 import { QuestionItem, PositionBlueprint } from '../types/interview.uts'
 
 const BLUEPRINT: PositionBlueprint = {
-  positionId: 'java-backend',
-  position: 'Java 后端',
+  positionId: 'backend',
+  position: '后端',
   experienceLevel: 'junior',
   experienceRange: '1-3年',
   companyType: '互联网',
@@ -425,7 +425,7 @@ describe('前端岗位选题（P0-2.3 题库与岗位补齐）', () => {
       const out = selectNext(makeInput(asked, 9999, [], '', 12))
       expect(out).not.toBeNull()
       if (out!.isWrapup) break
-      expect(out!.question.positionId).toBe('java-backend')
+      expect(out!.question.positionId).toBe('backend')
       expect(seen.has(out!.question.id)).toBe(false)
       seen.add(out!.question.id)
       asked.push(out!.question)
