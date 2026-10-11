@@ -143,13 +143,17 @@ function requestCloud(
       reject(new Error(msg))
       return
     }
+    // 官方签名（云托管文档）：服务名通过 X-WX-SERVICE 请求头路由。
+    // callContainer 无 name 参数，未知字段被 SDK 静默忽略 → 缺头时网关路由到
+    // 环境内其他服务 → 容器 Fastify 404（网关仍 200）
+    const header = buildHeaders(options.header)
+    header['X-WX-SERVICE'] = CLOUD_SERVICE_NAME
     wxApi.cloud.callContainer({
       config: { env: CLOUD_ENV_ID },
-      name: CLOUD_SERVICE_NAME,
       path: path + serializeQuery(query),
       method: options.method,
       data: options.data,
-      header: buildHeaders(options.header),
+      header: header,
       timeout: REQUEST_TIMEOUT,
       success: (res: any) => {
         handleResponse(res, resolve, reject, silent)
