@@ -6,7 +6,9 @@
 import { computed } from 'vue'
 import { StringMap } from '../styles/theme.uts'
 
-// Lucide 图标（PUA 码位，来源 static/fonts/lucide.css；字体由 styles/icons.css 注册）
+// Lucide 图标（PUA 码位，来源 design-system/mentorloop/fonts-reference/lucide.css）
+// MP-WEIXIN：字体由 styles/icon-font.uts 运行时注入（构建管线丢弃 @font-face）
+// 其余端：styles/icons.css 的 @font-face 注册（App 由 main.css #ifdef APP 引入）
 // icons 数据库未命中匹配，图标家族为 fallback 选择（MASTER.md §A3-1）
 const ICON_GLYPH: StringMap = {
   // 导航 / 基础

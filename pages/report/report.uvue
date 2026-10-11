@@ -160,7 +160,7 @@
             <ml-button text="再次模拟" type="primary" block @click="again"></ml-button>
           </view>
           <view class="flex-1 ml-2">
-            <ml-button text="返回首页" type="secondary" block @click="again"></ml-button>
+            <ml-button text="返回首页" type="secondary" block @click="goHome"></ml-button>
           </view>
         </view>
       </view>
@@ -176,6 +176,8 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { reportHistory } from '../../store/report-history.uts'
+import { quotaStore } from '../../store/quota.uts'
+import { useMock } from '../../api/env.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
 import { getReport } from '../../api/report.uts'
 import { trackEvent } from '../../api/tracking.uts'
@@ -248,10 +250,15 @@ function exampleFor(key: string): string {
 }
 
 onShow(async () => {
+  // 真模式：无本地报告记录时不打假 sessionId（服务端 /report 按真实会话 id 查询，'latest' 必 500）
+  const local = reportHistory.latest()
+  if (!useMock() && local == null) {
+    hasReport.value = false
+    return
+  }
   try {
     // 优先用 API（mock 模式下内部从 history 取最新）
-    const latest = reportHistory.latest()
-    const sid = latest != null ? latest.sessionId : 'latest'
+    const sid = local != null ? local.sessionId : 'latest'
     const r = await getReport(sid)
     report.value = r
     hasReport.value = r.overall.length > 0
@@ -303,7 +310,28 @@ function startPlanTask(t: TrainingTask) {
   uni.navigateTo({ url: url })
 }
 
+// 再次模拟：与首页同规则做额度门控（prep 页无门控，直跳会绕过付费墙），然后进入面试准备页
 function again() {
+  quotaStore.restore()
+  if (!quotaStore.canStartInterview()) {
+    trackEvent('quota_exceeded', { scene: 'interview' })
+    uni.showModal({
+      title: '免费额度已用完',
+      content: '开通会员可无限次模拟面试，或购买单次包继续练习',
+      confirmText: '去开通',
+      cancelText: '暂不需要',
+      success: (r: any) => {
+        if (r.confirm) {
+          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
+        }
+      }
+    })
+    return
+  }
+  uni.reLaunch({ url: '/pages/interview/prep?mode=standard' })
+}
+
+function goHome() {
   uni.reLaunch({ url: '/pages/index/index' })
 }
 </script>

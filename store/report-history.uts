@@ -9,6 +9,8 @@ import { userStore } from './user-profile.uts'
 
 const HISTORY_KEY = 'ml_report_history'
 const MAX_KEEP = 10
+// 服务端拉取节流：TTL 内直接复用本地缓存，避免三个 tab 页 onShow 各拉一次 /me/reports
+const FETCH_TTL = 60 * 1000
 
 // 带时间戳的报告记录
 export type ReportRecord = {
@@ -19,6 +21,10 @@ export type ReportRecord = {
 
 class ReportHistory {
   private list: ReportRecord[] = []
+  // 拉取节流状态：TTL + 账号维度（换号强制重拉，避免展示上一个账号的报告）
+  private lastFetchAt: number = 0
+  private lastFetchUid: string = ''
+  private fetching: Promise<void> | null = null
 
   // 启动时从本地缓存加载
   load() {
@@ -71,10 +77,29 @@ class ReportHistory {
   }
 
   // 从服务端拉取本账号报告历史并覆盖本地缓存（跨设备同步）
-  // Mock 或未登录直接跳过；失败时保留本地数据（静默降级，不阻断页面）
+  // Mock 或未登录直接跳过；失败时保留本地数据（静默降级，不阻断页面）。
+  // 节流：TTL 内跳过；同一账号的并发调用共享同一 in-flight 请求（三个 tab 页 onShow 只发一次）
   async fetchFromServer(): Promise<void> {
     if (useMock()) return
     if (!userStore.isLoggedIn()) return
+    const inFlight = this.fetching
+    if (inFlight != null) {
+      await inFlight
+      return
+    }
+    const uid = userStore.profile.uid
+    const fresh = Date.now() - this.lastFetchAt < FETCH_TTL && uid == this.lastFetchUid
+    if (fresh) return
+    const task = this.doFetch(uid)
+    this.fetching = task
+    try {
+      await task
+    } finally {
+      this.fetching = null
+    }
+  }
+
+  private async doFetch(uid: string): Promise<void> {
     try {
       const res = await get('/me/reports')
       const arr = res.data as any[] | null
@@ -85,6 +110,9 @@ class ReportHistory {
         recs.push({ sessionId: it.sessionId, at: it.at, report: it.report } as ReportRecord)
       }
       this.list = recs
+      // 成功后才更新节流标记（失败则下次 onShow 重试）
+      this.lastFetchAt = Date.now()
+      this.lastFetchUid = uid
       this.persist()
     } catch (e: any) {
       console.warn('[report-history] fetchFromServer failed, keep local', e)
@@ -93,6 +121,8 @@ class ReportHistory {
 
   clear() {
     this.list = []
+    this.lastFetchAt = 0
+    this.lastFetchUid = ''
     try {
       uni.removeStorageSync(HISTORY_KEY)
     } catch (e: any) {

@@ -7,6 +7,7 @@ import { interviewSession } from './store/interview-session.uts'
 import { loginByWechat, applyAuth } from './api/auth.uts'
 import { trackEvent, flushTrackingQueue } from './api/tracking.uts'
 import { initCloud, useMock } from './api/client.uts'
+import { installIconFont } from './styles/icon-font.uts'
 
 onLaunch(() => {
   console.log('[MentorLoop] app launch')
@@ -14,6 +15,8 @@ onLaunch(() => {
   // #ifdef MP-WEIXIN
   // 云托管链路：初始化 wx.cloud（callContainer 前置，静默登录/业务请求都走云链路）
   initCloud()
+  // 图标字体：构建管线丢弃 @font-face，MP 端需运行时注入 lucide 子集（否则全页图标空白）
+  installIconFont()
   // #endif
 
   // 启动时恢复会话（App 与小程序通用）

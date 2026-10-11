@@ -13,3 +13,6 @@ utssdk/*/app-ios
 
 # HBuilderX 本地 IDE 配置
 .hbuilderx
+
+# 字体参考件（vendor 产物，102KB 压缩 css，不作源码维护）
+design-system/mentorloop/fonts-reference
