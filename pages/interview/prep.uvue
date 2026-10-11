@@ -87,69 +87,6 @@
           </ml-card>
         </view>
 
-        <!-- 面试时长 -->
-        <view class="mb-3">
-          <ml-card>
-            <view class="flex-row items-center">
-              <ml-icon name="clock" :size="14" color="#5B6CFF"></ml-icon>
-              <text class="text-sm font-semibold text-ink ml-1.5">面试时长</text>
-            </view>
-            <view class="flex-row mt-3">
-              <view
-                class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-                :class="mode === 'quick' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-                hover-class="pressed-chip"
-                :hover-start-time="0"
-                @click="mode = 'quick'"
-              >
-                <text
-                  class="text-sm"
-                  :class="mode === 'quick' ? 'text-smart font-medium' : 'text-ink'"
-                >
-                  快练
-                </text>
-                <text class="text-xs" :class="mode === 'quick' ? 'text-smart' : 'text-ink-soft'">
-                  5 分钟
-                </text>
-              </view>
-              <view
-                class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-                :class="mode === 'standard' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-                hover-class="pressed-chip"
-                :hover-start-time="0"
-                @click="mode = 'standard'"
-              >
-                <text
-                  class="text-sm"
-                  :class="mode === 'standard' ? 'text-smart font-medium' : 'text-ink'"
-                >
-                  标准
-                </text>
-                <text class="text-xs" :class="mode === 'standard' ? 'text-smart' : 'text-ink-soft'">
-                  20 分钟
-                </text>
-              </view>
-              <view
-                class="flex-1 h-11 rounded-lg flex-col items-center justify-center"
-                :class="mode === 'deep' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-                hover-class="pressed-chip"
-                :hover-start-time="0"
-                @click="mode = 'deep'"
-              >
-                <text
-                  class="text-sm"
-                  :class="mode === 'deep' ? 'text-smart font-medium' : 'text-ink'"
-                >
-                  深度
-                </text>
-                <text class="text-xs" :class="mode === 'deep' ? 'text-smart' : 'text-ink-soft'">
-                  40 分钟
-                </text>
-              </view>
-            </view>
-          </ml-card>
-        </view>
-
         <!-- 设备检测 -->
         <ml-card>
           <view class="flex-row items-center">
@@ -202,14 +139,14 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
-import { onShow, onLoad } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
-import { PositionId, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
+import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 
 type CheckKey = 'mic' | 'net' | 'record'
@@ -227,7 +164,6 @@ const experienceOptions = EXPERIENCE_OPTIONS
 // 默认读取用户上次选择
 const positionId = ref<PositionId>(userStore.profile.positionId)
 const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
-const mode = ref<InterviewMode>('standard')
 const checking = ref(false)
 const checkError = ref('')
 
@@ -295,16 +231,6 @@ function quickPrelight() {
     if (p.record) setCheck('record', true, false)
   })
 }
-
-// 支持外部传入模式（首页快练/标准/深度直达）；无传参时使用档案默认偏好
-onLoad((q: OnLoadOption) => {
-  const m = q != null && q['mode'] != null ? (q['mode'] as string) : ''
-  if (m === 'quick' || m === 'standard' || m === 'deep') {
-    mode.value = m as InterviewMode
-  } else {
-    mode.value = userStore.profile.defaultMode
-  }
-})
 
 function selectPosition(p: PositionOption) {
   if (!p.available) {
@@ -493,10 +419,9 @@ function start() {
     token: null
   })
   userStore.persist()
-  // 将方向、等级、时长一同传给房间页
+  // 将方向、等级传给房间页（时长语义 v2：无固定时长，题池封顶 + 用户自主结束，固定 standard 预算）
   const url =
-    '/pages/interview/room?mode=' +
-    mode.value +
+    '/pages/interview/room?mode=standard' +
     '&positionId=' +
     positionId.value +
     '&experienceLevel=' +

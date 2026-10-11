@@ -17,7 +17,7 @@
       </view>
       <view class="flex-row items-center h-11">
         <ml-icon name="clock" :size="14" color="#FFFFFF"></ml-icon>
-        <text class="text-sm text-white ml-1">{{ remain }}″</text>
+        <text class="text-sm text-white ml-1">{{ elapsedText }}</text>
       </view>
     </view>
 
@@ -162,7 +162,14 @@ import {
 } from '../../api/speech.uts'
 
 const recording = ref(false)
-const remain = ref(1200)
+const elapsed = ref(0)
+// 时长语义 v2：正计时展示（用户自主控制时长：题池封顶 + 随时手动退出），不再倒计时自动收束
+const elapsedText = computed((): string => {
+  const m = Math.floor(elapsed.value / 60)
+  const s = elapsed.value % 60
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(m) + ':' + pad(s)
+})
 const caption = ref('')
 const sessionId = ref('')
 // 当前追问话术（非空时显示追问而非原题）
@@ -193,7 +200,7 @@ const textModalVisible = ref(false)
 const textDraft = ref('')
 const submittingText = ref(false)
 
-// 暂停状态（暂停时冻结倒计时与录音入口）
+// 暂停状态（暂停时冻结计时与录音入口）
 const paused = ref(false)
 
 // 感知层：录音器 + TTS 句柄 + 实时识别会话 + 平台能力
@@ -253,13 +260,10 @@ onLoad((options: any) => {
       const m = options.mode as string
       if (m === 'quick') {
         mode.value = 'quick'
-        remain.value = 300
       } else if (m === 'deep') {
         mode.value = 'deep'
-        remain.value = 2400
       } else {
         mode.value = 'standard'
-        remain.value = 1200
       }
     }
     const posId = options.positionId != null ? (options.positionId as string) : 'backend'
@@ -284,15 +288,8 @@ onLoad((options: any) => {
   initRecorder()
   init()
   timer = setInterval(() => {
-    if (paused.value) return // 暂停时冻结倒计时
-    if (remain.value > 0) remain.value = remain.value - 1
-    // 倒计时归零自动收束
-    if (remain.value === 0) {
-      if (recording.value) stopRecord(true)
-      setTimeout(() => {
-        goSummary()
-      }, 500)
-    }
+    if (paused.value) return // 暂停时冻结计时
+    elapsed.value = elapsed.value + 1
   }, 1000)
 })
 

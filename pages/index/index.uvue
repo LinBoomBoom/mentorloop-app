@@ -20,11 +20,11 @@
         paddingRight: rightPad + 'px'
       }"
     >
-      <view class="flex-col">
+      <view class="flex-col flex-1 mr-2">
         <text class="text-[22px] font-bold text-white">{{ greeting }}</text>
-        <text class="text-xs text-mist mt-1">
-          {{ dateText }} · {{ positionLabel }} · {{ experienceLabel }}
-        </text>
+        <text class="text-xs text-mist mt-1"
+          >{{ dateText }} · {{ positionLabel }} · {{ experienceLabel }}</text
+        >
       </view>
       <view
         class="w-10 h-10 rounded-full flex-row items-center justify-center pressable"
@@ -87,7 +87,7 @@
 
     <!-- 可滚动内容区 -->
     <scroll-view class="flex-1" scroll-y="true">
-      <view class="px-5 pt-5">
+      <view class="px-5 pt-5 pb-5">
         <!-- 数据条 -->
         <view
           class="flex-row rounded-2xl border px-2 py-3"
@@ -205,23 +205,6 @@
             生成能力评估报告后，这里会给出{'\n'}针对性的训练任务与成长追踪
           </text>
         </view>
-
-        <!-- 次级入口 -->
-        <view class="flex-row mt-3 mb-4">
-          <view
-            v-for="(e, i) in entries"
-            :key="e.text"
-            class="flex-1 rounded-2xl border py-3 flex-col items-center pressable"
-            :class="i < entries.length - 1 ? 'mr-2.5' : ''"
-            :style="cardStyle"
-            hover-class="pressed-card"
-            :hover-start-time="0"
-            @click="e.onTap"
-          >
-            <ml-icon :name="e.icon" :size="17" :color="e.color"></ml-icon>
-            <text class="text-xs text-white mt-1.5">{{ e.text }}</text>
-          </view>
-        </view>
       </view>
     </scroll-view>
 
@@ -230,25 +213,6 @@
       class="px-5 pt-3"
       :style="{ paddingBottom: bottomPad + 'px', backgroundColor: 'rgba(11,33,56,0.9)' }"
     >
-      <!-- 模式选择 -->
-      <view
-        class="flex-row rounded-full p-1"
-        :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
-      >
-        <view
-          v-for="m in modes"
-          :key="m.id"
-          class="flex-1 h-9 rounded-full flex-col items-center justify-center"
-          :style="mode === m.id ? { backgroundColor: '#5B6CFF' } : {}"
-          hover-class="pressed-chip"
-          :hover-start-time="0"
-          @click="mode = m.id"
-        >
-          <text class="text-[13px] font-medium" :class="mode === m.id ? 'text-white' : 'text-mist'">
-            {{ m.label }}
-          </text>
-        </view>
-      </view>
       <!-- 主 CTA -->
       <view class="mt-3">
         <ml-button text="开始模拟面试" type="primary" block @tap="startInterview"></ml-button>
@@ -422,23 +386,6 @@ const bubbleTexts: string[] = [
 ]
 const bubbleText = ref(bubbleTexts[0])
 
-// 面试模式
-type Mode = 'quick' | 'standard' | 'deep'
-const modes: { id: Mode; label: string }[] = [
-  { id: 'quick', label: '快练 5min' },
-  { id: 'standard', label: '标准 20min' },
-  { id: 'deep', label: '深度 40min' }
-]
-const mode = ref<Mode>('standard')
-
-// 次级入口
-type Entry = { icon: string; color: string; text: string; onTap: () => void }
-const entries: Entry[] = [
-  { icon: 'dumbbell', color: '#8FA0FF', text: '专项训练', onTap: goTraining },
-  { icon: 'file-text', color: '#5CE8D8', text: '简历优化', onTap: goResume },
-  { icon: 'trending-up', color: '#F5C97B', text: '我的成长', onTap: goGrowth }
-]
-
 // 深色卡样式（实色 + 细描边，避免滚动区 blur 开销）
 const cardStyle = {
   backgroundColor: '#0B2138',
@@ -494,15 +441,11 @@ function startInterview() {
     })
     return
   }
-  uni.navigateTo({ url: '/pages/interview/prep?mode=' + mode.value })
+  uni.navigateTo({ url: '/pages/interview/prep' })
 }
 
 function goTraining() {
   uni.switchTab({ url: '/pages/training/training' })
-}
-
-function goResume() {
-  uni.switchTab({ url: '/pages/resume/resume' })
 }
 
 function goGrowth() {

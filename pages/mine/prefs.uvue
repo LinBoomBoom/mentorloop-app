@@ -70,35 +70,9 @@
         </ml-card>
       </view>
 
-      <!-- 默认面试模式 -->
-      <view class="mt-3">
-        <ml-card>
-          <view class="flex-row items-center">
-            <ml-icon name="clock" :size="14" color="#5B6CFF"></ml-icon>
-            <text class="text-sm font-semibold text-ink ml-1.5">默认面试模式</text>
-            <text class="text-xs text-ink-soft ml-2">进入准备页时自动预选</text>
-          </view>
-          <view class="flex-row mt-3">
-            <view
-              v-for="m in modes"
-              :key="m.id"
-              class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-              :class="mode === m.id ? 'bg-smart' : 'bg-line'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="mode = m.id"
-            >
-              <text class="text-sm" :class="mode === m.id ? 'text-white' : 'text-ink'">
-                {{ m.label }}
-              </text>
-            </view>
-          </view>
-        </ml-card>
-      </view>
-
       <!-- 说明 -->
       <text class="text-[11px] text-mist mt-3 text-center">
-        偏好保存后，下次进入面试准备页自动采用默认方向、年限与模式
+        偏好保存后，下次进入面试准备页自动采用默认方向与年限
       </text>
 
       <view class="mt-4">
@@ -115,23 +89,16 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
-import { PositionId, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
+import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { trackEvent } from '../../api/tracking.uts'
 
 const positionOptions = POSITION_OPTIONS
 const experienceOptions = EXPERIENCE_OPTIONS
 
-const modes: { id: InterviewMode; label: string }[] = [
-  { id: 'quick', label: '快练 5min' } as { id: InterviewMode; label: string },
-  { id: 'standard', label: '标准 20min' } as { id: InterviewMode; label: string },
-  { id: 'deep', label: '深度 40min' } as { id: InterviewMode; label: string }
-]
-
 // 从用户档案回填当前值
 const nickname = ref(userStore.profile.nickname)
 const positionId = ref<PositionId>(userStore.profile.positionId)
 const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
-const mode = ref<InterviewMode>(userStore.profile.defaultMode)
 
 function selectPosition(p: PositionOption) {
   if (!p.available) {
@@ -149,12 +116,12 @@ function save() {
     plan: null,
     positionId: positionId.value,
     experienceLevel: experienceLevel.value,
-    defaultMode: mode.value,
-    token: null
+    defaultMode: null,
+    token: null,
+    phone: null
   })
   userStore.persist()
   trackEvent('prefs_saved', {
-    mode: mode.value,
     positionId: positionId.value,
     experienceLevel: experienceLevel.value
   })
