@@ -11,6 +11,7 @@
 import { createHmac } from 'node:crypto'
 import { randomUUID } from 'node:crypto'
 import { Env } from '../config.js'
+import { createWxAsrDriver } from './asr-wx.js'
 
 export type AsrResult = { text: string; confidence: number }
 export type AsrDriverOpts = { timeoutMs: number }
@@ -197,6 +198,7 @@ export const aliyunDriver: AsrDriver = createAliyunDriver({
 })
 
 // 注册表：按配置选择驱动（默认 stub）
+// - wx：微信「语音上传+翻译」（免费，复用 WX_APPID/WX_SECRET，音频 ≤1MB mp3 16k 单声道）
 export function getAsrDriver(env: Env): AsrDriver {
   if (env.asrProvider === 'aliyun') {
     return createAliyunDriver({
@@ -205,6 +207,9 @@ export function getAsrDriver(env: Env): AsrDriver {
       appKey: env.asrAliyunAppKey,
       region: env.asrAliyunRegion
     })
+  }
+  if (env.asrProvider === 'wx') {
+    return createWxAsrDriver({ appId: env.wxAppId, secret: env.wxSecret, lang: 'zh_CN' })
   }
   return stubDriver
 }
