@@ -18,6 +18,25 @@ export const THEME: StringMap = {
   surface: '#FFFFFF'
 }
 
+// 六维能力色板（与 main.css @theme --color-dim-* 单源对齐；growth/training/report 统一消费）
+export const DIM_COLOR: StringMap = {
+  knowledge: '#5B6CFF',
+  engineering: '#1FB6A6',
+  analysis: '#E08A00',
+  communication: '#7C5CFF',
+  learning: '#0EA5B7',
+  motivation: '#E0654A'
+}
+
+export const DIM_TINT: StringMap = {
+  knowledge: '#EEF1FF',
+  engineering: '#E6F7F4',
+  analysis: '#FFF3E0',
+  communication: '#F0EBFF',
+  learning: '#E0F5F8',
+  motivation: '#FDEBE6'
+}
+
 // 数字人状态（文档 02 / 04：idle/asking/listening/followup/thinking/summary）
 export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'thinking' | 'summary'
 

@@ -10,7 +10,7 @@
     <view
       v-if="actionText.length > 0"
       class="flex-row items-center h-7 px-1 -mr-1"
-      hover-class="ml-sh-pressed"
+      hover-class="pressed-row"
       :hover-start-time="0"
       @click="onAction"
     >
@@ -37,9 +37,3 @@ function onAction() {
   emit('action')
 }
 </script>
-
-<style>
-.ml-sh-pressed {
-  opacity: 0.7;
-}
-</style>

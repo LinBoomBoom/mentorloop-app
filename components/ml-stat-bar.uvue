@@ -1,0 +1,69 @@
+<template>
+  <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row">
+    <view
+      v-for="(it, i) in items"
+      :key="i"
+      class="flex-1 flex-col items-center"
+      :class="i > 0 ? 'border-l border-line' : ''"
+      :hover-class="tappable ? 'pressed-card' : 'none'"
+      :hover-start-time="0"
+      @click="onTap(i)"
+    >
+      <text class="text-lg font-bold" :style="{ color: it.color }">{{ it.value }}</text>
+      <text class="text-[11px] text-ink-soft mt-0.5">{{ it.label }}</text>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+
+// 统计条组件（growth/training/mine 三页复制粘贴样式的组件化收敛）
+// MP 端 props 走序列化，不收函数；点击通过 stat-tap 事件回传索引
+type StatEntry = {
+  value: string
+  label: string
+  color: string
+}
+
+const props = defineProps({
+  value1: { type: String, default: '' },
+  label1: { type: String, default: '' },
+  color1: { type: String, default: '' },
+  value2: { type: String, default: '' },
+  label2: { type: String, default: '' },
+  color2: { type: String, default: '' },
+  value3: { type: String, default: '' },
+  label3: { type: String, default: '' },
+  color3: { type: String, default: '' },
+  // 统计项可点击时才给按压反馈
+  tappable: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['stat-tap'])
+
+const items = computed((): StatEntry[] => {
+  const ink = '#1A2433'
+  return [
+    {
+      value: props.value1,
+      label: props.label1,
+      color: props.color1.length > 0 ? props.color1 : ink
+    } as StatEntry,
+    {
+      value: props.value2,
+      label: props.label2,
+      color: props.color2.length > 0 ? props.color2 : ink
+    } as StatEntry,
+    {
+      value: props.value3,
+      label: props.label3,
+      color: props.color3.length > 0 ? props.color3 : ink
+    } as StatEntry
+  ]
+})
+
+function onTap(i: number) {
+  emit('stat-tap', i)
+}
+</script>

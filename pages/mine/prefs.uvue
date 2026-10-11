@@ -32,7 +32,7 @@
               :class="
                 positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
               "
-              hover-class="chip-pressed"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="selectPosition(p)"
             >
@@ -58,7 +58,7 @@
               :key="e.id"
               class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
               :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="experienceLevel = e.id"
             >
@@ -84,7 +84,7 @@
               :key="m.id"
               class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
               :class="mode === m.id ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="mode = m.id"
             >
@@ -164,9 +164,3 @@ function save() {
   }, 400)
 }
 </script>
-
-<style>
-.chip-pressed {
-  opacity: 0.8;
-}
-</style>

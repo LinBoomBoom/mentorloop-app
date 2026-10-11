@@ -270,6 +270,12 @@ skill 推荐 `#2563EB` 蓝；项目既定品牌为「深海军蓝 + 靛紫 + 青
 
 深色面正文对比度 ≥4.5:1；`mist #AEB9CC` 仅用于大字号/非关键说明。
 
+**六维能力色板（2026-10-11 正式化）**：knowledge 靛紫 `#5B6CFF`/`#EEF1FF` · engineering 青绿 `#1FB6A6`/`#E6F7F4` · analysis 琥珀 `#E08A00`/`#FFF3E0` · communication 紫 `#7C5CFF`/`#F0EBFF` · learning 青 `#0EA5B7`/`#E0F5F8` · motivation 橙红 `#E0654A`/`#FDEBE6`。Token 单源：main.css `--color-dim-*` ↔ theme.uts `DIM_COLOR/DIM_TINT`。
+
+**品牌头部带**：浅色学习页顶部品牌锚点（高 88-96px），`linear-gradient(135deg, #2B3F9E 0%, #16305F 48%, #0F2C4C 100%)`（类名 `.ml-brand-band`），静态无 blur，白字标题 + mist 副标题。
+
+**按压反馈三档**（hover-class 统一前缀，main.css 全局定义）：`pressed-row` 0.7（列表行）/ `pressed-card` 0.85（卡片与按钮）/ `pressed-chip` 0.8（选项 chip）；禁各页自造 -pressed 命名。
+
 ## A2. 字体：中文优先系统字体，不加载 Lora，Raleway 仅作可选数字字体
 
 - skill 的 Lora/Raleway 是拉丁字体，不含中文字形；小程序加载中文字体体积不可接受。

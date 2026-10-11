@@ -2,7 +2,7 @@
   <view
     class="bg-surface rounded-2xl p-4 border border-line"
     :class="[raised ? 'shadow-card' : '', padded ? '' : 'p-0']"
-    :hover-class="pressable ? 'ml-card-pressed' : 'none'"
+    :hover-class="pressable ? 'pressed-card' : 'none'"
     :hover-start-time="0"
     :hover-stay-time="80"
     @click="onClick"
@@ -27,10 +27,3 @@ function onClick() {
   emit('tap')
 }
 </script>
-
-<style>
-/* uvue 组件样式：按压时仅改透明度，不引起布局位移（MASTER.md A3-5） */
-.ml-card-pressed {
-  opacity: 0.85;
-}
-</style>

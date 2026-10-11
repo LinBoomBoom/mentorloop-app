@@ -45,6 +45,22 @@
   --color-figure-head: #c9d4e5;
   --color-figure-body: #8c9bb5;
 
+  /* 六维能力色板（growth/training/report 维度画像统一消费，替代散落硬编码） */
+  --color-dim-knowledge: #5b6cff;
+  --color-dim-engineering: #1fb6a6;
+  --color-dim-analysis: #e08a00;
+  --color-dim-communication: #7c5cff;
+  --color-dim-learning: #0ea5b7;
+  --color-dim-motivation: #e0654a;
+
+  /* 六维 chip 底（浅色 tint） */
+  --color-dim-knowledge-tint: #eef1ff;
+  --color-dim-engineering-tint: #e6f7f4;
+  --color-dim-analysis-tint: #fff3e0;
+  --color-dim-communication-tint: #f0ebff;
+  --color-dim-learning-tint: #e0f5f8;
+  --color-dim-motivation-tint: #fdebe6;
+
   /* 字体（中文优先系统栈，不加载拉丁 webfont） */
   --font-sans: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif;
 
@@ -58,6 +74,27 @@
 :root,
 page {
   background-color: var(--color-bg-light);
+}
+
+/* 自定义全局类必须用 @utility 注册（Tailwind 4）：main.css 里手写的普通规则会被
+   weapp-tailwindcss 管线静默丢弃（@font-face 同因，见 ISS 记录），只有工具类通道能存活 */
+
+/* 品牌头部带（浅色学习页顶部品牌锚点，静态无 blur，MP/App 双端可用）
+   MASTER.md §A1：靛紫辉光渐入深海军蓝 */
+@utility ml-brand-band {
+  background-color: #0f2c4c;
+  background-image: linear-gradient(135deg, #2b3f9e 0%, #16305f 48%, #0f2c4c 100%);
+}
+
+/* 按压反馈统一三档（MASTER.md A3-5：opacity 收敛为 0.7/0.8/0.85） */
+@utility pressed-row {
+  opacity: 0.7;
+}
+@utility pressed-card {
+  opacity: 0.85;
+}
+@utility pressed-chip {
+  opacity: 0.8;
 }
 
 /* 尊重系统「减少动态效果」（MASTER.md A3-7 无障碍要求） */

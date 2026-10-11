@@ -29,7 +29,7 @@
       <view
         class="w-10 h-10 rounded-full flex-row items-center justify-center pressable"
         :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
-        hover-class="hero-pressed"
+        hover-class="pressed-chip"
         :hover-start-time="0"
         @click="openSettings"
       >
@@ -37,22 +37,23 @@
       </view>
     </view>
 
-    <!-- 数字人主视觉 -->
-    <view class="flex-none h-[300px] flex-col items-center justify-center relative">
+    <!-- 数字人主视觉（压缩至 232px 给内容区让位；MASTER.md A4 首页仍以数字人为主角） -->
+    <view class="flex-none h-[232px] flex-col items-center justify-center relative">
       <!-- 呼吸光环 -->
       <view
-        class="absolute w-64 h-64 rounded-full border border-smart opacity-20 breath-ring"
+        class="absolute w-52 h-52 rounded-full border border-smart opacity-20 breath-ring"
       ></view>
       <view
-        class="absolute w-56 h-56 rounded-full border border-reliable opacity-25 breath-ring-delay"
+        class="absolute w-44 h-44 rounded-full border border-reliable opacity-25 breath-ring-delay"
       ></view>
       <!-- 底部光晕 -->
-      <view class="absolute bottom-4 w-44 h-8 rounded-full bg-smart opacity-25 blur-floor"></view>
+      <view class="absolute bottom-4 w-36 h-7 rounded-full bg-smart opacity-25 blur-floor"></view>
 
       <!-- 数字人：头部 + 面部 + 肩部 -->
       <view class="flex-col items-center relative z-1">
-        <view class="figure-head flex-col items-center justify-center">
-          <view class="flex-row items-center">
+        <view class="figure-head flex-col items-center justify-center relative">
+          <view class="figure-highlight"></view>
+          <view class="flex-row items-center mt-1">
             <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
             <view class="w-5"></view>
             <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
@@ -60,6 +61,15 @@
           <view class="h-1.5 w-6 rounded-full bg-navy-deep mt-2.5 avatar-mouth"></view>
         </view>
         <view class="figure-body"></view>
+        <!-- 领结：琥珀点缀呼应品牌强调色（静态，无动效开销） -->
+        <view class="flex-row items-center relative z-1" style="margin-top: -8px">
+          <view class="w-2.5 h-2.5 rotate-45 bow-wing"></view>
+          <view
+            class="w-1.5 h-1.5 rounded-full bow-knot"
+            style="margin-left: 3px; margin-right: 3px"
+          ></view>
+          <view class="w-2.5 h-2.5 rotate-45 bow-wing"></view>
+        </view>
       </view>
 
       <!-- 状态点 + 语气泡 -->
@@ -111,7 +121,7 @@
           <view
             class="mt-3 rounded-2xl border p-4 pressable"
             :style="cardStyle"
-            hover-class="hero-pressed"
+            hover-class="pressed-card"
             :hover-start-time="0"
             @click="goTraining"
           >
@@ -150,7 +160,7 @@
           <view
             class="mt-3 rounded-2xl border p-4 pressable"
             :style="cardStyle"
-            hover-class="hero-pressed"
+            hover-class="pressed-card"
             :hover-start-time="0"
             @click="goReport"
           >
@@ -204,7 +214,7 @@
             class="flex-1 rounded-2xl border py-3 flex-col items-center pressable"
             :class="i < entries.length - 1 ? 'mr-2.5' : ''"
             :style="cardStyle"
-            hover-class="hero-pressed"
+            hover-class="pressed-card"
             :hover-start-time="0"
             @click="e.onTap"
           >
@@ -230,7 +240,7 @@
           :key="m.id"
           class="flex-1 h-9 rounded-full flex-col items-center justify-center"
           :style="mode === m.id ? { backgroundColor: '#5B6CFF' } : {}"
-          hover-class="hero-pressed"
+          hover-class="pressed-chip"
           :hover-start-time="0"
           @click="mode = m.id"
         >
@@ -246,6 +256,8 @@
       <view
         v-if="!loggedIn"
         class="flex-row items-center justify-center mt-2.5 h-7"
+        hover-class="pressed-row"
+        :hover-start-time="0"
         @click="goLogin"
       >
         <ml-icon name="sparkles" :size="12" color="#E08A00"></ml-icon>
@@ -583,32 +595,45 @@ function goLogin() {
   filter: blur(18px);
 }
 .pressable {
-  /* 仅标记可点击，按压态由 hover-class 控制 */
-}
-.hero-pressed {
-  opacity: 0.75;
+  /* 仅标记可点击，按压态由 hover-class 全局类控制 */
 }
 
-/* 数字人形象：头部（靛紫→青绿渐变）+ 肩部 */
+/* 数字人形象：头部（靛紫→青绿渐变）+ 肩部 + 高光 + 领结 */
 .figure-head {
-  width: 96px;
-  height: 96px;
-  border-radius: 48px;
+  width: 88px;
+  height: 88px;
+  border-radius: 44px;
   background-color: #8fa0ff;
   background-image: linear-gradient(160deg, #aab6ff 0%, #7d8ef7 55%, #5b6cff 100%);
   box-shadow:
     0 12px 32px rgba(91, 108, 255, 0.45),
     inset 0 -8px 16px rgba(15, 44, 76, 0.25);
 }
+.figure-highlight {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 26px;
+  height: 13px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.4);
+  transform: rotate(-25deg);
+}
 .figure-body {
-  width: 128px;
-  height: 44px;
+  width: 120px;
+  height: 42px;
   margin-top: -6px;
   background-color: #5b6cff;
   background-image: linear-gradient(180deg, #6f7fff 0%, #4a5ce0 100%);
-  border-top-left-radius: 64px;
-  border-top-right-radius: 64px;
+  border-top-left-radius: 60px;
+  border-top-right-radius: 60px;
   box-shadow: 0 10px 28px rgba(15, 44, 76, 0.4);
+}
+.bow-wing {
+  background-color: #f5c97b;
+}
+.bow-knot {
+  background-color: #e08a00;
 }
 .eye {
   /* 眼睛为深色椭圆，配合头部渐变形成表情 */

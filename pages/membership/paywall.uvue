@@ -30,7 +30,7 @@
             :key="s.id"
             class="rounded-2xl border p-4 mb-2.5 relative"
             :style="skuStyle(s)"
-            hover-class="sku-pressed"
+            hover-class="pressed-card"
             :hover-start-time="0"
             @click="selected = s.id"
           >
@@ -195,9 +195,3 @@ function showAgreement() {
   uni.showToast({ title: '会员服务协议即将上线', icon: 'none' })
 }
 </script>
-
-<style>
-.sku-pressed {
-  opacity: 0.85;
-}
-</style>

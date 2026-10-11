@@ -1,6 +1,17 @@
 <template>
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <view class="px-4 pt-3 pb-6">
+    <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
+    <view
+      class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between relative overflow-hidden"
+    >
+      <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+      <view class="flex-col">
+        <text class="text-xl font-bold text-white">我的成长</text>
+        <text class="text-xs text-mist mt-1">六维能力画像 · 看得见的进步</text>
+      </view>
+      <ml-icon name="chart-column" :size="22" color="#5CE8D8"></ml-icon>
+    </view>
+    <view class="px-4 pb-6 -mt-5">
       <!-- 空状态 -->
       <view v-if="records.length === 0">
         <ml-card>
@@ -17,23 +28,17 @@
       </view>
 
       <template v-else>
-        <!-- 统计行 -->
-        <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row">
-          <view class="flex-1 flex-col items-center">
-            <text class="text-lg font-bold text-ink">{{ records.length }}</text>
-            <text class="text-[11px] text-ink-soft mt-0.5">累计面试</text>
-          </view>
-          <view class="w-px h-9 bg-line"></view>
-          <view class="flex-1 flex-col items-center">
-            <text class="text-lg font-bold text-smart">{{ avgLevel }}</text>
-            <text class="text-[11px] text-ink-soft mt-0.5">平均等级</text>
-          </view>
-          <view class="w-px h-9 bg-line"></view>
-          <view class="flex-1 flex-col items-center">
-            <text class="text-lg font-bold text-reliable">{{ strongest }}</text>
-            <text class="text-[11px] text-ink-soft mt-0.5">最强维度</text>
-          </view>
-        </view>
+        <!-- 统计行（组件化收敛：ml-stat-bar） -->
+        <ml-stat-bar
+          :value1="String(records.length)"
+          label1="累计面试"
+          :value2="avgLevel"
+          label2="平均等级"
+          color2="#5B6CFF"
+          :value3="strongest"
+          label3="最强维度"
+          color3="#1FB6A6"
+        ></ml-stat-bar>
 
         <!-- 能力趋势 -->
         <view class="mt-5">
@@ -56,7 +61,7 @@
                   {{ c.score }}
                 </text>
                 <view
-                  class="w-7 rounded-t-lg pressable"
+                  class="w-7 rounded-t-lg"
                   :style="barStyle(c.score, i === chartItems.length - 1, c.index === showIdx)"
                 ></view>
               </view>
@@ -83,7 +88,9 @@
               <view
                 v-for="(r, i) in records"
                 :key="r.sessionId + '_' + i"
-                class="flex-col items-center mr-2.5 pressable"
+                class="flex-col items-center mr-2.5"
+                hover-class="pressed-card"
+                :hover-start-time="0"
                 @click="showIdx = i"
               >
                 <view
@@ -229,8 +236,10 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
+import mlStatBar from '../../components/ml-stat-bar.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
+import { DIM_COLOR, DIM_TINT } from '../../styles/theme.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { trainingHistory, TrainingItem } from '../../store/training-history.uts'
 import { useMock } from '../../api/env.uts'
@@ -379,29 +388,14 @@ function dimIcon(k: string): string {
   return v != null ? v : 'target'
 }
 
+// 六维色板单源：styles/theme.uts DIM_COLOR / DIM_TINT（MASTER.md §A1）
 function dimColor(k: string): string {
-  const map: { [key: string]: string } = {
-    knowledge: '#5B6CFF',
-    engineering: '#1FB6A6',
-    analysis: '#E08A00',
-    communication: '#7C5CFF',
-    learning: '#0EA5B7',
-    motivation: '#E0654A'
-  }
-  const v = map[k]
+  const v = DIM_COLOR[k]
   return v != null ? v : '#5B6CFF'
 }
 
 function dimTint(k: string): string {
-  const map: { [key: string]: string } = {
-    knowledge: '#EEF1FF',
-    engineering: '#E6F7F4',
-    analysis: '#FFF3E0',
-    communication: '#F0EBFF',
-    learning: '#E0F5F8',
-    motivation: '#FDEBE6'
-  }
-  const v = map[k]
+  const v = DIM_TINT[k]
   return v != null ? v : '#EEF1FF'
 }
 
@@ -471,9 +465,3 @@ function goReport() {
   uni.navigateTo({ url: '/pages/report/report' })
 }
 </script>
-
-<style>
-.pressable {
-  /* 按压态由 hover-class 控制 */
-}
-</style>

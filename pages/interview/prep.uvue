@@ -22,21 +22,35 @@
               :key="p.id"
               class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
               :class="
-                positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
+                positionId === p.id
+                  ? 'bg-surface border border-smart'
+                  : p.available
+                    ? 'bg-bg-muted'
+                    : 'bg-bg-muted opacity-60'
               "
-              :hover-class="p.available ? 'chip-pressed' : 'none'"
+              :hover-class="p.available ? 'pressed-chip' : 'none'"
               :hover-start-time="0"
               @click="selectPosition(p)"
             >
               <text
                 class="text-sm"
                 :class="
-                  positionId === p.id ? 'text-white' : p.available ? 'text-ink' : 'text-ink-soft'
+                  positionId === p.id
+                    ? 'text-smart font-medium'
+                    : p.available
+                      ? 'text-ink'
+                      : 'text-ink-soft'
                 "
               >
                 {{ p.name }}
               </text>
-              <ml-icon v-if="positionId === p.id" name="check" :size="13" color="#FFFFFF"></ml-icon>
+              <ml-icon
+                v-if="positionId === p.id"
+                class="ml-1"
+                name="check"
+                :size="13"
+                color="#5B6CFF"
+              ></ml-icon>
               <text v-if="!p.available" class="text-xs text-mist ml-1">敬请期待</text>
             </view>
           </view>
@@ -56,12 +70,15 @@
               v-for="e in experienceOptions"
               :key="e.id"
               class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
-              :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="experienceLevel = e.id"
             >
-              <text class="text-sm" :class="experienceLevel === e.id ? 'text-white' : 'text-ink'">
+              <text
+                class="text-sm"
+                :class="experienceLevel === e.id ? 'text-smart font-medium' : 'text-ink'"
+              >
                 {{ e.label }}
               </text>
             </view>
@@ -79,43 +96,52 @@
           <view class="flex-row mt-3">
             <view
               class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-              :class="mode === 'quick' ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              :class="mode === 'quick' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="mode = 'quick'"
             >
-              <text class="text-sm" :class="mode === 'quick' ? 'text-white' : 'text-ink'">
+              <text
+                class="text-sm"
+                :class="mode === 'quick' ? 'text-smart font-medium' : 'text-ink'"
+              >
                 快练
               </text>
-              <text class="text-xs" :class="mode === 'quick' ? 'text-white' : 'text-ink-soft'">
+              <text class="text-xs" :class="mode === 'quick' ? 'text-smart' : 'text-ink-soft'">
                 5 分钟
               </text>
             </view>
             <view
               class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-              :class="mode === 'standard' ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              :class="mode === 'standard' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="mode = 'standard'"
             >
-              <text class="text-sm" :class="mode === 'standard' ? 'text-white' : 'text-ink'">
+              <text
+                class="text-sm"
+                :class="mode === 'standard' ? 'text-smart font-medium' : 'text-ink'"
+              >
                 标准
               </text>
-              <text class="text-xs" :class="mode === 'standard' ? 'text-white' : 'text-ink-soft'">
+              <text class="text-xs" :class="mode === 'standard' ? 'text-smart' : 'text-ink-soft'">
                 20 分钟
               </text>
             </view>
             <view
               class="flex-1 h-11 rounded-lg flex-col items-center justify-center"
-              :class="mode === 'deep' ? 'bg-smart' : 'bg-line'"
-              hover-class="chip-pressed"
+              :class="mode === 'deep' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+              hover-class="pressed-chip"
               :hover-start-time="0"
               @click="mode = 'deep'"
             >
-              <text class="text-sm" :class="mode === 'deep' ? 'text-white' : 'text-ink'">
+              <text
+                class="text-sm"
+                :class="mode === 'deep' ? 'text-smart font-medium' : 'text-ink'"
+              >
                 深度
               </text>
-              <text class="text-xs" :class="mode === 'deep' ? 'text-white' : 'text-ink-soft'">
+              <text class="text-xs" :class="mode === 'deep' ? 'text-smart' : 'text-ink-soft'">
                 40 分钟
               </text>
             </view>
@@ -448,9 +474,3 @@ function onPrimary() {
   else runCheck()
 }
 </script>
-
-<style>
-.chip-pressed {
-  opacity: 0.8;
-}
-</style>

@@ -1,10 +1,17 @@
 <template>
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <view v-if="!hasReport" class="flex-col items-center justify-center mt-40">
-      <view class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center mb-3">
-        <ml-icon name="file-text" :size="25" color="#5B6CFF"></ml-icon>
-      </view>
-      <text class="text-sm text-ink-soft">暂无报告，完成一次面试后查看</text>
+    <view v-if="!hasReport" class="p-4 pt-6">
+      <ml-card>
+        <ml-empty
+          icon="file-text"
+          icon-color="#5B6CFF"
+          icon-bg="#EEF1FF"
+          title="暂无报告"
+          desc="完成一次模拟面试后，这里会展示总体判断、六维评分与训练计划"
+        >
+          <ml-button text="回首页开始面试" type="primary" block @click="goHome"></ml-button>
+        </ml-empty>
+      </ml-card>
     </view>
 
     <template v-else>
@@ -16,7 +23,23 @@
             <ml-icon name="sparkles" :size="14" color="#AEB9CC"></ml-icon>
             <text class="text-xs text-mist ml-1.5">总体判断</text>
           </view>
-          <text class="text-lg font-semibold text-white mt-2 mb-4">{{ report.overall }}</text>
+          <view class="flex-row items-center mt-2 mb-4">
+            <text class="text-lg font-semibold text-white flex-1 leading-6">
+              {{ report.overall }}
+            </text>
+            <view
+              class="w-11 h-11 rounded-full flex-col items-center justify-center ml-3"
+              :style="{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.14)'
+              }"
+            >
+              <text class="text-lg font-bold" :style="{ color: overallLevelColor }">
+                {{ overallLevel }}
+              </text>
+              <text class="text-[9px] text-mist">综合</text>
+            </view>
+          </view>
           <view class="flex-row">
             <view
               class="flex-1 rounded-xl p-3 mr-2.5"
@@ -42,10 +65,8 @@
         </view>
 
         <!-- 能力维度（证据卡：点击展开完整证据 + 优秀回答示例） -->
-        <view class="flex-row items-center mt-5 mb-2.5">
-          <ml-icon name="chart-column" :size="15" color="#5B6CFF"></ml-icon>
-          <text class="text-base font-semibold text-ink ml-1.5">能力维度</text>
-          <text class="text-xs text-mist ml-2">点击卡片展开证据</text>
+        <view class="mt-5">
+          <ml-section-header title="能力维度" caption="点击卡片展开证据"></ml-section-header>
         </view>
         <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
           <ml-card pressable @tap="toggleEvidence(d.dimension)">
@@ -111,9 +132,8 @@
 
         <!-- 风险提示 -->
         <view v-if="report.riskQuestions.length > 0">
-          <view class="flex-row items-center mt-5 mb-2.5">
-            <ml-icon name="triangle-alert" :size="15" color="#DC2626"></ml-icon>
-            <text class="text-base font-semibold text-ink ml-1.5">风险提示</text>
+          <view class="mt-5">
+            <ml-section-header title="风险提示" caption="面试官视角的红旗信号"></ml-section-header>
           </view>
           <view class="mb-2" v-for="(r, i) in report.riskQuestions" :key="i">
             <ml-card>
@@ -126,9 +146,11 @@
         </view>
 
         <!-- 训练计划 -->
-        <view class="flex-row items-center mt-5 mb-2.5">
-          <ml-icon name="dumbbell" :size="15" color="#5B6CFF"></ml-icon>
-          <text class="text-base font-semibold text-ink ml-1.5">建议训练计划</text>
+        <view class="mt-5">
+          <ml-section-header
+            title="建议训练计划"
+            caption="出自本次评估报告 · 点击直达训练"
+          ></ml-section-header>
         </view>
         <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
           <ml-card pressable @tap="startPlanTask(t)">
@@ -169,12 +191,14 @@
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import mlEmpty from '../../components/ml-empty.uvue'
+import mlSectionHeader from '../../components/ml-section-header.uvue'
 import { reportHistory } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { useMock } from '../../api/env.uts'
@@ -199,6 +223,36 @@ const emptyReport: InterviewReport = {
 
 const report = ref(emptyReport)
 const hasReport = ref(false)
+
+// 综合等级徽章（总体判断卡右侧；A=4...D=1 均值映射，与 growth/首页同口径）
+const overallLevel = computed((): string => {
+  const dims = report.value.dimensions
+  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < dims.length; i++) {
+    const v = map[dims[i].level]
+    if (v != null) {
+      total += v
+      cnt += 1
+    }
+  }
+  if (cnt === 0) return '--'
+  const avg = total / cnt
+  if (avg >= 3.5) return 'A'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
+})
+
+// 深色面上的等级色（与首页 levelColor 同一套深色适配值）
+const overallLevelColor = computed((): string => {
+  const l = overallLevel.value
+  if (l === 'A') return '#5CE8D8'
+  if (l === 'B') return '#8FA0FF'
+  if (l === 'C') return '#F5C97B'
+  return '#FF9E6D'
+})
 
 // 证据卡展开状态（记录已展开的维度 key）
 const expandedKeys = ref<string[]>([])
