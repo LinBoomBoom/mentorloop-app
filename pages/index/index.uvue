@@ -14,7 +14,11 @@
     <!-- 顶栏：问候 + 设置 -->
     <view
       class="flex-row items-center justify-between px-5"
-      :style="{ paddingTop: topPad + 'px', height: topPad + 44 + 'px' }"
+      :style="{
+        paddingTop: topPad + 'px',
+        height: topPad + 44 + 'px',
+        paddingRight: rightPad + 'px'
+      }"
     >
       <view class="flex-col">
         <text class="text-[22px] font-bold text-white">{{ greeting }}</text>
@@ -266,6 +270,14 @@ import { InterviewReport } from '../../types/scoring.uts'
 // 安全区内边距（onShow 从窗口信息读取）
 const topPad = ref(36)
 const bottomPad = ref(24)
+
+// C6：MP 端顶栏右侧让出微信胶囊宽度（胶囊≈87px+右边距，几何稳定），
+// 避免设置按钮被胶囊遮挡；APP/H5 无胶囊保持 20px。
+// 注：uni-app x 未暴露 getMenuButtonBoundingClientRect（框架零引用），故用固定避让值
+const rightPad = ref(20)
+// #ifdef MP-WEIXIN
+rightPad.value = 100
+// #endif
 
 const positionLabel = ref(positionDisplay(userStore.profile))
 const experienceLabel = ref(experienceDisplay(userStore.profile))

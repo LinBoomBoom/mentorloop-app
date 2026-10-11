@@ -27,6 +27,8 @@ declare module '*.uts' {
   export function scoreInterview(...args: any[]): any
   // store/interview-session
   export const interviewSession: any
+  // store/report-history（/me/reports 拉取节流）
+  export const reportHistory: any
   // store/training-history（P0-1 训练闭环）
   export function reasonForAnswer(...args: any[]): any
   export function domainOfTaskId(...args: any[]): any

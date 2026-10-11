@@ -130,13 +130,16 @@ const glyph = computed((): string => {
   return v != null ? v : ''
 })
 
-const iconStyle = computed((): StringMap => {
+const iconStyle = computed(() => {
+  // 禁用 StringMap（UTSType）：MP 端 normalizeStyle 无法枚举 UTSType 实例字段，
+  // 会把内联样式序列化成空串，color/fontSize 全部失效（图标变黑）。
+  // 普通对象字面量编译为 UTSJSONObject，走专门分支正常序列化。
   return {
     fontFamily: 'lucide',
     fontSize: props.size + 'px',
     lineHeight: props.size + 'px',
     color: props.color
-  } as StringMap
+  }
 })
 </script>
 
