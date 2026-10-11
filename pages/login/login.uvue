@@ -162,7 +162,7 @@ async function doLogin() {
   loading.value = true
   try {
     const r = await loginByPhone(phone.value, code.value)
-    applyAuth(r)
+    applyAuth(r, phone.value)
     trackEvent('auth_login_success', { channel: 'app' })
     uni.reLaunch({ url: '/pages/index/index' })
   } catch (e: any) {

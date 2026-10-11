@@ -1,188 +1,203 @@
 <template>
-  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <view class="p-4">
-      <!-- 顶部说明 -->
-      <view class="mb-4 mt-1">
-        <text class="text-xl font-bold text-ink">定制你的模拟面试</text>
-        <text class="text-sm text-ink-soft mt-1">
-          选择方向与等级，题目会按你的简历与能力水平动态匹配
-        </text>
-      </view>
-
-      <!-- 岗位方向选择 -->
-      <view class="mb-3">
-        <ml-card>
-          <view class="flex-row items-center">
-            <ml-icon name="target" :size="14" color="#5B6CFF"></ml-icon>
-            <text class="text-sm font-semibold text-ink ml-1.5">面试方向</text>
-          </view>
-          <view class="flex-row flex-wrap mt-3">
-            <view
-              v-for="p in positionOptions"
-              :key="p.id"
-              class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
-              :class="
-                positionId === p.id
-                  ? 'bg-surface border border-smart'
-                  : p.available
-                    ? 'bg-bg-muted'
-                    : 'bg-bg-muted opacity-60'
-              "
-              :hover-class="p.available ? 'pressed-chip' : 'none'"
-              :hover-start-time="0"
-              @click="selectPosition(p)"
-            >
-              <text
-                class="text-sm"
-                :class="
-                  positionId === p.id
-                    ? 'text-smart font-medium'
-                    : p.available
-                      ? 'text-ink'
-                      : 'text-ink-soft'
-                "
-              >
-                {{ p.name }}
-              </text>
-              <ml-icon
-                v-if="positionId === p.id"
-                class="ml-1"
-                name="check"
-                :size="13"
-                color="#5B6CFF"
-              ></ml-icon>
-              <text v-if="!p.available" class="text-xs text-mist ml-1">敬请期待</text>
-            </view>
-          </view>
-        </ml-card>
-      </view>
-
-      <!-- 经验等级选择 -->
-      <view class="mb-3">
-        <ml-card>
-          <view class="flex-row items-center">
-            <ml-icon name="trending-up" :size="14" color="#5B6CFF"></ml-icon>
-            <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
-            <text class="text-xs text-ink-soft ml-2">决定题目难度区间</text>
-          </view>
-          <view class="flex-row flex-wrap mt-3">
-            <view
-              v-for="e in experienceOptions"
-              :key="e.id"
-              class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
-              :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="experienceLevel = e.id"
-            >
-              <text
-                class="text-sm"
-                :class="experienceLevel === e.id ? 'text-smart font-medium' : 'text-ink'"
-              >
-                {{ e.label }}
-              </text>
-            </view>
-          </view>
-        </ml-card>
-      </view>
-
-      <!-- 面试时长 -->
-      <view class="mb-3">
-        <ml-card>
-          <view class="flex-row items-center">
-            <ml-icon name="clock" :size="14" color="#5B6CFF"></ml-icon>
-            <text class="text-sm font-semibold text-ink ml-1.5">面试时长</text>
-          </view>
-          <view class="flex-row mt-3">
-            <view
-              class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-              :class="mode === 'quick' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="mode = 'quick'"
-            >
-              <text
-                class="text-sm"
-                :class="mode === 'quick' ? 'text-smart font-medium' : 'text-ink'"
-              >
-                快练
-              </text>
-              <text class="text-xs" :class="mode === 'quick' ? 'text-smart' : 'text-ink-soft'">
-                5 分钟
-              </text>
-            </view>
-            <view
-              class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
-              :class="mode === 'standard' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="mode = 'standard'"
-            >
-              <text
-                class="text-sm"
-                :class="mode === 'standard' ? 'text-smart font-medium' : 'text-ink'"
-              >
-                标准
-              </text>
-              <text class="text-xs" :class="mode === 'standard' ? 'text-smart' : 'text-ink-soft'">
-                20 分钟
-              </text>
-            </view>
-            <view
-              class="flex-1 h-11 rounded-lg flex-col items-center justify-center"
-              :class="mode === 'deep' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="mode = 'deep'"
-            >
-              <text
-                class="text-sm"
-                :class="mode === 'deep' ? 'text-smart font-medium' : 'text-ink'"
-              >
-                深度
-              </text>
-              <text class="text-xs" :class="mode === 'deep' ? 'text-smart' : 'text-ink-soft'">
-                40 分钟
-              </text>
-            </view>
-          </view>
-        </ml-card>
-      </view>
-
-      <!-- 设备检测 -->
-      <ml-card>
-        <view class="flex-row items-center">
-          <ml-icon name="shield-check" :size="14" color="#5B6CFF"></ml-icon>
-          <text class="text-sm font-semibold text-ink ml-1.5">设备检测</text>
-        </view>
-        <view
-          class="flex-row justify-between items-center h-11 mt-1"
-          v-for="c in checks"
-          :key="c.key"
-        >
-          <text class="text-sm text-ink">{{ c.name }}</text>
-          <text
-            class="text-xs"
-            :class="c.ok ? 'text-reliable' : c.checking ? 'text-mist' : 'text-warn'"
-          >
-            {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
+  <view class="h-screen bg-bg-light">
+    <scroll-view class="h-screen" scroll-y="true">
+      <view class="p-4">
+        <!-- 顶部说明 -->
+        <view class="mb-4 mt-1">
+          <text class="text-xl font-bold text-ink">定制你的模拟面试</text>
+          <text class="text-sm text-ink-soft mt-1">
+            选择方向与等级，题目会按你的简历与能力水平动态匹配
           </text>
         </view>
-        <text v-if="checkError.length > 0" class="text-xs text-danger mt-1">{{ checkError }}</text>
-        <view class="mt-2">
-          <ml-button
-            :text="deviceOk ? '进入面试' : checking ? '检测中…' : '开始检测'"
-            :type="deviceOk ? 'primary' : 'secondary'"
-            block
-            :disabled="checking || !canStart"
-            @click="onPrimary"
-          ></ml-button>
-        </view>
-      </ml-card>
 
-      <view class="h-6"></view>
-    </view>
-  </scroll-view>
+        <!-- 岗位方向选择 -->
+        <view class="mb-3">
+          <ml-card>
+            <view class="flex-row items-center">
+              <ml-icon name="target" :size="14" color="#5B6CFF"></ml-icon>
+              <text class="text-sm font-semibold text-ink ml-1.5">面试方向</text>
+            </view>
+            <view class="flex-row flex-wrap mt-3">
+              <view
+                v-for="p in positionOptions"
+                :key="p.id"
+                class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
+                :class="
+                  positionId === p.id
+                    ? 'bg-surface border border-smart'
+                    : p.available
+                      ? 'bg-bg-muted'
+                      : 'bg-bg-muted opacity-60'
+                "
+                :hover-class="p.available ? 'pressed-chip' : 'none'"
+                :hover-start-time="0"
+                @click="selectPosition(p)"
+              >
+                <text
+                  class="text-sm"
+                  :class="
+                    positionId === p.id
+                      ? 'text-smart font-medium'
+                      : p.available
+                        ? 'text-ink'
+                        : 'text-ink-soft'
+                  "
+                >
+                  {{ p.name }}
+                </text>
+                <ml-icon
+                  v-if="positionId === p.id"
+                  class="ml-1"
+                  name="check"
+                  :size="13"
+                  color="#5B6CFF"
+                ></ml-icon>
+                <text v-if="!p.available" class="text-xs text-mist ml-1">敬请期待</text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 经验等级选择 -->
+        <view class="mb-3">
+          <ml-card>
+            <view class="flex-row items-center">
+              <ml-icon name="trending-up" :size="14" color="#5B6CFF"></ml-icon>
+              <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
+              <text class="text-xs text-ink-soft ml-2">决定题目难度区间</text>
+            </view>
+            <view class="flex-row flex-wrap mt-3">
+              <view
+                v-for="e in experienceOptions"
+                :key="e.id"
+                class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
+                :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="experienceLevel = e.id"
+              >
+                <text
+                  class="text-sm"
+                  :class="experienceLevel === e.id ? 'text-smart font-medium' : 'text-ink'"
+                >
+                  {{ e.label }}
+                </text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 面试时长 -->
+        <view class="mb-3">
+          <ml-card>
+            <view class="flex-row items-center">
+              <ml-icon name="clock" :size="14" color="#5B6CFF"></ml-icon>
+              <text class="text-sm font-semibold text-ink ml-1.5">面试时长</text>
+            </view>
+            <view class="flex-row mt-3">
+              <view
+                class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
+                :class="mode === 'quick' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="mode = 'quick'"
+              >
+                <text
+                  class="text-sm"
+                  :class="mode === 'quick' ? 'text-smart font-medium' : 'text-ink'"
+                >
+                  快练
+                </text>
+                <text class="text-xs" :class="mode === 'quick' ? 'text-smart' : 'text-ink-soft'">
+                  5 分钟
+                </text>
+              </view>
+              <view
+                class="flex-1 h-11 rounded-lg flex-col items-center justify-center mr-2"
+                :class="mode === 'standard' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="mode = 'standard'"
+              >
+                <text
+                  class="text-sm"
+                  :class="mode === 'standard' ? 'text-smart font-medium' : 'text-ink'"
+                >
+                  标准
+                </text>
+                <text class="text-xs" :class="mode === 'standard' ? 'text-smart' : 'text-ink-soft'">
+                  20 分钟
+                </text>
+              </view>
+              <view
+                class="flex-1 h-11 rounded-lg flex-col items-center justify-center"
+                :class="mode === 'deep' ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="mode = 'deep'"
+              >
+                <text
+                  class="text-sm"
+                  :class="mode === 'deep' ? 'text-smart font-medium' : 'text-ink'"
+                >
+                  深度
+                </text>
+                <text class="text-xs" :class="mode === 'deep' ? 'text-smart' : 'text-ink-soft'">
+                  40 分钟
+                </text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 设备检测 -->
+        <ml-card>
+          <view class="flex-row items-center">
+            <ml-icon name="shield-check" :size="14" color="#5B6CFF"></ml-icon>
+            <text class="text-sm font-semibold text-ink ml-1.5">设备检测</text>
+          </view>
+          <view
+            class="flex-row justify-between items-center h-11 mt-1"
+            v-for="c in checks"
+            :key="c.key"
+          >
+            <text class="text-sm text-ink">{{ c.name }}</text>
+            <text
+              class="text-xs"
+              :class="c.ok ? 'text-reliable' : c.checking ? 'text-mist' : 'text-warn'"
+            >
+              {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
+            </text>
+          </view>
+          <text v-if="checkError.length > 0" class="text-xs text-danger mt-1">{{
+            checkError
+          }}</text>
+          <view class="mt-2">
+            <ml-button
+              :text="
+                !phoneOk
+                  ? '登录后进入面试'
+                  : deviceOk
+                    ? '进入面试'
+                    : checking
+                      ? '检测中…'
+                      : '开始检测'
+              "
+              :type="deviceOk && phoneOk ? 'primary' : 'secondary'"
+              block
+              :disabled="checking || !canStart || !phoneOk"
+              @click="onPrimary"
+            ></ml-button>
+          </view>
+        </ml-card>
+
+        <view class="h-6"></view>
+      </view>
+    </scroll-view>
+
+    <!-- 进面试强制登录层（个人主体：手机号+验证码；静默登录仅可浏览） -->
+    <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
+  </view>
 </template>
 
 <script setup lang="uts">
@@ -191,6 +206,7 @@ import { onShow, onLoad } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
 import { PositionId, ExperienceLevel, InterviewMode } from '../../types/interview.uts'
@@ -214,6 +230,10 @@ const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
 const mode = ref<InterviewMode>('standard')
 const checking = ref(false)
 const checkError = ref('')
+
+// 进面试强制登录门控（PO 裁决：静默登录仅可浏览，手机号身份才可面试）
+const phoneOk = ref(userStore.hasPhoneIdentity())
+const showLogin = ref(false)
 
 const initialChecks: CheckItem[] = [
   { key: 'net', name: '网络', ok: false, checking: false } as CheckItem,
@@ -239,6 +259,9 @@ onShow(() => {
   // 从用户 profile 恢复默认选择
   positionId.value = userStore.profile.positionId
   experienceLevel.value = userStore.profile.experienceLevel
+  // 登录门控：无手机号身份则弹出登录层
+  phoneOk.value = userStore.hasPhoneIdentity()
+  showLogin.value = !phoneOk.value
   // P2-12：插件快速预检（只读，不弹窗）——已授权/联网时直接点亮对应项
   quickPrelight()
   // P2-12：网络断连监听（面试前断网即时提示，给出解决路径）
@@ -252,6 +275,18 @@ onShow(() => {
     }
   })
 })
+
+// 登录层回调：成功放行；「暂不登录」退出本页返回上一页（不放行面试）
+function onLoginSuccess() {
+  phoneOk.value = userStore.hasPhoneIdentity()
+  showLogin.value = false
+  uni.showToast({ title: '登录成功', icon: 'none' })
+}
+
+function onLoginExit() {
+  showLogin.value = false
+  uni.navigateBack()
+}
 
 // P2-12：进入页面即做只读预检（不弹权限窗），已满足的项直接置绿
 function quickPrelight() {

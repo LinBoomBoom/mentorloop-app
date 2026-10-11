@@ -61,7 +61,7 @@ onLaunch(() => {
         if (code == null || code.length === 0) return
         loginByWechat(code)
           .then((r) => {
-            applyAuth(r)
+            applyAuth(r, '')
           })
           .catch(() => {
             console.warn('[MentorLoop] wechat silent login failed')

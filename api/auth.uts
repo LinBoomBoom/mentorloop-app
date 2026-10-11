@@ -39,7 +39,8 @@ export async function deleteAccount(): Promise<boolean> {
 }
 
 // 登录成功后统一写入用户状态并持久化（供下次启动恢复会话）
-export function applyAuth(r: AuthResult) {
+// phone：验证码登录传入登录手机号（面试入口门控依据）；微信静默登录传空串
+export function applyAuth(r: AuthResult, phone: string) {
   userStore.setProfile({
     uid: r.uid,
     nickname: r.nickname,
@@ -47,7 +48,8 @@ export function applyAuth(r: AuthResult) {
     plan: null,
     positionId: null,
     experienceLevel: null,
-    defaultMode: null
+    defaultMode: null,
+    phone: phone
   } as UserProfilePatch)
   userStore.persist()
 }
