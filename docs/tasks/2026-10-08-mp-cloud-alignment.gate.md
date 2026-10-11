@@ -50,17 +50,18 @@
 3. **版本配置环境变量**（控制台填，CLI EnvParams 空且不继承——M1 前科）：`MYSQL_HOST/PORT/USER/PASSWORD/DATABASE=mentorloop_mp`（HOST 用**内网地址**）、`JWT_SECRET`（新随机值，勿复用桌面端）、`MOCK_SMS_CODE=123456`、`PORT=8787`；账号互通（2026-10-09 任务卡）加 `DESKTOP_DB_NAME=mentorloop`（连接账号需对 mentorloop 库有 SELECT，root 现状满足）；监听端口与 PORT 一致
 4. **部署**：`docker build` 上下文 = `server/` 目录（`docker build -t <registry>/mentorloop-mp-api:<tag> server/`），推镜像或控制台上传；发布
 5. **smoke**（全部走 callContainer/云链路）：
-   - [ ] `GET /healthz` → code 0 且 `driver==='mysql'`
+   - [x] `GET /healthz` → code 0 且 `driver==='mysql'`（2026-10-10 云端调试实证：POST /track/batch 200 且 debug_ping 行落 TDSQL-C，驱动=mysql；healthz 为 GET 路由，调试面板固定 POST 返回 Fastify 404 属预期）
    - [ ] **账号互通（2026-10-09）**：桌面端 mentorloop 库造一个 vip JSON `{level:1,expireAt:<未来>}` 且 phone 与 MP 登录号相同的用户 → MP 短信登录 → `GET /membership/quota` 返回该 expireAt；`users.desktop_user_id` 已写
-   - [ ] `POST /auth/wechat`（带 X-WX-OPENID 头或 body.code）→ token 可用
+   - [x] `POST /auth/wechat`（带 X-WX-OPENID 头或 body.code）→ token 可用（2026-10-11 用户开发者工具实测静默登录通过，复用已有用户 `u_0be7f8cbc23d` 未新建行，符合 findOrCreateUser 语义）
    - [ ] 建会话 → 出题 → 答题 → 报告 全链路
-   - [ ] `POST /track/batch` 埋点落库（同参数重复 → 去重不重复计数）
-   - [ ] `mentorloop_mp` 库各表数据可查
-   - [ ] 微信开发者工具：静默登录 → 答题 → 成长页报告历史
+   - [x] `POST /track/batch` 埋点落库（同参数重复 → 去重不重复计数）（2026-10-11 DMC 查证：6 条 app_launch 落库——5 条为 10-10 积压补传 + 1 条当日，幂等去重无重复行）
+   - [x] `mentorloop_mp` 库各表数据可查（2026-10-11 DMC 实证：users=2 / tracking_events=7（含 1 条 debug_ping）/ sessions=0 / answers=0 / reports=0）
+   - [ ] 微信开发者工具：静默登录 → 答题 → 成长页报告历史（静默登录已通过；答题与成长页待验）
    - [ ] App/H5 行为不变（仍 mock）；本地 `cd server && npm run dev` SQLite 路径不回归（单测已覆盖）
 
 ## 遗留与备注
 
+- **2026-10-11 callContainer 路由修复（eb16399）**：`wx.cloud.callContainer` 无 `name` 参数（6693e2f 曾误加，SDK 静默忽略）；官方契约服务名走 `header['X-WX-SERVICE']`。环境内多服务（mentorloop-mp-api / mentorloop-api / express 模板）时缺头 → 网关 200 但容器 Fastify 404。已改为 requestCloud 统一注入，用户实测链路跑通
 - `manifest.cloud:true` 被 uni-app x CLI 忽略（构建通过）：callContainer 可用性实际依赖 appid 与云环境同主体绑定 + 开发者工具云能力开关，非 manifest 字段；发布前在开发者工具确认
 - **安全登记**：`X-WX-OPENID` 仅 callContainer 私有链路可信；未来绑定公网域名必须在入口层剥离 `X-WX-*` 请求头（入发布检查单）；`JWT_SECRET/WX_APPSECRET/MYSQL_PASSWORD` 只进控制台版本配置，不进仓库
 - CLI 构建本项目必须 `UNI_INPUT_DIR` 指向项目根（源码在根目录的 HBuilderX 布局），已验证可用
