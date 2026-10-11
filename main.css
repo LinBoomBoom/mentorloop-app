@@ -99,9 +99,7 @@ page {
 
 /* 尊重系统「减少动态效果」（MASTER.md A3-7 无障碍要求） */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
     transition: none !important;
     animation: none !important;
   }
