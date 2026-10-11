@@ -11,6 +11,7 @@ import {
   PositionId
 } from '../types/interview.js'
 import { getPositionName, getExperienceRange } from '../data/position-options.js'
+import { requireSessionOwner } from './session-access.js'
 
 export type NewSessionInput = {
   positionId: PositionId
@@ -101,7 +102,13 @@ export type NextQuestionParams = {
   resumeRiskTopicsComma: string
 }
 
-export async function nextQuestion(db: Db, p: NextQuestionParams): Promise<QuestionItem> {
+export async function nextQuestion(
+  db: Db,
+  uid: string,
+  p: NextQuestionParams
+): Promise<QuestionItem> {
+  // IDOR 防护：非本人会话与不存在会话同报 404
+  await requireSessionOwner(db, p.sessionId, uid)
   const session = await getSession(db, p.sessionId)
   if (session == null) throw new Error('SESSION_NOT_FOUND')
 
@@ -166,11 +173,14 @@ const DEFAULT_TOPICS: string[] = ['订单系统', '性能优化', '架构设计'
 
 export async function submitAnswer(
   db: Db,
+  uid: string,
   sessionId: string,
   questionId: string,
   text: string,
   isFollowup: boolean
 ): Promise<boolean> {
+  // IDOR 防护：禁止向他人会话写入答案
+  await requireSessionOwner(db, sessionId, uid)
   const t = now()
   const idxRow = (await db
     .prepare('SELECT COUNT(*) AS c FROM answers WHERE session_id = ? AND question_id = ?')

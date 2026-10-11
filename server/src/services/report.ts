@@ -7,6 +7,7 @@ import { getQuestionById } from '../data/question-bank.js'
 import { QuestionItem, TranscriptEntry } from '../types/interview.js'
 import { InterviewReport } from '../types/scoring.js'
 import { consumeInterview } from './quota.js'
+import { requireSessionOwner } from './session-access.js'
 import { interpretReport, mergeInterpretation } from '../llm/report-enhancer.js'
 
 type AnswerRow = {
@@ -17,20 +18,19 @@ type AnswerRow = {
   created_at: number
 }
 
-async function sessionUserId(db: Db, sessionId: string): Promise<string | null> {
-  const row = (await db
-    .prepare(`SELECT u.uid AS uid FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`)
-    .get(sessionId)) as { uid: string } | undefined
-  return row != null ? row.uid : null
-}
-
 // 幂等重算评分报告：已存在则返回缓存；首次生成时扣减一次面试额度
 // P1.2：规则评分为锚点；启用 LLM 时仅覆盖解释与优秀示例，失败回退纯规则。
-export async function getReport(db: Db, sessionId: string, env?: Env): Promise<InterviewReport> {
+// IDOR 防护：属主校验必须先于缓存查询（否则缓存命中即泄漏他人报告）。
+export async function getReport(
+  db: Db,
+  uid: string,
+  sessionId: string,
+  env?: Env
+): Promise<InterviewReport> {
+  await requireSessionOwner(db, sessionId, uid)
   const cached = (await db
     .prepare('SELECT payload FROM reports WHERE session_id = ?')
     .get(sessionId)) as { payload: string } | undefined
-  const uid = await sessionUserId(db, sessionId)
   if (cached != null) {
     return JSON.parse(cached.payload) as InterviewReport
   }

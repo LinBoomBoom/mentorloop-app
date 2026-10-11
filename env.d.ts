@@ -38,6 +38,17 @@ declare module '*.uts' {
   // data/question-bank
   export const QUESTION_BANK: any[]
   export const WRAPUP_QUESTION: any
+  export const FRONTEND_WRAPUP_QUESTION: any
+  export function getWrapupForPosition(...args: any[]): any
+  export function getQuestionById(...args: any[]): any
+  // data/position-options（rules-consistency.spec）
+  export const POSITION_OPTIONS: any[]
+  export const EXPERIENCE_OPTIONS: any[]
+  export const DIFFICULTY_PRIORITY: any
+  // data/backend-map（rules-consistency.spec）
+  export function getDomainIds(...args: any[]): any
+  // engine/rubric（rules-consistency.spec）
+  export const RUBRIC: any[]
   // types/interview
   export type PositionBlueprint = any
   export type QuestionItem = any

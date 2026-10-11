@@ -22,13 +22,16 @@ export type Env = {
   llmTimeoutMs: number
   payMode: 'mock' | 'wx'
   wxAppId: string
+  wxSecret: string // 小程序 AppSecret：/auth/wechat body.code 换 openid（jscode2session）
+  trustWxHeaders: boolean // 仅云托管私有链路部署时开启：采信网关注入的 X-WX-* 头；关闭时服务端强制剥离该类头
+  wxMockLogin: boolean // 本地联调豁免：无 WX_SECRET 时用 'wx_'+code 作 openid（生产禁止）
   wxMchId: string
   wxMchSerial: string
   wxApiV3Key: string
   wxMchPrivateKey: string
   wxPlatformPublicKey: string
   wxNotifyUrl: string
-  asrProvider: 'stub' | 'aliyun'
+  asrProvider: 'stub' | 'aliyun' | 'wx'
   asrTimeoutMs: number
   asrAliyunAccessKeyId: string
   asrAliyunAccessKeySecret: string
@@ -57,13 +60,16 @@ const DEFAULT_ENV: Env = {
   llmTimeoutMs: 30000,
   payMode: 'mock', // P1.3：默认 mock 支付（下单即发放）；'wx' 需要 WX_* 配置齐全
   wxAppId: '',
+  wxSecret: '',
+  trustWxHeaders: false, // 默认不信任：公网部署时客户端可伪造 X-WX-OPENID；云托管部署显式开启
+  wxMockLogin: false, // 默认关闭：'wx_'+code 假 openid 仅限本地联调显式开启
   wxMchId: '',
   wxMchSerial: '',
   wxApiV3Key: '',
   wxMchPrivateKey: '',
   wxPlatformPublicKey: '',
   wxNotifyUrl: '',
-  asrProvider: 'stub', // P2-13：默认 stub（明确降级，不伪造转写）；'aliyun' 需 ASR_ALIYUN_* 齐全
+  asrProvider: 'stub', // P2-13：默认 stub（明确降级，不伪造转写）；'wx' 复用 WX_APPID/WX_SECRET（音频≤1MB mp3）；'aliyun' 需 ASR_ALIYUN_* 齐全
   asrTimeoutMs: 30000,
   asrAliyunAccessKeyId: '',
   asrAliyunAccessKeySecret: '',
@@ -94,13 +100,16 @@ export function loadEnv(): Env {
     llmTimeoutMs: parseInt(e.LLM_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.llmTimeoutMs,
     payMode: e.PAY_MODE === 'wx' ? 'wx' : 'mock',
     wxAppId: e.WX_APPID ?? DEFAULT_ENV.wxAppId,
+    wxSecret: e.WX_SECRET ?? DEFAULT_ENV.wxSecret,
+    trustWxHeaders: e.TRUST_WX_HEADERS === 'true',
+    wxMockLogin: e.WX_MOCK_LOGIN === 'true',
     wxMchId: e.WX_MCHID ?? DEFAULT_ENV.wxMchId,
     wxMchSerial: e.WX_MCH_SERIAL ?? DEFAULT_ENV.wxMchSerial,
     wxApiV3Key: e.WX_API_V3_KEY ?? DEFAULT_ENV.wxApiV3Key,
     wxMchPrivateKey: e.WX_MCH_PRIVATE_KEY ?? DEFAULT_ENV.wxMchPrivateKey,
     wxPlatformPublicKey: e.WX_PLATFORM_PUBLIC_KEY ?? DEFAULT_ENV.wxPlatformPublicKey,
     wxNotifyUrl: e.WX_NOTIFY_URL ?? DEFAULT_ENV.wxNotifyUrl,
-    asrProvider: e.ASR_PROVIDER === 'aliyun' ? 'aliyun' : 'stub',
+    asrProvider: e.ASR_PROVIDER === 'aliyun' ? 'aliyun' : e.ASR_PROVIDER === 'wx' ? 'wx' : 'stub',
     asrTimeoutMs: parseInt(e.ASR_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.asrTimeoutMs,
     asrAliyunAccessKeyId: e.ASR_ALIYUN_ACCESS_KEY_ID ?? DEFAULT_ENV.asrAliyunAccessKeyId,
     asrAliyunAccessKeySecret:
@@ -133,4 +142,25 @@ export function getModeBudget(mode: string): ModeBudget {
   if (mode === 'quick') return { maxQuestions: 3, totalSeconds: 300 }
   if (mode === 'deep') return { maxQuestions: 12, totalSeconds: 2400 }
   return { maxQuestions: 7, totalSeconds: 1200 }
+}
+
+// 云端部署（MYSQL_HOST 注入）启动安全守卫：拒绝以开发默认值上生产。
+// - 默认 JWT_SECRET → 任何人可伪造 token（越权全站）
+// - 默认万能验证码 → 任意手机号接管账号
+// 本地 SQLite（mysqlHost 为空）零配置可跑，不受影响。
+export function assertCloudSafety(env: Env): void {
+  if (env.mysqlHost.length === 0) return
+  const problems: string[] = []
+  if (env.jwtSecret === DEFAULT_ENV.jwtSecret) {
+    problems.push('JWT_SECRET 仍为开发默认值 dev-only-change-me')
+  }
+  if (env.mockSmsCode === DEFAULT_ENV.mockSmsCode) {
+    problems.push('MOCK_SMS_CODE 仍为万能验证码 123456')
+  }
+  if (env.wxMockLogin) {
+    problems.push('WX_MOCK_LOGIN=true（假 openid 登录）禁止在云端开启')
+  }
+  if (problems.length > 0) {
+    throw new Error('[config] 拒绝启动（云模式安全守卫）：' + problems.join('；'))
+  }
 }

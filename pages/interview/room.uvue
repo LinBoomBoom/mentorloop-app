@@ -136,7 +136,7 @@ import interviewerAvatar from '../../components/interviewer-avatar.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
-import { createSession, nextQuestion } from '../../api/interview.uts'
+import { createSession, nextQuestion, submitAnswer } from '../../api/interview.uts'
 import {
   QuestionItem,
   PositionBlueprint,
@@ -528,6 +528,16 @@ function handleAnswer(answerText: string, inputMode: string = 'voice') {
   const signal = analyzeAnswer(answerText, currentQuestion.value.id)
   const depth = interviewSession.getDepth()
   const decision = decideFollowup(signal, currentQuestion.value, depth)
+
+  // 服务端答案上报（2026-10-12 P0 接线；mock 由 api 层内部短路）：
+  // 服务端报告/审计/配额结算依赖该链路。失败不阻塞本地流程 —— 答案已入
+  // transcript 与快照草稿，补传机制见 interview-session pendingEvents。
+  submitAnswer(sessionId.value, currentQuestion.value.id, answerText, depth > 0).catch(
+    (e: any) => {
+      console.warn('[room] answer upload failed', e)
+      trackEvent('interview_answer_upload_failed', { questionId: currentQuestion.value.id })
+    }
+  )
 
   if (decision.shouldFollowup) {
     setTimeout(() => {

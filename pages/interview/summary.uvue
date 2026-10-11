@@ -63,6 +63,8 @@ import { interviewSession } from '../../store/interview-session.uts'
 import { reportHistory } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { scoreInterview } from '../../engine/scorer.uts'
+import { getReport } from '../../api/report.uts'
+import { useMock } from '../../api/client.uts'
 import { trackEvent } from '../../api/tracking.uts'
 
 const count = ref(0)
@@ -95,7 +97,7 @@ onLoad(() => {
   count.value = interviewSession.getQuestions().length
 })
 
-function genReport() {
+async function genReport() {
   if (generating.value) return
   generating.value = true
   // 收束状态机
@@ -103,11 +105,27 @@ function genReport() {
   interviewSession.transition('REPORT_GENERATING')
   interviewSession.transition('COMPLETED')
 
-  // 用规则评分器现场打分
   const qs = interviewSession.getQuestions()
   const ts = interviewSession.getTranscript()
-  const report = scoreInterview(qs, ts)
-  reportHistory.push(interviewSession.sessionId, report)
+  try {
+    if (!useMock()) {
+      // 报告权威源 = 服务端（2026-10-12 P0 统一）：服务端基于已上报的答案评分，
+      // 含 LLM 解释与服务端配额结算。此前真模式本地评分 + 报告页查服务端，
+      // 两侧认知相反 → 刚面完必"暂无报告"。
+      const serverReport = await getReport(interviewSession.sessionId)
+      reportHistory.push(interviewSession.sessionId, serverReport)
+    } else {
+      // Mock：本地规则评分
+      const report = scoreInterview(qs, ts)
+      reportHistory.push(interviewSession.sessionId, report)
+    }
+  } catch (e: any) {
+    // 网络异常降级：本地规则评分兜底，避免死锁；报告页后续仍以服务端为准刷新
+    console.warn('[summary] server report failed, fallback to local', e)
+    const report = scoreInterview(qs, ts)
+    reportHistory.push(interviewSession.sessionId, report)
+    uni.showToast({ title: '网络异常，已生成预估报告', icon: 'none' })
+  }
   // 北极星：完成一次正式模拟面试
   trackEvent('interview_complete', { questionCount: qs.length, followupCount: followupTotal.value })
   // 额度扣减：完成一场面试后消耗（会员不扣）
@@ -116,9 +134,7 @@ function genReport() {
   // 清掉会话快照（已转为报告）
   interviewSession.clearSnapshot()
 
-  setTimeout(() => {
-    generating.value = false
-    uni.redirectTo({ url: '/pages/report/report' })
-  }, 500)
+  generating.value = false
+  uni.redirectTo({ url: '/pages/report/report' })
 }
 </script>

@@ -103,3 +103,11 @@ CREATE TABLE IF NOT EXISTS tracking_events (
 -- 幂等防重埋点：同 事件/用户/会话/客户端时间戳 只录一次
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_dedupe
   ON tracking_events(event, IFNULL(user_id,0), IFNULL(session_id,''), IFNULL(client_ts,0));
+
+-- 索引对齐（2026-10-11）：与 deploy/cloud/baseline-mp-mysql.sql 保持一致。
+-- MySQL 版已有以下二级索引，SQLite 版此前缺失，导致按 user_id 的查询全表扫。
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_user ON reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_resumes_user ON resumes(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);

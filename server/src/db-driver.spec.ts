@@ -119,17 +119,21 @@ describe('sqlite 驱动（本地直通）接口形态', () => {
 })
 
 // 冻结 §2.2/§4.2：/auth/wechat 两种鉴权源各自可用且出参同形
+// 2026-10-11 安全收紧后，两种鉴权源均需显式开关：头直登需 TRUST_WX_HEADERS，
+// code 兜底需 WX_MOCK_LOGIN（默认全关，见 routes/auth.ts 与 security.spec.ts）
 describe('/auth/wechat 双鉴权源', () => {
   beforeEach(() => closeDb())
 
-  function makeApp() {
+  function makeApp(patch: { trustWxHeaders?: boolean; wxMockLogin?: boolean } = {}) {
     const env = loadEnv()
     env.dbPath = './data/test-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.db'
+    if (patch.trustWxHeaders != null) env.trustWxHeaders = patch.trustWxHeaders
+    if (patch.wxMockLogin != null) env.wxMockLogin = patch.wxMockLogin
     return buildApp({ env })
   }
 
-  it('X-WX-OPENID 头直登（callContainer 私有链路），出参 {uid,nickname,token}', async () => {
-    const app = makeApp()
+  it('X-WX-OPENID 头直登（TRUST_WX_HEADERS=true 模拟云托管私有链路），出参 {uid,nickname,token}', async () => {
+    const app = makeApp({ trustWxHeaders: true })
     const r = await app.inject({
       method: 'POST',
       url: '/auth/wechat',
@@ -153,8 +157,8 @@ describe('/auth/wechat 双鉴权源', () => {
     closeDb()
   })
 
-  it('body.code 兜底（mock：wx_ + code 作 openid），出参同形', async () => {
-    const app = makeApp()
+  it('body.code 兜底（WX_MOCK_LOGIN=true：wx_ + code 作 openid），出参同形', async () => {
+    const app = makeApp({ wxMockLogin: true })
     const r = await app.inject({
       method: 'POST',
       url: '/auth/wechat',

@@ -4,6 +4,7 @@ import { writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createSession, nextQuestion as svcNext, submitAnswer } from '../services/interview.js'
 import { getAsrDriver } from '../services/asr.js'
+import { requireAuth } from './auth-guard.js'
 import { ok, okData, fail } from '../util.js'
 import { newId } from '../util.js'
 
@@ -13,13 +14,7 @@ export default async function (app: FastifyInstance): Promise<void> {
   app.post(
     '/interview/session',
     {
-      preHandler: async (request, reply) => {
-        try {
-          await request.jwtVerify()
-        } catch {
-          reply.code(401).send(fail(401, '未登录或登录已过期'))
-        }
-      },
+      preHandler: requireAuth,
       schema: {
         querystring: { type: 'object', properties: { mode: { type: 'string' } } },
         body: {
@@ -53,13 +48,7 @@ export default async function (app: FastifyInstance): Promise<void> {
   app.get(
     '/interview/next',
     {
-      preHandler: async (request, reply) => {
-        try {
-          await request.jwtVerify()
-        } catch {
-          reply.code(401).send(fail(401, '未登录或登录已过期'))
-        }
-      },
+      preHandler: requireAuth,
       schema: {
         querystring: {
           type: 'object',
@@ -77,9 +66,10 @@ export default async function (app: FastifyInstance): Promise<void> {
       }
     },
     async (request, reply) => {
+      const uid = (request.user as any).uid as string
       const q = request.query as any
       try {
-        const question = await svcNext(db, {
+        const question = await svcNext(db, uid, {
           sessionId: q.sessionId,
           mode: q.mode ?? 'standard',
           askedComma: q.asked ?? '',
@@ -99,13 +89,7 @@ export default async function (app: FastifyInstance): Promise<void> {
   app.post(
     '/interview/answer',
     {
-      preHandler: async (request, reply) => {
-        try {
-          await request.jwtVerify()
-        } catch {
-          reply.code(401).send(fail(401, '未登录或登录已过期'))
-        }
-      },
+      preHandler: requireAuth,
       schema: {
         body: {
           type: 'object',
@@ -119,9 +103,22 @@ export default async function (app: FastifyInstance): Promise<void> {
         }
       }
     },
-    async (request) => {
+    async (request, reply) => {
+      const uid = (request.user as any).uid as string
       const body = request.body as any
-      await submitAnswer(db, body.sessionId, body.questionId, body.text, body.isFollowup === true)
+      try {
+        await submitAnswer(
+          db,
+          uid,
+          body.sessionId,
+          body.questionId,
+          body.text,
+          body.isFollowup === true
+        )
+      } catch (e: any) {
+        if (e?.message === 'SESSION_NOT_FOUND') return reply.code(404).send(fail(404, '会话不存在'))
+        return reply.code(500).send(fail(500, '答案保存失败'))
+      }
       return ok()
     }
   )
@@ -131,13 +128,7 @@ export default async function (app: FastifyInstance): Promise<void> {
   app.post(
     '/interview/asr',
     {
-      preHandler: async (request, reply) => {
-        try {
-          await request.jwtVerify()
-        } catch {
-          reply.code(401).send(fail(401, '未登录或登录已过期'))
-        }
-      }
+      preHandler: requireAuth
     },
     async (request) => {
       const env = (app as any).env as import('../config.js').Env

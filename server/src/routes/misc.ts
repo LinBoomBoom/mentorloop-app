@@ -35,9 +35,12 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const { sessionId } = request.query as { sessionId: string }
+      const uid = (request.user as any).uid as string
       try {
-        return okData(await getReport(db, sessionId, env))
-      } catch {
+        return okData(await getReport(db, uid, sessionId, env))
+      } catch (e: any) {
+        // 属主校验失败与会话不存在统一 404，防会话 id 探测
+        if (e?.message === 'SESSION_NOT_FOUND') return reply.code(404).send(fail(404, '会话不存在'))
         return reply.code(500).send(fail(500, '报告生成失败'))
       }
     }
@@ -83,20 +86,31 @@ export default async function (app: FastifyInstance): Promise<void> {
   )
 
   // ---- 埋点 ----
+  // 2026-10-12 收紧：加 requireAuth（SOP 此前豁免 track，但匿名通道可被公网刷爆；
+  // 客户端 requestSilent 统一附带 token，登录前事件在队列中等待登录后补传）
+  // 并加批量上限（100 条/批、单条 4KB），uid 以鉴权身份为准（不再信任 body.userId）
   app.post(
     '/track/batch',
     {
+      preHandler: requireAuth,
       schema: {
         body: {
           type: 'object',
           required: ['events'],
-          properties: { events: { type: 'array', items: { type: 'string' } } }
+          properties: {
+            events: {
+              type: 'array',
+              maxItems: 100,
+              items: { type: 'string', maxLength: 4096 }
+            }
+          }
         }
       }
     },
     async (request) => {
       const { events } = request.body as { events: string[] }
-      await ingestEvents(db, events ?? [])
+      const uid = (request.user as any).uid as string
+      await ingestEvents(db, uid, events ?? [])
       return ok()
     }
   )

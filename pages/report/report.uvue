@@ -319,7 +319,14 @@ onShow(async () => {
     // 北极星：报告查看率
     if (hasReport.value) trackEvent('report_view', { interviewId: sid })
   } catch {
-    hasReport.value = false
+    // 服务端不可达：本地有记录则先展示（summary 已可能写入本地兜底报告），
+    // 后续 onShow 仍会以服务端为准刷新；本地也无则展示空态
+    if (local != null) {
+      report.value = local.report
+      hasReport.value = local.report.overall.length > 0
+    } else {
+      hasReport.value = false
+    }
   }
 })
 

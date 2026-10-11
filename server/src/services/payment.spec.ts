@@ -17,12 +17,14 @@ function makeApp(env: Env) {
   return buildApp({ env })
 }
 
+// 发码限流（60s/次）后，登录辅助需每测试独立手机号（同文件多测试复用会撞限流）
 async function login(app: any): Promise<string> {
-  await app.inject({ method: 'POST', url: '/auth/sms-code', payload: { phone: '13900000088' } })
+  const phone = '139' + String(Date.now()).slice(-8)
+  await app.inject({ method: 'POST', url: '/auth/sms-code', payload: { phone } })
   const r = await app.inject({
     method: 'POST',
     url: '/auth/login',
-    payload: { phone: '13900000088', code: '123456' }
+    payload: { phone, code: '123456' }
   })
   return r.json().data.token
 }
