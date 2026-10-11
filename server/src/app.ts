@@ -36,14 +36,26 @@ export function buildApp(opts: BuildOptions = {}): FastifyInstance {
   ;(app as any).env = env
   ;(app as any).db = db
 
-  // 覆盖默认 application/json 解析器：额外保留字节原文（微信支付回调验签需要）
+  // 覆盖默认 application/json 解析器：额外保留字节原文（微信支付回调验签需要）。
+  // JSON.parse 抛出的 SyntaxError 必须就地捕获转 done(err)：同步 throw 会穿透
+  // Fastify 解析管线（uncaughtException）直接杀死进程（2026-10-11 本地崩溃实证）
   app.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
     (req: any, body: any, done: any) => {
       req.rawBody = body
       const text = String(body)
-      done(null, text.length > 0 ? JSON.parse(text) : {})
+      if (text.length === 0) {
+        done(null, {})
+        return
+      }
+      try {
+        done(null, JSON.parse(text))
+      } catch {
+        const err: any = new Error('请求体不是合法 JSON')
+        err.statusCode = 400
+        done(err, undefined)
+      }
     }
   )
 
