@@ -34,3 +34,7 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+
+# 临时截图与快照导出
+.screenshots/
+.trae-html-share-packages/
