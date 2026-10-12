@@ -282,6 +282,7 @@
         <li><a href="#system">⑦ 设计体系</a></li>
         <li><a href="#libs">⑧ 组件库 12 强</a></li>
         <li><a href="#roadmap">⑨ 路线与清单</a></li>
+        <li><a href="#crossfw">⑩ 跨框架适配</a></li>
       </ul>
     </nav>
 
@@ -291,7 +292,7 @@
       <h1>多端 UI 设计学习手册<br><span class="grad-text">移动端 · Web 端 · 桌面端</span></h1>
       <p class="lede">一套屏幕策略吃透三端：分别怎么设计、如何互相适配、用什么体验原则支撑，以及如何落到设计体系与组件库上。写给想系统掌握多端设计的 UI 设计师。</p>
       <div class="hero-meta">
-        <span class="chip"><b>9</b> 个章节</span>
+        <span class="chip"><b>10</b> 个章节</span>
         <span class="chip"><b>3</b> 端设计策略</span>
         <span class="chip"><b>12</b> 个开源组件库速览</span>
         <span class="chip"><b>30</b> 天学习路线</span>
@@ -919,6 +920,115 @@ flowchart LR
       <div class="callout"><b>最后一句话：</b>规范会过时、组件库会更替，但<mark class="key">「输入方式决定交互、Token 保证一致、状态补全闭环」这三条判断力不会过时</mark>。把判断力练进手感，你就拥有了随时适配任何新设备的能力。</div>
     </section>
 
+    <!-- ======== Chapter 10: 跨框架适配 ======== -->
+    <section class="chapter" id="crossfw">
+      <span class="sec-tag">10 / CROSS-FRAMEWORK</span>
+      <h2>跨框架适配矩阵：手册如何跟着框架走</h2>
+
+      <p>市面上多端构建框架众多，设计师常问：「换了框架，这本手册还有用吗？」答案是<mark class="key">分层看：原则层永远是你的资产，实现层才需要换映射表</mark>。本章给出三层迁移模型、主流框架对照、以及一份真实项目（uni-app x）踩坑沉淀出的硬约束速查。</p>
+
+      <h3>10.1 三层可迁移性模型</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>层</th><th>内容</th><th>迁移性</th><th>换框架时做什么</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>原则层</b></td><td>端特性（第②③④章）、UX 原则与 A11y（第⑥章）、拇指区 / 触控目标 / 状态闭环</td><td class="yes">100% 通用</td><td>什么都不用改 —— 这是判断力的部分</td></tr>
+            <tr><td><b>方法层</b></td><td>Token 单源与三层结构、断点体系、组件级适配对照表、设计体系五层（第⑤⑦章）</td><td class="yes">≈90% 通用</td><td>方法不变，把「Token 载体」换成目标框架的对应物</td></tr>
+            <tr><td><b>实现层</b></td><td>12 个 React 组件库、Figma Variables、Tailwind 具体类、hover/媒体查询等 Web 手段</td><td class="yes">需换映射表</td><td>按 10.2 对照表替换实现手段，注意原生端「静默失效」陷阱</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>10.2 主流多端框架映射表</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>框架</th><th>渲染方式</th><th>目标端</th><th>Token 落地载体</th><th>组件库对应物</th><th>手册适配要点</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>uni-app x</b><sup><a href="#cite-10">[10]</a></sup></td>
+              <td>uvue 编译为原生渲染（vapor 模式）</td>
+              <td>小程序 / Android / iOS / 鸿蒙 / H5</td>
+              <td>Tailwind 4 <code style="font-family:var(--font-mono);font-size:0.85em">@theme</code> ↔ UTS 常量表 ↔ 设计文档（三处单源）</td>
+              <td>自建组件库 / uni-ui 官方组件</td>
+              <td>移动端章直接适用；Web/桌面章按储备读；<b>必须掌握 10.3 硬约束</b>（原生端大量 CSS 特性静默失效）</td>
+            </tr>
+            <tr>
+              <td><b>Taro</b><sup><a href="#cite-11">[11]</a></sup></td>
+              <td>编译为小程序代码（React 语法）</td>
+              <td>小程序家族 / H5 / RN</td>
+              <td>CSS Variables / Tailwind（小程序端需 weapp 类桥接管线）</td>
+              <td>NutUI-React、Taro UI</td>
+              <td>React 组件库（第⑧章）思路可参考，组件本体仍受小程序约束（无完整 media query）</td>
+            </tr>
+            <tr>
+              <td><b>React Native</b><sup><a href="#cite-12">[12]</a></sup></td>
+              <td>原生组件渲染</td>
+              <td>iOS / Android（无官方小程序，嵌 H5 属社区方案·未验证）</td>
+              <td>NativeWind（Tailwind 语法）/ StyleSheet 常量</td>
+              <td>Tamagui、gluestack、RN Paper</td>
+              <td>移动端章直接适用；「hover / 滚动 / 断点」等 Web 手段全部换成原生等价物</td>
+            </tr>
+            <tr>
+              <td><b>Flutter</b><sup><a href="#cite-13">[13]</a></sup></td>
+              <td>自绘引擎（Skia/Impeller）</td>
+              <td>iOS / Android / Web / 桌面</td>
+              <td><code style="font-family:var(--font-mono);font-size:0.85em">ThemeData</code> / <code style="font-family:var(--font-mono);font-size:0.85em">ThemeExtension</code></td>
+              <td>Material、Cupertino 官方组件</td>
+              <td>原则层全适用；CSS 断点概念换成 LayoutBuilder / MediaQuery，响应式靠布局组合</td>
+            </tr>
+            <tr>
+              <td><b>ArkUI（鸿蒙原生）</b><sup><a href="#cite-14">[14]</a></sup></td>
+              <td>声明式原生渲染</td>
+              <td>HarmonyOS 家族</td>
+              <td>资源文件（color/float/string）+ AppStorage</td>
+              <td>HMS 官方组件 / 自建</td>
+              <td>原则层全适用；注意鸿蒙折叠屏 / 平板形态的断点设计（系统提供断点能力）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted)">表中能力描述以各框架官方文档最新版为准<sup><a href="#cite-10">[10]</a></sup><sup><a href="#cite-11">[11]</a></sup><sup><a href="#cite-12">[12]</a></sup><sup><a href="#cite-13">[13]</a></sup><sup><a href="#cite-14">[14]</a></sup>；版本敏感项（如 RN 小程序方案）落地前应做 POC 验证。</p>
+
+      <div class="callout"><b>实战案例 · MentorLoop：</b>本项目用 uni-app x（vapor 模式）一套代码覆盖微信小程序 / Android / iOS / 鸿蒙 / H5，走「自建组件库 + Token 三处单源」路线（Tailwind 4 <code style="font-family:var(--font-mono);font-size:0.85em">@theme</code> ↔ UTS 常量表 ↔ 设计主文件），正是手册第⑦章「自建设计系统」流派的落地实例。代价是必须吃透 10.3 的硬约束 —— 每一条都对应真实踩过的坑。</div>
+
+      <h3>10.3 uvue（uni-app x）硬约束速查：真机会「静默失效」的坑</h3>
+      <p>编译型原生渲染框架与 Web DOM 的最大区别：<mark class="key">不支持的 CSS 特性往往不报错，而是静默失效 —— 布局错乱、样式丢失，且只在真机上出现</mark>。以下约束已在实际项目中验证沉淀：</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>类别</th><th>禁止写法</th><th>后果</th><th>正确做法</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>布局间距</b></td><td><code style="font-family:var(--font-mono);font-size:0.85em">gap-*</code> / <code style="font-family:var(--font-mono);font-size:0.85em">space-x-*</code> / <code style="font-family:var(--font-mono);font-size:0.85em">space-y-*</code></td><td>真机静默失效，布局错乱</td><td>显式 <code style="font-family:var(--font-mono);font-size:0.85em">mt-*</code> / <code style="font-family:var(--font-mono);font-size:0.85em">ml-*</code>；<code style="font-family:var(--font-mono);font-size:0.85em">view</code> 默认纵向，横向布局显式 <code style="font-family:var(--font-mono);font-size:0.85em">flex-row</code></td></tr>
+            <tr><td><b>样式继承</b></td><td>文字样式（字号/颜色/字重）写在容器上</td><td>对文字完全无效（样式不继承）</td><td>文字必须用 <code style="font-family:var(--font-mono);font-size:0.85em">&lt;text&gt;</code> 包裹，样式写在 <code style="font-family:var(--font-mono);font-size:0.85em">&lt;text&gt;</code> 本身</td></tr>
+            <tr><td><b>视觉特性</b></td><td>内联 SVG / CSS 渐变原子类 / 透明度修饰符（<code style="font-family:var(--font-mono);font-size:0.85em">bg-white/5</code> → 输出 <code style="font-family:var(--font-mono);font-size:0.85em">color-mix()</code>）</td><td>原生端不支持：图标丢失 / 背景消失</td><td>图标字体（iconfont）或 PNG；透明度用内联 <code style="font-family:var(--font-mono);font-size:0.85em">rgba()</code>；渐变用图片或多层 view 模拟</td></tr>
+            <tr><td><b>选择器</b></td><td>复杂后代选择器 <code style="font-family:var(--font-mono);font-size:0.85em">.a .b</code></td><td>原生端解析不可靠</td><td>扁平原子类，一层类名直达</td></tr>
+            <tr><td><b>类型系统（UTS）</b></td><td><code style="font-family:var(--font-mono);font-size:0.85em">interface</code> / <code style="font-family:var(--font-mono);font-size:0.85em">undefined</code> / 匿名对象字面量</td><td>编译报错或类型信息丢失</td><td>统一用 <code style="font-family:var(--font-mono);font-size:0.85em">type</code> 命名类型、空值用 <code style="font-family:var(--font-mono);font-size:0.85em">null</code>、字面量 <code style="font-family:var(--font-mono);font-size:0.85em">as NamedType</code></td></tr>
+            <tr><td><b>组件范式</b></td><td>选项式 API / mixin</td><td>vapor 模式不支持</td><td>统一 <code style="font-family:var(--font-mono);font-size:0.85em">&lt;script setup lang="uts"&gt;</code> 组合式</td></tr>
+            <tr><td><b>单位</b></td><td>直接写 px 期望与设计稿一致</td><td>不同屏密度下缩放不一致</td><td>用 rpx 体系（如框架支持 rem→rpx 自动换算，直接写 Tailwind 间距即可）</td></tr>
+            <tr><td><b>构建产物</b></td><td>混用 IDE 运行产物与 CLI 产物 / 用 debug 包评估性能</td><td>样式聚合路径错误、性能误判</td><td>固定一条产物链路（推荐 CLI watch），性能验证只用 release 包</td></tr>
+            <tr><td><b>触控与安全区</b></td><td>触控目标小于 44pt/48dp、点击元素压在刘海或 Home 条下</td><td>可点性差 / 误触</td><td>外层容器扩大热区；自定义导航页避让状态栏与 home indicator</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><b>工程化拦截建议：</b>硬约束靠人记一定会漏（本项目就是「经常出现不符合规范的问题导致 bug」才沉淀出这张表）。有效的三层防线是：<mark class="key">① 编译期把不支持的类设为 error；② 提交/CI 加静态扫描脚本双闸门；③ 把违规模式写进 SOP 检查清单，代码评审逐条过</mark>。</div>
+
+      <h3>10.4 换框架时的迁移检查单</h3>
+      <p>当产品决定迁移到另一个多端框架时，按这四张「迁移卡」逐项过：</p>
+      <ul class="checklist">
+        <li><b>Token 迁移</b>：语义色 / 间距 / 字号 / 圆角 / 阴影逐条映射到新框架载体；暗色模式换肤机制重新设计；新旧值逐项 diff 确认无「顺手改值」</li>
+        <li><b>组件迁移</b>：组件清单（状态 × 变体矩阵）先迁移，再迁移页面；hover 态在触屏端换成按压态；Web 专属交互（右键、拖选）重新定义触屏等价物</li>
+        <li><b>动效迁移</b>：时长 / 缓动 / reduced-motion 降级逐项迁移；原生端动效用框架动画 API 而非 CSS</li>
+        <li><b>交互重验</b>：触控目标、安全区、手势冲突、键盘避让、状态闭环（加载/空/错误）在新渲染器下重新走查 —— 原则不变，表现层全部重验</li>
+      </ul>
+
+      <div class="callout"><b>一句话结论：</b>换框架换的是「实现层映射表」，不换的是「设计判断力」。把本手册 ①–⑥ 章内化，把 10.3 这类硬约束沉淀进团队 SOP 和自动拦截脚本，多端设计资产就能跟着产品一起迁移。</div>
+    </section>
+
     </main>
 
     <!-- ======== Footer / Sources ======== -->
@@ -961,6 +1071,26 @@ flowchart LR
           <li id="cite-9">
             <span class="src-title">Figma, Variables and design tokens 官方指南（设计 Token 双向同步）。</span>
             <a class="src-url" href="https://help.figma.com/hc/en-us/articles/15339657135383" target="_blank" rel="noopener">https://help.figma.com/hc/en-us/articles/15339657135383</a>
+          </li>
+          <li id="cite-10">
+            <span class="src-title">DCloud, uni-app x 官方文档（uvue / UTS / vapor 模式与多端编译约束）。</span>
+            <a class="src-url" href="https://uniapp.dcloud.net.cn/uni-app-x/" target="_blank" rel="noopener">https://uniapp.dcloud.net.cn/uni-app-x/</a>
+          </li>
+          <li id="cite-11">
+            <span class="src-title">京东 Taro, 官方文档（React 语法多端编译框架）。</span>
+            <a class="src-url" href="https://docs.taro.zone/" target="_blank" rel="noopener">https://docs.taro.zone/</a>
+          </li>
+          <li id="cite-12">
+            <span class="src-title">Meta, React Native 官方文档（原生渲染跨端框架）。</span>
+            <a class="src-url" href="https://reactnative.dev/" target="_blank" rel="noopener">https://reactnative.dev/</a>
+          </li>
+          <li id="cite-13">
+            <span class="src-title">Google, Flutter 官方文档（自绘引擎多端框架，ThemeData/ThemeExtension Token 体系）。</span>
+            <a class="src-url" href="https://flutter.dev/" target="_blank" rel="noopener">https://flutter.dev/</a>
+          </li>
+          <li id="cite-14">
+            <span class="src-title">华为, HarmonyOS ArkUI 声明式开发范式官方文档。</span>
+            <a class="src-url" href="https://developer.huawei.com/consumer/cn/arkui/" target="_blank" rel="noopener">https://developer.huawei.com/consumer/cn/arkui/</a>
           </li>
         </ol>
       </div>

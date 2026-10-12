@@ -1,6 +1,6 @@
 # MentorLoop SOP 与 Skill 体系手册
 
-> 手册版本：1.0.0 · 更新日期：2026-10-08
+> 手册版本：1.1.0 · 更新日期：2026-10-12
 > 定位：把 MentorLoop 研发过程的「流程 + 门禁 + 角色 + 规范 + 治理」整理为一份**自足的总览文档**，任何 Agent 或新人从本文即可理解全貌；各规则的正本仍在对应 SOP 文件，本文引用不复述判据全文。
 > 权威索引：[README.md](./README.md) §8 · 机检：`node scripts/check-sop-registry.mjs`（退出码 0 = 全绿）
 
@@ -10,13 +10,13 @@
 
 本体系把「研发过程本身」当作一等产物治理：仓库同时承载**业务代码**与**研发管理资产**。管理资产分五层，职责不混：
 
-| 层                | 名称       | 内容                                                        | 承载位置                                                         |
-| ----------------- | ---------- | ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| **L0 治理层**     | 决策与角色 | 冻结决策、变更管理、角色职责、里程碑基线                    | `project-execution-plan.md` §9–10、`roles-sop.md`                |
-| **L1 生命周期层** | 主线流程   | 定义 → 构建 → 验证 → 交付                                   | `README.md` §2–4                                                 |
-| **L2 领域层**     | 领域规范   | 客户端 / 服务端 / 内容 / 设计系统 / 原生插件 / 合规         | 6 份 domain / compliance SOP                                     |
-| **L3 执行层**     | 操作手册   | 单次任务的命令 + checklist + 产物路径                       | task-card / quality-gate / admission / release / pipeline SOP    |
-| **L4 自动化层**   | Agent 承载 | 项目级 skill + 入口规则，把 L1–L3 变成 Agent 自动加载的约束 | `.trae/skills/mentorloop-*`（16 个）、`.trae/rules/sop-entry.md` |
+| 层                | 名称       | 内容                                                                     | 承载位置                                                         |
+| ----------------- | ---------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **L0 治理层**     | 决策与角色 | 冻结决策、变更管理、角色职责、里程碑基线                                 | `project-execution-plan.md` §9–10、`roles-sop.md`                |
+| **L1 生命周期层** | 主线流程   | 定义 → 构建 → 验证 → 交付                                                | `README.md` §2–4                                                 |
+| **L2 领域层**     | 领域规范   | 客户端 / 服务端 / 内容 / 设计系统 / 原生插件 / 合规 / uni-app x 平台规范 | 7 份 domain / compliance SOP                                     |
+| **L3 执行层**     | 操作手册   | 单次任务的命令 + checklist + 产物路径                                    | task-card / quality-gate / admission / release / pipeline SOP    |
+| **L4 自动化层**   | Agent 承载 | 项目级 skill + 入口规则，把 L1–L3 变成 Agent 自动加载的约束              | `.trae/skills/mentorloop-*`（16 个）、`.trae/rules/sop-entry.md` |
 
 一句话链条：
 
@@ -168,7 +168,7 @@ SOP（定规则） → Skill（把规则变成 AI 可执行的流程） → 机�
 
 ---
 
-## 五、12 份 SOP 总览与核心内容
+## 五、13 份 SOP 总览与核心内容
 
 ### SOP-01 角色体系与协作（`roles-sop.md`，v1.0.0）
 
@@ -328,6 +328,16 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 **已落地**：本地数据清除 `pages/mine/privacy.uvue`；服务端账号删除 `DELETE /me/account`（幂等，级联 9 表 + 简历文件）+ 注销入口。
 **已知缺口**：协议/隐私 URL 待回填（依赖 ICP 备案）；删除响应时效承诺待 LC 明示；ICP/App 备案、算法评估未启动（预留 2–3 个月）。
 
+### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.0.0）
+
+解决「按 Vue/Web 直觉写 uni-app x 导致静默失效 bug」这一类高频问题。规范条款正本在根 `README.md` §5（与 `mentorloop-system-spec` 同源），本 SOP 只沉淀防线机制、bug 模式与检查清单。
+
+**三层防线**：① 编译期 `vite.config.ts` `uvueUnsupported: 'error'`（gap / space-* / 渐变直接报错，不静默失效）；② 提交/CI `scripts/check-uvue-css.mjs`（G2 第 4 项）；③ 评审/自查清单（SOP-13 §5）。新「静默失效」bug 必须三步收口：补 README §5 条款 → 能自动化则升防线 ①② → issue 登记。
+
+**高频 bug 模式**：HBuilderX「运行」模式产物 app.wxss 聚合样式致 WXSS 编译错误（小程序端一律用 CLI watch 产物 `dist/dev/mp-weixin`，HBuilderX 仅 App 真机调试）；CLI watch 与 HBuilderX 双 watch 并行产物混淆；gap/space 静默失效；uvue 样式不继承致文字样式丢失。
+
+**更新触发**：新增 bug 模式 / 新增可扫描规则 / README §5 条款变更 / 官方文档新增约束 → minor。
+
 ---
 
 ## 六、16 个 Skill 目录（L4 自动化承载）
@@ -480,7 +490,7 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 
 **A. 登记与机检**
 
-- [ ] 12 份 SOP frontmatter 五字段齐（编号/名称/适用范围/版本/最后更新）；
+- [ ] 13 份 SOP frontmatter 五字段齐（编号/名称/适用范围/版本/最后更新）；
 - [ ] 16 个 skill frontmatter 五字段齐（name/description/metadata.version/domain/last_updated）；
 - [ ] `docs/sop/README.md` §8 含 SOP 表 + Skill 表（版本列）+ 版本规则；
 - [ ] `node scripts/check-sop-registry.mjs` 退出码 0。
@@ -508,5 +518,5 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 ## 十二、与现有文档的关系
 
 - **复用不重写**：`closure-development-plan.md`（任务台账）、`project-execution-plan.md`（里程碑/风险/决策）、根 `README.md` §5（编码约束）、`design-system/mentorloop/MASTER.md`（设计系统）、`MentorLoop_05`（多 Agent 协同）、`MentorLoop_06`（预算合规）。
-- **本目录**：SOP 正本 12 份 + 本手册；`.trae/skills/` 16 个 skill；`.trae/rules/sop-entry.md` 入口规则；`tests/evals/` 固定评测集；`scripts/check-sop-registry.mjs` 机检。
+- **本目录**：SOP 正本 13 份 + 本手册；`.trae/skills/` 16 个 skill；`.trae/rules/sop-entry.md` 入口规则；`tests/evals/` 固定评测集；`scripts/check-sop-registry.mjs` 机检。
 - **单一事实来源**：SOP 只引用规范条款，规范条款只写在原处；本手册是导出视图，与正本冲突时以各 SOP / skill 正本为准。
