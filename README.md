@@ -94,7 +94,7 @@ node scripts/check-uvue-css.mjs   # 拦截 gap / space-x-* 等原生端不支持
 pnpm check          # 以上 lint + typecheck + test 串联
 ```
 
-提交前由 husky 自动执行：`lint-staged` → `check-uvue-css`。提交信息遵循 Conventional Commits。
+提交前由 husky 自动执行：`lint-staged` → `check-uvue-css`。提交信息遵循 Conventional Commits，且**描述一律用中文**——`type(scope):` 关键字保留英文（commitlint 约束），标题与正文用中文，便于非英语读者阅读。
 
 CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS guard → test → typecheck → audit。
 
