@@ -32,7 +32,9 @@ export default [
       'env.d.ts',
       // UTS 原生层（Kotlin/Swift）由 HBuilderX 编译，本地 JS 工具链不解析（编译验证归 P3-14）
       'utssdk/*/app-android/**',
-      'utssdk/*/app-ios/**'
+      'utssdk/*/app-ios/**',
+      // 多端 UI 学习手册：自包含 HTML 交付物 + 第三方/压缩 JS，非仓库源码
+      'multi-platform-ui-handbook/**'
     ]
   },
   js.configs.recommended,

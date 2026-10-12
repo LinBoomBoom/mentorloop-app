@@ -10,13 +10,13 @@
 
 本体系把「研发过程本身」当作一等产物治理：仓库同时承载**业务代码**与**研发管理资产**。管理资产分五层，职责不混：
 
-| 层                | 名称       | 内容                                                                     | 承载位置                                                         |
-| ----------------- | ---------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **L0 治理层**     | 决策与角色 | 冻结决策、变更管理、角色职责、里程碑基线                                 | `project-execution-plan.md` §9–10、`roles-sop.md`                |
-| **L1 生命周期层** | 主线流程   | 定义 → 构建 → 验证 → 交付                                                | `README.md` §2–4                                                 |
-| **L2 领域层**     | 领域规范   | 客户端 / 服务端 / 内容 / 设计系统 / 原生插件 / 合规 / uni-app x 平台规范 | 7 份 domain / compliance SOP                                     |
-| **L3 执行层**     | 操作手册   | 单次任务的命令 + checklist + 产物路径                                    | task-card / quality-gate / admission / release / pipeline SOP    |
-| **L4 自动化层**   | Agent 承载 | 项目级 skill + 入口规则，把 L1–L3 变成 Agent 自动加载的约束              | `.trae/skills/mentorloop-*`（16 个）、`.trae/rules/sop-entry.md` |
+| 层                | 名称       | 内容                                                                     | 承载位置                                                      |
+| ----------------- | ---------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| **L0 治理层**     | 决策与角色 | 冻结决策、变更管理、角色职责、里程碑基线                                 | `project-execution-plan.md` §9–10、`roles-sop.md`             |
+| **L1 生命周期层** | 主线流程   | 定义 → 构建 → 验证 → 交付                                                | `README.md` §2–4                                              |
+| **L2 领域层**     | 领域规范   | 客户端 / 服务端 / 内容 / 设计系统 / 原生插件 / 合规 / uni-app x 平台规范 | 7 份 domain / compliance SOP                                  |
+| **L3 执行层**     | 操作手册   | 单次任务的命令 + checklist + 产物路径                                    | task-card / quality-gate / admission / release / pipeline SOP |
+| **L4 自动化层**   | Agent 承载 | 项目级 skill + 入口规则，把 L1–L3 变成 Agent 自动加载的约束              | `.trae/skills/`（17 个）、`.trae/rules/sop-entry.md`          |
 
 一句话链条：
 
@@ -328,13 +328,15 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 **已落地**：本地数据清除 `pages/mine/privacy.uvue`；服务端账号删除 `DELETE /me/account`（幂等，级联 9 表 + 简历文件）+ 注销入口。
 **已知缺口**：协议/隐私 URL 待回填（依赖 ICP 备案）；删除响应时效承诺待 LC 明示；ICP/App 备案、算法评估未启动（预留 2–3 个月）。
 
-### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.1.0）
+### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.2.0）
 
 解决「按 Vue/Web 直觉写 uni-app x 导致静默失效 bug」这一类高频问题。规范条款正本在根 `README.md` §5（与 `mentorloop-system-spec` 同源），本 SOP 只沉淀防线机制、bug 模式与检查清单。
 
 **三层防线**：① 编译期 `vite.config.ts` `uvueUnsupported: 'error'`（gap / space-* / 渐变直接报错，不静默失效）；② 提交/CI `scripts/check-uvue-css.mjs`（G2 第 4 项）；③ 评审/自查清单（SOP-13 §5）。新「静默失效」bug 必须三步收口：补 README §5 条款 → 能自动化则升防线 ①② → issue 登记。
 
-**高频 bug 模式**：HBuilderX「运行」模式产物 app.wxss 聚合样式致 WXSS 编译错误（小程序端一律用 CLI watch 产物 `dist/dev/mp-weixin`，HBuilderX 仅 App 真机调试）；CLI watch 与 HBuilderX 双 watch 并行产物混淆；gap/space 静默失效；uvue 样式不继承致文字样式丢失。
+**高频 bug 模式**：HBuilderX「运行」模式产物 app.wxss 聚合样式致 WXSS 编译错误（小程序端一律用 CLI watch 产物 `dist/dev/mp-weixin`，HBuilderX 仅 App 真机调试）；CLI watch 与 HBuilderX 双 watch 并行产物混淆；gap/space 静默失效；uvue 样式不继承致文字样式丢失；静态资源变量路径丢包；页面类 `uni.*` 命错栈顶页。
+
+**平台与结构条款（v1.2.0 补）**：静态资源一律 `static/`（变量路径会丢包）；页面类 `uni.*` 打页面栈栈顶页而非当前文件页；`main.uts` 顶层 / `createApp()` / `onLaunch` 不写业务与大数据；组件名与属性全小写连字符、easycom `.uvue` 优先于 `.vue`；条件编译新增 `APP-ANDROID` / `APP-IOS`；`plus` / `weex` 已移除。平台通用知识（结构/配置/组件/API/ucss/原生/调试/性能）另见项目级 skill `uni-app-x`。
 
 **生态工具边界（§6.1）**：uni-helper 系社区工具（uni-network、uni-use、unocss-preset-uni 等 10 项）面向经典 uni-app，与 uni-app x 的适配性未经验证——默认不引入，引入前必须走 FA 官方文档 + POC 验证。
 
@@ -342,28 +344,29 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
 ---
 
-## 六、16 个 Skill 目录（L4 自动化承载）
+## 六、17 个 Skill 目录（L4 自动化承载）
 
 Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `description` / `metadata.version` / `metadata.domain` / `metadata.last_updated`。权威登记见 [README.md §8.2](./README.md)。
 
-| #   | Skill                                 | 版本  | 职责                                | 典型触发                                 |
-| --- | ------------------------------------- | ----- | ----------------------------------- | ---------------------------------------- |
-| 1   | `mentorloop-task-card`                | 1.0.0 | 任务卡八要素 + G1 入口校验          | 新任务 / 需求 / 缺口                     |
-| 2   | `mentorloop-contract-freeze`          | 1.0.0 | 契约变更检测与双签记录              | 改 types / api / 服务端出参              |
-| 3   | `mentorloop-system-spec`              | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束 | 客户端 pages / components / engine / api |
-| 4   | `mentorloop-server-conventions`       | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置   | server/ 改动                             |
-| 5   | `mentorloop-content-review`           | 1.0.0 | 题库/图谱/量表人工审核准备          | 题库 / 能力图谱 / 评分量表               |
-| 6   | `mentorloop-quality-gate`             | 1.0.0 | G2 质量门命令执行                   | 提交前                                   |
-| 7   | `mentorloop-release-check`            | 1.0.0 | G4 发布准入与合规清单               | 发布 / 提审                              |
-| 8   | `mentorloop-pipeline`                 | 1.0.0 | 链式流水线推进与链长裁剪            | 推进任务 / 走流程 / 下一步               |
-| 9   | `mentorloop-role-ai-engineer`         | 1.0.0 | AI 引擎：选题/追问/评分/评测集      | 引擎设计 / 评分规则                      |
-| 10  | `mentorloop-role-feasibility-analyst` | 1.0.0 | 框架能力/版本兼容/POC 可行性        | 是否支持 / 版本兼容 / POC                |
-| 11  | `mentorloop-role-miniprogram-pm`      | 1.0.0 | 小程序端需求/包体积/审核/登录       | 小程序端需求 / 平台约束                  |
-| 12  | `mentorloop-role-product-owner`       | 1.0.0 | 优先级/范围裁剪/冻结决策            | 优先级 / 范围裁剪 / 冻结决策             |
-| 13  | `mentorloop-role-uiux-designer`       | 1.0.0 | UI/UX 信息架构/交互/视觉/无障碍     | UI/UX 设计走查                           |
-| 14  | `mentorloop-avatar-design`            | 1.0.0 | 2.5D 数字人资产与状态集             | 数字人 / 虚拟形象                        |
-| 15  | `mentorloop-lipsync-spec`             | 1.0.0 | 口型同步 viseme/音素/TTS 时序       | 口型 / 唇形 / TTS 时序                   |
-| 16  | `mentorloop-interview-room-ux`        | 1.0.0 | 面试房间布局/状态色/字幕/动效       | 面试房间 / 实时字幕                      |
+| #   | Skill                                 | 版本  | 职责                                                                 | 典型触发                                 |
+| --- | ------------------------------------- | ----- | -------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | `mentorloop-task-card`                | 1.0.0 | 任务卡八要素 + G1 入口校验                                           | 新任务 / 需求 / 缺口                     |
+| 2   | `mentorloop-contract-freeze`          | 1.0.0 | 契约变更检测与双签记录                                               | 改 types / api / 服务端出参              |
+| 3   | `mentorloop-system-spec`              | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                  | 客户端 pages / components / engine / api |
+| 4   | `mentorloop-server-conventions`       | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                    | server/ 改动                             |
+| 5   | `mentorloop-content-review`           | 1.0.0 | 题库/图谱/量表人工审核准备                                           | 题库 / 能力图谱 / 评分量表               |
+| 6   | `mentorloop-quality-gate`             | 1.0.0 | G2 质量门命令执行                                                    | 提交前                                   |
+| 7   | `mentorloop-release-check`            | 1.0.0 | G4 发布准入与合规清单                                                | 发布 / 提审                              |
+| 8   | `mentorloop-pipeline`                 | 1.0.0 | 链式流水线推进与链长裁剪                                             | 推进任务 / 走流程 / 下一步               |
+| 9   | `mentorloop-role-ai-engineer`         | 1.0.0 | AI 引擎：选题/追问/评分/评测集                                       | 引擎设计 / 评分规则                      |
+| 10  | `mentorloop-role-feasibility-analyst` | 1.0.0 | 框架能力/版本兼容/POC 可行性                                         | 是否支持 / 版本兼容 / POC                |
+| 11  | `mentorloop-role-miniprogram-pm`      | 1.0.0 | 小程序端需求/包体积/审核/登录                                        | 小程序端需求 / 平台约束                  |
+| 12  | `mentorloop-role-product-owner`       | 1.0.0 | 优先级/范围裁剪/冻结决策                                             | 优先级 / 范围裁剪 / 冻结决策             |
+| 13  | `mentorloop-role-uiux-designer`       | 1.0.0 | UI/UX 信息架构/交互/视觉/无障碍                                      | UI/UX 设计走查                           |
+| 14  | `mentorloop-avatar-design`            | 1.0.0 | 2.5D 数字人资产与状态集                                              | 数字人 / 虚拟形象                        |
+| 15  | `mentorloop-lipsync-spec`             | 1.0.0 | 口型同步 viseme/音素/TTS 时序                                        | 口型 / 唇形 / TTS 时序                   |
+| 16  | `mentorloop-interview-room-ux`        | 1.0.0 | 面试房间布局/状态色/字幕/动效                                        | 面试房间 / 实时字幕                      |
+| 17  | `uni-app-x`                           | 1.0.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） | 平台结构 / 配置 / 编译运行排障           |
 
 外部 skill（非本项目承载，按需调用）：`TRAE-code-review` / `TRAE-security-review`（G3 审查）、`TRAE-debugger`（服务端排障）、`lark-approval`（审批留痕）、`screenshot` / `computer-use`（真机取证）。
 
@@ -379,7 +382,8 @@ Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `descr
 | ---------------------------------------- | -------------------------------------------------- |
 | 新任务 / 需求 / 缺口                     | `mentorloop-task-card`                             |
 | `types/` · `api/` · 服务端出参           | `mentorloop-contract-freeze`                       |
-| 客户端 pages / components / engine / api | `mentorloop-system-spec`                           |
+| 客户端 pages / components / engine / api | `mentorloop-system-spec`（+ 平台知识 `uni-app-x`） |
+| uni-app x 平台结构 / 配置 / 编译运行排障 | `uni-app-x`                                        |
 | server/                                  | `mentorloop-server-conventions`                    |
 | 题库 / 图谱 / 量表                       | `mentorloop-content-review`                        |
 | 引擎设计 / 选题 / 追问 / 评分规则        | `mentorloop-role-ai-engineer`                      |
@@ -394,15 +398,15 @@ Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `descr
 
 单任务同时命中多个 skill 时按裁决表加载，**最多 3 个**，避免上下文税膨胀：
 
-| 改动类型            | 必载                            | 条件加载（命中才载）                                                                                                        | 不载                     |
-| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| 客户端 UI 页面/组件 | `mentorloop-system-spec`        | 面试房间 → `interview-room-ux`；数字人资产 → `avatar-design`；口型 → `lipsync-spec`；新页面/交互设计 → `role-uiux-designer` | 其余设计 skill           |
-| 服务端              | `mentorloop-server-conventions` | 契约变更 → `contract-freeze`                                                                                                | 客户端 skill             |
-| 引擎/选题/评分      | `mentorloop-role-ai-engineer`   | 契约变更 → `contract-freeze`；内容审核 → `content-review`                                                                   | UI skill                 |
-| 题库/图谱/量表      | `mentorloop-content-review`     | 契约变更 → `contract-freeze`                                                                                                | 引擎 skill（除非改规则） |
-| 新任务入口          | `mentorloop-task-card`          | 契约/UI/服务端 → 对应 skill                                                                                                 | 其余                     |
-| 提交前              | `mentorloop-quality-gate`       | —                                                                                                                           | 全部规划类 skill         |
-| 发布                | `mentorloop-release-check`      | —                                                                                                                           | 其余                     |
+| 改动类型            | 必载                            | 条件加载（命中才载）                                                                                                                                | 不载                     |
+| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| 客户端 UI 页面/组件 | `mentorloop-system-spec`        | 面试房间 → `interview-room-ux`；数字人资产 → `avatar-design`；口型 → `lipsync-spec`；新页面/交互设计 → `role-uiux-designer`；平台知识 → `uni-app-x` | 其余设计 skill           |
+| 服务端              | `mentorloop-server-conventions` | 契约变更 → `contract-freeze`                                                                                                                        | 客户端 skill             |
+| 引擎/选题/评分      | `mentorloop-role-ai-engineer`   | 契约变更 → `contract-freeze`；内容审核 → `content-review`                                                                                           | UI skill                 |
+| 题库/图谱/量表      | `mentorloop-content-review`     | 契约变更 → `contract-freeze`                                                                                                                        | 引擎 skill（除非改规则） |
+| 新任务入口          | `mentorloop-task-card`          | 契约/UI/服务端 → 对应 skill                                                                                                                         | 其余                     |
+| 提交前              | `mentorloop-quality-gate`       | —                                                                                                                                                   | 全部规划类 skill         |
+| 发布                | `mentorloop-release-check`      | —                                                                                                                                                   | 其余                     |
 
 **三条规则**：①「必载」始终加载，「条件加载」按触达范围决定；② 禁止同时加载三个设计子 skill（数字人整体改动走 `role-uiux-designer` 统筹，子 skill 按需二选一）；③ 超过 3 个时保留「必载」+「最窄触达」，其余改用 SOP 文档按需读章节。
 
@@ -493,7 +497,7 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 **A. 登记与机检**
 
 - [ ] 13 份 SOP frontmatter 五字段齐（编号/名称/适用范围/版本/最后更新）；
-- [ ] 16 个 skill frontmatter 五字段齐（name/description/metadata.version/domain/last_updated）；
+- [ ] 17 个 skill frontmatter 五字段齐（name/description/metadata.version/domain/last_updated）；
 - [ ] `docs/sop/README.md` §8 含 SOP 表 + Skill 表（版本列）+ 版本规则；
 - [ ] `node scripts/check-sop-registry.mjs` 退出码 0。
 
@@ -520,5 +524,5 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 ## 十二、与现有文档的关系
 
 - **复用不重写**：`closure-development-plan.md`（任务台账）、`project-execution-plan.md`（里程碑/风险/决策）、根 `README.md` §5（编码约束）、`design-system/mentorloop/MASTER.md`（设计系统）、`MentorLoop_05`（多 Agent 协同）、`MentorLoop_06`（预算合规）。
-- **本目录**：SOP 正本 13 份 + 本手册；`.trae/skills/` 16 个 skill；`.trae/rules/sop-entry.md` 入口规则；`tests/evals/` 固定评测集；`scripts/check-sop-registry.mjs` 机检。
+- **本目录**：SOP 正本 13 份 + 本手册；`.trae/skills/` 17 个 skill；`.trae/rules/sop-entry.md` 入口规则；`tests/evals/` 固定评测集；`scripts/check-sop-registry.mjs` 机检。
 - **单一事实来源**：SOP 只引用规范条款，规范条款只写在原处；本手册是导出视图，与正本冲突时以各 SOP / skill 正本为准。

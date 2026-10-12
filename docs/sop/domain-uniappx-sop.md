@@ -2,7 +2,7 @@
 编号: SOP-13
 名称: uni-app x 平台规范符合性
 适用范围: pages/ components/ engine/ api/ store/ utssdk/ 内 .uvue 与 .uts 代码、Tailwind 原子类、编译产物与运行模式
-版本: 1.1.0
+版本: 1.2.0
 最后更新: 2026-10-12
 ---
 
@@ -55,6 +55,22 @@
 | 新增页面不查 `@source`                                                | `main.css` `@source` 覆盖 `App.uvue`、`pages/**`、`components/**` |
 | token 只改一处                                                        | `main.css` @theme ↔ `styles/theme.uts` ↔ `MASTER.md` §A1 三处同步 |
 
+### 平台与结构（2026-10-12 补，条款出处：根 README §5）
+
+| 禁止 / 陷阱                                                    | 必须用 / 正确做法                                                                               | 后果                                                      |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 静态资源放 `assets` 或用变量路径引用                           | 一律放 `static/`（根或 `uni_modules/`）；`web-view` 本地 html 放 `hybrid/`                      | **静默失效**：变量路径资源打包后丢失                      |
+| 把 css/js 放进 `static/`                                       | 代码文件置于源码目录                                                                            | 重复打包增体积 + 开发期二次热更新                         |
+| 假设页面类 `uni.*` 作用于「当前文件页」                        | 该类 API 作用于**页面栈栈顶页**；严谨写法 `getCurrentInstance()?.proxy?.$page.getElementById()` | 命错页：新页 `onShow` 前调用会命中上一页                  |
+| 在 `main.uts` 顶层 / `createApp()` / `onLaunch` 写业务与大数据 | 业务后移到页面生命周期，此处只做注册                                                            | 拖慢启动、执行过早大量 API 不可用、顶层变量常驻内存不回收 |
+| 使用已移除的 `plus` / `weex` API                               | 改用 `uni.*` 或 uts 操作原生                                                                    | 编译 / 运行失败                                           |
+
+**配置与组件速查**：
+
+- `manifest.json` 必含 `uni-app-x` 节点（缺失即被判为 js 引擎版）；`uni-app-x` 可配 `vapor` / `flex-direction`（默认 column）/ `styleIsolationVersion`。本项目 `vapor: true`。
+- 组件名与属性全小写连字符；easycom 按约定路径自动导入，同名时 `.uvue` 优先于 `.vue`；内置组件用 `$refs` + `.`，非 easycom 组件用 `$callMethod`。
+- 条件编译平台标识含 `APP-ANDROID` / `APP-IOS`（uni-app x 相对 uni-app 新增）。
+
 ---
 
 ## 3. 三层防线
@@ -81,6 +97,8 @@
 | 双 watch 并行      | `dist/dev` 与 `unpackage/dist/dev` 内容不一致，误判产物来源                  | CLI watch 与 HBuilderX 运行会话同时各写一个目录                                                                            | ISS-20261011-01    |
 | gap/space 静默失效 | H5 正常，真机布局错乱                                                        | 原生端不支持且编译不报错（防线 ①② 已拦截新增代码）                                                                         | check-uvue-css.mjs |
 | 文字样式丢失       | 容器上写了 text-_/font-_ 但文字未生效                                        | uvue 样式不继承                                                                                                            | 根 README §5       |
+| 静态资源丢失       | 打包后部分图片/字体缺失，源码里路径看起来正确                                | 变量路径静态资源编译器无法识别，产物中不 copy                                                                              | 根 README §5       |
+| 命错页面           | 页面内调用 `uni.*` 却操作了别的页面                                          | `uni.*` 跑在全局逻辑层，页面类 API 打的是栈顶页而非当前页                                                                  | 根 README §5       |
 
 **构建产物纪律**（源自 ISS-20261011-01）：
 
@@ -112,6 +130,8 @@
 - [ ] `engine/` 无 UI、无 `uni.*`；`api/` 契约未动（动了先走 G1 契约冻结）
 - [ ] `utssdk/` 降级实现未伪造结果
 - [ ] 新页面已确认 `main.css` `@source` 覆盖；token 三处同步
+- [ ] 静态资源均在 `static/`（或 `uni_modules/static/`），无变量路径引用；css/js 未放 static
+- [ ] 页面类 `uni.*` 未假设作用于当前页；`main.uts` 顶层 / `onLaunch` 未写业务或大数据
 - [ ] MP 端验证用的是 CLI 产物 `dist/dev/mp-weixin`，非 HBuilderX 运行产物 `unpackage/dist/dev`
 - [ ] `node scripts/check-uvue-css.mjs` 通过（G2 已含）
 
@@ -119,7 +139,7 @@
 
 ## 6. 承载 skill 与证据要求
 
-- 客户端改动入口必载 `mentorloop-system-spec`；平台能力存疑时按 `mentorloop-role-feasibility-analyst` 要求，以官方文档（https://doc.dcloud.net.cn/uni-app-x/ ）核实后才可作为决策依据，禁止凭直觉断言「支持 / 不支持」。
+- 客户端改动入口必载 `mentorloop-system-spec`；平台通用知识（项目结构 / 配置 / 组件 / API / ucss / 原生 SDK / 调试 / 性能）见项目级 skill `uni-app-x`；平台能力存疑时按 `mentorloop-role-feasibility-analyst` 要求，以官方文档（https://doc.dcloud.net.cn/uni-app-x/ ）核实后才可作为决策依据，禁止凭直觉断言「支持 / 不支持」。
 - 涉及编译器 / 平台行为差异的问题按 issue 模板登记；结论（版本门槛、产物行为等）同步风险登记册。
 
 ### 6.1 社区生态工具边界（uni-helper 系）

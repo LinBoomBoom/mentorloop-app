@@ -126,6 +126,15 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 - 设计 token 写在 `main.css` 的 `@theme` 块（单一事实来源，与 `styles/theme.uts` 同步）。
 - **不要用** `bg-white/5` 这类透明度修饰符（Tailwind 4 会输出 `color-mix()`，原生端不支持）→ 用内联 `rgba()`。
 
+### 平台与结构
+
+- `manifest.json` 必含 `uni-app-x` 节点（缺该节点会被识别为 uni-app js 引擎版）；本项目 `uni-app-x.vapor = true`。
+- 静态资源一律放 `static/`（根或 `uni_modules/`），`web-view` 本地 html 放 `hybrid/`；**变量路径的静态资源打包后会丢失**；css/js 代码文件不要放 `static/`（重复打包 + 二次热更新）。
+- 页面类 `uni.*`（`getElementById` / `setNavigationBarTitle` / `pageScrollTo` 等）作用于**页面栈栈顶页**，不是当前文件页；严谨写法 `getCurrentInstance()?.proxy?.$page.getElementById(...)`。
+- 不在 `main.uts` 顶层 / `createApp()` / `onLaunch` 写业务或大数据（拖慢启动、过早调用 API 不可用、顶层变量常驻内存）。
+- 组件名与属性全小写连字符；easycom 自动导入，同名时 `.uvue` 优先于 `.vue`；内置组件用 `$refs` + `.`，非 easycom 组件用 `$callMethod`。
+- 条件编译支持 `APP-ANDROID` / `APP-IOS`；已移除的 `plus` / `weex` API 不再支持。
+
 ---
 
 ## 6. 当前状态与待补项

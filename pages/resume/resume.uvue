@@ -451,39 +451,9 @@ function saveAll() {
   uni.showToast({ title: '已保存 ' + adoptedCount.value + ' 条改写（本地草稿）', icon: 'none' })
 }
 
-// 把生成的版本内容写入本地文件（尽力而为）；失败静默，交付由复制全文兜底
+// 把生成的版本内容写入本地文件（尽力而为）；失败静默，交付由复制全文兜底。
+// App 端本地文件写入需原生层（uts 插件），当前仅 MP 端落地；App 交付由复制全文兜底。
 function writeVersionFile(vid: string, content: string) {
-  // #ifdef APP-PLUS || APP
-  try {
-    const g = globalThis as any
-    const plus = g.plus
-    if (plus != null && plus.io != null) {
-      const fname = 'resume-' + vid + '-' + Date.now() + '.txt'
-      plus.io.resolveLocalFileSystemURL(
-        '_doc',
-        (dir: any) => {
-          dir.getFile(
-            fname,
-            { create: true },
-            (fileEntry: any) => {
-              fileEntry.createWriter(
-                (writer: any) => {
-                  writer.onerror = function () {}
-                  writer.write(content)
-                },
-                function () {}
-              )
-            },
-            function () {}
-          )
-        },
-        function () {}
-      )
-    }
-  } catch {
-    // 忽略写文件失败，交由复制兜底
-  }
-  // #endif
   // #ifdef MP-WEIXIN
   try {
     // @ts-expect-error getFileSystemManager 为小程序端 API

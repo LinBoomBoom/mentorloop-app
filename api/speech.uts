@@ -3,7 +3,7 @@
 // 平台策略：
 //   - MP-WEIXIN：微信同声传译插件（WechatSI）做 TTS + 实时语音识别；RecorderManager 录音
 //   - APP（Android/iOS）：RecorderManager 录音 + 云端 ASR 通道（api/asr.uts）；
-//     TTS 优先系统引擎（plus.speech），不可用时降级字幕模式
+//     TTS 原生层待补（uts 插件，走 utssdk 边界），当前降级字幕模式（uni-app x 已移除 plus）
 //   - H5：无原生录音/播放能力，降级为文字作答（不报错）
 // 约束（文档 04）：音频帧不进响应式状态；转写仅显示稳定文本；失败不静默丢答案。
 
@@ -78,9 +78,6 @@ export function speak(text: string): TtsHandle {
   // #ifdef MP-WEIXIN
   handle = speakWeixin(text)
   // #endif
-  // #ifdef APP-PLUS || APP
-  handle = speakApp(text)
-  // #endif
   // #ifndef MP-WEIXIN || APP-PLUS || APP
   handle = speakSilent(text)
   // #endif
@@ -147,43 +144,8 @@ function speakWeixin(text: string): TtsHandle {
 }
 // #endif
 
-// #ifdef APP-PLUS || APP
-function speakApp(text: string): TtsHandle {
-  const g = globalThis as any
-  const plus = g.plus
-  if (plus != null && plus.speech != null && plus.speech.startSpeak != null) {
-    try {
-      let stopped = false
-      emitTtsState('start')
-      plus.speech.startSpeak({
-        engine: 'system',
-        lang: 'zh-cn',
-        content: text
-      })
-      // HTML5+ 基线差异：startSpeak 无统一完成回调，按文本长度估算播报时长
-      const estimateMs = Math.min(12000, 1200 + text.length * 180)
-      setTimeout(() => {
-        if (!stopped) emitTtsState('end')
-      }, estimateMs)
-      const handle: TtsHandle = {
-        stop: () => {
-          stopped = true
-          try {
-            plus.speech.stopSpeak()
-          } catch {
-            // 忽略停止异常
-          }
-          emitTtsState('end')
-        }
-      } as TtsHandle
-      return handle
-    } catch {
-      // 系统引擎启动失败，走静默降级
-    }
-  }
-  return speakSilent(text)
-}
-// #endif
+// App 端 TTS：uni-app x 已移除 plus API，原生层待以 uts 插件补齐（utssdk 边界）；
+// 未补齐前经 speak() 的 null 兜底降级为 speakSilent（字幕承担全部信息）。
 
 // ---------------- 录音管理（作答采集） ----------------
 

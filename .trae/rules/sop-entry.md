@@ -9,6 +9,7 @@ alwaysApply: true
 - 新任务 / 需求 / 缺口 → `mentorloop-task-card`（八要素，含角色）
 - 改 `types/` · `api/` · 服务端出参 → `mentorloop-contract-freeze`
 - 客户端 `pages/` · `components/` · `engine/` · `api/` → `mentorloop-system-spec`
+- uni-app x 平台结构 / 配置 / 组件 / API / ucss / 原生 / 调试 / 性能 → `uni-app-x`
 - 服务端 `server/` → `mentorloop-server-conventions`
 - 题库 / 能力图谱 / 评分量表 → `mentorloop-content-review`
 - 引擎设计 / 选题 / 追问 / 评分规则 → `mentorloop-role-ai-engineer`
@@ -27,15 +28,16 @@ alwaysApply: true
 
 单任务同时命中多个 skill 时，按以下规则加载，**最多 3 个**，避免上下文税膨胀：
 
-| 改动类型            | 必载                            | 条件加载（命中才载）                                                                                                                                                    | 不载                     |
-| ------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| 客户端 UI 页面/组件 | `mentorloop-system-spec`        | 面试房间 → `mentorloop-interview-room-ux`；数字人资产 → `mentorloop-avatar-design`；口型 → `mentorloop-lipsync-spec`；新页面/交互设计 → `mentorloop-role-uiux-designer` | 其余设计 skill           |
-| 服务端              | `mentorloop-server-conventions` | 契约变更 → `mentorloop-contract-freeze`                                                                                                                                 | 客户端 skill             |
-| 引擎/选题/评分      | `mentorloop-role-ai-engineer`   | 契约变更 → `mentorloop-contract-freeze`；内容审核 → `mentorloop-content-review`                                                                                         | UI skill                 |
-| 题库/图谱/量表      | `mentorloop-content-review`     | 契约变更 → `mentorloop-contract-freeze`                                                                                                                                 | 引擎 skill（除非改规则） |
-| 新任务入口          | `mentorloop-task-card`          | 契约变更 → `mentorloop-contract-freeze`；UI → system-spec；服务端 → server-conventions                                                                                  | 其余                     |
-| 提交前              | `mentorloop-quality-gate`       | —                                                                                                                                                                       | 全部规划类 skill         |
-| 发布                | `mentorloop-release-check`      | —                                                                                                                                                                       | 其余                     |
+| 改动类型                | 必载                            | 条件加载（命中才载）                                                                                                                                                                            | 不载                     |
+| ----------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| 客户端 UI 页面/组件     | `mentorloop-system-spec`        | 面试房间 → `mentorloop-interview-room-ux`；数字人资产 → `mentorloop-avatar-design`；口型 → `mentorloop-lipsync-spec`；新页面/交互设计 → `mentorloop-role-uiux-designer`；平台知识 → `uni-app-x` | 其余设计 skill           |
+| 平台知识 / 编译运行排障 | `uni-app-x`                     | 客户端代码改动 → `mentorloop-system-spec`                                                                                                                                                       | 其余                     |
+| 服务端                  | `mentorloop-server-conventions` | 契约变更 → `mentorloop-contract-freeze`                                                                                                                                                         | 客户端 skill             |
+| 引擎/选题/评分          | `mentorloop-role-ai-engineer`   | 契约变更 → `mentorloop-contract-freeze`；内容审核 → `mentorloop-content-review`                                                                                                                 | UI skill                 |
+| 题库/图谱/量表          | `mentorloop-content-review`     | 契约变更 → `mentorloop-contract-freeze`                                                                                                                                                         | 引擎 skill（除非改规则） |
+| 新任务入口              | `mentorloop-task-card`          | 契约变更 → `mentorloop-contract-freeze`；UI → system-spec；服务端 → server-conventions                                                                                                          | 其余                     |
+| 提交前                  | `mentorloop-quality-gate`       | —                                                                                                                                                                                               | 全部规划类 skill         |
+| 发布                    | `mentorloop-release-check`      | —                                                                                                                                                                                               | 其余                     |
 
 **规则**：
 

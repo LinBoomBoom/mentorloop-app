@@ -16,3 +16,6 @@ utssdk/*/app-ios
 
 # 字体参考件（vendor 产物，102KB 压缩 css，不作源码维护）
 design-system/mentorloop/fonts-reference
+
+# 多端 UI 学习手册（自包含 HTML 交付物 + 第三方/压缩 JS，不作源码维护）
+multi-platform-ui-handbook
