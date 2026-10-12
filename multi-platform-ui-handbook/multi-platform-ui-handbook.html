@@ -312,7 +312,7 @@
 
       <p>同一个产品，在手机上靠拇指滑动，在电脑前靠鼠标和键盘，在 Web 上靠链接和浏览器。三者的屏幕尺寸、输入方式、使用场景和注意力模式完全不同 —— <mark class="key">多端设计不是把一张稿子等比缩放，而是围绕「人怎么用」重新组织信息与交互</mark>。</p>
 
-      <p>2026 年，AI 辅助开发已经能极快地生成页面，但缺了明确的设计基础，产出往往千篇一律。业内给出的答案不是「更努力地提需求」，而是<mark class="key">先建立统一的设计基础：组件、样式规则、交互规范</mark><sup><a href="#cite-1">[1]</a></sup> —— 这正是设计体系的用武之地，也是本手册第 ⑦⑧ 章的主题。</p>
+      <p>2026 年，AI 辅助开发已经能极快地生成页面，但缺了明确的设计基础，产出往往千篇一律。业内给出的答案不是「更努力地提需求」，而是<mark class="key">先建立统一的设计基础：组件、样式规则、交互规范</mark> —— 这正是设计体系的用武之地，也是本手册第 ⑦⑧ 章的主题。</p>
 
       <div class="grid-4">
         <div class="mini-card"><span class="icon">📱</span><h4>移动端</h4><p>拇指操作 · 随身场景 · 碎片注意力</p></div>
@@ -753,7 +753,7 @@ flowchart TD
       <span class="sec-tag">08 / COMPONENT LIBS</span>
       <h2>2026 年 12 大开源组件库速览</h2>
 
-      <p>组件库是设计体系在工程侧的落地载体。<mark class="key">设计师读懂组件库，等于读懂了实现的边界与可能性</mark> —— 提需求时知道什么「现成就有」，什么「要定制」，沟通成本骤降<sup><a href="#cite-1">[1]</a></sup>。</p>
+      <p>组件库是设计体系在工程侧的落地载体。<mark class="key">设计师读懂组件库，等于读懂了实现的边界与可能性</mark> —— 提需求时知道什么「现成就有」，什么「要定制」，沟通成本骤降。</p>
 
       <h3>8.1 四种流派 × 12 个库</h3>
 
@@ -847,14 +847,14 @@ flowchart TD
 
       <h3>8.2 定位象限：开箱即用 × 样式可控</h3>
       <figure class="chart-figure">
-        <figcaption>图 8-1　12 个组件库定位象限（依据原文描述的定性示意，非量化评测）</figcaption>
+        <figcaption>图 8-1　12 个组件库定位象限（基于各库官方文档的定性示意，非量化评测；清单为本手册整理，非转述自微信文章）</figcaption>
         <div id="chart-quadrant" style="width:100%;min-height:440px"></div>
       </figure>
       <p>解读：左上角（开箱即用高、可控性低）适合「照着规范快速出活」；右下角（可控性高、开箱即用低）适合「自建设计体系」；shadcn/ui 的走红正是因为<mark class="key">用「复制源码」的方式同时占住了两头</mark>。</p>
 
       <h3>8.3 三类典型方案的定性对比</h3>
       <figure class="chart-figure">
-        <figcaption>图 8-2　三类典型组件库方案能力对比（1–5 定性打分，依据原文描述）</figcaption>
+        <figcaption>图 8-2　三类典型组件库方案能力对比（1–5 定性打分，基于各库官方文档的定性评估）</figcaption>
         <div id="chart-radar" style="width:100%;min-height:420px"></div>
       </figure>
 
@@ -875,7 +875,7 @@ flowchart TD
           </tbody>
         </table>
       </div>
-      <p style="font-size:0.8rem;color:var(--muted)">选型依据来自原文总结<sup><a href="#cite-1">[1]</a></sup>。2026 年组件库已明显分化：有的帮你快速出活，有的帮你完全掌控，有的专解决好看的问题 —— 选对了省下大量重复劳动，选错了后期改动痛苦。</p>
+      <p style="font-size:0.8rem;color:var(--muted)">选型依据综合自各组件库官方文档（见参考 [7][8] 等）。2026 年组件库已明显分化：有的帮你快速出活，有的帮你完全掌控，有的专解决好看的问题 —— 选对了省下大量重复劳动，选错了后期改动痛苦。</p>
     </section>
 
     <!-- ======== Chapter 9: 路线与清单 ======== -->
@@ -1037,7 +1037,7 @@ flowchart LR
         <h2>参考来源</h2>
         <ol>
           <li id="cite-1">
-            <span class="src-title">微信公众号文章，《让 AI 学会审美，2026 年 12 个最热门开源 UI 组件库》—— 本手册第 ⑧ 章组件库信息与选型建议的主要来源。</span>
+            <span class="src-title">微信公众号文章，《让 AI 学会审美，2026 年 12 个最热门开源 UI 组件库》—— 本手册的选题来源。因微信风控限制正文未能读取，本手册未转述其内容；第 ⑧ 章 12 个组件库清单与定位系本手册基于各库官方文档（[7][8] 等）与社区公开评价整理，可能与原文清单不一致。</span>
             <a class="src-url" href="https://mp.weixin.qq.com/s/xoIrdVzFuRr1YxmpBDRLKA" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/xoIrdVzFuRr1YxmpBDRLKA</a>
           </li>
           <li id="cite-2">
