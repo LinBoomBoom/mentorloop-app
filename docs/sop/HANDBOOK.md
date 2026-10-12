@@ -328,13 +328,15 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 **已落地**：本地数据清除 `pages/mine/privacy.uvue`；服务端账号删除 `DELETE /me/account`（幂等，级联 9 表 + 简历文件）+ 注销入口。
 **已知缺口**：协议/隐私 URL 待回填（依赖 ICP 备案）；删除响应时效承诺待 LC 明示；ICP/App 备案、算法评估未启动（预留 2–3 个月）。
 
-### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.0.0）
+### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.1.0）
 
 解决「按 Vue/Web 直觉写 uni-app x 导致静默失效 bug」这一类高频问题。规范条款正本在根 `README.md` §5（与 `mentorloop-system-spec` 同源），本 SOP 只沉淀防线机制、bug 模式与检查清单。
 
 **三层防线**：① 编译期 `vite.config.ts` `uvueUnsupported: 'error'`（gap / space-* / 渐变直接报错，不静默失效）；② 提交/CI `scripts/check-uvue-css.mjs`（G2 第 4 项）；③ 评审/自查清单（SOP-13 §5）。新「静默失效」bug 必须三步收口：补 README §5 条款 → 能自动化则升防线 ①② → issue 登记。
 
 **高频 bug 模式**：HBuilderX「运行」模式产物 app.wxss 聚合样式致 WXSS 编译错误（小程序端一律用 CLI watch 产物 `dist/dev/mp-weixin`，HBuilderX 仅 App 真机调试）；CLI watch 与 HBuilderX 双 watch 并行产物混淆；gap/space 静默失效；uvue 样式不继承致文字样式丢失。
+
+**生态工具边界（§6.1）**：uni-helper 系社区工具（uni-network、uni-use、unocss-preset-uni 等 10 项）面向经典 uni-app，与 uni-app x 的适配性未经验证——默认不引入，引入前必须走 FA 官方文档 + POC 验证。
 
 **更新触发**：新增 bug 模式 / 新增可扫描规则 / README §5 条款变更 / 官方文档新增约束 → minor。
 

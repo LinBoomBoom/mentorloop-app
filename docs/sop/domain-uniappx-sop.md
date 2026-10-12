@@ -2,7 +2,7 @@
 编号: SOP-13
 名称: uni-app x 平台规范符合性
 适用范围: pages/ components/ engine/ api/ store/ utssdk/ 内 .uvue 与 .uts 代码、Tailwind 原子类、编译产物与运行模式
-版本: 1.0.0
+版本: 1.1.0
 最后更新: 2026-10-12
 ---
 
@@ -121,6 +121,22 @@
 
 - 客户端改动入口必载 `mentorloop-system-spec`；平台能力存疑时按 `mentorloop-role-feasibility-analyst` 要求，以官方文档（https://doc.dcloud.net.cn/uni-app-x/ ）核实后才可作为决策依据，禁止凭直觉断言「支持 / 不支持」。
 - 涉及编译器 / 平台行为差异的问题按 issue 模板登记；结论（版本门槛、产物行为等）同步风险登记册。
+
+### 6.1 社区生态工具边界（uni-helper 系）
+
+出处：微信公众号文章《2026 uni-app 最火的10个插件！覆盖所有场景！》（2026-10-12 已读取正文）。该批工具面向**经典 uni-app**（Vue3 + Vite），与本项目 uni-app x（uvue / UTS）的适配性**未经官方文档验证**：
+
+| 工具                                         | 用途                           | 本项目处置                                                                              |
+| -------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
+| vitesse-uni-app                              | 脱离 HBuilderX 的 Vite 模板    | 不适用：App / MP 编译仍依赖 HBuilderX（见 §4 构建产物纪律）                             |
+| uni-network                                  | Promise 请求库                 | 不引入：`api/client.uts` 已自研封装                                                     |
+| uni-use / uni-promises                       | vueuse 式 Hooks / 回转 Promise | 未验证：uvue 组合式 API 为子集，禁止直接引入                                            |
+| vite-plugin-uni-pages                        | 文件系统路由                   | 不适用：`pages.json` 由 uni-app x 编译器约定管理                                        |
+| uni-app-types                                | 内置组件 TS 类型               | 不适用：本项目类型系统为 UTS（`type` 声明，非 TS interface）                            |
+| unocss-preset-uni / vite-plugin-uni-tailwind | 原子化 CSS / Tailwind v3       | 不适用：CSS 生成由 weapp-tailwindcss `uniAppX()` 独占（vite.config.ts），双管线必然冲突 |
+| create-uni / Awesome uni-app                 | 脚手架 / 资源索引              | 仅作学习参考                                                                            |
+
+**纪律**：任何社区工具引入前必须走 FA 验证（官方文档 + POC），默认不引入。上表「不适用」为管线级冲突判断（依据仓库内既定架构事实），「未验证」为能力级存疑——两者均不得未经评估直接安装。
 
 ---
 
