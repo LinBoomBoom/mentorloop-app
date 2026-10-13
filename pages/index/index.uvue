@@ -31,49 +31,18 @@
         :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         hover-class="pressed-chip"
         :hover-start-time="0"
-        @click="openSettings"
+        @click="openMine"
       >
-        <ml-icon name="settings" :size="19" color="#FFFFFF"></ml-icon>
+        <ml-icon name="user" :size="19" color="#FFFFFF"></ml-icon>
       </view>
     </view>
 
-    <!-- 数字人主视觉（压缩至 232px 给内容区让位；MASTER.md A4 首页仍以数字人为主角） -->
-    <view class="flex-none h-[232px] flex-col items-center justify-center relative">
-      <!-- 呼吸光环 -->
-      <view
-        class="absolute w-52 h-52 rounded-full border border-smart opacity-20 breath-ring"
-      ></view>
-      <view
-        class="absolute w-44 h-44 rounded-full border border-reliable opacity-25 breath-ring-delay"
-      ></view>
-      <!-- 底部光晕 -->
-      <view class="absolute bottom-4 w-36 h-7 rounded-full bg-smart opacity-25 blur-floor"></view>
-
-      <!-- 数字人：头部 + 面部 + 肩部 -->
-      <view class="flex-col items-center relative z-1">
-        <view class="figure-head flex-col items-center justify-center relative">
-          <view class="figure-highlight"></view>
-          <view class="flex-row items-center mt-1">
-            <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
-            <view class="w-5"></view>
-            <view class="w-2 h-2.5 rounded-full bg-navy-deep eye"></view>
-          </view>
-          <view class="h-1.5 w-6 rounded-full bg-navy-deep mt-2.5 avatar-mouth"></view>
-        </view>
-        <view class="figure-body"></view>
-        <!-- 领结：琥珀点缀呼应品牌强调色（静态，无动效开销） -->
-        <view class="flex-row items-center relative z-1" style="margin-top: -8px">
-          <view class="w-2.5 h-2.5 rotate-45 bow-wing"></view>
-          <view
-            class="w-1.5 h-1.5 rounded-full bow-knot"
-            style="margin-left: 3px; margin-right: 3px"
-          ></view>
-          <view class="w-2.5 h-2.5 rotate-45 bow-wing"></view>
-        </view>
-      </view>
+    <!-- 语音状态可视化主视觉（D3：替代数字人；MASTER.md A4） -->
+    <view class="flex-none h-[250px] flex-col items-center justify-center relative">
+      <ml-voice-visual state="idle" :show-label="false" :ring="152"></ml-voice-visual>
 
       <!-- 状态点 + 语气泡 -->
-      <view class="absolute -bottom-2 flex-col items-center">
+      <view class="flex-col items-center mt-2">
         <view class="flex-row items-center">
           <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-1.5 pulse-dot"></view>
           <text class="text-xs text-mist">AI 面试官 · 就绪</text>
@@ -99,19 +68,19 @@
           <view class="flex-1 flex-col items-center" @click="goGrowth">
             <ml-icon name="target" :size="16" color="#F5C97B"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ totalCount }}</text>
-            <text class="text-[11px] text-mist mt-0.5">累计面试</text>
+            <text class="text-xs text-mist mt-0.5">累计面试</text>
           </view>
           <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
           <view class="flex-1 flex-col items-center" @click="goGrowth">
             <ml-icon name="award" :size="16" color="#5CE8D8"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ avgLevel }}</text>
-            <text class="text-[11px] text-mist mt-0.5">平均等级</text>
+            <text class="text-xs text-mist mt-0.5">平均等级</text>
           </view>
           <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
           <view class="flex-1 flex-col items-center" @click="goTraining">
             <ml-icon name="flame" :size="16" color="#FF9E6D"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ todoCount }}</text>
-            <text class="text-[11px] text-mist mt-0.5">待训练</text>
+            <text class="text-xs text-mist mt-0.5">待训练</text>
           </view>
         </view>
 
@@ -135,14 +104,14 @@
                 </view>
                 <text class="text-sm font-semibold text-white ml-2">今日训练任务</text>
               </view>
-              <view class="flex-row items-center h-6 px-1">
+              <view class="flex-row items-center h-11 px-1">
                 <text class="text-xs text-mist">全部</text>
                 <ml-icon name="chevron-right" :size="13" color="#AEB9CC"></ml-icon>
               </view>
             </view>
             <view class="flex-row items-center mt-3">
               <view class="flex-col flex-1">
-                <text class="text-[15px] text-white font-medium">{{ topTask.title }}</text>
+                <text class="text-base text-white font-medium">{{ topTask.title }}</text>
                 <text class="text-xs text-mist mt-1">
                   出自最近报告 · {{ topTask.durationMin }} 分钟
                 </text>
@@ -174,7 +143,7 @@
                 </view>
                 <text class="text-sm font-semibold text-white ml-2">最近报告</text>
               </view>
-              <text class="text-[11px] text-mist">{{ latestAt }}</text>
+              <text class="text-xs text-mist">{{ latestAt }}</text>
             </view>
             <view class="flex-row items-center mt-3">
               <view class="w-12 h-12 rounded-full flex-col items-center justify-center level-badge">
@@ -183,7 +152,7 @@
                 </text>
               </view>
               <view class="flex-col flex-1 ml-3">
-                <text class="text-[13px] text-white leading-5 report-line">
+                <text class="text-sm text-white leading-5 report-line">
                   {{ latestOverall }}
                 </text>
                 <text class="text-xs text-warn mt-1">优先改进：{{ topPriority }}</text>
@@ -200,7 +169,7 @@
           >
             <ml-icon name="sparkles" :size="22" color="#8FA0FF"></ml-icon>
           </view>
-          <text class="text-[15px] font-semibold text-white mt-3">完成第一场模拟面试</text>
+          <text class="text-base font-semibold text-white mt-3">完成第一场模拟面试</text>
           <text class="text-xs text-mist mt-1.5 text-center leading-5">
             生成能力评估报告后，这里会给出{'\n'}针对性的训练任务与成长追踪
           </text>
@@ -219,7 +188,7 @@
       </view>
       <view
         v-if="!loggedIn"
-        class="flex-row items-center justify-center mt-2.5 h-7"
+        class="flex-row items-center justify-center mt-2.5 h-11"
         hover-class="pressed-row"
         :hover-start-time="0"
         @click="goLogin"
@@ -236,6 +205,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
@@ -449,14 +419,14 @@ function goTraining() {
 }
 
 function goGrowth() {
-  uni.switchTab({ url: '/pages/growth/growth' })
+  uni.navigateTo({ url: '/pages/growth/growth' })
 }
 
 function goReport() {
-  uni.navigateTo({ url: '/pages/report/report' })
+  uni.switchTab({ url: '/pages/report/report' })
 }
 
-function openSettings() {
+function openMine() {
   uni.switchTab({ url: '/pages/mine/mine' })
 }
 
@@ -471,35 +441,7 @@ function goLogin() {
 </script>
 
 <style>
-/* 呼吸光环 */
-@keyframes breath {
-  0% {
-    transform: scale(1);
-    opacity: 0.25;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.25;
-  }
-}
-@keyframes breath-delay {
-  0% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-  50% {
-    transform: scale(1.16);
-    opacity: 0.12;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-}
+/* 呼吸状态点 */
 @keyframes pulse {
   0%,
   100% {
@@ -509,78 +451,17 @@ function goLogin() {
     opacity: 0.35;
   }
 }
-@keyframes mouth-idle {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.55);
-  }
-}
 
-.breath-ring {
-  animation: breath 3.2s ease-in-out infinite;
-}
-.breath-ring-delay {
-  animation: breath-delay 3.2s ease-in-out infinite 0.9s;
-}
 .pulse-dot {
   animation: pulse 2s ease-in-out infinite;
 }
-.avatar-mouth {
-  animation: mouth-idle 2.6s ease-in-out infinite;
-}
 .blur-disc {
   filter: blur(56px);
-}
-.blur-floor {
-  filter: blur(18px);
 }
 .pressable {
   /* 仅标记可点击，按压态由 hover-class 全局类控制 */
 }
 
-/* 数字人形象：头部（靛紫→青绿渐变）+ 肩部 + 高光 + 领结 */
-.figure-head {
-  width: 88px;
-  height: 88px;
-  border-radius: 44px;
-  background-color: #8fa0ff;
-  background-image: linear-gradient(160deg, #aab6ff 0%, #7d8ef7 55%, #5b6cff 100%);
-  box-shadow:
-    0 12px 32px rgba(91, 108, 255, 0.45),
-    inset 0 -8px 16px rgba(15, 44, 76, 0.25);
-}
-.figure-highlight {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  width: 26px;
-  height: 13px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.4);
-  transform: rotate(-25deg);
-}
-.figure-body {
-  width: 120px;
-  height: 42px;
-  margin-top: -6px;
-  background-color: #5b6cff;
-  background-image: linear-gradient(180deg, #6f7fff 0%, #4a5ce0 100%);
-  border-top-left-radius: 60px;
-  border-top-right-radius: 60px;
-  box-shadow: 0 10px 28px rgba(15, 44, 76, 0.4);
-}
-.bow-wing {
-  background-color: #f5c97b;
-}
-.bow-knot {
-  background-color: #e08a00;
-}
-.eye {
-  /* 眼睛为深色椭圆，配合头部渐变形成表情 */
-}
 .bubble-wrap {
   background-color: rgba(255, 255, 255, 0.1);
   max-width: 260px;

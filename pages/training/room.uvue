@@ -116,7 +116,7 @@
           class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
           v-model="textDraft"
           placeholder="在这里输入你的回答…"
-          placeholder-class="text-mist"
+          placeholder-class="text-ink-soft"
           :maxlength="1000"
           :auto-focus="true"
         />

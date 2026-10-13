@@ -13,7 +13,7 @@
         >
           <ml-icon name="sparkles" :size="30" color="#FFFFFF"></ml-icon>
         </view>
-        <text class="text-xl font-bold text-white mt-3">MentorLoop</text>
+        <text class="text-[22px] font-bold text-white mt-3">MentorLoop</text>
         <text class="text-xs text-mist mt-1.5">学面一体智能导师 · 让每次模拟都有证据</text>
         <view class="flex-row items-center mt-3">
           <ml-tag label="v0.9.0" bg="rgba(255,255,255,0.14)" color="#FFFFFF"></ml-tag>
@@ -49,14 +49,14 @@
             </view>
             <view class="flex-col flex-1">
               <text class="text-sm text-ink">{{ s.text }}</text>
-              <text class="text-[11px] text-ink-soft mt-0.5">{{ s.desc }}</text>
+              <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
             </view>
             <ml-tag v-if="s.soon" label="即将上线" bg="#F1F5F9" color="#AEB9CC"></ml-tag>
           </view>
         </ml-card>
       </view>
 
-      <text class="text-[11px] text-mist mt-4 text-center"> MentorLoop · 学面一体智能导师 </text>
+      <text class="text-xs text-ink-soft mt-4 text-center"> MentorLoop · 学面一体智能导师 </text>
     </view>
   </scroll-view>
 </template>

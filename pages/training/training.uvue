@@ -6,24 +6,12 @@
     >
       <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
       <view class="flex-col">
-        <text class="text-xl font-bold text-white">专项训练</text>
+        <text class="text-[22px] font-bold text-white">专项训练</text>
         <text class="text-xs text-mist mt-1">报告驱动的定向训练 · 即时反馈</text>
       </view>
       <ml-icon name="dumbbell" :size="22" color="#5CE8D8"></ml-icon>
     </view>
-    <view class="px-4 pb-6 -mt-5">
-      <!-- 概览统计条（组件化收敛：ml-stat-bar） -->
-      <ml-stat-bar
-        :value1="String(todoCount)"
-        label1="待训练任务"
-        color1="#5B6CFF"
-        :value2="String(doneCount)"
-        label2="已完成面试"
-        :value3="latestLevel"
-        label3="当前等级"
-        :color3="levelColor"
-      ></ml-stat-bar>
-
+    <view class="px-4 pb-6 pt-4">
       <template v-if="recommended.length > 0">
         <!-- 报告推荐任务 -->
         <view class="mt-5">
@@ -48,7 +36,7 @@
                 </view>
                 <view class="flex-col flex-1">
                   <view class="flex-row items-center">
-                    <text class="text-[15px] font-medium text-ink flex-1">{{ t.title }}</text>
+                    <text class="text-base font-medium text-ink flex-1">{{ t.title }}</text>
                     <ml-tag
                       :label="t.priority === 1 ? '最高优先' : 'P' + t.priority"
                       :bg="t.priority === 1 ? '#FFF3E0' : '#F1F5F9'"
@@ -98,8 +86,8 @@
                 :color="d.levelColor.length > 0 ? d.levelColor : '#AEB9CC'"
               ></ml-tag>
             </view>
-            <text class="text-[13px] font-medium text-ink mt-2.5">{{ d.label }}</text>
-            <text class="text-[11px] text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
+            <text class="text-sm font-medium text-ink mt-2.5">{{ d.label }}</text>
+            <text class="text-xs text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
           </view>
         </view>
       </view>
@@ -124,7 +112,7 @@
             </view>
             <view class="flex-col flex-1">
               <text class="text-sm text-ink">{{ t.title }}</text>
-              <text class="text-[11px] text-ink-soft mt-0.5">
+              <text class="text-xs text-ink-soft mt-0.5">
                 {{ t.durationMin }} 分钟 · 单维突破
               </text>
             </view>
@@ -166,7 +154,6 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
-import mlStatBar from '../../components/ml-stat-bar.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import { DIM_COLOR, DIM_TINT } from '../../styles/theme.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
@@ -241,23 +228,6 @@ const dimensions = computed((): DimCard[] => {
   return out
 })
 
-const todoCount = computed((): number => recommended.value.length)
-
-const doneCount = computed((): number => {
-  // 完成面试数以报告历史为准（每场面试生成一份报告）
-  return latest.value != null ? reportHistory.all().length : 0
-})
-
-const latestLevel = computed((): string => {
-  const r = latest.value
-  if (r == null) return '--'
-  return avgLevelOf(r.report.dimensions)
-})
-
-const levelColor = computed((): string => {
-  return levelColorOf(latestLevel.value)
-})
-
 const reportDate = computed((): string => {
   const r = latest.value
   if (r == null) return ''
@@ -265,25 +235,6 @@ const reportDate = computed((): string => {
   const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
   return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 })
-
-function avgLevelOf(dims: { level: ScoreLevel }[]): string {
-  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
-  let total = 0
-  let cnt = 0
-  for (let i = 0; i < dims.length; i++) {
-    const v = map[dims[i].level]
-    if (v != null) {
-      total += v
-      cnt += 1
-    }
-  }
-  if (cnt === 0) return '--'
-  const avg = total / cnt
-  if (avg >= 3.5) return 'A'
-  if (avg >= 2.5) return 'B'
-  if (avg >= 1.5) return 'C'
-  return 'D'
-}
 
 function levelBg(l: ScoreLevel): string {
   if (l === 'A') return '#E6F7F4'
@@ -356,6 +307,6 @@ function startInterview() {
 }
 
 function goReport() {
-  uni.navigateTo({ url: '/pages/report/report' })
+  uni.switchTab({ url: '/pages/report/report' })
 }
 </script>

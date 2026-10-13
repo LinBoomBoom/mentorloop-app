@@ -18,6 +18,7 @@ import {
   RUBRIC as cRubric
 } from '../engine/rubric.uts'
 import { analyzeAnswer as cAnalyzeAnswer } from '../engine/answer-signal.uts'
+import { rephraseQuestion as cRephrase } from '../engine/rephrase.uts'
 import {
   QUESTION_BANK as cBank,
   WRAPUP_QUESTION as cWrapup,
@@ -44,6 +45,7 @@ import {
   RUBRIC as sRubric
 } from '../server/src/rules/rubric'
 import { analyzeAnswer as sAnalyzeAnswer } from '../server/src/rules/answer-signal'
+import { rephraseQuestion as sRephrase } from '../server/src/rules/rephrase'
 import {
   QUESTION_BANK as sBank,
   WRAPUP_QUESTION as sWrapup,
@@ -278,5 +280,28 @@ describe('双端评分器：完整报告一致', () => {
     const qs = sBank.slice(0, 6)
     const ts = transcript('vague')
     expect(cScoreInterview(qs, ts)).toEqual(sScoreInterview(qs, ts))
+  })
+})
+
+describe('双端换一种说法：澄清句一致且不泄题', () => {
+  const cases = [
+    { knowledgePoint: '线程池参数', purpose: '评估参数决策是否有依据' },
+    { knowledgePoint: '锁与并发安全', purpose: '' },
+    { knowledgePoint: '', purpose: '' }
+  ]
+
+  it('rephraseQuestion 双端输出逐字一致', () => {
+    for (const c of cases) {
+      expect(cRephrase(c)).toBe(sRephrase(c))
+    }
+  })
+
+  it('题库全量：澄清句不含 expectedEvidence（防泄题）', () => {
+    for (const q of cBank) {
+      const out = cRephrase({ knowledgePoint: q.knowledgePoint, purpose: q.purpose })
+      if (q.expectedEvidence.length > 0) {
+        expect(out.includes(q.expectedEvidence)).toBe(false)
+      }
+    }
   })
 })

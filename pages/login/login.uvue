@@ -3,7 +3,7 @@
        小程序端不进入本页面，走微信授权静默登录 -->
   <view class="h-screen bg-bg-light" :style="{ paddingTop: statusBarPad }">
     <view class="px-6 pt-10 pb-8">
-      <text class="text-3xl font-bold text-navy">MentorLoop</text>
+      <text class="text-[28px] font-bold text-navy">MentorLoop</text>
       <text class="text-sm text-ink-soft mt-2">学面一体智能导师 · 让每次模拟都有证据</text>
     </view>
 
@@ -32,11 +32,11 @@
             />
           </view>
           <view
-            class="ml-3 rounded-lg px-3 h-9 justify-center items-center"
+            class="ml-3 rounded-lg px-3 h-11 justify-center items-center"
             :class="canSend ? 'bg-chip-smart' : 'bg-line'"
             @click="sendCode"
           >
-            <text class="text-sm" :class="canSend ? 'text-smart' : 'text-mist'">
+            <text class="text-sm" :class="canSend ? 'text-smart' : 'text-ink-soft'">
               {{ sendLabel }}
             </text>
           </view>
@@ -54,9 +54,11 @@
 
       <view class="flex-row items-center mt-4" @click="toggleAgree">
         <view
-          class="w-4 h-4 rounded-full border"
+          class="w-4 h-4 rounded flex-row items-center justify-center border"
           :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
-        ></view>
+        >
+          <ml-icon v-if="agreed" name="check" :size="11" color="#FFFFFF"></ml-icon>
+        </view>
         <view class="flex-row items-center ml-2 flex-1">
           <text class="text-xs text-ink-soft">我已阅读并同意</text>
           <text class="text-xs text-smart" @click.stop="openAgreement">《用户协议》</text>
@@ -64,7 +66,7 @@
           <text class="text-xs text-smart" @click.stop="openPrivacy">《隐私政策》</text>
         </view>
       </view>
-      <text class="text-xs text-mist mt-3">
+      <text class="text-xs text-ink-soft mt-3">
         手机号仅用于登录验证；简历与录音数据保护详见隐私政策。
       </text>
     </view>
@@ -74,6 +76,7 @@
 <script setup lang="uts">
 import { ref, computed, onUnmounted } from 'vue'
 import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
 import { sendSmsCode, loginByPhone, applyAuth } from '../../api/auth.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { AGREEMENT_URL, PRIVACY_URL } from '../../api/env.uts'

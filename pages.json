@@ -70,7 +70,7 @@
     }
   ],
   "tabBar": {
-    "color": "#94A3B8",
+    "color": "#5B6472",
     "selectedColor": "#5B6CFF",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
@@ -88,16 +88,10 @@
         "selectedIconPath": "static/tabbar/dumbbell-active.png"
       },
       {
-        "pagePath": "pages/resume/resume",
-        "text": "简历优化",
+        "pagePath": "pages/report/report",
+        "text": "报告",
         "iconPath": "static/tabbar/file.png",
         "selectedIconPath": "static/tabbar/file-active.png"
-      },
-      {
-        "pagePath": "pages/growth/growth",
-        "text": "我的成长",
-        "iconPath": "static/tabbar/trend.png",
-        "selectedIconPath": "static/tabbar/trend-active.png"
       },
       {
         "pagePath": "pages/mine/mine",

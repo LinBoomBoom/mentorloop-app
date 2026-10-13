@@ -4,7 +4,7 @@
       <view class="p-4">
         <!-- 顶部说明 -->
         <view class="mb-4 mt-1">
-          <text class="text-xl font-bold text-ink">定制你的模拟面试</text>
+          <text class="text-[22px] font-bold text-ink">定制你的模拟面试</text>
           <text class="text-sm text-ink-soft mt-1">
             选择方向与等级，题目会按你的简历与能力水平动态匹配
           </text>
@@ -21,7 +21,7 @@
               <view
                 v-for="p in positionOptions"
                 :key="p.id"
-                class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
+                class="h-11 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
                 :class="
                   positionId === p.id
                     ? 'bg-surface border border-smart'
@@ -52,7 +52,7 @@
                   :size="13"
                   color="#5B6CFF"
                 ></ml-icon>
-                <text v-if="!p.available" class="text-xs text-mist ml-1">敬请期待</text>
+                <text v-if="!p.available" class="text-xs text-ink-soft ml-1">敬请期待</text>
               </view>
             </view>
           </ml-card>
@@ -70,7 +70,7 @@
               <view
                 v-for="e in experienceOptions"
                 :key="e.id"
-                class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
+                class="px-3.5 h-11 rounded-lg flex-row items-center mr-2 mb-2"
                 :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
                 hover-class="pressed-chip"
                 :hover-start-time="0"
@@ -101,7 +101,7 @@
             <text class="text-sm text-ink">{{ c.name }}</text>
             <text
               class="text-xs"
-              :class="c.ok ? 'text-reliable' : c.checking ? 'text-mist' : 'text-warn'"
+              :class="c.ok ? 'text-reliable' : c.checking ? 'text-ink-soft' : 'text-warn'"
             >
               {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
             </text>

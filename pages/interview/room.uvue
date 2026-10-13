@@ -7,23 +7,45 @@
 
     <!-- 顶部状态条（安全区动态内边距） -->
     <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
+      <!-- 左：退出（放弃，不生成报告） -->
       <view class="flex-row items-center h-11" @click="confirmExit">
-        <ml-icon name="phone-off" :size="16" color="#AEB9CC"></ml-icon>
+        <ml-icon name="arrow-left" :size="16" color="#AEB9CC"></ml-icon>
         <text class="text-sm text-mist ml-1.5">退出</text>
       </view>
+      <!-- 右：网络状态 + 计时 + 结束并生成报告 -->
       <view class="flex-row items-center h-11">
-        <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-1.5"></view>
-        <text class="text-xs text-mist">网络良好</text>
-      </view>
-      <view class="flex-row items-center h-11">
-        <ml-icon name="clock" :size="14" color="#FFFFFF"></ml-icon>
-        <text class="text-sm text-white ml-1">{{ elapsedText }}</text>
+        <view class="flex-row items-center mr-3">
+          <view
+            class="w-1.5 h-1.5 rounded-full mr-1.5"
+            :style="{ backgroundColor: netOk ? '#1FB6A6' : '#DC2626' }"
+          ></view>
+          <text class="text-xs" :class="netOk ? 'text-mist' : 'text-danger'">{{ netText }}</text>
+        </view>
+        <view class="flex-row items-center mr-3">
+          <ml-icon name="clock" :size="14" color="#FFFFFF"></ml-icon>
+          <text class="text-sm text-white ml-1">{{ elapsedText }}</text>
+        </view>
+        <view
+          class="flex-row items-center h-11 px-3.5 rounded-full border"
+          :style="{ borderColor: 'rgba(91,108,255,0.6)' }"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="confirmFinish"
+        >
+          <ml-icon name="check-circle" :size="13" color="#8FA0FF"></ml-icon>
+          <text class="text-xs text-white ml-1">结束</text>
+        </view>
       </view>
     </view>
 
-    <!-- 数字人舞台 -->
-    <view class="flex-1">
-      <interviewer-avatar :state="avatarState" :speaking="ttsSpeaking"></interviewer-avatar>
+    <!-- 语音状态可视化舞台（D3：替代数字人；状态环 + 声波） -->
+    <view class="flex-1 flex-col items-center justify-center">
+      <ml-voice-visual
+        :state="avatarState"
+        :speaking="ttsSpeaking"
+        :show-label="false"
+        :ring="208"
+      ></ml-voice-visual>
     </view>
 
     <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
@@ -50,10 +72,45 @@
         <text class="text-base font-semibold text-white">{{ displayQuestion }}</text>
       </view>
       <text v-if="caption.length > 0" class="text-xs text-mist mt-1.5">{{ caption }}</text>
-      <!-- 文字作答入口（暂停/录音时隐藏） -->
-      <view v-if="!paused && !recording" class="flex-row items-center mt-2.5" @click="textMode">
-        <ml-icon name="keyboard" :size="13" color="#AEB9CC"></ml-icon>
-        <text class="text-xs text-mist ml-1.5">不方便说话？切换文字作答</text>
+
+      <!-- 换一种说法：追加澄清行，原题保留在上一行 -->
+      <view
+        v-if="rephrasedText.length > 0"
+        class="mt-2 rounded-lg p-2.5"
+        :style="{ backgroundColor: 'rgba(255,255,255,0.07)' }"
+      >
+        <text class="text-xs text-white leading-5">{{ rephrasedText }}</text>
+      </view>
+
+      <!-- 求助操作（暂停/录音时隐藏）：再说一遍 / 换一种说法 / 文字作答 -->
+      <view v-if="!paused && !recording" class="flex-row items-center mt-1">
+        <view
+          class="flex-row items-center h-11 pr-4"
+          hover-class="pressed-row"
+          :hover-start-time="0"
+          @click="replayQuestion"
+        >
+          <ml-icon name="rotate-ccw" :size="13" color="#AEB9CC"></ml-icon>
+          <text class="text-xs text-mist ml-1.5">再说一遍</text>
+        </view>
+        <view
+          class="flex-row items-center h-11 pr-4"
+          hover-class="pressed-row"
+          :hover-start-time="0"
+          @click="onRephrase"
+        >
+          <ml-icon name="repeat" :size="13" color="#AEB9CC"></ml-icon>
+          <text class="text-xs text-mist ml-1.5">换一种说法</text>
+        </view>
+        <view
+          class="flex-row items-center h-11 pr-2"
+          hover-class="pressed-row"
+          :hover-start-time="0"
+          @click="textMode"
+        >
+          <ml-icon name="keyboard" :size="13" color="#AEB9CC"></ml-icon>
+          <text class="text-xs text-mist ml-1.5">文字作答</text>
+        </view>
       </view>
     </view>
 
@@ -81,7 +138,7 @@
         >
           <ml-icon :name="recording ? 'square' : 'mic'" :size="24" color="#FFFFFF"></ml-icon>
         </view>
-        <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '按住作答' }}</text>
+        <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '点击作答' }}</text>
       </view>
 
       <!-- 跳过本题（跳过保留为证据） -->
@@ -110,7 +167,7 @@
           class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
           v-model="textDraft"
           placeholder="在这里输入你的回答…"
-          placeholder-class="text-mist"
+          placeholder-class="text-ink-soft"
           :maxlength="1000"
           :auto-focus="true"
         />
@@ -131,8 +188,8 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
-import { onLoad, onUnload } from '@dcloudio/uni-app'
-import interviewerAvatar from '../../components/interviewer-avatar.uvue'
+import { onLoad, onUnload, onBackPress } from '@dcloudio/uni-app'
+import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
@@ -147,6 +204,7 @@ import {
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
 import { decideFollowup, FollowupDecision } from '../../engine/followup-engine.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
+import { rephraseQuestion, RephraseInput } from '../../engine/rephrase.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import {
   SpeechRecorder,
@@ -174,6 +232,8 @@ const caption = ref('')
 const sessionId = ref('')
 // 当前追问话术（非空时显示追问而非原题）
 const followupPrompt = ref('')
+// 换一种说法生成的澄清句（非空时在题面下方追加展示，原题保留）
+const rephrasedText = ref('')
 // 最近一次录音文件路径（供 ASR 上送与证据存档）
 const lastAudioPath = ref('')
 // ASR 实时识别的中间文本（仅稳定文本进入转写链）
@@ -202,6 +262,11 @@ const submittingText = ref(false)
 
 // 暂停状态（暂停时冻结计时与录音入口）
 const paused = ref(false)
+
+// 网络状态（M6：真实探测，替代表头硬编码）
+const netOk = ref(true)
+const netText = computed((): string => (netOk.value ? '网络良好' : '网络已断开'))
+let netHandler: ((r: any) => void) | null = null
 
 // 感知层：录音器 + TTS 句柄 + 实时识别会话 + 平台能力
 const speech = new SpeechRecorder()
@@ -285,6 +350,7 @@ onLoad((options: any) => {
       target: '求职'
     } as PositionBlueprint
   }
+  initNetwork()
   initRecorder()
   init()
   timer = setInterval(() => {
@@ -309,7 +375,47 @@ onUnload(() => {
   } catch {
     // 忽略卸载阶段错误
   }
+  // 移除网络状态监听，避免页面销毁后残留回调
+  if (netHandler != null) {
+    try {
+      uni.offNetworkStatusChange(netHandler)
+    } catch {
+      // 忽略
+    }
+    netHandler = null
+  }
 })
+
+// 系统返回（App 手势 / 安卓返回键）必须走确认，不能绕过二次确认（文档 03 硬交互规则）
+onBackPress(() => {
+  if (textModalVisible.value) {
+    cancelText()
+    return true
+  }
+  confirmExit()
+  return true
+})
+
+// 初始化网络状态真实探测（M6）：进入即探测 + 监听变化，断开即时提示
+function initNetwork() {
+  try {
+    uni.getNetworkType({
+      success: (r: any) => {
+        netOk.value = (r.networkType as string) !== 'none'
+      }
+    })
+    netHandler = (r: any) => {
+      const ok = r.isConnected as boolean
+      if (netOk.value && !ok) {
+        uni.showToast({ title: '网络已断开，请检查网络连接', icon: 'none' })
+      }
+      netOk.value = ok
+    }
+    uni.onNetworkStatusChange(netHandler)
+  } catch {
+    // 平台不支持时保持默认（不阻塞面试）
+  }
+}
 
 // 初始化录音器（回调统一走感知层；H5 降级为文字作答）
 function initRecorder() {
@@ -360,6 +466,7 @@ async function init() {
 async function ask() {
   interviewSession.resetDepth()
   followupPrompt.value = ''
+  rephrasedText.value = ''
   interviewSession.transition('ASKING')
   avatarState.value = 'asking'
   caption.value = ''
@@ -398,6 +505,7 @@ async function ask() {
 function askFollowup(decision: FollowupDecision) {
   interviewSession.incrementDepth()
   followupPrompt.value = decision.prompt
+  rephrasedText.value = ''
   caption.value = ''
   trackEvent('interview_followup_asked', {
     questionId: currentQuestion.value.id,
@@ -556,6 +664,36 @@ function goSummary() {
   uni.navigateTo({ url: '/pages/interview/summary' })
 }
 
+// 再说一遍：重播当前展示文本（已换说法则重播澄清句，否则重播题面/追问）
+function replayQuestion() {
+  const text = rephrasedText.value.length > 0 ? rephrasedText.value : displayQuestion.value
+  if (text.length === 0 || text === '准备开始…') {
+    uni.showToast({ title: '还没有题目可重听', icon: 'none' })
+    return
+  }
+  trackEvent('interview_replay_question', { questionId: currentQuestion.value.id })
+  if (ttsHandle != null) ttsHandle.stop()
+  ttsHandle = speak(text)
+}
+
+// 换一种说法：用引擎确定性澄清句追加一行并播报，不替换原题、不改难度与知识点
+function onRephrase() {
+  const q = currentQuestion.value
+  if (q.content.length === 0) {
+    uni.showToast({ title: '还没有题目可换说法', icon: 'none' })
+    return
+  }
+  const text = rephraseQuestion({
+    knowledgePoint: q.knowledgePoint,
+    purpose: q.purpose
+  } as RephraseInput)
+  rephrasedText.value = text
+  avatarState.value = 'asking'
+  trackEvent('interview_rephrase_question', { questionId: q.id })
+  if (ttsHandle != null) ttsHandle.stop()
+  ttsHandle = speak(text)
+}
+
 function textMode() {
   if (recording.value) {
     uni.showToast({ title: '请先停止录音', icon: 'none' })
@@ -632,18 +770,48 @@ function togglePause() {
   caption.value = '已暂停，点击继续'
 }
 
+// 退出（放弃）：返回上一页，不生成报告；已作答内容保留为草稿（与「结束」语义区分）
 function confirmExit() {
+  const answered = interviewSession.getQuestions().length
   uni.showModal({
-    title: '结束面试',
-    content: '进度将自动保存，确认退出？',
+    title: '退出面试',
+    content:
+      answered > 0
+        ? '退出将不生成报告，已作答内容会保留为草稿。想拿到报告请点右上角「结束」。确认退出？'
+        : '将返回上一页，确认退出？',
+    confirmText: '退出',
+    cancelText: '继续作答',
+    confirmColor: '#DC2626',
     success: (r: any) => {
       if (r.confirm) {
-        trackEvent('interview_abandon', {
-          reason: 'user_exit',
-          answeredCount: interviewSession.getQuestions().length
-        })
+        trackEvent('interview_abandon', { reason: 'user_exit', answeredCount: answered })
         interviewSession.saveSnapshot()
         uni.navigateBack()
+      }
+    }
+  })
+}
+
+// 结束（收口）：按已作答内容生成报告——用户答够即可主动收尾，不必等题池耗尽
+function confirmFinish() {
+  const answered = interviewSession.getQuestions().length
+  if (answered === 0) {
+    uni.showToast({ title: '还没有作答，先完成至少一道题', icon: 'none' })
+    return
+  }
+  if (recording.value) {
+    uni.showToast({ title: '请先停止录音', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '结束面试',
+    content: '将按已作答的 ' + answered + ' 道题生成报告，结束后不可继续作答。确认结束？',
+    confirmText: '结束并生成报告',
+    cancelText: '继续作答',
+    success: (r: any) => {
+      if (r.confirm) {
+        trackEvent('interview_finish_early', { answeredCount: answered })
+        goSummary()
       }
     }
   })

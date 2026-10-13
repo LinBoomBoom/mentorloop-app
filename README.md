@@ -44,12 +44,12 @@ Mentorloop-app/
 ├── pages.json
 ├── vite.config.ts      # uni() + WeappTailwindcss(uniAppX(...))
 ├── index.html          # H5 模板
-├── components/         # ml-button / ml-card / ml-tag / ml-nav-bar / interviewer-avatar（.uvue）
+├── components/         # ml-button / ml-card / ml-tag / ml-voice-visual（.uvue）
 ├── pages/              # 9 个页面（.uvue）
 ├── store/              # interview-session.uts（状态机） / user-profile.uts
 ├── types/              # interview / scoring / resume（UTS 类型，必须用 type）
 ├── api/                # client / interview / resume / report + mock/
-├── utssdk/             # 原生插件接口占位（audio / realtime / avatar / device）
+├── utssdk/             # 原生插件接口占位（audio / realtime / device）
 ├── scripts/            # check-uvue-css.mjs（受限原子类守卫）
 └── tests/              # Vitest 纯逻辑测试
 ```
@@ -141,6 +141,6 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 
 - ✅ 工程基座、蒸汽模式开关、Tailwind 接入、15 个 `.uvue`（5 组件 + 9 页面 + App）、状态机、Mock API、质量门禁。
 - ⚠️ 本仓库未在本地编译/真机验证（无 HBuilderX 构建环境）。请在 HBuilderX 打开运行核对。
-- ⚠️ `utssdk/` 下 4 个插件为接口占位（方法签名 + 降级实现），录音/ASR/TTS/数字人渲染需补原生层。
-- ⚠️ tabBar 当前纯文字，需在 `static/` 补 5 组 PNG 并在 `pages.json` 配置 `iconPath`。
+- ⚠️ `utssdk/` 下 3 个插件为接口占位（方法签名 + 降级实现），录音/ASR/TTS 需补原生层；数字人已由决策 D3 下线，改为语音状态可视化（`components/ml-voice-visual.uvue`）。
+- ⚠️ tabBar 当前纯文字，需在 `static/` 补 PNG 并在 `pages.json` 配置 `iconPath`（现为 4 个 tab：首页 / 专项训练 / 报告 / 我的）。
 - ⚠️ `@dcloudio/vite-plugin-uni` 版本需与 HBuilderX 自带编译器版本对齐；若报版本不匹配，请按 HBuilderX 版本调整该依赖后重装。

@@ -5,6 +5,7 @@ import { selectNext, getModeBudget, SelectorInput } from '../engine/question-sel
 import { decideFollowup, AnswerSignal } from '../engine/followup-engine.uts'
 import { confidenceBand, displayLevel } from '../engine/rubric.uts'
 import { analyzeAnswer } from '../engine/answer-signal.uts'
+import { rephraseQuestion } from '../engine/rephrase.uts'
 import { scoreInterview } from '../engine/scorer.uts'
 import { interviewSession } from '../store/interview-session.uts'
 import { reasonForAnswer, domainOfTaskId, SKIP_REASON } from '../store/training-history.uts'
@@ -429,6 +430,49 @@ describe('前端岗位选题（P0-2.3 题库与岗位补齐）', () => {
       expect(seen.has(out!.question.id)).toBe(false)
       seen.add(out!.question.id)
       asked.push(out!.question)
+    }
+  })
+})
+
+describe('换一种说法（rephrase）', () => {
+  it('知识点+目的：包含两者并给出结构化引导', () => {
+    const out = rephraseQuestion({
+      knowledgePoint: '线程池参数',
+      purpose: '评估参数决策是否有依据'
+    })
+    expect(out.startsWith('换个角度说')).toBe(true)
+    expect(out.includes('线程池参数')).toBe(true)
+    expect(out.includes('评估参数决策是否有依据')).toBe(true)
+  })
+
+  it('仅有知识点：不出现空目的拼接', () => {
+    const out = rephraseQuestion({ knowledgePoint: '集合选型', purpose: '' })
+    expect(out.includes('集合选型')).toBe(true)
+    expect(out.includes('「」')).toBe(false)
+  })
+
+  it('空输入：回退通用引导，不抛错', () => {
+    const out = rephraseQuestion({ knowledgePoint: '', purpose: '' })
+    expect(out.length).toBeGreaterThan(0)
+  })
+
+  it('同输入输出确定（可双端镜像）', () => {
+    const a = rephraseQuestion({ knowledgePoint: '锁', purpose: '验证排障经历' })
+    const b = rephraseQuestion({ knowledgePoint: '锁', purpose: '验证排障经历' })
+    expect(a).toBe(b)
+  })
+
+  it('题库全量：不泄露 expectedEvidence / misconceptions（防泄题）', () => {
+    for (const q of QUESTION_BANK) {
+      const out = rephraseQuestion({ knowledgePoint: q.knowledgePoint, purpose: q.purpose })
+      if (q.expectedEvidence.length > 0) {
+        expect(out.includes(q.expectedEvidence)).toBe(false)
+      }
+      for (const m of q.misconceptions) {
+        if (m.length > 0) {
+          expect(out.includes(m)).toBe(false)
+        }
+      }
     }
   })
 })

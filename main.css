@@ -41,10 +41,6 @@
   --color-chip-warn: #fff3e0;
   --color-chip-danger: #feecec;
 
-  /* 数字人占位形象 */
-  --color-figure-head: #c9d4e5;
-  --color-figure-body: #8c9bb5;
-
   /* 六维能力色板（growth/training/report 维度画像统一消费，替代散落硬编码） */
   --color-dim-knowledge: #5b6cff;
   --color-dim-engineering: #1fb6a6;

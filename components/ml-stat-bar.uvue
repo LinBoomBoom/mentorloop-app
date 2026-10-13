@@ -10,7 +10,7 @@
       @click="onTap(i)"
     >
       <text class="text-lg font-bold" :style="{ color: it.color }">{{ it.value }}</text>
-      <text class="text-[11px] text-ink-soft mt-0.5">{{ it.label }}</text>
+      <text class="text-xs text-ink-soft mt-0.5">{{ it.label }}</text>
     </view>
   </view>
 </template>

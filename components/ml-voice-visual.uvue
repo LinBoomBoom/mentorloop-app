@@ -1,0 +1,251 @@
+<template>
+  <view class="flex-col items-center justify-center">
+    <!-- 状态光环（外/内两圈，颜色与动效随状态切换） -->
+    <view
+      class="relative flex-row items-center justify-center"
+      :style="{ width: ring + 'px', height: ring + 'px' }"
+    >
+      <view class="absolute rounded-full ring-a" :class="ringClassA" :style="outerRingStyle"></view>
+      <view class="absolute rounded-full ring-b" :class="ringClassB" :style="innerRingStyle"></view>
+      <!-- 中央 AI 徽标 -->
+      <view class="rounded-full flex-row items-center justify-center z-1" :style="coreStyle">
+        <ml-icon :name="coreIcon" :size="coreIconSize" color="#FFFFFF"></ml-icon>
+      </view>
+    </view>
+
+    <!-- 声波条：语音态起伏，其余态静止 -->
+    <view class="flex-row items-end justify-center mt-3" style="height: 26px">
+      <view
+        v-for="(b, i) in bars"
+        :key="i"
+        class="rounded-full mr-1 bar-base"
+        :class="waveOn ? 'bar-wave' : ''"
+        :style="barStyle(i)"
+      ></view>
+    </view>
+
+    <text v-if="showLabel" class="text-xs mt-2.5" :style="{ color: labelColor }">{{ label }}</text>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+import mlIcon from './ml-icon.uvue'
+import { AVATAR_STATE_LABEL, StringMap } from '../styles/theme.uts'
+
+// 语音状态可视化（D3：替代数字人）：状态环 + 中央 AI 徽标 + 声波条
+// 状态语义单一事实来源：styles/theme.uts 的 AvatarState（6 态）/ AVATAR_STATE_LABEL
+// 动效全部 CSS keyframes（合成器线程），不使用内联 SVG、不使用 gap-*、不透明度用 rgba 内联
+const props = defineProps({
+  state: { type: String, default: 'idle' },
+  // TTS 播报中（驱动声波加速）
+  speaking: { type: Boolean, default: false },
+  // 是否显示状态文案（房间另有 AI 徽标时可关）
+  showLabel: { type: Boolean, default: true },
+  // 光环直径（px）：首页 hero 用 176，房间舞台用 208
+  ring: { type: Number, default: 200 }
+})
+
+const LABELS: StringMap = AVATAR_STATE_LABEL
+const STATE_COLOR: StringMap = {
+  idle: '#5B6CFF',
+  asking: '#5B6CFF',
+  followup: '#5B6CFF',
+  listening: '#1FB6A6',
+  summary: '#1FB6A6',
+  thinking: '#AEB9CC'
+}
+
+const color = computed((): string => {
+  const v = STATE_COLOR[props.state]
+  return v != null ? v : '#5B6CFF'
+})
+
+const label = computed((): string => {
+  const v = LABELS[props.state]
+  return v != null && v.length > 0 ? v : '待机'
+})
+
+// 深色面上状态色加亮一档，保证 4.5:1 可读（非关键标签，仍加亮处理）
+const labelColor = computed((): string => {
+  const s = props.state
+  if (s === 'listening' || s === 'summary') return '#5CE8D8'
+  if (s === 'thinking') return '#AEB9CC'
+  return '#8FA0FF'
+})
+
+const coreIcon = computed((): string => {
+  const s = props.state
+  if (s === 'asking' || s === 'listening' || s === 'followup') return 'mic-vocal'
+  if (s === 'thinking') return 'brain'
+  if (s === 'summary') return 'check-circle'
+  return 'bot'
+})
+
+const coreIconSize = computed((): number => Math.round(props.ring * 0.23))
+
+// 语音态：声波起伏（speaking 时更快）
+const waveOn = computed((): boolean => {
+  const s = props.state
+  return s === 'asking' || s === 'listening' || s === 'followup'
+})
+
+const ringClassA = computed((): string => {
+  const s = props.state
+  if (s === 'asking' || s === 'followup') return props.speaking ? 'ring-pulse-fast' : 'ring-pulse'
+  if (s === 'listening' || s === 'summary' || s === 'idle') return 'ring-breathe'
+  return ''
+})
+
+const ringClassB = computed((): string => {
+  const s = props.state
+  if (s === 'asking' || s === 'followup') return 'ring-pulse'
+  if (s === 'listening' || s === 'summary' || s === 'idle') return 'ring-breathe'
+  return ''
+})
+
+// 内联样式：普通对象字面量（UTSJSONObject），禁 StringMap/Map 作内联样式
+const outerRingStyle = computed((): { [key: string]: string } => {
+  const c = color.value
+  return {
+    width: props.ring + 'px',
+    height: props.ring + 'px',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: rgba(c, 0.3),
+    backgroundColor: 'transparent'
+  }
+})
+
+const innerRingStyle = computed((): { [key: string]: string } => {
+  const c = color.value
+  const d = Math.round(props.ring * 0.82)
+  return {
+    width: d + 'px',
+    height: d + 'px',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: rgba(c, 0.5),
+    backgroundColor: 'transparent',
+    animationDelay: '0.6s'
+  }
+})
+
+const coreStyle = computed((): { [key: string]: string } => {
+  const c = color.value
+  const d = Math.round(props.ring * 0.4)
+  return {
+    width: d + 'px',
+    height: d + 'px',
+    backgroundColor: rgba(c, 0.2),
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: rgba(c, 0.55)
+  }
+})
+
+// 声波：7 条，高度错落（视觉固定，动画只改 scaleY）
+const bars: number[] = [10, 18, 26, 14, 22, 12, 16]
+
+function barStyle(i: number): { [key: string]: string } {
+  return {
+    width: '4px',
+    height: bars[i] + 'px',
+    backgroundColor: color.value,
+    animationDelay: String(i * 0.11) + 's'
+  }
+}
+
+// #RRGGBB + alpha → rgba()（原生端不支持 color-mix / 透明度修饰符）
+function rgba(hex: string, alpha: number): string {
+  const h = hex.charAt(0) === '#' ? hex.substring(1) : hex
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')'
+}
+</script>
+
+<style>
+@keyframes ring-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.32);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.32);
+    opacity: 0;
+  }
+}
+@keyframes ring-pulse-fast {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  60% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+}
+@keyframes ring-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.07);
+    opacity: 0.55;
+  }
+}
+@keyframes bar-wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.ring-a {
+  animation-duration: 2.8s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+.ring-b {
+  animation-duration: 2.8s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+.ring-pulse {
+  animation-name: ring-pulse;
+}
+.ring-pulse-fast {
+  animation-name: ring-pulse-fast;
+  animation-duration: 1.5s;
+}
+.ring-breathe {
+  animation-name: ring-breathe;
+}
+.bar-base {
+  transform-origin: center bottom;
+  opacity: 0.5;
+}
+.bar-wave {
+  animation-name: bar-wave;
+  animation-duration: 0.9s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+</style>

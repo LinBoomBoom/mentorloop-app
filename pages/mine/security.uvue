@@ -43,7 +43,7 @@
             </view>
             <view class="flex-col flex-1">
               <text class="text-sm text-ink">{{ s.text }}</text>
-              <text class="text-[11px] text-ink-soft mt-0.5">{{ s.desc }}</text>
+              <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
             </view>
             <ml-tag v-if="s.soon" label="即将上线" bg="#F1F5F9" color="#AEB9CC"></ml-tag>
           </view>
@@ -60,7 +60,7 @@
         </ml-card>
       </view>
 
-      <text class="text-[11px] text-mist mt-4 text-center leading-4">
+      <text class="text-xs text-ink-soft mt-4 text-center leading-4">
         手机号换绑、第三方绑定与设备管理需要后端支持，将随服务端上线开放
       </text>
     </view>

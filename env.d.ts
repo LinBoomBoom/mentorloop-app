@@ -23,6 +23,9 @@ declare module '*.uts' {
   export function displayLevel(...args: any[]): any
   // engine/answer-signal
   export function analyzeAnswer(...args: any[]): any
+  // engine/rephrase（房间「换一种说法」）
+  export function rephraseQuestion(...args: any[]): any
+  export type RephraseInput = any
   // engine/scorer
   export function scoreInterview(...args: any[]): any
   // store/interview-session

@@ -10,7 +10,7 @@
       <view class="flex-row items-center justify-between">
         <text class="text-lg font-bold text-ink">登录 MentorLoop</text>
         <view
-          class="w-9 h-9 rounded-full flex-row items-center justify-center"
+          class="w-11 h-11 rounded-full flex-row items-center justify-center"
           hover-class="pressed-chip"
           :hover-start-time="0"
           @click="onExit"
@@ -57,16 +57,20 @@
           :hover-start-time="0"
           @click="sendCode"
         >
-          <text class="text-sm" :class="canSend ? 'text-smart' : 'text-mist'">{{ sendLabel }}</text>
+          <text class="text-sm" :class="canSend ? 'text-smart' : 'text-ink-soft'">{{
+            sendLabel
+          }}</text>
         </view>
       </view>
 
       <!-- 协议 -->
       <view class="flex-row items-center mt-4" @click="toggleAgree">
         <view
-          class="w-4 h-4 rounded-full border"
+          class="w-4 h-4 rounded flex-row items-center justify-center border"
           :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
-        ></view>
+        >
+          <ml-icon v-if="agreed" name="check" :size="11" color="#FFFFFF"></ml-icon>
+        </view>
         <view class="flex-row items-center ml-2 flex-1">
           <text class="text-xs text-ink-soft">我已阅读并同意</text>
           <text class="text-xs text-smart" @click.stop="openAgreement">《用户协议》</text>
@@ -96,7 +100,7 @@
         <text class="text-sm text-ink-soft">暂不登录，返回</text>
       </view>
 
-      <text class="text-[11px] text-mist mt-2.5 leading-4">
+      <text class="text-xs text-ink-soft mt-2.5 leading-4">
         手机号仅用于登录验证；简历与录音数据保护详见隐私政策
       </text>
     </view>

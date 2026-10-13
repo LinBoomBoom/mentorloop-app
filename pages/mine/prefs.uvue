@@ -12,9 +12,9 @@
           v-model="nickname"
           :maxlength="20"
           placeholder="输入昵称（空则保存为访客）"
-          placeholder-class="text-mist"
+          placeholder-class="text-ink-soft"
         />
-        <text class="text-[11px] text-mist mt-1.5">昵称用于面试总结与报告署名</text>
+        <text class="text-xs text-ink-soft mt-1.5">昵称用于面试总结与报告署名</text>
       </ml-card>
 
       <!-- 默认面试方向 -->
@@ -28,7 +28,7 @@
             <view
               v-for="p in positionOptions"
               :key="p.id"
-              class="h-9 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
+              class="h-11 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
               :class="
                 positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
               "
@@ -39,7 +39,7 @@
               <text class="text-sm" :class="positionId === p.id ? 'text-white' : 'text-ink'">
                 {{ p.name }}
               </text>
-              <text v-if="!p.available" class="text-xs text-mist ml-1">即将上线</text>
+              <text v-if="!p.available" class="text-xs text-ink-soft ml-1">即将上线</text>
             </view>
           </view>
         </ml-card>
@@ -56,7 +56,7 @@
             <view
               v-for="e in experienceOptions"
               :key="e.id"
-              class="px-3.5 h-9 rounded-lg flex-row items-center mr-2 mb-2"
+              class="px-3.5 h-11 rounded-lg flex-row items-center mr-2 mb-2"
               :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
               hover-class="pressed-chip"
               :hover-start-time="0"
@@ -71,7 +71,7 @@
       </view>
 
       <!-- 说明 -->
-      <text class="text-[11px] text-mist mt-3 text-center">
+      <text class="text-xs text-ink-soft mt-3 text-center">
         偏好保存后，下次进入面试准备页自动采用默认方向与年限
       </text>
 

@@ -16,7 +16,7 @@
             <text class="text-xs text-mist mt-0.5">学面一体，练到上岗</text>
           </view>
         </view>
-        <text class="text-[13px] text-mist leading-5 mt-3">
+        <text class="text-sm text-mist leading-5 mt-3">
           会员解锁无限次模拟面试、深度证据报告与完整训练计划
         </text>
       </view>
@@ -39,7 +39,7 @@
                 class="h-5 px-2 rounded-full flex-row items-center"
                 :style="{ backgroundColor: s.highlight ? '#5B6CFF' : '#E6F7F4' }"
               >
-                <text class="text-[10px]" :style="{ color: s.highlight ? '#FFFFFF' : '#1FB6A6' }">
+                <text class="text-xs" :style="{ color: s.highlight ? '#FFFFFF' : '#1FB6A6' }">
                   {{ s.badge }}
                 </text>
               </view>
@@ -55,18 +55,18 @@
                 <ml-icon v-if="selected === s.id" name="check" :size="12" color="#FFFFFF"></ml-icon>
               </view>
               <view class="flex-col flex-1">
-                <text class="text-[15px] font-semibold text-ink">{{ s.name }}</text>
+                <text class="text-base font-semibold text-ink">{{ s.name }}</text>
                 <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
               </view>
               <view class="flex-col items-end ml-2">
                 <view class="flex-row items-baseline">
                   <text class="text-xs text-ink">¥</text>
-                  <text class="text-xl font-bold text-ink">{{ formatPrice(s.priceCent) }}</text>
-                  <text class="text-[11px] text-ink-soft ml-0.5">/{{ s.unit }}</text>
+                  <text class="text-[22px] font-bold text-ink">{{ formatPrice(s.priceCent) }}</text>
+                  <text class="text-xs text-ink-soft ml-0.5">/{{ s.unit }}</text>
                 </view>
                 <text
                   v-if="s.originPriceCent > 0"
-                  class="text-[11px] text-mist line-through mt-0.5"
+                  class="text-xs text-ink-soft line-through mt-0.5"
                 >
                   ¥{{ formatPrice(s.originPriceCent) }}
                 </text>
@@ -90,8 +90,8 @@
                   <ml-icon name="check" :size="11" color="#1FB6A6"></ml-icon>
                 </view>
                 <view class="flex-col flex-1">
-                  <text class="text-[13px] font-medium text-ink">{{ b.label }}</text>
-                  <text class="text-[11px] text-ink-soft mt-0.5 leading-4">{{ b.desc }}</text>
+                  <text class="text-sm font-medium text-ink">{{ b.label }}</text>
+                  <text class="text-xs text-ink-soft mt-0.5 leading-4">{{ b.desc }}</text>
                 </view>
               </view>
             </view>
@@ -112,12 +112,12 @@
 
       <!-- 协议与说明 -->
       <view class="flex-row items-center justify-center mt-3">
-        <text class="text-[11px] text-mist">支付即同意</text>
-        <text class="text-[11px] text-smart ml-0.5" @click="showAgreement">《会员服务协议》</text>
-        <text class="text-[11px] text-mist">· 连续包月可随时取消</text>
+        <text class="text-xs text-ink-soft">支付即同意</text>
+        <text class="text-xs text-smart ml-0.5" @click="showAgreement">《会员服务协议》</text>
+        <text class="text-xs text-ink-soft">· 连续包月可随时取消</text>
       </view>
-      <view class="flex-col items-center mt-2">
-        <text class="text-[10px] text-mist">Mock 环境：支付为模拟流程，权益即时发放</text>
+      <view v-if="isMock" class="flex-col items-center mt-2">
+        <text class="text-xs text-ink-soft">Mock 环境：支付为模拟流程，权益即时发放</text>
       </view>
     </view>
   </scroll-view>
@@ -132,6 +132,7 @@ import mlIcon from '../../components/ml-icon.uvue'
 import { SKUS, MEMBER_BENEFITS, Sku, SkuId, formatPrice } from '../../data/membership.uts'
 import { purchase } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { useMock } from '../../api/env.uts'
 
 const skus = SKUS
 const benefits = MEMBER_BENEFITS
@@ -140,6 +141,8 @@ const paying = ref(false)
 
 // 入口来源（mine=我的页 / gating=权益拦截 / index=首页）
 const from = ref('mine')
+// Mock 说明仅演示环境展示，真实环境不出现
+const isMock = useMock()
 
 onLoad((opts: any) => {
   if (opts != null && opts['from'] != null) {

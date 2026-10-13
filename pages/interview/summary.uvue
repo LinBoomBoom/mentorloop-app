@@ -2,7 +2,7 @@
   <view class="p-4 bg-bg-light h-screen">
     <!-- 页头 -->
     <view class="mb-4 mt-1">
-      <text class="text-xl font-bold text-ink">面试完成</text>
+      <text class="text-[22px] font-bold text-ink">面试完成</text>
       <text class="text-sm text-ink-soft mt-1">确认本场数据，生成结构化面试报告</text>
     </view>
 
@@ -15,7 +15,7 @@
           <ml-icon name="check-circle" :size="24" color="#1FB6A6"></ml-icon>
         </view>
         <view class="flex-col flex-1">
-          <text class="text-2xl font-bold text-ink">{{ count }} 道题</text>
+          <text class="text-[22px] font-bold text-ink">{{ count }} 道题</text>
           <text class="text-xs text-ink-soft mt-0.5">追问 {{ followupTotal }} 次</text>
         </view>
       </view>
@@ -135,6 +135,6 @@ async function genReport() {
   interviewSession.clearSnapshot()
 
   generating.value = false
-  uni.redirectTo({ url: '/pages/report/report' })
+  uni.switchTab({ url: '/pages/report/report' })
 }
 </script>

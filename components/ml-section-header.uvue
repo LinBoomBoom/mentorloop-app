@@ -9,7 +9,7 @@
     </view>
     <view
       v-if="actionText.length > 0"
-      class="flex-row items-center h-7 px-1 -mr-1"
+      class="flex-row items-center h-11 px-2 -mr-2"
       hover-class="pressed-row"
       :hover-start-time="0"
       @click="onAction"
