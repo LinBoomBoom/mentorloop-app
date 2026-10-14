@@ -117,6 +117,7 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 - **样式不继承**：文字必须用 `<text>` 包裹，并在 `<text>` 上写 `text-*` / `font-*`。
 - **原生端不支持** `gap` / `gap-x-*` / `gap-y-*` / `space-x-*` / `space-y-*` → 用 `mt-*` / `ml-*`。
 - 避免复杂后代选择器（`.a .b`），全部用扁平原子类（与蒸汽模式要求同向）。
+- 模板**静态属性不得承载表达式**：`label="'项目经历 ' + n + ' 段'"` 缺 `:` 会被当成字面字符串原样渲染 → 必须 `:label="'项目经历 ' + n + ' 段'"`。由 ESLint 本地规则 `uvue/no-expression-in-static-attr` 按**表达式语法解析（AST）**拦截（覆盖 `a + b`、`x.y`、`x ? a : b` 等无引号写法；`rgba(...)`、连字符值、纯字面量不误报）。
 - 单位用 rpx（已开启 `rem2rpx`，直接写 Tailwind 的 rem 间距即可自动换算）。
 
 ### Tailwind
