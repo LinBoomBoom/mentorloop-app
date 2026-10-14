@@ -34,7 +34,7 @@ export const TRACKING_EVENTS: TrackingEventDef[] = [
   } as TrackingEventDef,
   {
     name: 'interview_question_asked',
-    description: '数字人提出问题（questionId、abilityDomain）',
+    description: 'AI 面试官提出问题（questionId、abilityDomain）',
     northStar: false
   } as TrackingEventDef,
   {

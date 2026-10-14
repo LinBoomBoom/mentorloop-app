@@ -46,7 +46,7 @@ export function speechCapability(): SpeechCapability {
 
 // ---------------- TTS 播放（面试官念题） ----------------
 
-// 播放状态回调（驱动数字人口型/状态）
+// 播放状态回调（驱动面试官语音状态）
 let ttsStateCb: ((state: 'start' | 'end') => void) | null = null
 
 export function onTtsState(cb: (state: 'start' | 'end') => void) {

@@ -34,7 +34,7 @@ export type SelectorInput = {
 
 export type SelectorOutput = {
   question: QuestionItem
-  purpose: string // 提问目的（展示给数字人播报与报告）
+  purpose: string // 提问目的（展示给面试官语音播报与报告）
   isWrapup: boolean
 }
 
