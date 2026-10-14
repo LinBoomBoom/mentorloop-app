@@ -9,7 +9,7 @@
       <view class="absolute rounded-full ring-b" :class="ringClassB" :style="innerRingStyle"></view>
       <!-- 中央 AI 徽标 -->
       <view class="rounded-full flex-row items-center justify-center z-1" :style="coreStyle">
-        <ml-icon :name="coreIcon" :size="coreIconSize" color="#FFFFFF"></ml-icon>
+        <ml-icon :name="coreIcon" :size="coreIconSize" :color="SURFACE"></ml-icon>
       </view>
     </view>
 
@@ -31,7 +31,7 @@
 <script setup lang="uts">
 import { computed } from 'vue'
 import mlIcon from './ml-icon.uvue'
-import { AVATAR_STATE_LABEL, StringMap } from '../styles/theme.uts'
+import { AVATAR_STATE_LABEL, StringMap, themeValue } from '../styles/theme.uts'
 
 // 语音状态可视化（D3：替代数字人）：状态环 + 中央 AI 徽标 + 声波条
 // 状态语义单一事实来源：styles/theme.uts 的 AvatarState（6 态）/ AVATAR_STATE_LABEL
@@ -47,18 +47,22 @@ const props = defineProps({
 })
 
 const LABELS: StringMap = AVATAR_STATE_LABEL
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const MIST = themeValue('mist', '#AEB9CC')
+const SURFACE = themeValue('surface', '#FFFFFF')
 const STATE_COLOR: StringMap = {
-  idle: '#5B6CFF',
-  asking: '#5B6CFF',
-  followup: '#5B6CFF',
-  listening: '#1FB6A6',
-  summary: '#1FB6A6',
-  thinking: '#AEB9CC'
+  idle: SMART,
+  asking: SMART,
+  followup: SMART,
+  listening: RELIABLE,
+  summary: RELIABLE,
+  thinking: MIST
 }
 
 const color = computed((): string => {
   const v = STATE_COLOR[props.state]
-  return v != null ? v : '#5B6CFF'
+  return v != null ? v : SMART
 })
 
 const label = computed((): string => {
@@ -67,11 +71,14 @@ const label = computed((): string => {
 })
 
 // 深色面上状态色加亮一档，保证 4.5:1 可读（非关键标签，仍加亮处理）
+// 2026-10-14 亮色族收敛：加亮档已入 token（smart-light / reliable-light）
+const LABEL_RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
+const LABEL_SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
 const labelColor = computed((): string => {
   const s = props.state
-  if (s === 'listening' || s === 'summary') return '#5CE8D8'
-  if (s === 'thinking') return '#AEB9CC'
-  return '#8FA0FF'
+  if (s === 'listening' || s === 'summary') return LABEL_RELIABLE_LIGHT
+  if (s === 'thinking') return MIST
+  return LABEL_SMART_LIGHT
 })
 
 const coreIcon = computed((): string => {

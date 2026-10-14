@@ -15,7 +15,7 @@
           :hover-start-time="0"
           @click="onExit"
         >
-          <ml-icon name="x" :size="18" color="#AEB9CC"></ml-icon>
+          <ml-icon name="x" :size="18" :color="MIST"></ml-icon>
         </view>
       </view>
       <text class="text-xs text-ink-soft mt-1"
@@ -69,7 +69,7 @@
           class="w-4 h-4 rounded flex-row items-center justify-center border"
           :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
         >
-          <ml-icon v-if="agreed" name="check" :size="11" color="#FFFFFF"></ml-icon>
+          <ml-icon v-if="agreed" name="check" :size="11" :color="SURFACE"></ml-icon>
         </view>
         <view class="flex-row items-center ml-2 flex-1">
           <text class="text-xs text-ink-soft">我已阅读并同意</text>
@@ -111,9 +111,13 @@
 import { ref, computed, onUnmounted } from 'vue'
 import mlButton from './ml-button.uvue'
 import mlIcon from './ml-icon.uvue'
+import { themeValue } from '../styles/theme.uts'
 import { sendSmsCode, loginByPhone, applyAuth } from '../api/auth.uts'
 import { trackEvent } from '../api/tracking.uts'
 import { AGREEMENT_URL, PRIVACY_URL } from '../api/env.uts'
+
+const MIST = themeValue('mist', '#AEB9CC')
+const SURFACE = themeValue('surface', '#FFFFFF')
 
 const emit = defineEmits(['success', 'exit'])
 

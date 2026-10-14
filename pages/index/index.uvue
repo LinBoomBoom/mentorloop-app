@@ -33,7 +33,7 @@
         :hover-start-time="0"
         @click="openMine"
       >
-        <ml-icon name="user" :size="19" color="#FFFFFF"></ml-icon>
+        <ml-icon name="user" :size="19" :color="SURFACE"></ml-icon>
       </view>
     </view>
 
@@ -66,19 +66,19 @@
           }"
         >
           <view class="flex-1 flex-col items-center" @click="goGrowth">
-            <ml-icon name="target" :size="16" color="#F5C97B"></ml-icon>
+            <ml-icon name="target" :size="16" :color="WARN_LIGHT"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ totalCount }}</text>
             <text class="text-xs text-mist mt-0.5">累计面试</text>
           </view>
           <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
           <view class="flex-1 flex-col items-center" @click="goGrowth">
-            <ml-icon name="award" :size="16" color="#5CE8D8"></ml-icon>
+            <ml-icon name="award" :size="16" :color="RELIABLE_LIGHT"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ avgLevel }}</text>
             <text class="text-xs text-mist mt-0.5">平均等级</text>
           </view>
           <view class="w-px h-9" :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"></view>
           <view class="flex-1 flex-col items-center" @click="goTraining">
-            <ml-icon name="flame" :size="16" color="#FF9E6D"></ml-icon>
+            <ml-icon name="flame" :size="16" :color="MOTIVATION_LIGHT"></ml-icon>
             <text class="text-lg font-bold text-white mt-1">{{ todoCount }}</text>
             <text class="text-xs text-mist mt-0.5">待训练</text>
           </view>
@@ -100,13 +100,13 @@
                   class="w-7 h-7 rounded-lg flex-row items-center justify-center"
                   :style="{ backgroundColor: 'rgba(224,138,0,0.18)' }"
                 >
-                  <ml-icon name="zap" :size="15" color="#F5C97B"></ml-icon>
+                  <ml-icon name="zap" :size="15" :color="WARN_LIGHT"></ml-icon>
                 </view>
                 <text class="text-sm font-semibold text-white ml-2">今日训练任务</text>
               </view>
               <view class="flex-row items-center h-11 px-1">
                 <text class="text-xs text-mist">全部</text>
-                <ml-icon name="chevron-right" :size="13" color="#AEB9CC"></ml-icon>
+                <ml-icon name="chevron-right" :size="13" :color="MIST"></ml-icon>
               </view>
             </view>
             <view class="flex-row items-center mt-3">
@@ -139,7 +139,7 @@
                   class="w-7 h-7 rounded-lg flex-row items-center justify-center"
                   :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
                 >
-                  <ml-icon name="file-check" :size="15" color="#5CE8D8"></ml-icon>
+                  <ml-icon name="file-check" :size="15" :color="RELIABLE_LIGHT"></ml-icon>
                 </view>
                 <text class="text-sm font-semibold text-white ml-2">最近报告</text>
               </view>
@@ -167,7 +167,7 @@
             class="w-12 h-12 rounded-full flex-row items-center justify-center"
             :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
           >
-            <ml-icon name="sparkles" :size="22" color="#8FA0FF"></ml-icon>
+            <ml-icon name="sparkles" :size="22" :color="SMART_LIGHT"></ml-icon>
           </view>
           <text class="text-base font-semibold text-white mt-3">完成第一场模拟面试</text>
           <text class="text-xs text-mist mt-1.5 text-center leading-5">
@@ -193,7 +193,7 @@
         :hover-start-time="0"
         @click="goLogin"
       >
-        <ml-icon name="sparkles" :size="12" color="#E08A00"></ml-icon>
+        <ml-icon name="sparkles" :size="12" :color="WARN"></ml-icon>
         <text class="text-xs text-warn ml-1">登录后同步训练记录与报告</text>
       </view>
     </view>
@@ -212,6 +212,16 @@ import { quotaStore } from '../../store/quota.uts'
 import { useMock } from '../../api/env.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { InterviewReport } from '../../types/scoring.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const SURFACE = themeValue('surface', '#FFFFFF')
+const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
+const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
+const MOTIVATION_LIGHT = themeValue('motivationLight', '#FF9E6D')
+const MIST = themeValue('mist', '#AEB9CC')
+const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
+const WARN = themeValue('warn', '#E08A00')
+const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
 
 // 安全区内边距（onShow 从窗口信息读取）
 const topPad = ref(36)
@@ -305,10 +315,10 @@ const latestLevel = computed((): string => {
 
 const levelColor = computed((): string => {
   const l = latestLevel.value
-  if (l === 'A') return '#5CE8D8'
-  if (l === 'B') return '#8FA0FF'
-  if (l === 'C') return '#F5C97B'
-  return '#FF9E6D'
+  if (l === 'A') return RELIABLE_LIGHT
+  if (l === 'B') return SMART_LIGHT
+  if (l === 'C') return WARN_LIGHT
+  return MOTIVATION_LIGHT
 })
 
 function avgOfReport(r: InterviewReport): string {
@@ -358,7 +368,7 @@ const bubbleText = ref(bubbleTexts[0])
 
 // 深色卡样式（实色 + 细描边，避免滚动区 blur 开销）
 const cardStyle = {
-  backgroundColor: '#0B2138',
+  backgroundColor: NAVY_DEEP,
   borderColor: 'rgba(255,255,255,0.08)'
 }
 

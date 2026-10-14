@@ -12,7 +12,7 @@
         <view
           class="w-12 h-12 rounded-full bg-chip-reliable flex-row items-center justify-center mr-3"
         >
-          <ml-icon name="check-circle" :size="24" color="#1FB6A6"></ml-icon>
+          <ml-icon name="check-circle" :size="24" :color="RELIABLE"></ml-icon>
         </view>
         <view class="flex-col flex-1">
           <text class="text-[22px] font-bold text-ink">{{ count }} 道题</text>
@@ -31,7 +31,7 @@
     <view v-if="generating" class="mt-3">
       <ml-card>
         <view class="flex-row items-center">
-          <ml-icon name="refresh-cw" :size="16" color="#5B6CFF"></ml-icon>
+          <ml-icon name="refresh-cw" :size="16" :color="SMART"></ml-icon>
           <text class="text-sm text-ink ml-2">正在调用评分引擎生成报告…</text>
         </view>
       </ml-card>
@@ -66,6 +66,10 @@ import { scoreInterview } from '../../engine/scorer.uts'
 import { getReport } from '../../api/report.uts'
 import { useMock } from '../../api/client.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const SMART = themeValue('smart', '#5B6CFF')
 
 const count = ref(0)
 const generating = ref(false)

@@ -4,7 +4,7 @@
       <!-- 数据清单 -->
       <ml-card>
         <view class="flex-row items-center">
-          <ml-icon name="shield" :size="14" color="#5B6CFF"></ml-icon>
+          <ml-icon name="shield" :size="14" :color="SMART"></ml-icon>
           <text class="text-sm font-semibold text-ink ml-1.5">本地数据</text>
           <text class="text-xs text-ink-soft ml-2">所有数据仅存储在本机</text>
         </view>
@@ -74,6 +74,19 @@ import { trainingHistory } from '../../store/training-history.uts'
 import { resumeDraft } from '../../store/resume-draft.uts'
 import { interviewSession } from '../../store/interview-session.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const DANGER = themeValue('danger', '#DC2626')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const DIM_COMMUNICATION = DIM_COLOR['communication'] != null ? DIM_COLOR['communication'] : '#7C5CFF'
+const DIM_COMMUNICATION_TINT = DIM_TINT['communication'] != null ? DIM_TINT['communication'] : '#F0EBFF'
+const DIM_LEARNING = DIM_COLOR['learning'] != null ? DIM_COLOR['learning'] : '#0EA5B7'
+const DIM_LEARNING_TINT = DIM_TINT['learning'] != null ? DIM_TINT['learning'] : '#E0F5F8'
 
 type DataRow = { icon: string; color: string; tint: string; text: string; value: string }
 
@@ -100,36 +113,36 @@ const dataRows = computed((): DataRow[] => {
   return [
     {
       icon: 'file-text',
-      color: '#5B6CFF',
-      tint: '#EEF1FF',
+      color: SMART,
+      tint: CHIP_SMART,
       text: '面试报告',
       value: reportCount.value + ' 份'
     } as DataRow,
     {
       icon: 'dumbbell',
-      color: '#1FB6A6',
-      tint: '#E6F7F4',
+      color: RELIABLE,
+      tint: CHIP_RELIABLE,
       text: '训练记录',
       value: trainingCount.value + ' 条'
     } as DataRow,
     {
       icon: 'file-check',
-      color: '#E08A00',
-      tint: '#FFF3E0',
+      color: WARN,
+      tint: CHIP_WARN,
       text: '简历草稿与导出版本',
       value: draftCount.value + ' 个版本'
     } as DataRow,
     {
       icon: 'database',
-      color: '#7C5CFF',
-      tint: '#F0EBFF',
+      color: DIM_COMMUNICATION,
+      tint: DIM_COMMUNICATION_TINT,
       text: '额度账本与埋点队列',
       value: '本地'
     } as DataRow,
     {
       icon: 'user',
-      color: '#0EA5B7',
-      tint: '#E0F5F8',
+      color: DIM_LEARNING,
+      tint: DIM_LEARNING_TINT,
       text: '账号与偏好',
       value: '保留' // 账号数据以服务端为准，不随本地清除
     } as DataRow
@@ -147,7 +160,7 @@ function confirmClear() {
   uni.showModal({
     title: '清除本地数据',
     content: '将删除本机的报告、训练记录、简历草稿与额度账本，此操作不可恢复。确认继续？',
-    confirmColor: '#DC2626',
+    confirmColor: DANGER,
     success: (r: any) => {
       if (r.confirm) clearLocal()
     }

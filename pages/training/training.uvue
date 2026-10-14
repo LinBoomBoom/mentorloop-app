@@ -9,7 +9,7 @@
         <text class="text-[22px] font-bold text-white">专项训练</text>
         <text class="text-xs text-mist mt-1">报告驱动的定向训练 · 即时反馈</text>
       </view>
-      <ml-icon name="dumbbell" :size="22" color="#5CE8D8"></ml-icon>
+      <ml-icon name="dumbbell" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
     </view>
     <view class="px-4 pb-6 pt-4">
       <template v-if="recommended.length > 0">
@@ -26,12 +26,12 @@
               <view class="flex-row items-center">
                 <view
                   class="w-11 h-11 rounded-xl flex-col items-center justify-center mr-3"
-                  :style="{ backgroundColor: t.priority === 1 ? '#FFF3E0' : '#EEF1FF' }"
+                  :style="{ backgroundColor: t.priority === 1 ? CHIP_WARN : CHIP_SMART }"
                 >
                   <ml-icon
                     name="target"
                     :size="18"
-                    :color="t.priority === 1 ? '#E08A00' : '#5B6CFF'"
+                    :color="t.priority === 1 ? WARN : SMART"
                   ></ml-icon>
                 </view>
                 <view class="flex-col flex-1">
@@ -39,18 +39,18 @@
                     <text class="text-base font-medium text-ink flex-1">{{ t.title }}</text>
                     <ml-tag
                       :label="t.priority === 1 ? '最高优先' : 'P' + t.priority"
-                      :bg="t.priority === 1 ? '#FFF3E0' : '#F1F5F9'"
-                      :color="t.priority === 1 ? '#E08A00' : '#5B6472'"
+                      :bg="t.priority === 1 ? CHIP_WARN : BG_MUTED"
+                      :color="t.priority === 1 ? WARN : INK_SOFT"
                     ></ml-tag>
                   </view>
                   <view class="flex-row items-center mt-1.5">
-                    <ml-icon name="clock" :size="11" color="#AEB9CC"></ml-icon>
+                    <ml-icon name="clock" :size="11" :color="MIST"></ml-icon>
                     <text class="text-xs text-ink-soft ml-1">{{ t.durationMin }} 分钟</text>
                     <view class="w-1 h-1 rounded-full bg-line mx-2"></view>
                     <text class="text-xs text-ink-soft">单维突破 · 即时反馈</text>
                   </view>
                 </view>
-                <ml-icon name="chevron-right" :size="17" color="#AEB9CC"></ml-icon>
+                <ml-icon name="chevron-right" :size="17" :color="MIST"></ml-icon>
               </view>
             </ml-card>
           </view>
@@ -82,8 +82,8 @@
               </view>
               <ml-tag
                 :label="d.level.length > 0 ? d.level : '待评估'"
-                :bg="d.levelBg.length > 0 ? d.levelBg : '#F1F5F9'"
-                :color="d.levelColor.length > 0 ? d.levelColor : '#AEB9CC'"
+                :bg="d.levelBg.length > 0 ? d.levelBg : BG_MUTED"
+                :color="d.levelColor.length > 0 ? d.levelColor : MIST"
               ></ml-tag>
             </view>
             <text class="text-sm font-medium text-ink mt-2.5">{{ d.label }}</text>
@@ -108,7 +108,7 @@
             <view
               class="w-9 h-9 rounded-lg bg-chip-reliable flex-row items-center justify-center mr-3"
             >
-              <ml-icon name="play" :size="15" color="#1FB6A6"></ml-icon>
+              <ml-icon name="play" :size="15" :color="RELIABLE"></ml-icon>
             </view>
             <view class="flex-col flex-1">
               <text class="text-sm text-ink">{{ t.title }}</text>
@@ -128,8 +128,8 @@
         <ml-card>
           <ml-empty
             icon="dumbbell"
-            icon-color="#5B6CFF"
-            icon-bg="#EEF1FF"
+            :icon-color="SMART"
+            :icon-bg="CHIP_SMART"
             title="还没有个性化推荐"
             desc="完成一次模拟面试后，这里会根据你的薄弱维度生成训练计划"
           >
@@ -155,12 +155,23 @@ import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
-import { DIM_COLOR, DIM_TINT } from '../../styles/theme.uts'
+import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const INK_SOFT = themeValue('inkSoft', '#5B6472')
+const MIST = themeValue('mist', '#AEB9CC')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 
 type TrainingEntry = {
   id: string
@@ -217,8 +228,8 @@ const dimensions = computed((): DimCard[] => {
       key: k,
       label: DIMENSION_LABEL[k],
       icon: DIM_ICONS[k] != null ? DIM_ICONS[k] : 'target',
-      color: DIM_COLOR[k] != null ? DIM_COLOR[k] : '#5B6CFF',
-      tint: DIM_TINT[k] != null ? DIM_TINT[k] : '#EEF1FF',
+      color: DIM_COLOR[k] != null ? DIM_COLOR[k] : SMART,
+      tint: DIM_TINT[k] != null ? DIM_TINT[k] : CHIP_SMART,
       weight: Math.round((DIMENSION_WEIGHT[k] != null ? DIMENSION_WEIGHT[k] : 0) * 100),
       level: hasLevel ? lv : '',
       levelBg: hasLevel ? levelBg(lv) : '',
@@ -237,15 +248,15 @@ const reportDate = computed((): string => {
 })
 
 function levelBg(l: ScoreLevel): string {
-  if (l === 'A') return '#E6F7F4'
-  if (l === 'B') return '#EEF1FF'
-  return '#FFF3E0'
+  if (l === 'A') return CHIP_RELIABLE
+  if (l === 'B') return CHIP_SMART
+  return CHIP_WARN
 }
 
 function levelColorOf(l: string): string {
-  if (l === 'A') return '#1FB6A6'
-  if (l === 'B') return '#5B6CFF'
-  return '#E08A00'
+  if (l === 'A') return RELIABLE
+  if (l === 'B') return SMART
+  return WARN
 }
 
 onShow(() => {

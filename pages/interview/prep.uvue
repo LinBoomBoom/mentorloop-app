@@ -14,7 +14,7 @@
         <view class="mb-3">
           <ml-card>
             <view class="flex-row items-center">
-              <ml-icon name="target" :size="14" color="#5B6CFF"></ml-icon>
+              <ml-icon name="target" :size="14" :color="SMART"></ml-icon>
               <text class="text-sm font-semibold text-ink ml-1.5">面试方向</text>
             </view>
             <view class="flex-row flex-wrap mt-3">
@@ -50,7 +50,7 @@
                   class="ml-1"
                   name="check"
                   :size="13"
-                  color="#5B6CFF"
+                  :color="SMART"
                 ></ml-icon>
                 <text v-if="!p.available" class="text-xs text-ink-soft ml-1">敬请期待</text>
               </view>
@@ -62,7 +62,7 @@
         <view class="mb-3">
           <ml-card>
             <view class="flex-row items-center">
-              <ml-icon name="trending-up" :size="14" color="#5B6CFF"></ml-icon>
+              <ml-icon name="trending-up" :size="14" :color="SMART"></ml-icon>
               <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
               <text class="text-xs text-ink-soft ml-2">决定题目难度区间</text>
             </view>
@@ -90,7 +90,7 @@
         <!-- 设备检测 -->
         <ml-card>
           <view class="flex-row items-center">
-            <ml-icon name="shield-check" :size="14" color="#5B6CFF"></ml-icon>
+            <ml-icon name="shield-check" :size="14" :color="SMART"></ml-icon>
             <text class="text-sm font-semibold text-ink ml-1.5">设备检测</text>
           </view>
           <view
@@ -148,6 +148,9 @@ import { userStore } from '../../store/user-profile.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
 import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
 
 type CheckKey = 'mic' | 'net' | 'record'
 

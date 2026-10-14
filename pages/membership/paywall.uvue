@@ -9,7 +9,7 @@
             class="w-11 h-11 rounded-full flex-row items-center justify-center"
             :style="{ backgroundColor: 'rgba(245,201,123,0.2)' }"
           >
-            <ml-icon name="crown" :size="22" color="#F5C97B"></ml-icon>
+            <ml-icon name="crown" :size="22" :color="WARN_LIGHT"></ml-icon>
           </view>
           <view class="flex-col flex-1 ml-3">
             <text class="text-lg font-bold text-white">MentorLoop 会员</text>
@@ -37,9 +37,9 @@
             <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
               <view
                 class="h-5 px-2 rounded-full flex-row items-center"
-                :style="{ backgroundColor: s.highlight ? '#5B6CFF' : '#E6F7F4' }"
+                :style="{ backgroundColor: s.highlight ? SMART : CHIP_RELIABLE }"
               >
-                <text class="text-xs" :style="{ color: s.highlight ? '#FFFFFF' : '#1FB6A6' }">
+                <text class="text-xs" :style="{ color: s.highlight ? SURFACE : RELIABLE }">
                   {{ s.badge }}
                 </text>
               </view>
@@ -48,11 +48,16 @@
               <view
                 class="w-5 h-5 rounded-full flex-row items-center justify-center mr-3"
                 :style="{
-                  backgroundColor: selected === s.id ? '#5B6CFF' : 'transparent',
-                  border: selected === s.id ? '1px solid #5B6CFF' : '1.5px solid #C9D2E3'
+                  backgroundColor: selected === s.id ? SMART : 'transparent',
+                  border: selected === s.id ? '1px solid ' + SMART : '1.5px solid ' + LINE_STRONG
                 }"
               >
-                <ml-icon v-if="selected === s.id" name="check" :size="12" color="#FFFFFF"></ml-icon>
+                <ml-icon
+                  v-if="selected === s.id"
+                  name="check"
+                  :size="12"
+                  :color="SURFACE"
+                ></ml-icon>
               </view>
               <view class="flex-col flex-1">
                 <text class="text-base font-semibold text-ink">{{ s.name }}</text>
@@ -85,9 +90,9 @@
               <view class="flex-row items-start" :class="i > 0 ? 'mt-0' : ''">
                 <view
                   class="w-5 h-5 rounded-full flex-row items-center justify-center mr-2 mt-0.5"
-                  :style="{ backgroundColor: '#E6F7F4' }"
+                  :style="{ backgroundColor: CHIP_RELIABLE }"
                 >
-                  <ml-icon name="check" :size="11" color="#1FB6A6"></ml-icon>
+                  <ml-icon name="check" :size="11" :color="RELIABLE"></ml-icon>
                 </view>
                 <view class="flex-col flex-1">
                   <text class="text-sm font-medium text-ink">{{ b.label }}</text>
@@ -133,6 +138,16 @@ import { SKUS, MEMBER_BENEFITS, Sku, SkuId, formatPrice } from '../../data/membe
 import { purchase } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { useMock } from '../../api/env.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const LINE = themeValue('line', '#E3E8F0')
+const LINE_STRONG = themeValue('lineStrong', '#C9D2E3')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 
 const skus = SKUS
 const benefits = MEMBER_BENEFITS
@@ -166,11 +181,11 @@ const payButtonText = computed((): string => {
 function skuStyle(s: Sku): Map<string, any> {
   const m = new Map<string, any>()
   if (selected.value === s.id) {
-    m.set('borderColor', '#5B6CFF')
-    m.set('backgroundColor', '#F5F6FF')
+    m.set('borderColor', SMART)
+    m.set('backgroundColor', CHIP_SMART)
   } else {
-    m.set('borderColor', '#E4E9F2')
-    m.set('backgroundColor', '#FFFFFF')
+    m.set('borderColor', LINE)
+    m.set('backgroundColor', SURFACE)
   }
   return m
 }

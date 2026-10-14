@@ -15,15 +15,18 @@
       @click="onAction"
     >
       <text class="text-xs text-smart">{{ actionText }}</text>
-      <ml-icon name="chevron-right" :size="13" color="#5B6CFF"></ml-icon>
+      <ml-icon name="chevron-right" :size="13" :color="SMART"></ml-icon>
     </view>
   </view>
 </template>
 
 <script setup lang="uts">
 import mlIcon from './ml-icon.uvue'
+import { themeValue } from '../styles/theme.uts'
 
 // 区块标题：左侧竖条 + 标题（+说明），右侧可选操作入口
+const SMART = themeValue('smart', '#5B6CFF')
+
 defineProps({
   title: { type: String, default: '' },
   caption: { type: String, default: '' },

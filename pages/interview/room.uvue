@@ -9,7 +9,7 @@
     <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
       <!-- 左：退出（放弃，不生成报告） -->
       <view class="flex-row items-center h-11" @click="confirmExit">
-        <ml-icon name="arrow-left" :size="16" color="#AEB9CC"></ml-icon>
+        <ml-icon name="arrow-left" :size="16" :color="MIST"></ml-icon>
         <text class="text-sm text-mist ml-1.5">退出</text>
       </view>
       <!-- 右：网络状态 + 计时 + 结束并生成报告 -->
@@ -17,12 +17,12 @@
         <view class="flex-row items-center mr-3">
           <view
             class="w-1.5 h-1.5 rounded-full mr-1.5"
-            :style="{ backgroundColor: netOk ? '#1FB6A6' : '#DC2626' }"
+            :style="{ backgroundColor: netOk ? RELIABLE : DANGER }"
           ></view>
           <text class="text-xs" :class="netOk ? 'text-mist' : 'text-danger'">{{ netText }}</text>
         </view>
         <view class="flex-row items-center mr-3">
-          <ml-icon name="clock" :size="14" color="#FFFFFF"></ml-icon>
+          <ml-icon name="clock" :size="14" :color="SURFACE"></ml-icon>
           <text class="text-sm text-white ml-1">{{ elapsedText }}</text>
         </view>
         <view
@@ -32,7 +32,7 @@
           :hover-start-time="0"
           @click="confirmFinish"
         >
-          <ml-icon name="check-circle" :size="13" color="#8FA0FF"></ml-icon>
+          <ml-icon name="check-circle" :size="13" :color="SMART_LIGHT"></ml-icon>
           <text class="text-xs text-white ml-1">结束</text>
         </view>
       </view>
@@ -54,7 +54,7 @@
         class="flex-row items-center h-7 px-3 rounded-full"
         :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
       >
-        <ml-icon name="sparkles" :size="12" color="#8C9BFF"></ml-icon>
+        <ml-icon name="sparkles" :size="12" :color="SMART_LIGHT"></ml-icon>
         <text class="text-xs text-white ml-1">AI 面试官</text>
       </view>
     </view>
@@ -90,7 +90,7 @@
           :hover-start-time="0"
           @click="replayQuestion"
         >
-          <ml-icon name="rotate-ccw" :size="13" color="#AEB9CC"></ml-icon>
+          <ml-icon name="rotate-ccw" :size="13" :color="MIST"></ml-icon>
           <text class="text-xs text-mist ml-1.5">再说一遍</text>
         </view>
         <view
@@ -99,7 +99,7 @@
           :hover-start-time="0"
           @click="onRephrase"
         >
-          <ml-icon name="repeat" :size="13" color="#AEB9CC"></ml-icon>
+          <ml-icon name="repeat" :size="13" :color="MIST"></ml-icon>
           <text class="text-xs text-mist ml-1.5">换一种说法</text>
         </view>
         <view
@@ -108,7 +108,7 @@
           :hover-start-time="0"
           @click="textMode"
         >
-          <ml-icon name="keyboard" :size="13" color="#AEB9CC"></ml-icon>
+          <ml-icon name="keyboard" :size="13" :color="MIST"></ml-icon>
           <text class="text-xs text-mist ml-1.5">文字作答</text>
         </view>
       </view>
@@ -125,7 +125,7 @@
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon :name="paused ? 'play' : 'pause'" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon :name="paused ? 'play' : 'pause'" :size="18" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-xs text-mist mt-1.5">{{ paused ? '继续' : '暂停' }}</text>
       </view>
@@ -136,7 +136,7 @@
           class="w-16 h-16 rounded-full flex-row items-center justify-center"
           :class="recording ? 'bg-danger' : 'bg-smart'"
         >
-          <ml-icon :name="recording ? 'square' : 'mic'" :size="24" color="#FFFFFF"></ml-icon>
+          <ml-icon :name="recording ? 'square' : 'mic'" :size="24" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '点击作答' }}</text>
       </view>
@@ -147,7 +147,7 @@
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon name="flag" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon name="flag" :size="18" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-xs text-mist mt-1.5">跳过</text>
       </view>
@@ -192,6 +192,7 @@ import { onLoad, onUnload, onBackPress } from '@dcloudio/uni-app'
 import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import { themeValue } from '../../styles/theme.uts'
 import { interviewSession } from '../../store/interview-session.uts'
 import { createSession, nextQuestion, submitAnswer } from '../../api/interview.uts'
 import {
@@ -218,6 +219,12 @@ import {
   AsrResult,
   speechCapability
 } from '../../api/speech.uts'
+
+const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const MIST = themeValue('mist', '#AEB9CC')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const DANGER = themeValue('danger', '#DC2626')
 
 const recording = ref(false)
 const elapsed = ref(0)
@@ -273,7 +280,7 @@ const speech = new SpeechRecorder()
 let ttsHandle: TtsHandle | null = null
 let asrSession: RealtimeAsrSession | null = null
 const cap = speechCapability()
-// TTS 播放状态（驱动数字人口型同步）
+// TTS 播放状态（驱动语音状态切换）
 const ttsSpeaking = ref(false)
 
 const initialState: string = 'idle'
@@ -432,7 +439,7 @@ function initRecorder() {
       avatarState.value = 'listening'
     }
   })
-  // TTS 播放状态 → 数字人口型同步
+  // TTS 播放状态 → 语音状态切换
   onTtsState((state: 'start' | 'end') => {
     if (state === 'start') {
       ttsSpeaking.value = true
@@ -492,7 +499,7 @@ async function ask() {
     goSummary()
     return
   }
-  // 数字人 TTS 播报题目（真实感知层），播报结束进入倾听
+  // 面试官语音 TTS 播报题目（真实感知层），播报结束进入倾听
   interviewSession.transition('LISTENING')
   avatarState.value = 'asking'
   if (ttsHandle != null) {
@@ -781,7 +788,7 @@ function confirmExit() {
         : '将返回上一页，确认退出？',
     confirmText: '退出',
     cancelText: '继续作答',
-    confirmColor: '#DC2626',
+    confirmColor: DANGER,
     success: (r: any) => {
       if (r.confirm) {
         trackEvent('interview_abandon', { reason: 'user_exit', answeredCount: answered })

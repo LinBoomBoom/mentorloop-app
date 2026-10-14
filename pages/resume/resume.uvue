@@ -9,7 +9,7 @@
         <text class="text-[22px] font-bold text-white">简历优化</text>
         <text class="text-xs text-mist mt-1">AI 解析 · 改写建议 · 投递版本</text>
       </view>
-      <ml-icon name="file-text" :size="22" color="#5CE8D8"></ml-icon>
+      <ml-icon name="file-text" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
     </view>
     <view class="px-4 pb-6 -mt-5">
       <!-- 步骤流：上传 → 解析 → 建议 -->
@@ -20,7 +20,7 @@
               class="w-6 h-6 rounded-full flex-row items-center justify-center"
               :style="stepStyle(i)"
             >
-              <ml-icon v-if="i < currentStep" name="check" :size="12" color="#FFFFFF"></ml-icon>
+              <ml-icon v-if="i < currentStep" name="check" :size="12" :color="SURFACE"></ml-icon>
               <text v-else class="text-xs font-semibold" :style="{ color: stepTextColor(i) }">
                 {{ i + 1 }}
               </text>
@@ -32,7 +32,7 @@
           <view
             v-if="i < steps.length - 1"
             class="flex-1 h-px mx-2 mb-4"
-            :style="{ backgroundColor: i < currentStep ? '#1FB6A6' : '#E3E8F0' }"
+            :style="{ backgroundColor: i < currentStep ? RELIABLE : LINE }"
           ></view>
         </template>
       </view>
@@ -56,7 +56,7 @@
       <view class="mt-3">
         <view
           class="bg-surface rounded-2xl border-2 border-dashed pressable relative overflow-hidden"
-          :style="{ borderColor: fileName.length > 0 ? '#5B6CFF' : '#E3E8F0' }"
+          :style="{ borderColor: fileName.length > 0 ? SMART : LINE }"
           hover-class="pressed-card"
           :hover-start-time="0"
           @click="pick"
@@ -66,7 +66,7 @@
               <ml-icon
                 :name="parsing ? 'loader-circle' : 'cloud-upload'"
                 :size="26"
-                color="#5B6CFF"
+                :color="SMART"
               ></ml-icon>
             </view>
             <text class="text-base font-semibold text-ink mt-3">
@@ -79,7 +79,7 @@
               v-if="fileName.length > 0"
               class="flex-row items-center mt-3 h-8 px-3 rounded-full bg-chip-smart"
             >
-              <ml-icon name="file-check" :size="13" color="#5B6CFF"></ml-icon>
+              <ml-icon name="file-check" :size="13" :color="SMART"></ml-icon>
               <text class="text-xs text-smart ml-1">{{ fileName }}</text>
             </view>
 
@@ -96,7 +96,7 @@
                 class="w-40"
                 :percent="60"
                 :show-value="false"
-                color="#5B6CFF"
+                :color="SMART"
               ></ml-progress>
             </view>
           </view>
@@ -104,7 +104,7 @@
 
         <!-- 隐私说明 -->
         <view class="flex-row items-center justify-center mt-2.5">
-          <ml-icon name="lock" :size="11" color="#AEB9CC"></ml-icon>
+          <ml-icon name="lock" :size="11" :color="MIST"></ml-icon>
           <text class="text-xs text-ink-soft ml-1">简历仅用于本次分析，不会上传至第三方</text>
         </view>
       </view>
@@ -117,27 +117,27 @@
           <view class="flex-row flex-wrap">
             <ml-tag
               :label="parsed.contact ? '联系方式已填' : '联系方式缺失'"
-              :bg="parsed.contact ? '#E6F7F4' : '#FEECEC'"
-              :color="parsed.contact ? '#1FB6A6' : '#DC2626'"
+              :bg="parsed.contact ? CHIP_RELIABLE : CHIP_DANGER"
+              :color="parsed.contact ? RELIABLE : DANGER"
             ></ml-tag>
             <view class="w-1.5"></view>
             <ml-tag
-              label="'项目经历 ' + parsed.projects + ' 段'"
-              bg="#EEF1FF"
-              color="#5B6CFF"
+              :label="'项目经历 ' + parsed.projects + ' 段'"
+              :bg="CHIP_SMART"
+              :color="SMART"
             ></ml-tag>
             <view class="w-1.5"></view>
             <ml-tag
               :label="parsed.quantified ? '成果已量化' : '成果未量化'"
-              :bg="parsed.quantified ? '#E6F7F4' : '#FFF3E0'"
-              :color="parsed.quantified ? '#1FB6A6' : '#E08A00'"
+              :bg="parsed.quantified ? CHIP_RELIABLE : CHIP_WARN"
+              :color="parsed.quantified ? RELIABLE : WARN"
             ></ml-tag>
           </view>
 
           <!-- 技术栈 -->
           <template v-if="parsed.techStack.length > 0">
             <view class="flex-row items-center mt-4">
-              <ml-icon name="layers" :size="13" color="#5B6CFF"></ml-icon>
+              <ml-icon name="layers" :size="13" :color="SMART"></ml-icon>
               <text class="text-xs font-semibold text-ink ml-1">技术栈</text>
             </view>
             <view class="flex-row flex-wrap mt-2">
@@ -154,7 +154,7 @@
           <!-- 待补充 -->
           <view v-if="parsed.gaps.length > 0" class="mt-3">
             <view class="flex-row items-center">
-              <ml-icon name="circle-help" :size="13" color="#E08A00"></ml-icon>
+              <ml-icon name="circle-help" :size="13" :color="WARN"></ml-icon>
               <text class="text-xs font-semibold text-warn ml-1">待补充</text>
             </view>
             <text
@@ -169,7 +169,7 @@
           <!-- 格式风险 -->
           <view v-if="parsed.formatRisks.length > 0" class="mt-3">
             <view class="flex-row items-center">
-              <ml-icon name="triangle-alert" :size="13" color="#DC2626"></ml-icon>
+              <ml-icon name="triangle-alert" :size="13" :color="DANGER"></ml-icon>
               <text class="text-xs font-semibold text-danger ml-1">格式风险</text>
             </view>
             <text
@@ -196,7 +196,7 @@
             <!-- 原句 -->
             <view class="rounded-xl p-3 bg-bg-muted">
               <view class="flex-row items-center">
-                <ml-icon name="quote" :size="12" color="#AEB9CC"></ml-icon>
+                <ml-icon name="quote" :size="12" :color="MIST"></ml-icon>
                 <text class="text-xs text-ink-soft ml-1">原文</text>
               </view>
               <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ s.original }}</text>
@@ -204,7 +204,7 @@
             <!-- 建议稿 -->
             <view class="mt-3 rounded-xl p-3 bg-chip-reliable">
               <view class="flex-row items-center">
-                <ml-icon name="wand-2" :size="12" color="#1FB6A6"></ml-icon>
+                <ml-icon name="wand-2" :size="12" :color="RELIABLE"></ml-icon>
                 <text class="text-xs font-semibold text-reliable ml-1">建议稿</text>
               </view>
               <text class="text-sm text-ink mt-1.5 leading-5">{{ s.suggested }}</text>
@@ -212,7 +212,7 @@
             <!-- 原因 -->
             <text class="text-xs text-ink-soft mt-2.5 leading-5">{{ s.reason }}</text>
             <view class="mt-2" v-if="s.needsUserEvidence">
-              <ml-tag label="需补充真实证据" bg="#FFF3E0" color="#E08A00"></ml-tag>
+              <ml-tag label="需补充真实证据" :bg="CHIP_WARN" :color="WARN"></ml-tag>
             </view>
             <!-- 操作 -->
             <view class="flex-row mt-3">
@@ -226,7 +226,7 @@
                 <ml-icon
                   :name="isAdopted(i) ? 'check-check' : 'check'"
                   :size="13"
-                  :color="isAdopted(i) ? '#5B6472' : '#FFFFFF'"
+                  :color="isAdopted(i) ? INK_SOFT : SURFACE"
                 ></ml-icon>
                 <text class="text-xs ml-1" :class="isAdopted(i) ? 'text-ink-soft' : 'text-white'">
                   {{ isAdopted(i) ? '已采用' : '采用' }}
@@ -239,7 +239,7 @@
                 :hover-start-time="0"
                 @click="dismissOne(i)"
               >
-                <ml-icon name="x" :size="13" color="#5B6472"></ml-icon>
+                <ml-icon name="x" :size="13" :color="INK_SOFT"></ml-icon>
                 <text class="text-xs text-ink-soft ml-1">忽略</text>
               </view>
             </view>
@@ -289,7 +289,7 @@
               :hover-start-time="0"
               @click="exportVersion(v)"
             >
-              <ml-icon name="share" :size="12" color="#5B6CFF"></ml-icon>
+              <ml-icon name="share" :size="12" :color="SMART"></ml-icon>
               <text class="text-xs text-smart ml-1">导出</text>
             </view>
           </view>
@@ -318,6 +318,22 @@ import {
 } from '../../store/resume-draft.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { userStore, positionDisplay } from '../../store/user-profile.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const DANGER = themeValue('danger', '#DC2626')
+const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const INK_SOFT = themeValue('inkSoft', '#5B6472')
+const LINE = themeValue('line', '#E3E8F0')
+const MIST = themeValue('mist', '#AEB9CC')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const CHIP_DANGER = themeValue('chipDanger', '#FEECEC')
+const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 
 const steps: string[] = ['上传简历', 'AI 解析', '优化建议']
 
@@ -337,22 +353,22 @@ const resumeVersions = computed((): ResumeVersion[] => {
       id: 'standard',
       name: '标准版',
       desc: '均衡呈现经历与技能，适合' + pos + '相关岗位',
-      color: '#5B6CFF',
-      tint: '#EEF1FF'
+      color: SMART,
+      tint: CHIP_SMART
     } as ResumeVersion,
     {
       id: 'tech',
       name: '技术深挖版',
       desc: '突出技术栈与工程实现细节，面向' + pos + '技术侧',
-      color: '#1FB6A6',
-      tint: '#E6F7F4'
+      color: RELIABLE,
+      tint: CHIP_RELIABLE
     } as ResumeVersion,
     {
       id: 'project',
       name: '项目突出版',
       desc: '前置核心项目与量化成果，匹配' + pos + '岗位 JD',
-      color: '#E08A00',
-      tint: '#FFF3E0'
+      color: WARN,
+      tint: CHIP_WARN
     } as ResumeVersion
   ]
 })
@@ -379,13 +395,13 @@ const adoptedCount = computed((): number => {
 })
 
 function stepStyle(i: number): { [key: string]: string } {
-  if (i < currentStep.value) return { backgroundColor: '#1FB6A6' }
-  if (i === currentStep.value) return { backgroundColor: '#5B6CFF' }
-  return { backgroundColor: '#F1F5F9', border: '1px solid #E3E8F0' }
+  if (i < currentStep.value) return { backgroundColor: RELIABLE }
+  if (i === currentStep.value) return { backgroundColor: SMART }
+  return { backgroundColor: BG_MUTED, border: '1px solid ' + LINE }
 }
 
 function stepTextColor(i: number): string {
-  return i <= currentStep.value ? '#FFFFFF' : '#AEB9CC'
+  return i <= currentStep.value ? SURFACE : MIST
 }
 
 function isAdopted(i: number): boolean {

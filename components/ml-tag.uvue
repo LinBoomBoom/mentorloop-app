@@ -5,9 +5,11 @@
 </template>
 
 <script setup lang="uts">
+import { themeValue } from '../styles/theme.uts'
+
 defineProps({
   label: { type: String, default: '' },
-  bg: { type: String, default: '#EEF1FF' },
-  color: { type: String, default: '#5B6CFF' }
+  bg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
+  color: { type: String, default: themeValue('smart', '#5B6CFF') }
 })
 </script>

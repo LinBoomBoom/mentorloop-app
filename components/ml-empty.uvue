@@ -19,12 +19,13 @@
 <script setup lang="uts">
 import { useSlots } from 'vue'
 import mlIcon from './ml-icon.uvue'
+import { themeValue } from '../styles/theme.uts'
 
 // 空状态：图标 + 标题 + 说明 + 可选操作区（slot）
 defineProps({
   icon: { type: String, default: 'sparkles' },
-  iconColor: { type: String, default: '#5B6CFF' },
-  iconBg: { type: String, default: '#EEF1FF' },
+  iconColor: { type: String, default: themeValue('smart', '#5B6CFF') },
+  iconBg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
   title: { type: String, default: '' },
   desc: { type: String, default: '' }
 })

@@ -8,7 +8,7 @@
     <!-- 顶部状态条 -->
     <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
       <view class="flex-row items-center h-11" @click="confirmExit">
-        <ml-icon name="arrow-left" :size="16" color="#AEB9CC"></ml-icon>
+        <ml-icon name="arrow-left" :size="16" :color="MIST"></ml-icon>
         <text class="text-sm text-mist ml-1.5">退出</text>
       </view>
       <view class="flex-row items-center h-11">
@@ -16,7 +16,7 @@
         <text class="text-xs text-mist">专项训练</text>
       </view>
       <view class="flex-row items-center h-11">
-        <ml-icon name="timer" :size="14" color="#FFFFFF"></ml-icon>
+        <ml-icon name="timer" :size="14" :color="SURFACE"></ml-icon>
         <text class="text-sm text-white ml-1">{{ remainText }}</text>
       </view>
     </view>
@@ -28,7 +28,7 @@
           class="flex-row items-center h-7 px-3 rounded-full"
           :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
         >
-          <ml-icon name="dumbbell" :size="12" color="#5CE8D8"></ml-icon>
+          <ml-icon name="dumbbell" :size="12" :color="RELIABLE_LIGHT"></ml-icon>
           <text class="text-xs text-white ml-1">{{ taskTitle }}</text>
         </view>
       </view>
@@ -68,7 +68,7 @@
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon name="keyboard" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon name="keyboard" :size="18" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-xs text-mist mt-1.5">文字答</text>
       </view>
@@ -82,7 +82,7 @@
           <ml-icon
             :name="finished ? 'check' : recording ? 'square' : 'mic'"
             :size="24"
-            color="#FFFFFF"
+            :color="SURFACE"
           ></ml-icon>
         </view>
         <text class="text-xs text-white mt-2">{{
@@ -96,7 +96,7 @@
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon name="flag" :size="18" color="#FFFFFF"></ml-icon>
+          <ml-icon name="flag" :size="18" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-xs text-mist mt-1.5">跳过</text>
       </view>
@@ -162,6 +162,11 @@ import {
   AsrResult,
   speechCapability
 } from '../../api/speech.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const MIST = themeValue('mist', '#AEB9CC')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 
 // 训练任务参数（training 页传入）
 const taskId = ref('')

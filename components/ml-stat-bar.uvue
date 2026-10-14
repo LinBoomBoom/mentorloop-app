@@ -17,6 +17,7 @@
 
 <script setup lang="uts">
 import { computed } from 'vue'
+import { themeValue } from '../styles/theme.uts'
 
 // 统计条组件（growth/training/mine 三页复制粘贴样式的组件化收敛）
 // MP 端 props 走序列化，不收函数；点击通过 stat-tap 事件回传索引
@@ -43,7 +44,7 @@ const props = defineProps({
 const emit = defineEmits(['stat-tap'])
 
 const items = computed((): StatEntry[] => {
-  const ink = '#1A2433'
+  const ink = themeValue('ink', '#1A2433')
   return [
     {
       value: props.value1,

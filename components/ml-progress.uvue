@@ -14,12 +14,13 @@
 
 <script setup lang="uts">
 import { computed } from 'vue'
+import { themeValue } from '../styles/theme.uts'
 
 // 进度条：标签 + 百分比 + 轨道（用于能力值、完成度等）
 const props = defineProps({
   label: { type: String, default: '' },
   percent: { type: Number, default: 0 }, // 0-100
-  color: { type: String, default: '#5B6CFF' },
+  color: { type: String, default: themeValue('smart', '#5B6CFF') },
   showValue: { type: Boolean, default: true }
 })
 

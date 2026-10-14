@@ -4,7 +4,7 @@
 
 <script setup lang="uts">
 import { computed } from 'vue'
-import { StringMap } from '../styles/theme.uts'
+import { StringMap, themeValue } from '../styles/theme.uts'
 
 // Lucide 图标（PUA 码位，来源 design-system/mentorloop/fonts-reference/lucide.css）
 // MP-WEIXIN：字体由 styles/icon-font.uts 运行时注入（构建管线丢弃 @font-face）
@@ -122,7 +122,7 @@ const ICON_GLYPH: StringMap = {
 const props = defineProps({
   name: { type: String, default: '' },
   size: { type: Number, default: 16 },
-  color: { type: String, default: '#1A2433' }
+  color: { type: String, default: themeValue('ink', '#1A2433') }
 })
 
 const glyph = computed((): string => {

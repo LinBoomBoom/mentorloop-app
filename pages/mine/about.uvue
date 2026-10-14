@@ -11,13 +11,13 @@
           class="w-16 h-16 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(91,108,255,0.3)' }"
         >
-          <ml-icon name="sparkles" :size="30" color="#FFFFFF"></ml-icon>
+          <ml-icon name="sparkles" :size="30" :color="SURFACE"></ml-icon>
         </view>
         <text class="text-[22px] font-bold text-white mt-3">MentorLoop</text>
         <text class="text-xs text-mist mt-1.5">学面一体智能导师 · 让每次模拟都有证据</text>
         <view class="flex-row items-center mt-3">
-          <ml-tag label="v0.9.0" bg="rgba(255,255,255,0.14)" color="#FFFFFF"></ml-tag>
-          <ml-tag label="内测版" bg="rgba(245,201,123,0.2)" color="#F5C97B"></ml-tag>
+          <ml-tag label="v0.9.0" bg="rgba(255,255,255,0.14)" :color="SURFACE"></ml-tag>
+          <ml-tag label="内测版" bg="rgba(245,201,123,0.2)" :color="WARN_LIGHT"></ml-tag>
         </view>
       </view>
 
@@ -51,7 +51,7 @@
               <text class="text-sm text-ink">{{ s.text }}</text>
               <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
             </view>
-            <ml-tag v-if="s.soon" label="即将上线" bg="#F1F5F9" color="#AEB9CC"></ml-tag>
+            <ml-tag v-if="s.soon" label="即将上线" :bg="BG_MUTED" :color="MIST"></ml-tag>
           </view>
         </ml-card>
       </view>
@@ -66,6 +66,20 @@ import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { AGREEMENT_URL, PRIVACY_URL } from '../../api/env.uts'
+import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const MIST = themeValue('mist', '#AEB9CC')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
+const DIM_COMMUNICATION = DIM_COLOR['communication'] != null ? DIM_COLOR['communication'] : '#7C5CFF'
+const DIM_COMMUNICATION_TINT = DIM_TINT['communication'] != null ? DIM_TINT['communication'] : '#F0EBFF'
 
 type AboutRow = {
   icon: string
@@ -79,8 +93,8 @@ type AboutRow = {
 const rows: AboutRow[] = [
   {
     icon: 'file-text',
-    color: '#5B6CFF',
-    tint: '#EEF1FF',
+    color: SMART,
+    tint: CHIP_SMART,
     text: '用户协议',
     desc: '使用条款与服务约定',
     soon: false,
@@ -88,8 +102,8 @@ const rows: AboutRow[] = [
   } as AboutRow,
   {
     icon: 'shield',
-    color: '#1FB6A6',
-    tint: '#E6F7F4',
+    color: RELIABLE,
+    tint: CHIP_RELIABLE,
     text: '隐私政策',
     desc: '数据收集、使用与删除说明',
     soon: false,
@@ -97,8 +111,8 @@ const rows: AboutRow[] = [
   } as AboutRow,
   {
     icon: 'message-square',
-    color: '#E08A00',
-    tint: '#FFF3E0',
+    color: WARN,
+    tint: CHIP_WARN,
     text: '意见反馈',
     desc: '告诉我们你的想法与问题',
     soon: true,
@@ -106,8 +120,8 @@ const rows: AboutRow[] = [
   } as AboutRow,
   {
     icon: 'sparkles',
-    color: '#7C5CFF',
-    tint: '#F0EBFF',
+    color: DIM_COMMUNICATION,
+    tint: DIM_COMMUNICATION_TINT,
     text: '候选岗位',
     desc: '前端 / Go 后端 / 产品经理',
     soon: true,

@@ -15,7 +15,7 @@
               border: '1px solid rgba(255,255,255,0.2)'
             }"
           >
-            <ml-icon name="user" :size="26" color="#FFFFFF"></ml-icon>
+            <ml-icon name="user" :size="26" :color="SURFACE"></ml-icon>
           </view>
           <view class="flex-col flex-1">
             <text class="text-lg font-semibold text-white">{{ nickname }}</text>
@@ -40,7 +40,7 @@
             :hover-start-time="0"
             @click="security"
           >
-            <ml-icon name="chevron-right" :size="18" color="#AEB9CC"></ml-icon>
+            <ml-icon name="chevron-right" :size="18" :color="MIST"></ml-icon>
           </view>
         </view>
 
@@ -62,7 +62,7 @@
           class="w-10 h-10 rounded-full flex-row items-center justify-center mr-3"
           :style="{ backgroundColor: 'rgba(245,201,123,0.2)' }"
         >
-          <ml-icon name="crown" :size="20" color="#F5C97B"></ml-icon>
+          <ml-icon name="crown" :size="20" :color="WARN_LIGHT"></ml-icon>
         </view>
         <view class="flex-col flex-1">
           <text class="text-sm font-semibold text-white">{{ planLabel }}权益</text>
@@ -71,12 +71,12 @@
         <view
           class="h-8 px-3 rounded-full flex-row items-center"
           :style="{
-            backgroundColor: plan.value === 'member' ? 'rgba(255,255,255,0.14)' : '#F5C97B'
+            backgroundColor: plan.value === 'member' ? 'rgba(255,255,255,0.14)' : WARN_LIGHT
           }"
         >
           <text
             class="text-xs font-semibold"
-            :style="{ color: plan.value === 'member' ? '#FFFFFF' : '#0B2138' }"
+            :style="{ color: plan.value === 'member' ? SURFACE : NAVY_DEEP }"
           >
             {{ plan.value === 'member' ? '查看权益' : '立即开通' }}
           </text>
@@ -105,7 +105,7 @@
               <text class="text-sm text-ink">{{ s.text }}</text>
               <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
             </view>
-            <ml-icon name="chevron-right" :size="16" color="#AEB9CC"></ml-icon>
+            <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
           </view>
         </ml-card>
       </view>
@@ -114,7 +114,7 @@
       <view v-if="loggedIn" class="mt-3">
         <ml-card pressable @tap="confirmLogout">
           <view class="flex-row items-center justify-center">
-            <ml-icon name="log-out" :size="16" color="#DC2626"></ml-icon>
+            <ml-icon name="log-out" :size="16" :color="DANGER"></ml-icon>
             <text class="text-sm text-danger ml-1.5">退出登录</text>
           </view>
         </ml-card>
@@ -138,6 +138,22 @@ import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const DANGER = themeValue('danger', '#DC2626')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const MIST = themeValue('mist', '#AEB9CC')
+const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
+const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
+const DIM_COMMUNICATION = DIM_COLOR['communication'] != null ? DIM_COLOR['communication'] : '#7C5CFF'
+const DIM_COMMUNICATION_TINT = DIM_TINT['communication'] != null ? DIM_TINT['communication'] : '#F0EBFF'
 
 const nickname = ref(userStore.profile.nickname)
 const plan = ref(userStore.profile.plan)
@@ -173,9 +189,9 @@ const planBadgeBg = computed((): string => {
 })
 
 const planBadgeColor = computed((): string => {
-  if (plan.value === 'member') return '#F5C97B'
-  if (plan.value === 'single') return '#5CE8D8'
-  return '#AEB9CC'
+  if (plan.value === 'member') return WARN_LIGHT
+  if (plan.value === 'single') return RELIABLE_LIGHT
+  return MIST
 })
 
 const planBadgeIcon = computed((): string => {
@@ -198,40 +214,40 @@ type SettingRow = {
 const settings: SettingRow[] = [
   {
     icon: 'lock',
-    color: '#5B6CFF',
-    tint: '#EEF1FF',
+    color: SMART,
+    tint: CHIP_SMART,
     text: '账号与安全',
     desc: '登录方式、设备管理',
     onTap: security
   },
   {
     icon: 'sliders-horizontal',
-    color: '#1FB6A6',
-    tint: '#E6F7F4',
+    color: RELIABLE,
+    tint: CHIP_RELIABLE,
     text: '面试偏好设置',
     desc: '难度、时长、提醒',
     onTap: prefs
   },
   {
     icon: 'cloud-upload',
-    color: '#E08A00',
-    tint: '#FFF3E0',
+    color: WARN,
+    tint: CHIP_WARN,
     text: '简历优化',
     desc: 'AI 解析 · 改写建议 · 投递版本',
     onTap: goResume
   },
   {
     icon: 'shield',
-    color: '#E08A00',
-    tint: '#FFF3E0',
+    color: WARN,
+    tint: CHIP_WARN,
     text: '隐私与数据',
     desc: '录音、简历与账户删除',
     onTap: privacy
   },
   {
     icon: 'info',
-    color: '#7C5CFF',
-    tint: '#F0EBFF',
+    color: DIM_COMMUNICATION,
+    tint: DIM_COMMUNICATION_TINT,
     text: '关于 MentorLoop',
     desc: '版本、协议、反馈',
     onTap: about
@@ -269,7 +285,7 @@ function confirmLogout() {
   uni.showModal({
     title: '退出登录',
     content: '退出后训练记录仍保留在本机，确认退出？',
-    confirmColor: '#DC2626',
+    confirmColor: DANGER,
     success: (r: any) => {
       if (r.confirm) logout()
     }
