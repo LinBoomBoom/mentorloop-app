@@ -16,7 +16,7 @@
             :class="i < dataRows.length - 1 ? 'border-b border-line' : ''"
           >
             <view
-              class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
+              class="w-8 h-8 rounded-control flex-row items-center justify-center mr-3"
               :style="{ backgroundColor: r.tint }"
             >
               <ml-icon :name="r.icon" :size="15" :color="r.color"></ml-icon>

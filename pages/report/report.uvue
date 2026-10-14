@@ -38,11 +38,11 @@
               @click="selectSession(r0.sessionId)"
             >
               <view
-                class="h-11 px-3.5 rounded-full flex-row items-center border"
+                class="h-11 px-3.5 rounded-chip flex-row items-center border"
                 :style="chipStyle(r0.sessionId)"
               >
                 <text
-                  class="text-xs"
+                  class="text-xs font-mono"
                   :style="{ color: r0.sessionId === activeSid ? SURFACE : INK_SOFT }"
                 >
                   {{ fmtDate(r0.at) }}
@@ -52,33 +52,33 @@
           </view>
         </scroll-view>
 
-        <!-- 总体判断（深色品牌卡） -->
-        <view class="bg-navy rounded-2xl p-5 relative overflow-hidden">
-          <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+        <!-- 总体判断（深色品牌卡，去装饰；综合等级 + 置信度） -->
+        <view class="bg-navy rounded-card p-5">
           <view class="flex-row items-center">
             <ml-icon name="sparkles" :size="14" :color="MIST"></ml-icon>
             <text class="text-xs text-mist ml-1.5">总体判断</text>
           </view>
-          <view class="flex-row items-center mt-2 mb-4">
+          <view class="flex-row items-center mt-2">
             <text class="text-lg font-semibold text-white flex-1 leading-6">
               {{ report.overall }}
             </text>
             <view
-              class="w-11 h-11 rounded-full flex-col items-center justify-center ml-3"
+              class="w-12 h-12 rounded-control flex-col items-center justify-center ml-3"
               :style="{
                 backgroundColor: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.14)'
               }"
             >
-              <text class="text-lg font-bold" :style="{ color: overallLevelColor }">
+              <text class="text-lg font-bold font-mono" :style="{ color: overallLevelColor }">
                 {{ overallLevel }}
               </text>
               <text class="text-xs text-mist">综合</text>
             </view>
           </view>
-          <view class="flex-row">
+          <text class="text-xs text-mist mt-2">{{ overallConfidenceText }}</text>
+          <view class="flex-row mt-4">
             <view
-              class="flex-1 rounded-xl p-3 mr-2.5"
+              class="flex-1 rounded-control p-3 mr-2.5"
               :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
             >
               <view class="flex-row items-center">
@@ -88,7 +88,7 @@
               <text class="text-sm text-white mt-1.5">{{ report.strongest }}</text>
             </view>
             <view
-              class="flex-1 rounded-xl p-3"
+              class="flex-1 rounded-control p-3"
               :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
             >
               <view class="flex-row items-center">
@@ -114,9 +114,12 @@
             <view class="flex-row items-center justify-between">
               <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
               <view class="flex-row items-center">
+                <text class="text-xs font-mono text-ink-soft mr-2">{{
+                  confText(d.dimension)
+                }}</text>
                 <ml-tag
                   :label="d.level"
-                  :bg="levelBg(d.level)"
+                  :bg="levelTint(d.level)"
                   :color="levelColor(d.level)"
                 ></ml-tag>
                 <ml-icon
@@ -131,31 +134,39 @@
             <view class="mt-2.5 h-1.5 rounded-full bg-line">
               <view
                 class="h-1.5 rounded-full"
-                :style="{ width: levelPct(d.level), backgroundColor: levelColor(d.level) }"
+                :style="{
+                  width: levelPercent(d.level) + '%',
+                  backgroundColor: levelColor(d.level)
+                }"
               ></view>
             </view>
-            <text class="text-xs text-ink-soft mt-2">证据：{{ d.evidence }}</text>
-            <text v-if="d.missingEvidence.length > 0" class="text-xs text-warn mt-1">
-              待补证据：{{ d.missingEvidence }}
+            <text class="text-xs text-ink-soft mt-2 leading-5">证据：{{ d.evidence }}</text>
+            <text v-if="isLowConf(d.dimension)" class="text-xs text-warn mt-1">
+              低置信度：证据不足，仅供参考
+            </text>
+            <text v-if="!isExpanded(d.dimension)" class="text-xs text-smart mt-1">
+              点击展开：对照锚点与参考答法
             </text>
 
-            <!-- 展开区：完整证据 + 优秀回答示例 + 建议加练题 -->
+            <!-- 展开区：证据对照（你的回答 ↔ 待补证据）+ 参考答法 + 建议加练 -->
             <template v-if="isExpanded(d.dimension)">
-              <view class="mt-3 rounded-xl p-3 bg-bg-muted">
-                <view class="flex-row items-center">
-                  <ml-icon name="quote" :size="12" :color="MIST"></ml-icon>
-                  <text class="text-xs text-ink-soft ml-1">你的回答摘录</text>
+              <view class="mt-3">
+                <text class="text-xs font-mono text-ink-soft">你的回答摘录</text>
+                <view class="mt-1.5 rounded-control p-3 bg-bg-muted" :style="quoteStyle">
+                  <text class="text-xs text-ink leading-5">{{ d.evidence }}</text>
                 </view>
-                <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ d.evidence }}</text>
               </view>
-              <view class="mt-2.5 rounded-xl p-3 bg-chip-reliable">
-                <view class="flex-row items-center">
-                  <ml-icon name="lightbulb" :size="12" :color="RELIABLE"></ml-icon>
-                  <text class="text-xs font-semibold text-reliable ml-1">优秀回答示例</text>
+              <view v-if="d.missingEvidence.length > 0" class="mt-2.5">
+                <text class="text-xs font-mono text-ink-soft">待补证据</text>
+                <view class="mt-1.5 rounded-control p-3 bg-chip-warn" :style="gapStyle">
+                  <text class="text-xs text-ink leading-5">{{ d.missingEvidence }}</text>
                 </view>
-                <text class="text-sm text-ink mt-1.5 leading-5">
-                  {{ exampleFor(d.dimension) }}
-                </text>
+              </view>
+              <view class="mt-2.5">
+                <text class="text-xs font-mono text-ink-soft">参考答法</text>
+                <view class="mt-1.5 rounded-control p-3 bg-chip-reliable" :style="refStyle">
+                  <text class="text-xs text-ink leading-5">{{ exampleFor(d.dimension) }}</text>
+                </view>
               </view>
               <view v-if="d.suggestQuestions.length > 0" class="mt-2.5">
                 <text class="text-xs font-semibold text-ink">建议加练</text>
@@ -197,16 +208,18 @@
           <ml-card pressable @tap="startPlanTask(t)">
             <view class="flex-row items-center">
               <view
-                class="w-9 h-9 rounded-lg flex-row items-center justify-center mr-3"
+                class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
                 :class="t.priority === 1 ? 'bg-chip-warn' : 'bg-chip-smart'"
               >
                 <ml-icon name="zap" :size="16" :color="t.priority === 1 ? WARN : SMART"></ml-icon>
               </view>
               <view class="flex-col flex-1">
                 <text class="text-sm text-ink">{{ t.title }}</text>
-                <text class="text-xs text-ink-soft mt-0.5">
-                  {{ t.durationMin }} 分钟 · 优先级 {{ t.priority }}
-                </text>
+                <view class="flex-row items-center mt-0.5">
+                  <text class="text-xs font-mono text-ink-soft">{{ t.durationMin }}</text>
+                  <text class="text-xs text-ink-soft ml-1">分钟 · 优先级</text>
+                  <text class="text-xs font-mono text-ink-soft ml-1">{{ t.priority }}</text>
+                </view>
               </view>
               <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
             </view>
@@ -248,6 +261,14 @@ import {
   DIMENSION_LABEL
 } from '../../types/scoring.uts'
 import { themeValue } from '../../styles/theme.uts'
+import {
+  averageLevel,
+  levelColor,
+  levelColorOnDark,
+  levelPercent,
+  levelTint
+} from '../../styles/score-display.uts'
+import { confidenceBand } from '../../engine/rubric.uts'
 
 const SMART = themeValue('smart', '#5B6CFF')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
@@ -257,12 +278,13 @@ const INK_SOFT = themeValue('inkSoft', '#5B6472')
 const LINE = themeValue('line', '#E3E8F0')
 const MIST = themeValue('mist', '#AEB9CC')
 const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
-const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
-const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
-const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
-const MOTIVATION_LIGHT = themeValue('motivationLight', '#FF9E6D')
+
+// 证据对照卡左侧强调边（diff 语义：你的回答 / 待补证据 / 参考答法）
+const quoteStyle = { borderLeftWidth: '2px', borderLeftStyle: 'solid', borderLeftColor: SMART }
+const gapStyle = { borderLeftWidth: '2px', borderLeftStyle: 'solid', borderLeftColor: WARN }
+const refStyle = { borderLeftWidth: '2px', borderLeftStyle: 'solid', borderLeftColor: RELIABLE }
 
 const emptyReport: InterviewReport = {
   overall: '',
@@ -281,35 +303,50 @@ const loading = ref(true)
 const records = ref<ReportRecord[]>([])
 const activeSid = ref('')
 
-// 综合等级徽章（总体判断卡右侧；A=4...D=1 均值映射，与 growth/首页同口径）
-const overallLevel = computed((): string => {
+// 综合等级徽章（U7：等级映射与刻度单一来源 styles/score-display.uts）
+const overallLevel = computed((): string => averageLevel(reportLevels(report.value.dimensions)))
+
+// 维度等级 → 等级序列（供 averageLevel 消费）
+function reportLevels(dims: DimensionScore[]): string[] {
+  const out: string[] = []
+  for (let i = 0; i < dims.length; i++) out.push(dims[i].level)
+  return out
+}
+
+// 深色面上的等级色（U7：单一来源 styles/score-display.uts）
+const overallLevelColor = computed((): string => levelColorOnDark(overallLevel.value))
+
+// 综合置信度（D-i3：消费模型既有 confidence 字段，低置信度不伪装精确）
+const overallConfidenceText = computed((): string => {
   const dims = report.value.dimensions
-  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
+  if (dims.length === 0) return ''
   let total = 0
-  let cnt = 0
-  for (let i = 0; i < dims.length; i++) {
-    const v = map[dims[i].level]
-    if (v != null) {
-      total += v
-      cnt += 1
-    }
-  }
-  if (cnt === 0) return '--'
-  const avg = total / cnt
-  if (avg >= 3.5) return 'A'
-  if (avg >= 2.5) return 'B'
-  if (avg >= 1.5) return 'C'
-  return 'D'
+  for (let i = 0; i < dims.length; i++) total += dims[i].confidence
+  const band = confidenceBand(total / dims.length)
+  if (band === 'high') return '综合置信度 高'
+  if (band === 'medium') return '综合置信度 中'
+  return '综合置信度 低 · 证据不足，仅供参考'
 })
 
-// 深色面上的等级色（与首页 levelColor 同一套深色适配值）
-const overallLevelColor = computed((): string => {
-  const l = overallLevel.value
-  if (l === 'A') return RELIABLE_LIGHT
-  if (l === 'B') return SMART_LIGHT
-  if (l === 'C') return WARN_LIGHT
-  return MOTIVATION_LIGHT
-})
+// 单维度置信度（档位阈值单一来源 engine/rubric.uts confidenceBand）
+function confidenceOf(key: string): number {
+  const dims = report.value.dimensions
+  for (let i = 0; i < dims.length; i++) {
+    if (dims[i].dimension === key) return dims[i].confidence
+  }
+  return 0
+}
+
+function confText(key: string): string {
+  const band = confidenceBand(confidenceOf(key))
+  if (band === 'high') return '高置信'
+  if (band === 'medium') return '中置信'
+  return '低置信'
+}
+
+function isLowConf(key: string): boolean {
+  return confidenceBand(confidenceOf(key)) === 'low'
+}
 
 // 证据卡展开状态（记录已展开的维度 key）
 const expandedKeys = ref<string[]>([])
@@ -436,25 +473,6 @@ function fmtDate(ts: number): string {
 function dimLabel(k: string): string {
   const v = DIMENSION_LABEL[k]
   return v != null && v.length > 0 ? v : k
-}
-
-function levelBg(l: string): string {
-  if (l === 'A') return CHIP_RELIABLE
-  if (l === 'B') return CHIP_SMART
-  return CHIP_WARN
-}
-
-function levelColor(l: string): string {
-  if (l === 'A') return RELIABLE
-  if (l === 'B') return SMART
-  return WARN
-}
-
-function levelPct(l: string): string {
-  if (l === 'A') return '92%'
-  if (l === 'B') return '75%'
-  if (l === 'C') return '58%'
-  return '40%'
 }
 
 // 训练计划 → 直达训练房间（source=report 定向薄弱项维度；额度在房间内统一扣减）

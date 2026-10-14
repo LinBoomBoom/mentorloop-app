@@ -2,8 +2,7 @@
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
     <view class="px-4 pt-4 pb-8">
       <!-- 头部品牌面 -->
-      <view class="bg-navy rounded-2xl p-5 relative overflow-hidden">
-        <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+      <view class="bg-navy rounded-card p-5">
         <view class="flex-row items-center">
           <view
             class="w-11 h-11 rounded-full flex-row items-center justify-center"
@@ -13,7 +12,7 @@
           </view>
           <view class="flex-col flex-1 ml-3">
             <text class="text-lg font-bold text-white">MentorLoop 会员</text>
-            <text class="text-xs text-mist mt-0.5">学面一体，练到上岗</text>
+            <text class="text-xs text-mist mt-0.5">按次购买或连续包月</text>
           </view>
         </view>
         <text class="text-sm text-mist leading-5 mt-3">
@@ -28,7 +27,7 @@
           <view
             v-for="s in skus"
             :key="s.id"
-            class="rounded-2xl border p-4 mb-2.5 relative"
+            class="rounded-card border p-4 mb-2.5 relative"
             :style="skuStyle(s)"
             hover-class="pressed-card"
             :hover-start-time="0"
@@ -36,7 +35,7 @@
           >
             <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
               <view
-                class="h-5 px-2 rounded-full flex-row items-center"
+                class="h-5 px-2 rounded-chip flex-row items-center"
                 :style="{ backgroundColor: s.highlight ? SMART : CHIP_RELIABLE }"
               >
                 <text class="text-xs" :style="{ color: s.highlight ? SURFACE : RELIABLE }">
@@ -66,12 +65,14 @@
               <view class="flex-col items-end ml-2">
                 <view class="flex-row items-baseline">
                   <text class="text-xs text-ink">¥</text>
-                  <text class="text-[22px] font-bold text-ink">{{ formatPrice(s.priceCent) }}</text>
+                  <text class="text-[22px] font-bold font-mono text-ink">{{
+                    formatPrice(s.priceCent)
+                  }}</text>
                   <text class="text-xs text-ink-soft ml-0.5">/{{ s.unit }}</text>
                 </view>
                 <text
                   v-if="s.originPriceCent > 0"
-                  class="text-xs text-ink-soft line-through mt-0.5"
+                  class="text-xs font-mono text-ink-soft line-through mt-0.5"
                 >
                   ¥{{ formatPrice(s.originPriceCent) }}
                 </text>

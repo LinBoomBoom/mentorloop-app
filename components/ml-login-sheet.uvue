@@ -24,7 +24,7 @@
 
       <!-- 手机号 -->
       <text class="text-xs text-ink-soft mt-4">手机号</text>
-      <view class="h-11 rounded-xl bg-bg-muted px-3 flex-row items-center mt-1.5">
+      <view class="h-11 rounded-control bg-bg-muted px-3 flex-row items-center mt-1.5">
         <input
           class="flex-1 text-base text-ink"
           type="number"
@@ -39,7 +39,7 @@
       <!-- 验证码 -->
       <text class="text-xs text-ink-soft mt-3">验证码</text>
       <view class="flex-row items-center mt-1.5">
-        <view class="flex-1 h-11 rounded-xl bg-bg-muted px-3 flex-row items-center">
+        <view class="flex-1 h-11 rounded-control bg-bg-muted px-3 flex-row items-center">
           <input
             class="flex-1 text-base text-ink"
             type="number"
@@ -51,7 +51,7 @@
           />
         </view>
         <view
-          class="ml-2.5 h-11 px-3.5 rounded-xl flex-row items-center justify-center"
+          class="ml-2.5 h-11 px-3.5 rounded-control flex-row items-center justify-center"
           :class="canSend ? 'bg-chip-smart' : 'bg-bg-muted opacity-60'"
           hover-class="pressed-chip"
           :hover-start-time="0"

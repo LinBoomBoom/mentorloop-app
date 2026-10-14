@@ -1,6 +1,6 @@
 <template>
   <view
-    class="bg-surface rounded-2xl p-4 border border-line"
+    class="bg-surface rounded-card p-4 border border-line"
     :class="[raised ? 'shadow-card' : '', padded ? '' : 'p-0']"
     :hover-class="pressable ? 'pressed-card' : 'none'"
     :hover-start-time="0"

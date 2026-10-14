@@ -1,10 +1,5 @@
 <template>
   <view class="flex-col h-screen bg-navy relative overflow-hidden">
-    <!-- 背景光晕 -->
-    <view
-      class="absolute top-24 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-reliable opacity-10 blur-circle"
-    ></view>
-
     <!-- 顶部状态条 -->
     <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
       <view class="flex-row items-center h-11" @click="confirmExit">
@@ -25,7 +20,7 @@
     <view class="flex-1 flex-col justify-center px-6">
       <view class="flex-row items-center justify-center">
         <view
-          class="flex-row items-center h-7 px-3 rounded-full"
+          class="flex-row items-center h-7 px-3 rounded-chip"
           :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
         >
           <ml-icon name="dumbbell" :size="12" :color="RELIABLE_LIGHT"></ml-icon>
@@ -34,7 +29,7 @@
       </view>
 
       <!-- 当前题目 -->
-      <view class="mt-6 rounded-2xl p-5" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
+      <view class="mt-6 rounded-card p-5" :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }">
         <view class="flex-row items-center">
           <view class="w-1.5 h-1.5 rounded-full bg-reliable mr-2"></view>
           <text class="text-xs text-mist">第 {{ doneCount + 1 }} 题</text>
@@ -109,11 +104,11 @@
       :style="{ backgroundColor: 'rgba(3,12,24,0.6)' }"
       @click="cancelText"
     >
-      <view class="w-11/12 rounded-2xl p-4 bg-navy-deep" @click.stop>
+      <view class="w-11/12 rounded-card p-4 bg-navy-deep" @click.stop>
         <text class="text-base font-semibold text-white">文字作答</text>
         <text class="text-xs text-mist mt-1 mb-3">写下你的思路，长度建议 ≥ 20 字</text>
         <textarea
-          class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
+          class="w-full h-32 rounded-control p-3 text-sm text-ink bg-surface"
           v-model="textDraft"
           placeholder="在这里输入你的回答…"
           placeholder-class="text-ink-soft"
@@ -532,7 +527,7 @@ function finishTraining() {
     reasons: sessionReasons.slice(),
     completedAt: Date.now()
   } as TrainingItem)
-  uni.showToast({ title: '训练完成，做得好！', icon: 'none' })
+  uni.showToast({ title: '训练完成，已记录本次表现', icon: 'none' })
   setTimeout(() => {
     uni.navigateBack()
   }, 1200)
@@ -570,9 +565,3 @@ function confirmExit() {
   })
 }
 </script>
-
-<style>
-.blur-circle {
-  filter: blur(60px);
-}
-</style>

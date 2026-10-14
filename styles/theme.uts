@@ -29,14 +29,16 @@ export const THEME: StringMap = {
   motivationLight: '#FF9E6D',
   lineStrong: '#C9D2E3',
   fontSans: "-apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif",
+  // 等宽栈（工程化训练台 D-i4：数字 / 编号 / 计时 / 时长）
+  fontMono: "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
   shadowSm: '0 1px 2px rgba(15, 44, 76, 0.06)',
   shadowCard: '0 4px 16px rgba(15, 44, 76, 0.08)',
   shadowFloat: '0 16px 40px rgba(15, 44, 76, 0.14)',
-  // 圆角 / 动效 / 尺寸（2026-10-14 F3 收敛，任务卡 ds-1）：与 main.css @theme 非颜色 token 对齐；
-  // 别名 textPrimary / textSecondary / border / amber 已移除，main.css 权威名唯一
-  radiusChip: '999px',
-  radiusControl: '12px',
-  radiusCard: '16px',
+  // 圆角 / 动效 / 尺寸（2026-10-14 F3 收敛，任务卡 ds-1；同日工程化训练台收紧 D-i4）：
+  // 与 main.css @theme 非颜色 token 对齐；别名 textPrimary / textSecondary / border / amber 已移除
+  radiusChip: '6px',
+  radiusControl: '8px',
+  radiusCard: '12px',
   durationPress: '120ms',
   durationAmbient: '400ms',
   easeStandard: 'ease-out',

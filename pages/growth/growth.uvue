@@ -1,13 +1,10 @@
 <template>
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
     <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
-    <view
-      class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between relative overflow-hidden"
-    >
-      <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+    <view class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between">
       <view class="flex-col">
         <text class="text-[22px] font-bold text-white">我的成长</text>
-        <text class="text-xs text-mist mt-1">六维能力画像 · 看得见的进步</text>
+        <text class="text-xs text-mist mt-1">六维能力画像 · 逐场对比</text>
       </view>
       <ml-icon name="chart-column" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
     </view>
@@ -55,7 +52,7 @@
                 @click="showIdx = c.index"
               >
                 <text
-                  class="text-xs mb-1"
+                  class="text-xs font-mono mb-1"
                   :class="
                     i === chartItems.length - 1 ? 'text-smart font-semibold' : 'text-ink-soft'
                   "
@@ -96,7 +93,7 @@
                 @click="showIdx = i"
               >
                 <view
-                  class="w-[104px] rounded-xl border px-2.5 py-2.5"
+                  class="w-[104px] rounded-card border px-2.5 py-2.5"
                   :style="sessionCardStyle(i === showIdx)"
                 >
                   <view class="flex-row items-center justify-between">
@@ -108,7 +105,7 @@
                     ></ml-tag>
                   </view>
                   <text
-                    class="text-sm font-semibold mt-1.5"
+                    class="text-sm font-semibold font-mono mt-1.5"
                     :class="i === showIdx ? 'text-smart' : 'text-ink'"
                   >
                     {{ formatDate(r.at) }}
@@ -134,7 +131,7 @@
               <view class="flex-row items-center justify-between">
                 <view class="flex-row items-center flex-1">
                   <view
-                    class="w-7 h-7 rounded-lg flex-row items-center justify-center mr-2"
+                    class="w-7 h-7 rounded-control flex-row items-center justify-center mr-2"
                     :style="{ backgroundColor: dimTint(d.dimension) }"
                   >
                     <ml-icon
@@ -151,14 +148,14 @@
                   </text>
                   <ml-tag
                     :label="d.level"
-                    :bg="levelBg(d.level)"
+                    :bg="levelTint(d.level)"
                     :color="levelColor(d.level)"
                   ></ml-tag>
                 </view>
               </view>
               <view class="mt-2 ml-9">
                 <ml-progress
-                  :percent="levelToScore(d.level)"
+                  :percent="levelPercent(d.level)"
                   :color="levelColor(d.level)"
                   :show-value="false"
                 ></ml-progress>
@@ -242,10 +239,18 @@ import mlStatBar from '../../components/ml-stat-bar.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
+import {
+  averageLevel,
+  dimIcon,
+  levelColor,
+  levelOrder,
+  levelPercent,
+  levelTint
+} from '../../styles/score-display.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { trainingHistory, TrainingItem } from '../../store/training-history.uts'
 import { useMock } from '../../api/env.uts'
-import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT, ScoreLevel } from '../../types/scoring.uts'
+import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT } from '../../types/scoring.uts'
 
 const SMART = themeValue('smart', '#5B6CFF')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
@@ -298,12 +303,11 @@ const avgLevel = computed((): string => {
 const strongest = computed((): string => {
   if (records.value.length === 0) return '--'
   const dims = records.value[0].report.dimensions
-  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
-  let best = -1
+  let best = 0
   let bestKey = ''
   for (let i = 0; i < dims.length; i++) {
-    const v = map[dims[i].level]
-    if (v != null && v > best) {
+    const v = levelOrder(dims[i].level)
+    if (v > best) {
       best = v
       bestKey = dims[i].dimension
     }
@@ -329,18 +333,13 @@ const chartItems = computed((): ChartItem[] => {
   return out
 })
 
+// 场次综合刻度（U7：统一走 levelPercent 刻度）
 function scoreOf(r: typeof records.value[0]['report']): number {
-  const map: { [key: string]: number } = { A: 90, B: 75, C: 60, D: 45 }
+  const dims = r.dimensions
+  if (dims.length === 0) return 0
   let total = 0
-  let cnt = 0
-  for (let i = 0; i < r.dimensions.length; i++) {
-    const v = map[r.dimensions[i].level]
-    if (v != null) {
-      total += v
-      cnt += 1
-    }
-  }
-  return cnt > 0 ? Math.round(total / cnt) : 0
+  for (let i = 0; i < dims.length; i++) total += levelPercent(dims[i].level)
+  return Math.round(total / dims.length)
 }
 
 function barStyle(score: number, isLatest: boolean, isSelected: boolean): { [key: string]: string } {
@@ -364,22 +363,14 @@ function sessionCardStyle(active: boolean): { [key: string]: string } {
 }
 
 function avgLevelOf(r: typeof records.value[0]['report']): string {
-  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
-  let total = 0
-  let cnt = 0
-  for (let i = 0; i < r.dimensions.length; i++) {
-    const v = map[r.dimensions[i].level]
-    if (v != null) {
-      total += v
-      cnt += 1
-    }
-  }
-  if (cnt === 0) return '--'
-  const avg = total / cnt
-  if (avg >= 3.5) return 'A'
-  if (avg >= 2.5) return 'B'
-  if (avg >= 1.5) return 'C'
-  return 'D'
+  return averageLevel(reportLevels(r))
+}
+
+// 报告各维度等级 → 等级序列（供 averageLevel 消费）
+function reportLevels(r: typeof records.value[0]['report']): string[] {
+  const out: string[] = []
+  for (let i = 0; i < r.dimensions.length; i++) out.push(r.dimensions[i].level)
+  return out
 }
 
 function dimLabel(k: string): string {
@@ -392,20 +383,8 @@ function weightOf(k: string): number {
   return w != null ? Math.round(w * 100) : 0
 }
 
-function dimIcon(k: string): string {
-  const map: { [key: string]: string } = {
-    knowledge: 'book-open',
-    engineering: 'briefcase',
-    analysis: 'brain',
-    communication: 'message-square',
-    learning: 'graduation-cap',
-    motivation: 'compass'
-  }
-  const v = map[k]
-  return v != null ? v : 'target'
-}
-
-// 六维色板单源：styles/theme.uts DIM_COLOR / DIM_TINT（MASTER.md §A1）
+// 六维色板 / 图标单一来源：styles/theme.uts（DIM_COLOR / DIM_TINT）
+// 与 styles/score-display.uts（dimIcon）
 function dimColor(k: string): string {
   const v = DIM_COLOR[k]
   return v != null ? v : SMART
@@ -414,25 +393,6 @@ function dimColor(k: string): string {
 function dimTint(k: string): string {
   const v = DIM_TINT[k]
   return v != null ? v : CHIP_SMART
-}
-
-function levelToScore(l: string): number {
-  if (l === 'A') return 90
-  if (l === 'B') return 75
-  if (l === 'C') return 60
-  return 45
-}
-
-function levelBg(l: ScoreLevel): string {
-  if (l === 'A') return CHIP_RELIABLE
-  if (l === 'B') return CHIP_SMART
-  return CHIP_WARN
-}
-
-function levelColor(l: ScoreLevel): string {
-  if (l === 'A') return RELIABLE
-  if (l === 'B') return SMART
-  return WARN
 }
 
 function diffTone(dim: string): string {
@@ -454,10 +414,9 @@ function diffOf(dim: string): string {
   if (prevIdx >= records.value.length) return '已对比到最早一场'
   const cur = records.value[curIdx].report
   const prev = records.value[prevIdx].report
-  const map: { [key: string]: number } = { A: 4, B: 3, C: 2, D: 1 }
   const getLvl = (r: typeof cur): number => {
     for (let i = 0; i < r.dimensions.length; i++) {
-      if (r.dimensions[i].dimension === dim) return map[r.dimensions[i].level]
+      if (r.dimensions[i].dimension === dim) return levelOrder(r.dimensions[i].level)
     }
     return 0
   }

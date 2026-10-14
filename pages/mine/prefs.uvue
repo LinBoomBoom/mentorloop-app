@@ -8,7 +8,7 @@
           <text class="text-sm font-semibold text-ink ml-1.5">昵称</text>
         </view>
         <input
-          class="mt-2 text-sm text-ink bg-bg-muted rounded-lg px-3 h-10"
+          class="mt-2 text-sm text-ink bg-bg-muted rounded-control px-3 h-10"
           v-model="nickname"
           :maxlength="20"
           placeholder="输入昵称（空则保存为访客）"
@@ -28,7 +28,7 @@
             <view
               v-for="p in positionOptions"
               :key="p.id"
-              class="h-11 pl-3.5 pr-3 rounded-lg flex-row items-center mr-2 mb-2"
+              class="h-11 pl-3.5 pr-3 rounded-chip flex-row items-center mr-2 mb-2"
               :class="
                 positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
               "
@@ -56,7 +56,7 @@
             <view
               v-for="e in experienceOptions"
               :key="e.id"
-              class="px-3.5 h-11 rounded-lg flex-row items-center mr-2 mb-2"
+              class="px-3.5 h-11 rounded-chip flex-row items-center mr-2 mb-2"
               :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
               hover-class="pressed-chip"
               :hover-start-time="0"

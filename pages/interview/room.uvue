@@ -1,10 +1,5 @@
 <template>
-  <view class="flex-col h-screen bg-navy relative overflow-hidden">
-    <!-- 背景光晕 -->
-    <view
-      class="absolute top-24 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-smart opacity-10 blur-circle"
-    ></view>
-
+  <view class="flex-col h-screen bg-navy">
     <!-- 顶部状态条（安全区动态内边距） -->
     <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
       <!-- 左：退出（放弃，不生成报告） -->
@@ -23,10 +18,10 @@
         </view>
         <view class="flex-row items-center mr-3">
           <ml-icon name="clock" :size="14" :color="SURFACE"></ml-icon>
-          <text class="text-sm text-white ml-1">{{ elapsedText }}</text>
+          <text class="text-sm font-mono text-white ml-1">{{ elapsedText }}</text>
         </view>
         <view
-          class="flex-row items-center h-11 px-3.5 rounded-full border"
+          class="flex-row items-center h-11 px-3.5 rounded-control border"
           :style="{ borderColor: 'rgba(91,108,255,0.6)' }"
           hover-class="pressed-chip"
           :hover-start-time="0"
@@ -38,85 +33,87 @@
       </view>
     </view>
 
-    <!-- 语音状态可视化舞台（D3：替代数字人；状态环 + 声波） -->
-    <view class="flex-1 flex-col items-center justify-center">
+    <!-- 主区：AI 身份标识 + 题目卡（题目为主视觉） -->
+    <view class="flex-1 flex-col justify-center px-4">
+      <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
+      <view class="flex-row items-center">
+        <view
+          class="flex-row items-center h-7 px-3 rounded-chip"
+          :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
+        >
+          <ml-icon name="bot" :size="12" :color="SMART_LIGHT"></ml-icon>
+          <text class="text-xs text-white ml-1">AI 面试官 · 系统生成</text>
+        </view>
+      </view>
+
+      <!-- 题目卡 -->
+      <view class="mt-3 rounded-card p-4" :style="panelStyle">
+        <view class="flex-row items-center justify-between">
+          <text class="text-xs font-mono text-mist">{{ 'Q' + askedCount }}</text>
+          <view class="flex-row items-center">
+            <view class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: stateColor }"></view>
+            <text class="text-xs text-mist ml-1.5">{{ stateLabel }}</text>
+          </view>
+        </view>
+
+        <text class="text-lg font-semibold text-white leading-6 mt-2">{{ displayQuestion }}</text>
+        <text v-if="caption.length > 0" class="text-xs text-mist mt-2">{{ caption }}</text>
+
+        <!-- 换一种说法：追加澄清行，原题保留在上一行 -->
+        <view
+          v-if="rephrasedText.length > 0"
+          class="mt-2 rounded-control p-2.5"
+          :style="{ backgroundColor: 'rgba(255,255,255,0.07)' }"
+        >
+          <text class="text-xs text-white leading-5">{{ rephrasedText }}</text>
+        </view>
+
+        <!-- 求助操作（暂停/录音时隐藏）：再说一遍 / 换一种说法 / 文字作答 -->
+        <view v-if="!paused && !recording" class="flex-row items-center mt-2" :style="dividerTop">
+          <view
+            class="flex-row items-center h-11 pr-4"
+            hover-class="pressed-row"
+            :hover-start-time="0"
+            @click="replayQuestion"
+          >
+            <ml-icon name="rotate-ccw" :size="13" :color="MIST"></ml-icon>
+            <text class="text-xs text-mist ml-1.5">再说一遍</text>
+          </view>
+          <view
+            class="flex-row items-center h-11 pr-4"
+            hover-class="pressed-row"
+            :hover-start-time="0"
+            @click="onRephrase"
+          >
+            <ml-icon name="repeat" :size="13" :color="MIST"></ml-icon>
+            <text class="text-xs text-mist ml-1.5">换一种说法</text>
+          </view>
+          <view
+            class="flex-row items-center h-11 pr-2"
+            hover-class="pressed-row"
+            :hover-start-time="0"
+            @click="textMode"
+          >
+            <ml-icon name="keyboard" :size="13" :color="MIST"></ml-icon>
+            <text class="text-xs text-mist ml-1.5">文字作答</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 语音状态可视化（辅助：状态环 + 声波，D3 语义保留） -->
+    <view class="flex-row items-end justify-center pt-2" style="height: 128px">
       <ml-voice-visual
         :state="avatarState"
         :speaking="ttsSpeaking"
         :show-label="false"
-        :ring="208"
+        :ring="96"
       ></ml-voice-visual>
-    </view>
-
-    <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
-    <view class="flex-row items-center justify-center">
-      <view
-        class="flex-row items-center h-7 px-3 rounded-full"
-        :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
-      >
-        <ml-icon name="sparkles" :size="12" :color="SMART_LIGHT"></ml-icon>
-        <text class="text-xs text-white ml-1">AI 面试官</text>
-      </view>
-    </view>
-
-    <!-- 字幕 / 实时转写面板 -->
-    <view
-      class="mx-4 mt-2.5 rounded-2xl p-4"
-      :style="{ backgroundColor: 'rgba(255,255,255,0.06)' }"
-    >
-      <view class="flex-row items-center">
-        <view
-          class="w-1.5 h-1.5 rounded-full mr-2"
-          :class="paused ? 'bg-warn' : avatarState === 'listening' ? 'bg-reliable' : 'bg-smart'"
-        ></view>
-        <text class="text-base font-semibold text-white">{{ displayQuestion }}</text>
-      </view>
-      <text v-if="caption.length > 0" class="text-xs text-mist mt-1.5">{{ caption }}</text>
-
-      <!-- 换一种说法：追加澄清行，原题保留在上一行 -->
-      <view
-        v-if="rephrasedText.length > 0"
-        class="mt-2 rounded-lg p-2.5"
-        :style="{ backgroundColor: 'rgba(255,255,255,0.07)' }"
-      >
-        <text class="text-xs text-white leading-5">{{ rephrasedText }}</text>
-      </view>
-
-      <!-- 求助操作（暂停/录音时隐藏）：再说一遍 / 换一种说法 / 文字作答 -->
-      <view v-if="!paused && !recording" class="flex-row items-center mt-1">
-        <view
-          class="flex-row items-center h-11 pr-4"
-          hover-class="pressed-row"
-          :hover-start-time="0"
-          @click="replayQuestion"
-        >
-          <ml-icon name="rotate-ccw" :size="13" :color="MIST"></ml-icon>
-          <text class="text-xs text-mist ml-1.5">再说一遍</text>
-        </view>
-        <view
-          class="flex-row items-center h-11 pr-4"
-          hover-class="pressed-row"
-          :hover-start-time="0"
-          @click="onRephrase"
-        >
-          <ml-icon name="repeat" :size="13" :color="MIST"></ml-icon>
-          <text class="text-xs text-mist ml-1.5">换一种说法</text>
-        </view>
-        <view
-          class="flex-row items-center h-11 pr-2"
-          hover-class="pressed-row"
-          :hover-start-time="0"
-          @click="textMode"
-        >
-          <ml-icon name="keyboard" :size="13" :color="MIST"></ml-icon>
-          <text class="text-xs text-mist ml-1.5">文字作答</text>
-        </view>
-      </view>
     </view>
 
     <!-- 控制条：两侧辅助操作 + 中央录音主按钮（底部安全区） -->
     <view
-      class="flex-row items-center justify-center px-6 pt-4"
+      class="flex-row items-center justify-center px-6 pt-3"
       :style="{ paddingBottom: bottomPad + 'px' }"
     >
       <!-- 暂停/恢复 -->
@@ -160,11 +157,11 @@
       :style="{ backgroundColor: 'rgba(3,12,24,0.6)' }"
       @click="cancelText"
     >
-      <view class="w-11/12 rounded-2xl p-4 bg-navy-deep" @click.stop>
+      <view class="w-11/12 rounded-card p-4 bg-navy-deep" @click.stop>
         <text class="text-base font-semibold text-white">文字作答</text>
         <text class="text-xs text-mist mt-1 mb-3">录音不便时可直接输入，长度建议 ≥ 20 字</text>
         <textarea
-          class="w-full h-32 rounded-lg p-3 text-sm text-ink bg-surface"
+          class="w-full h-32 rounded-control p-3 text-sm text-ink bg-surface"
           v-model="textDraft"
           placeholder="在这里输入你的回答…"
           placeholder-class="text-ink-soft"
@@ -192,7 +189,7 @@ import { onLoad, onUnload, onBackPress } from '@dcloudio/uni-app'
 import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
-import { themeValue } from '../../styles/theme.uts'
+import { AVATAR_STATE_LABEL, StringMap, themeValue } from '../../styles/theme.uts'
 import { interviewSession } from '../../store/interview-session.uts'
 import { createSession, nextQuestion, submitAnswer } from '../../api/interview.uts'
 import {
@@ -221,6 +218,7 @@ import {
 } from '../../api/speech.uts'
 
 const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
+const SMART = themeValue('smart', '#5B6CFF')
 const SURFACE = themeValue('surface', '#FFFFFF')
 const MIST = themeValue('mist', '#AEB9CC')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
@@ -237,6 +235,8 @@ const elapsedText = computed((): string => {
 })
 const caption = ref('')
 const sessionId = ref('')
+// 当前已推进到第几题（工程化题号展示）
+const askedCount = ref(0)
 // 当前追问话术（非空时显示追问而非原题）
 const followupPrompt = ref('')
 // 换一种说法生成的澄清句（非空时在题面下方追加展示，原题保留）
@@ -286,6 +286,19 @@ const ttsSpeaking = ref(false)
 const initialState: string = 'idle'
 const avatarState = ref(initialState)
 
+// 状态文案 / 状态色（单一来源 styles/theme.uts 的 AvatarState 语义）
+const STATE_LABELS: StringMap = AVATAR_STATE_LABEL
+const stateLabel = computed((): string => {
+  const v = STATE_LABELS[avatarState.value]
+  return v != null && v.length > 0 ? v : '待机'
+})
+const stateColor = computed((): string => {
+  const s = avatarState.value
+  if (s === 'listening' || s === 'summary') return RELIABLE
+  if (s === 'thinking') return MIST
+  return SMART
+})
+
 const emptyQuestion: QuestionItem = {
   id: '',
   positionId: 'backend',
@@ -311,6 +324,19 @@ const displayQuestion = computed((): string => {
   if (currentQuestion.value.content.length > 0) return currentQuestion.value.content
   return '准备开始…'
 })
+
+// 深色面卡片样式（实色 + 细描边，避免 blur 开销）
+const panelStyle = {
+  backgroundColor: 'rgba(255,255,255,0.06)',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'rgba(255,255,255,0.1)'
+}
+const dividerTop = {
+  borderTopWidth: '1px',
+  borderTopStyle: 'solid',
+  borderTopColor: 'rgba(255,255,255,0.07)'
+}
 
 onLoad((options: any) => {
   // 读取安全区：顶部状态栏 + 底部 home indicator
@@ -481,6 +507,7 @@ async function ask() {
     const q = await nextQuestion(sessionId.value, mode.value, blueprint.value)
     currentQuestion.value = q
     interviewSession.pushQuestion(q)
+    askedCount.value = interviewSession.getQuestions().length
     trackEvent('interview_question_asked', {
       questionId: q.id,
       abilityDomain: q.abilityDomain,
@@ -824,9 +851,3 @@ function confirmFinish() {
   })
 }
 </script>
-
-<style>
-.blur-circle {
-  filter: blur(60px);
-}
-</style>

@@ -21,7 +21,7 @@
       </view>
 
       <!-- 覆盖能力域 -->
-      <view class="mt-4 rounded-lg p-3 bg-bg-muted">
+      <view class="mt-4 rounded-control p-3 bg-bg-muted">
         <text class="text-xs text-ink-soft">覆盖能力域</text>
         <text class="text-sm text-ink mt-1">{{ domainsText }}</text>
       </view>

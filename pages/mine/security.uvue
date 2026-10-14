@@ -2,8 +2,7 @@
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
     <view class="px-4 pt-4 pb-8">
       <!-- 账号卡 -->
-      <view class="bg-navy rounded-2xl p-4 relative overflow-hidden">
-        <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+      <view class="bg-navy rounded-card p-4">
         <view class="flex-row items-center">
           <view
             class="w-12 h-12 rounded-full flex-row items-center justify-center mr-3"
@@ -36,7 +35,7 @@
             @click="onSecurityRow(s)"
           >
             <view
-              class="w-8 h-8 rounded-lg flex-row items-center justify-center mr-3"
+              class="w-8 h-8 rounded-control flex-row items-center justify-center mr-3"
               :style="{ backgroundColor: s.tint }"
             >
               <ml-icon :name="s.icon" :size="16" :color="s.color"></ml-icon>

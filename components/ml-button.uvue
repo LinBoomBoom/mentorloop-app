@@ -1,6 +1,6 @@
 <template>
   <view
-    class="flex-row items-center justify-center rounded-xl"
+    class="flex-row items-center justify-center rounded-control"
     :class="[sizeClass, bgClass, block ? 'w-full' : '', disabled ? 'opacity-50' : '']"
     :hover-class="disabled ? 'none' : 'pressed-card'"
     :hover-start-time="0"

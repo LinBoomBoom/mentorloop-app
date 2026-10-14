@@ -1,5 +1,5 @@
 <template>
-  <view class="bg-surface rounded-2xl border border-line shadow-card px-2 py-3.5 flex-row">
+  <view class="bg-surface rounded-card border border-line shadow-card px-2 py-3.5 flex-row">
     <view
       v-for="(it, i) in items"
       :key="i"
@@ -9,7 +9,7 @@
       :hover-start-time="0"
       @click="onTap(i)"
     >
-      <text class="text-lg font-bold" :style="{ color: it.color }">{{ it.value }}</text>
+      <text class="text-lg font-bold font-mono" :style="{ color: it.color }">{{ it.value }}</text>
       <text class="text-xs text-ink-soft mt-0.5">{{ it.label }}</text>
     </view>
   </view>

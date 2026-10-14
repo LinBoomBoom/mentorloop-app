@@ -68,16 +68,20 @@
   /* 字体（中文优先系统栈，不加载拉丁 webfont） */
   --font-sans: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif;
 
+  /* 等宽字体栈（工程化训练台 D-i4：数字 / 编号 / 计时 / 时长；纯系统栈，零包体增量） */
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
   /* 三级阴影（navy 色调，比纯黑更贴合品牌） */
   --shadow-sm: 0 1px 2px rgba(15, 44, 76, 0.06);
   --shadow-card: 0 4px 16px rgba(15, 44, 76, 0.08);
   --shadow-float: 0 16px 40px rgba(15, 44, 76, 0.14);
 
-  /* 圆角语义档（MASTER.md §A1 2026-10-14 token 补齐）：生成 rounded-chip/control/card 原子类；
-     不覆盖 Tailwind 默认 --radius-* 档，避免全站视觉回归 */
-  --radius-chip: 999px;
-  --radius-control: 12px;
-  --radius-card: 16px;
+  /* 圆角语义档（MASTER.md §A1）：生成 rounded-chip/control/card 原子类；
+     不覆盖 Tailwind 默认 --radius-* 档，避免全站视觉回归
+     2026-10-14 工程化训练台收紧（D-i4）：999/12/16 → 6/8/12，去胶囊化 */
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-card: 12px;
   --ease-standard: ease-out;
 
   /* 动效/尺寸语义档（仅作 CSS 变量声明，非 Tailwind 标准命名空间，不生成原子类）：

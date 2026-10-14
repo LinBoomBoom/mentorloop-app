@@ -1,10 +1,7 @@
 <template>
   <scroll-view class="h-screen bg-bg-light" scroll-y="true">
     <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
-    <view
-      class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between relative overflow-hidden"
-    >
-      <view class="absolute -right-8 -top-10 w-32 h-32 rounded-full bg-smart opacity-20"></view>
+    <view class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between">
       <view class="flex-col">
         <text class="text-[22px] font-bold text-white">专项训练</text>
         <text class="text-xs text-mist mt-1">报告驱动的定向训练 · 即时反馈</text>
@@ -25,7 +22,7 @@
             <ml-card pressable @tap="startTaskEntry(t.id, t.title, t.durationMin)">
               <view class="flex-row items-center">
                 <view
-                  class="w-11 h-11 rounded-xl flex-col items-center justify-center mr-3"
+                  class="w-11 h-11 rounded-control flex-col items-center justify-center mr-3"
                   :style="{ backgroundColor: t.priority === 1 ? CHIP_WARN : CHIP_SMART }"
                 >
                   <ml-icon
@@ -67,7 +64,7 @@
           <view
             v-for="(d, i) in dimensions"
             :key="d.key"
-            class="bg-surface rounded-2xl border border-line p-3 mb-2.5 pressable"
+            class="bg-surface rounded-card border border-line p-3 mb-2.5 pressable"
             :class="i % 2 === 0 ? 'w-[calc(50%-5px)] mr-2.5' : 'w-[calc(50%-5px)]'"
             hover-class="pressed-card"
             :hover-start-time="0"
@@ -75,7 +72,7 @@
           >
             <view class="flex-row items-center justify-between">
               <view
-                class="w-9 h-9 rounded-lg flex-row items-center justify-center"
+                class="w-9 h-9 rounded-control flex-row items-center justify-center"
                 :style="{ backgroundColor: d.tint }"
               >
                 <ml-icon :name="d.icon" :size="17" :color="d.color"></ml-icon>
@@ -106,7 +103,7 @@
             @click="startTaskEntry(t.id, t.title, t.durationMin)"
           >
             <view
-              class="w-9 h-9 rounded-lg bg-chip-reliable flex-row items-center justify-center mr-3"
+              class="w-9 h-9 rounded-control bg-chip-reliable flex-row items-center justify-center mr-3"
             >
               <ml-icon name="play" :size="15" :color="RELIABLE"></ml-icon>
             </view>
@@ -116,7 +113,7 @@
                 {{ t.durationMin }} 分钟 · 单维突破
               </text>
             </view>
-            <view class="h-7 px-3 rounded-full border border-line flex-row items-center">
+            <view class="h-7 px-3 rounded-chip border border-line flex-row items-center">
               <text class="text-xs text-smart">开始</text>
             </view>
           </view>
@@ -156,6 +153,7 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
+import { dimIcon, levelColor, levelTint } from '../../styles/score-display.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
@@ -169,7 +167,6 @@ const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
 const INK_SOFT = themeValue('inkSoft', '#5B6472')
 const MIST = themeValue('mist', '#AEB9CC')
 const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
-const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
 const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 
@@ -200,16 +197,7 @@ const genericTasks: TrainingEntry[] = [
 const recommended = ref<TrainingTask[]>([])
 const latest = ref<ReportRecord | null>(null)
 
-// 六维卡片静态配置：图标本地定义，色板单源 styles/theme.uts（MASTER.md §A1）
-const DIM_ICONS: { [key: string]: string } = {
-  knowledge: 'book-open',
-  engineering: 'briefcase',
-  analysis: 'brain',
-  communication: 'message-square',
-  learning: 'graduation-cap',
-  motivation: 'compass'
-}
-
+// 六维图标单一来源：styles/score-display.uts（dimIcon）；色板单源 styles/theme.uts（DIM_COLOR / DIM_TINT）
 const dimensions = computed((): DimCard[] => {
   const keys = ['knowledge', 'engineering', 'analysis', 'communication', 'learning', 'motivation']
   const out: DimCard[] = []
@@ -227,13 +215,13 @@ const dimensions = computed((): DimCard[] => {
     out.push({
       key: k,
       label: DIMENSION_LABEL[k],
-      icon: DIM_ICONS[k] != null ? DIM_ICONS[k] : 'target',
+      icon: dimIcon(k),
       color: DIM_COLOR[k] != null ? DIM_COLOR[k] : SMART,
       tint: DIM_TINT[k] != null ? DIM_TINT[k] : CHIP_SMART,
       weight: Math.round((DIMENSION_WEIGHT[k] != null ? DIMENSION_WEIGHT[k] : 0) * 100),
       level: hasLevel ? lv : '',
-      levelBg: hasLevel ? levelBg(lv) : '',
-      levelColor: hasLevel ? levelColorOf(lv) : ''
+      levelBg: hasLevel ? levelTint(lv) : '',
+      levelColor: hasLevel ? levelColor(lv) : ''
     } as DimCard)
   }
   return out
@@ -246,18 +234,6 @@ const reportDate = computed((): string => {
   const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
   return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 })
-
-function levelBg(l: ScoreLevel): string {
-  if (l === 'A') return CHIP_RELIABLE
-  if (l === 'B') return CHIP_SMART
-  return CHIP_WARN
-}
-
-function levelColorOf(l: string): string {
-  if (l === 'A') return RELIABLE
-  if (l === 'B') return SMART
-  return WARN
-}
 
 onShow(() => {
   reportHistory.load()

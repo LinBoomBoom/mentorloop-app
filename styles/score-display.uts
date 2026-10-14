@@ -1,0 +1,83 @@
+// 评分 / 维度「呈现映射」单一来源（任务卡 ui-1 · U7 去重）
+// 只承载 UI 呈现：等级序数、平均等级、百分比刻度、语义色 / tint、维度图标。
+// 评分规则本身（锚点、置信度档位）正本在 engine/rubric.uts，本模块不重复规则。
+// 取色一律经 styles/theme.uts 的 themeValue（SOP-10 §2 消费端取值纪律：不得引入 token 之外的 hex）。
+
+import { StringMap, NumberMap, themeValue } from './theme.uts'
+
+/** 等级 → 序数（A=4 … D=1） */
+export const LEVEL_ORDER: NumberMap = { A: 4, B: 3, C: 2, D: 1 }
+
+/** 等级 → 序数；未知等级返回 0 */
+export function levelOrder(level: string): number {
+  const v = LEVEL_ORDER[level]
+  return v != null ? v : 0
+}
+
+/** 平均序数 → 等级（≥3.5 A / ≥2.5 B / ≥1.5 C / 否则 D） */
+export function levelFromAverage(avg: number): string {
+  if (avg >= 3.5) return 'A'
+  if (avg >= 2.5) return 'B'
+  if (avg >= 1.5) return 'C'
+  return 'D'
+}
+
+/** 多等级求平均等级；序列为空返回 '--' */
+export function averageLevel(levels: string[]): string {
+  let total = 0
+  let cnt = 0
+  for (let i = 0; i < levels.length; i++) {
+    const v = levelOrder(levels[i])
+    if (v > 0) {
+      total += v
+      cnt += 1
+    }
+  }
+  if (cnt === 0) return '--'
+  return levelFromAverage(total / cnt)
+}
+
+/** 等级 → 进度刻度（四条统一刻度：92 / 75 / 58 / 40） */
+export function levelPercent(level: string): number {
+  if (level === 'A') return 92
+  if (level === 'B') return 75
+  if (level === 'C') return 58
+  return 40
+}
+
+/** 等级 → 浅色学习面语义色 */
+export function levelColor(level: string): string {
+  if (level === 'A') return themeValue('reliable', '#1FB6A6')
+  if (level === 'B') return themeValue('smart', '#5B6CFF')
+  return themeValue('warn', '#E08A00')
+}
+
+/** 等级 → 浅色面语义 tint（chip 底） */
+export function levelTint(level: string): string {
+  if (level === 'A') return themeValue('chipReliable', '#E6F7F4')
+  if (level === 'B') return themeValue('chipSmart', '#EEF1FF')
+  return themeValue('chipWarn', '#FFF3E0')
+}
+
+/** 等级 → 深色沉浸面加亮色（保 ≥4.5:1 对比度） */
+export function levelColorOnDark(level: string): string {
+  if (level === 'A') return themeValue('reliableLight', '#5CE8D8')
+  if (level === 'B') return themeValue('smartLight', '#8FA0FF')
+  if (level === 'C') return themeValue('warnLight', '#F5C97B')
+  return themeValue('motivationLight', '#FF9E6D')
+}
+
+/** 六维能力域 → 图标名（须存在于 components/ml-icon.uvue 的 ICON_GLYPH，check F 守卫） */
+export const DIM_ICON: StringMap = {
+  knowledge: 'book-open',
+  engineering: 'briefcase',
+  analysis: 'brain',
+  communication: 'message-square',
+  learning: 'graduation-cap',
+  motivation: 'compass'
+}
+
+export function dimIcon(key: string): string {
+  const v = DIM_ICON[key]
+  return v != null ? v : 'target'
+}
