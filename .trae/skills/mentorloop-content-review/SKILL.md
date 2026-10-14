@@ -2,9 +2,9 @@
 name: mentorloop-content-review
 description: Prepare and validate MentorLoop ability maps, question banks and scoring rubrics for human review. Use when adding or changing questions, ability maps or scoring anchors. 中文触发 题库 能力图谱 评分量表 评分锚点 内容审核. Do not use for runtime code changes.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Content Review
@@ -49,4 +49,4 @@ Content assets decide interview quality and scoring credibility, and AI output m
 
 ## Change discipline
 
-Changing the rubric or question selection requires rerunning the fixed evaluation set before merging. Contract-affecting changes (for example `QuestionItem` fields) go through `mentorloop-contract-freeze` first.
+Rubric or question-selection changes require rerunning the fixed evaluation set before merging — the single authoritative discipline lives in `docs/sop/domain-content-sop.md` §6. Contract-affecting changes (for example `QuestionItem` fields) go through `mentorloop-contract-freeze` first.

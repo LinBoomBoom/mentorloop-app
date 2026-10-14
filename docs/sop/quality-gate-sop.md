@@ -2,8 +2,8 @@
 编号: SOP-05
 名称: G2 质量门
 适用范围: docs/sop/quality-gate-sop.md G2 检查项、命令、领域特化与门禁记录模板
-版本: 1.1.0
-最后更新: 2026-10-08
+版本: 1.3.0
+最后更新: 2026-10-14
 ---
 
 # G2 质量门 SOP（构建 → 验证）
@@ -27,25 +27,26 @@
 
 ### 2.1 根工程（客户端 + 工程门禁）
 
-| #   | 检查项        | 命令                              | 通过标准                                            | 阻断 |
-| --- | ------------- | --------------------------------- | --------------------------------------------------- | ---- |
-| 1   | Lint          | `pnpm lint`                       | 0 error、0 warning（`--max-warnings 0`）            | 是   |
-| 2   | 格式          | `pnpm format:check`               | 通过                                                | 是   |
-| 3   | 单元测试      | `pnpm test`                       | 全绿                                                | 是   |
-| 4   | uvue CSS 守卫 | `node scripts/check-uvue-css.mjs` | OK（无 `gap` / `space-*` / 渐变）                   | 是   |
-| 5   | 类型检查      | `pnpm typecheck`                  | 新增**纯逻辑**（`engine/`、`store/`、`types/`）通过 | 否¹  |
+| #   | 检查项          | 命令                                   | 通过标准                                                       | 阻断 |
+| --- | --------------- | -------------------------------------- | -------------------------------------------------------------- | ---- |
+| 1   | Lint            | `pnpm lint`                            | 0 error、0 warning（`--max-warnings 0`）                       | 是   |
+| 2   | 格式            | `pnpm format:check`                    | 通过                                                           | 是   |
+| 3   | 单元测试        | `pnpm test`                            | 全绿                                                           | 是   |
+| 4   | uvue CSS 守卫   | `node scripts/check-uvue-css.mjs`      | OK（无 `gap` / `space-*` / 渐变）                              | 是   |
+| 5   | 设计 token 守卫 | `node scripts/check-design-tokens.mjs` | OK（三载体一致 + 字号白名单 + hex 白名单（全 .uvue）+ 图标名） | 是   |
+| 6   | 类型检查        | `pnpm typecheck`                       | 新增**纯逻辑**（`engine/`、`store/`、`types/`）通过            | 否¹  |
 
 ¹ 根 `typecheck`（vue-tsc）依赖 HBuilderX 环境，CI 当前 `continue-on-error`；但新增纯逻辑必须本地通过。
 
-> 快捷串联：`pnpm check`（= lint + typecheck + test）。仍**需单独跑** `format:check` 与 uvue 守卫。
+> 快捷串联：`pnpm check`（= lint + typecheck + test）。仍**需单独跑** `format:check`、uvue 守卫与设计 token 守卫。
 
 ### 2.2 服务端子包（`server/`）
 
 | #   | 检查项   | 命令                                         | 通过标准 | 阻断 |
 | --- | -------- | -------------------------------------------- | -------- | ---- |
-| 6   | 类型检查 | `pnpm --filter @mentorloop/server typecheck` | 通过     | 是   |
-| 7   | 单元测试 | `pnpm --filter @mentorloop/server test`      | 全绿     | 是   |
-| 8   | 构建     | `pnpm --filter @mentorloop/server build`     | 成功     | 是   |
+| 7   | 类型检查 | `pnpm --filter @mentorloop/server typecheck` | 通过     | 是   |
+| 8   | 单元测试 | `pnpm --filter @mentorloop/server test`      | 全绿     | 是   |
+| 9   | 构建     | `pnpm --filter @mentorloop/server build`     | 成功     | 是   |
 
 ### 2.3 覆盖要求（人工判定）
 
@@ -58,20 +59,20 @@
 ## 3. 一键门禁脚本
 
 ```bash
-pnpm lint && pnpm format:check && pnpm test && node scripts/check-uvue-css.mjs && pnpm --filter @mentorloop/server typecheck && pnpm --filter @mentorloop/server test && pnpm --filter @mentorloop/server build
+pnpm lint && pnpm format:check && pnpm test && node scripts/check-uvue-css.mjs && node scripts/check-design-tokens.mjs && pnpm --filter @mentorloop/server typecheck && pnpm --filter @mentorloop/server test && pnpm --filter @mentorloop/server build
 ```
 
 ---
 
 ## 4. 领域特化检查（按改动范围追加）
 
-| 改动范围          | 追加检查                                                                                                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------- |
-| `.uvue` / `.uts`  | 已遵守 README §5：`type` 不用 `interface`、空值用 `null`、文字用 `<text>`、无透明度修饰符（`color-mix`） |
-| `types/` / `api/` | 已产出契约冻结单并双签（G1），且两端字段一致                                                             |
-| `engine/`         | 逻辑保持纯函数（无 `uni.*`、无网络），可被服务端 `rules/` 镜像                                           |
-| `server/`         | 统一响应 `{code,data,message}`；写操作幂等                                                               |
-| 设计 token        | `main.css` `@theme`、`styles/theme.uts`、`MASTER.md` §A1 三方一致                                        |
+| 改动范围          | 追加检查                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| `.uvue` / `.uts`  | 已遵守 README §5：`type` 不用 `interface`、空值用 `null`、文字用 `<text>`、无透明度修饰符（`color-mix`）     |
+| `types/` / `api/` | 已产出契约冻结单并双签（G1），且两端字段一致                                                                 |
+| `engine/`         | 逻辑保持纯函数（无 `uni.*`、无网络），可被服务端 `rules/` 镜像                                               |
+| `server/`         | 统一响应 `{code,data,message}`；写操作幂等                                                                   |
+| 设计 token        | `node scripts/check-design-tokens.mjs` 绿：`main.css` `@theme`、`styles/theme.uts`、`MASTER.md` §A1 三方一致 |
 
 ---
 
@@ -86,13 +87,14 @@ pnpm lint && pnpm format:check && pnpm test && node scripts/check-uvue-css.mjs &
 - 任务卡：docs/tasks/YYYY-MM-DD-<slug>.md
 - 结论：通过 / 不通过
 
-| 检查项    | 命令                            | 结果    |
-| --------- | ------------------------------- | ------- |
-| Lint      | pnpm lint                       | ✅ / ❌ |
-| 格式      | pnpm format:check               | ✅ / ❌ |
-| 单测      | pnpm test                       | ✅ / ❌ |
-| uvue 守卫 | node scripts/check-uvue-css.mjs | ✅ / ❌ |
-| 服务端    | typecheck / test / build        | ✅ / ❌ |
+| 检查项     | 命令                                 | 结果    |
+| ---------- | ------------------------------------ | ------- |
+| Lint       | pnpm lint                            | ✅ / ❌ |
+| 格式       | pnpm format:check                    | ✅ / ❌ |
+| 单测       | pnpm test                            | ✅ / ❌ |
+| uvue 守卫  | node scripts/check-uvue-css.mjs      | ✅ / ❌ |
+| token 守卫 | node scripts/check-design-tokens.mjs | ✅ / ❌ |
+| 服务端     | typecheck / test / build             | ✅ / ❌ |
 
 ## 失败项与处理
 
@@ -113,12 +115,12 @@ pnpm lint && pnpm format:check && pnpm test && node scripts/check-uvue-css.mjs &
 
 ### 7.1 按改动范围裁剪（避免小改动全量跑）
 
-| 改动范围                  | 必跑子集                                    | 可跳过       |
-| ------------------------- | ------------------------------------------- | ------------ |
-| 纯客户端 `.uvue` / `.uts` | lint / format / test / uvue 守卫            | 服务端三项   |
-| 纯服务端 `server/`        | lint / format / server typecheck+test+build | uvue 守卫    |
-| 纯 `docs/` / `*.md`       | format:check                                | 全部代码检查 |
-| 契约 / 引擎 / 测试        | 全量（两端都可能受影响）                    | 无           |
+| 改动范围                  | 必跑子集                                      | 可跳过            |
+| ------------------------- | --------------------------------------------- | ----------------- |
+| 纯客户端 `.uvue` / `.uts` | lint / format / test / uvue 守卫 / token 守卫 | 服务端三项        |
+| 纯服务端 `server/`        | lint / format / server typecheck+test+build   | uvue / token 守卫 |
+| 纯 `docs/` / `*.md`       | format:check                                  | 全部代码检查      |
+| 契约 / 引擎 / 测试        | 全量（两端都可能受影响）                      | 无                |
 
 > 裁剪依据是「改动文件路径」，不是任务卡链型。微链任务也可能跨端，此时仍跑全量。
 

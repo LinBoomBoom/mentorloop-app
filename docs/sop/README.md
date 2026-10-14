@@ -44,12 +44,12 @@
 
 ## 3. 门禁体系
 
-| Gate          | 位置   | 检查项                                                                          | 通过标准             | 失败动作     | 承载                                                             |
-| ------------- | ------ | ------------------------------------------------------------------------------- | -------------------- | ------------ | ---------------------------------------------------------------- |
-| **G1 契约门** | ① → ②  | 任务卡八要素齐全；`types/`·`api/` 变更双签；验收标准可测                        | 双签留痕、验收可判定 | 退回定义     | `mentorloop-task-card`                                           |
-| **G2 质量门** | ② → ③  | `pnpm check`、`check-uvue-css.mjs`、server typecheck/test/build、新增逻辑有单测 | 全绿                 | 不得进入验证 | `mentorloop-quality-gate`                                        |
-| **G3 准入门** | ③ → ④  | 代码审查无阻断、安全审查无高危、验收逐项核验、产品红线复核                      | 结论书面通过         | 打回构建     | `admission-sop.md` + `TRAE-code-review` / `TRAE-security-review` |
-| **G4 发布门** | ④ 出口 | 里程碑出口标准、合规清单（文档 06 §5）、评测集回归、release 包性能              | 全部勾选             | 不发布       | `release-sop.md` + QA/DevOps 结论                                |
+| Gate          | 位置   | 检查项                                                                                                     | 通过标准             | 失败动作     | 承载                                                             |
+| ------------- | ------ | ---------------------------------------------------------------------------------------------------------- | -------------------- | ------------ | ---------------------------------------------------------------- |
+| **G1 契约门** | ① → ②  | 任务卡八要素齐全；`types/`·`api/` 变更双签；验收标准可测                                                   | 双签留痕、验收可判定 | 退回定义     | `mentorloop-task-card`                                           |
+| **G2 质量门** | ② → ③  | `pnpm check`、`check-uvue-css.mjs`、`check-design-tokens.mjs`、server typecheck/test/build、新增逻辑有单测 | 全绿                 | 不得进入验证 | `mentorloop-quality-gate`                                        |
+| **G3 准入门** | ③ → ④  | 代码审查无阻断、安全审查无高危、验收逐项核验、产品红线复核                                                 | 结论书面通过         | 打回构建     | `admission-sop.md` + `TRAE-code-review` / `TRAE-security-review` |
+| **G4 发布门** | ④ 出口 | 里程碑出口标准、合规清单（文档 06 §5）、评测集回归、release 包性能                                         | 全部勾选             | 不发布       | `release-sop.md` + QA/DevOps 结论                                |
 
 > 铁律：模型或评分规则变更**必跑固定评测集**；发布**必须**有 QA/安全书面准入结论。
 >
@@ -59,14 +59,14 @@
 
 ## 4. 领域 SOP 矩阵
 
-| 领域                   | 关键约束（引用）                    | 专属门禁                    | 承载                                                                                                                 |
-| ---------------------- | ----------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 客户端 uvue/UTS        | README §5 硬约束                    | `check-uvue-css` + 类型约束 | `domain-uniappx-sop.md` + `mentorloop-system-spec`                                                                   |
-| 服务端 Fastify         | 统一响应、幂等键、契约镜像 `rules/` | server typecheck/test/build | `domain-server-sop.md` + `mentorloop-server-conventions`                                                             |
-| 内容（题库/图谱/量表） | AI 产物须人工审核                   | 审核留痕                    | `domain-content-sop.md` + `mentorloop-content-review`                                                                |
-| 设计系统               | token 三方一致、双表面、无障碍      | 设计评审 checklist          | `domain-design-sop.md` + `mentorloop-role-uiux-designer`（+ `avatar-design` / `lipsync-spec` / `interview-room-ux`） |
-| 原生插件               | 降级不得伪造；音频帧不进响应式      | 真机验证 + 取证             | `domain-native-sop.md` + `screenshot`                                                                                |
-| 支付与合规             | 回调验签、服务端账本权威、合规清单  | 渗透测试 + 合规核验         | `compliance-sop.md` + `mentorloop-release-check`                                                                     |
+| 领域                   | 关键约束（引用）                    | 专属门禁                    | 承载                                                                                                                                |
+| ---------------------- | ----------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 客户端 uvue/UTS        | README §5 硬约束                    | `check-uvue-css` + 类型约束 | `domain-uniappx-sop.md` + `mentorloop-system-spec`                                                                                  |
+| 服务端 Fastify         | 统一响应、幂等键、契约镜像 `rules/` | server typecheck/test/build | `domain-server-sop.md` + `mentorloop-server-conventions`                                                                            |
+| 内容（题库/图谱/量表） | AI 产物须人工审核                   | 审核留痕                    | `domain-content-sop.md` + `mentorloop-content-review`                                                                               |
+| 设计系统               | token 三方一致、双表面、无障碍      | 设计评审 checklist          | `domain-design-sop.md` + `mentorloop-role-uiux-designer`（+ `interview-room-ux` / `mobile-design-adapter` / `design-intelligence`） |
+| 原生插件               | 降级不得伪造；音频帧不进响应式      | 真机验证 + 取证             | `domain-native-sop.md` + `screenshot`                                                                                               |
+| 支付与合规             | 回调验签、服务端账本权威、合规清单  | 渗透测试 + 合规核验         | `compliance-sop.md` + `mentorloop-release-check`                                                                                    |
 
 ---
 
@@ -96,16 +96,18 @@
 
 ## 7. 落地路线
 
-| 批次       | 内容                                                                                                                   | 状态                    |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| **批次 1** | `mentorloop-system-spec` + 任务卡 SOP + G2 质量门 SOP                                                                  | ✅ 已落地（2026-09-24） |
-| **批次 2** | 契约冻结 SOP（G1）+ 服务端/内容领域 SOP                                                                                | ✅ 已落地（2026-09-24） |
-| **批次 3** | 发布准入 SOP（G4）+ 合规 SOP                                                                                           | ✅ 已落地（2026-09-24） |
-| **批次 4** | 缺口补齐：G3 准入 SOP + 设计系统 / 原生插件领域 SOP                                                                    | ✅ 已落地（2026-09-24） |
-| **批次 5** | 角色体系：10 角色目录 + RACI + 门禁职责 + 3 角色 skill                                                                 | ✅ 已落地（2026-09-24） |
-| **批次 6** | 链式流水线：链型裁剪 + 角色挂链位 + 瘦模式 + 节流规则                                                                  | ✅ 已落地（2026-09-24） |
-| **批次 7** | uni-app x 平台规范符合性 SOP（SOP-13）：三层防线 + bug 模式 + 构建产物纪律                                             | ✅ 已落地（2026-10-12） |
-| **批次 8** | uni-app x 平台知识库 skill（`uni-app-x`）+ SOP-13 平台与结构条款：静态资源 / 栈顶页面 / 启动时序 / 组件调用 / 条件编译 | ✅ 已落地（2026-10-12） |
+| 批次        | 内容                                                                                                                   | 状态                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **批次 1**  | `mentorloop-system-spec` + 任务卡 SOP + G2 质量门 SOP                                                                  | ✅ 已落地（2026-09-24） |
+| **批次 2**  | 契约冻结 SOP（G1）+ 服务端/内容领域 SOP                                                                                | ✅ 已落地（2026-09-24） |
+| **批次 3**  | 发布准入 SOP（G4）+ 合规 SOP                                                                                           | ✅ 已落地（2026-09-24） |
+| **批次 4**  | 缺口补齐：G3 准入 SOP + 设计系统 / 原生插件领域 SOP                                                                    | ✅ 已落地（2026-09-24） |
+| **批次 5**  | 角色体系：10 角色目录 + RACI + 门禁职责 + 3 角色 skill                                                                 | ✅ 已落地（2026-09-24） |
+| **批次 6**  | 链式流水线：链型裁剪 + 角色挂链位 + 瘦模式 + 节流规则                                                                  | ✅ 已落地（2026-09-24） |
+| **批次 7**  | uni-app x 平台规范符合性 SOP（SOP-13）：三层防线 + bug 模式 + 构建产物纪律                                             | ✅ 已落地（2026-10-12） |
+| **批次 8**  | uni-app x 平台知识库 skill（`uni-app-x`）+ SOP-13 平台与结构条款：静态资源 / 栈顶页面 / 启动时序 / 组件调用 / 条件编译 | ✅ 已落地（2026-10-12） |
+| **批次 9**  | 移动端转换 skill（`mentorloop-mobile-design-adapter`）：Web/多端概念稿 → uvue 移动端设计规格（rpx/安全区/触控/五态）   | ✅ 已落地（2026-10-14） |
+| **批次 10** | 设计治理 P0（任务卡 ds-1）：avatar/lipsync skill 下线 + D3 残留清理 + MASTER 非权威标注 + token 三载体补齐             | ✅ 已落地（2026-10-14） |
 
 ---
 
@@ -118,41 +120,41 @@
 
 | SOP                                                     | 版本  | 覆盖                                                                                   |
 | ------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------- |
-| [SOP-01 角色体系与协作](./roles-sop.md)                 | 1.0.0 | 角色目录 / RACI / 门禁职责 / 交接接口                                                  |
+| [SOP-01 角色体系与协作](./roles-sop.md)                 | 1.2.0 | 角色目录 / RACI / 门禁职责 / 交接接口 / 安全与财务归属                                 |
 | [SOP-02 链式流水线](./pipeline-sop.md)                  | 1.0.0 | 链型裁剪 / 挂链位 / 瘦模式 / 节流                                                      |
 | [SOP-03 任务卡（G1 入口）](./task-card-sop.md)          | 1.0.0 | 八要素 + G1 检查清单                                                                   |
 | [SOP-04 契约冻结与双签（G1）](./contract-freeze-sop.md) | 1.0.0 | 冻结触发条件 / 双签 / 冻结后纪律                                                       |
-| [SOP-05 G2 质量门](./quality-gate-sop.md)               | 1.1.0 | lint / format / test / uvue 守卫 / server                                              |
-| [SOP-06 G3 验收准入](./admission-sop.md)                | 1.0.0 | 代码审查 / 安全审查 / 验收 / 红线复核                                                  |
-| [SOP-07 G4 发布准入](./release-sop.md)                  | 1.0.0 | 前置条件 / 准入单 / 灰度回滚                                                           |
+| [SOP-05 G2 质量门](./quality-gate-sop.md)               | 1.3.0 | lint / format / test / uvue 守卫 / token 守卫 / server                                 |
+| [SOP-06 G3 验收准入](./admission-sop.md)                | 1.1.0 | 代码审查 / 安全审查 / 验收 / 红线复核                                                  |
+| [SOP-07 G4 发布准入](./release-sop.md)                  | 1.1.0 | 前置条件 / 准入单 / 灰度回滚 / LC 合规签署                                             |
 | [SOP-08 服务端领域](./domain-server-sop.md)             | 1.0.0 | Fastify 分层 / 统一响应 / 鉴权 / 幂等                                                  |
 | [SOP-09 内容领域](./domain-content-sop.md)              | 1.0.0 | 题库 / 图谱 / 量表结构 + 审核留痕                                                      |
-| [SOP-10 设计系统领域](./domain-design-sop.md)           | 1.1.0 | token 三方一致 / 双表面 / uvue 硬约束                                                  |
-| [SOP-11 原生插件领域](./domain-native-sop.md)           | 1.0.0 | utssdk 契约 / 降级 / 性能 / 真机验证                                                   |
-| [SOP-12 上线合规](./compliance-sop.md)                  | 1.0.0 | 合规清单 / 隐私红线 / 数据删除入口                                                     |
-| [SOP-13 uni-app x 平台规范](./domain-uniappx-sop.md)    | 1.2.0 | UTS/uvue 规范速查 / 平台与结构条款 / 三层防线 / bug 模式 / 构建产物纪律 / 生态工具边界 |
+| [SOP-10 设计系统领域](./domain-design-sop.md)           | 1.7.0 | token 三方一致 / 双表面 / uvue 硬约束 / 移动端转换 / 设计 skill 边界与优先级           |
+| [SOP-11 原生插件领域](./domain-native-sop.md)           | 1.1.0 | utssdk 契约 / 降级 / 性能 / 真机验证                                                   |
+| [SOP-12 上线合规](./compliance-sop.md)                  | 1.1.0 | 合规清单 / 隐私红线 / 数据删除入口                                                     |
+| [SOP-13 uni-app x 平台规范](./domain-uniappx-sop.md)    | 1.3.0 | UTS/uvue 规范速查 / 平台与结构条款 / 三层防线 / bug 模式 / 构建产物纪律 / 生态工具边界 |
 
 ### 8.2 Skill 表
 
 | Skill                                                                                                  | 版本  | 职责                                                                 |
 | ------------------------------------------------------------------------------------------------------ | ----- | -------------------------------------------------------------------- |
 | [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.0.0 | 任务卡八要素 + G1 入口校验                                           |
-| [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.0.0 | 契约变更检测与双签记录                                               |
+| [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.1.0 | 契约变更检测与双签记录                                               |
 | [mentorloop-system-spec](../../.trae/skills/mentorloop-system-spec/SKILL.md)                           | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                  |
 | [mentorloop-server-conventions](../../.trae/skills/mentorloop-server-conventions/SKILL.md)             | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                    |
-| [mentorloop-content-review](../../.trae/skills/mentorloop-content-review/SKILL.md)                     | 1.0.0 | 题库/图谱/量表人工审核准备                                           |
-| [mentorloop-quality-gate](../../.trae/skills/mentorloop-quality-gate/SKILL.md)                         | 1.0.0 | G2 质量门命令执行                                                    |
-| [mentorloop-release-check](../../.trae/skills/mentorloop-release-check/SKILL.md)                       | 1.0.0 | G4 发布准入与合规清单                                                |
-| [mentorloop-pipeline](../../.trae/skills/mentorloop-pipeline/SKILL.md)                                 | 1.0.0 | 链式流水线推进与链长裁剪                                             |
-| [mentorloop-role-ai-engineer](../../.trae/skills/mentorloop-role-ai-engineer/SKILL.md)                 | 1.0.0 | AI 引擎：选题/追问/评分/评测集                                       |
+| [mentorloop-content-review](../../.trae/skills/mentorloop-content-review/SKILL.md)                     | 1.1.0 | 题库/图谱/量表人工审核准备                                           |
+| [mentorloop-quality-gate](../../.trae/skills/mentorloop-quality-gate/SKILL.md)                         | 1.3.0 | G2 质量门命令执行                                                    |
+| [mentorloop-release-check](../../.trae/skills/mentorloop-release-check/SKILL.md)                       | 1.1.0 | G4 发布准入与合规清单                                                |
+| [mentorloop-pipeline](../../.trae/skills/mentorloop-pipeline/SKILL.md)                                 | 1.1.0 | 链式流水线推进与上下文节流                                           |
+| [mentorloop-role-ai-engineer](../../.trae/skills/mentorloop-role-ai-engineer/SKILL.md)                 | 1.1.0 | AI 引擎：选题/追问/评分/评测集                                       |
 | [mentorloop-role-feasibility-analyst](../../.trae/skills/mentorloop-role-feasibility-analyst/SKILL.md) | 1.0.0 | 框架能力/版本兼容/POC 可行性                                         |
-| [mentorloop-role-miniprogram-pm](../../.trae/skills/mentorloop-role-miniprogram-pm/SKILL.md)           | 1.0.0 | 小程序端需求/包体积/审核/登录                                        |
-| [mentorloop-role-product-owner](../../.trae/skills/mentorloop-role-product-owner/SKILL.md)             | 1.0.0 | 优先级/范围裁剪/冻结决策                                             |
-| [mentorloop-role-uiux-designer](../../.trae/skills/mentorloop-role-uiux-designer/SKILL.md)             | 1.0.0 | UI/UX 信息架构/交互/视觉/无障碍                                      |
-| [mentorloop-avatar-design](../../.trae/skills/mentorloop-avatar-design/SKILL.md)                       | 1.0.0 | 2.5D 数字人资产与状态集                                              |
-| [mentorloop-lipsync-spec](../../.trae/skills/mentorloop-lipsync-spec/SKILL.md)                         | 1.0.0 | 口型同步 viseme/音素/TTS 时序                                        |
-| [mentorloop-interview-room-ux](../../.trae/skills/mentorloop-interview-room-ux/SKILL.md)               | 1.0.0 | 面试房间布局/状态色/字幕/动效                                        |
-| [uni-app-x](../../.trae/skills/uni-app-x/SKILL.md)                                                     | 1.0.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） |
+| [mentorloop-role-miniprogram-pm](../../.trae/skills/mentorloop-role-miniprogram-pm/SKILL.md)           | 1.0.1 | 小程序端需求/包体积/审核/登录                                        |
+| [mentorloop-role-product-owner](../../.trae/skills/mentorloop-role-product-owner/SKILL.md)             | 1.1.0 | 优先级/范围裁剪/冻结决策                                             |
+| [mentorloop-role-uiux-designer](../../.trae/skills/mentorloop-role-uiux-designer/SKILL.md)             | 1.1.0 | UI/UX 信息架构/交互/视觉/无障碍                                      |
+| [mentorloop-interview-room-ux](../../.trae/skills/mentorloop-interview-room-ux/SKILL.md)               | 1.0.1 | 面试房间布局/状态色/字幕/动效                                        |
+| [uni-app-x](../../.trae/skills/uni-app-x/SKILL.md)                                                     | 1.1.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） |
+| [mentorloop-mobile-design-adapter](../../.trae/skills/mentorloop-mobile-design-adapter/SKILL.md)       | 1.2.0 | Web/多端概念稿 → uvue 移动端设计规格（rpx/安全区/触控/五态）         |
+| [mentorloop-design-intelligence](../../.trae/skills/mentorloop-design-intelligence/SKILL.md)           | 1.0.0 | 设计灵感与选型：风格/配色/字体/布局候选 → 设计选型单                 |
 
 ### 8.3 产物模板
 
@@ -166,6 +168,7 @@
 | 发布准入单         | `docs/releases/YYYY-MM-DD-<version>.md`       |
 | 评测报告（AI）     | `docs/evals/YYYY-MM-DD-<范围>.md`             |
 | 复盘报告           | `docs/releases/YYYY-MM-DD-<version>.retro.md` |
+| 合规台账（LC）     | `docs/compliance/compliance-ledger.md`        |
 
 ### 8.4 版本规则（skill 与 SOP 共用）
 

@@ -2,8 +2,8 @@
 编号: SOP-01
 名称: 角色体系与协作
 适用范围: docs/sop/roles-sop.md 全部角色定义、RACI、门禁职责与交接接口
-版本: 1.0.0
-最后更新: 2026-10-08
+版本: 1.2.0
+最后更新: 2026-10-14
 ---
 
 # 角色体系与协作 SOP
@@ -22,18 +22,18 @@
 
 ## 2. 角色目录
 
-| 代号      | 角色           | 核心职责                                                     | 主要产物                         | 主责门禁 |
-| --------- | -------------- | ------------------------------------------------------------ | -------------------------------- | -------- |
-| **PO**    | 产品负责人     | 范围与优先级、验收裁决、里程碑出口、冻结决策变更             | 决策记录、里程碑评审结论         | G1 / G4  |
-| **MP-PM** | 小程序产品经理 | 小程序端需求、微信平台特性、包体积与审核合规、登录与分享路径 | 小程序需求规格、页面流、审核材料 | G1       |
-| **FA**    | 可行性分析师   | 技术可行性验证、官方文档核实、POC、版本兼容、风险登记        | 可行性结论、POC 报告、风险条目   | G1 / G4  |
-| **UX**    | UI/UX 设计师   | 信息架构、交互、视觉系统、无障碍、设计走查                   | 设计稿、设计评审结论             | G3       |
-| **FE**    | 客户端工程师   | uvue / UTS / 状态机 / 感知层 / 原生插件                      | 客户端代码 + 单测                | G2       |
-| **BE**    | 后端工程师     | Fastify 服务、契约、幂等、配额账本、支付                     | 服务端代码 + 单测                | G2       |
-| **AI**    | AI 工程师      | 能力图谱、选题、追问、评分、报告、评测集                     | 引擎逻辑、评测报告               | G2 / G4  |
-| **CO**    | 内容运营       | 题库 / 图谱 / 评分量表的审核与上新、去重与质量审查           | 审核记录                         | G1       |
-| **QA**    | QA / DevOps    | 测试策略、门禁执行、验收准入、监控告警、发布准入             | 验收结论、发布准入单             | G3 / G4  |
-| **LC**    | 合规 / 法务    | 备案、隐私政策与协议、算法评估、支付与税务                   | 合规台账                         | G4       |
+| 代号      | 角色           | 核心职责                                                                       | 主要产物                                 | 主责门禁 |
+| --------- | -------------- | ------------------------------------------------------------------------------ | ---------------------------------------- | -------- |
+| **PO**    | 产品负责人     | 需求受理与 PRD、用户研究、范围与优先级、验收裁决、里程碑出口、冻结决策变更     | PRD / 调研结论、决策记录、里程碑评审结论 | G1 / G4  |
+| **MP-PM** | 小程序产品经理 | 小程序端需求、微信平台特性、包体积与审核合规、登录与分享路径                   | 小程序需求规格、页面流、审核材料         | G1       |
+| **FA**    | 可行性分析师   | 技术可行性验证、官方文档核实、POC、版本兼容、风险登记                          | 可行性结论、POC 报告、风险条目           | G1 / G4  |
+| **UX**    | UI/UX 设计师   | 信息架构、交互、视觉系统、无障碍、可用性测试、设计走查                         | 设计稿、设计评审结论、可用性测试记录     | G3       |
+| **FE**    | 客户端工程师   | uvue / UTS / 状态机 / 感知层 / 原生插件                                        | 客户端代码 + 单测                        | G2       |
+| **BE**    | 后端工程师     | Fastify 服务、契约、幂等、配额账本、支付                                       | 服务端代码 + 单测                        | G2       |
+| **AI**    | AI 工程师      | 能力图谱、选题、追问、评分、报告、评测集                                       | 引擎逻辑、评测报告                       | G2 / G4  |
+| **CO**    | 内容运营       | 题库 / 图谱 / 评分量表的审核与上新、去重与质量审查；增长实验与客服反馈归集     | 审核记录、增长 / 客服反馈归集            | G1       |
+| **QA**    | QA / DevOps    | 测试策略、真机测试与取证、**安全准入**、门禁执行、验收准入、监控告警、发布准入 | 验收结论、安全结论、真机取证、发布准入单 | G3 / G4  |
+| **LC**    | 合规 / 法务    | 备案、隐私政策与协议、算法评估、支付与税务（含财务核验）                       | 合规台账、G4 合规签署                    | G4       |
 
 ---
 
@@ -56,7 +56,7 @@
 | ------------- | ---------------------- | ---------------------------------------------------------- | -------------------------------------------- |
 | **G1 契约门** | PO（裁决）             | MP-PM（需求）、FA（可行性）、FE/BE（双签）、CO（内容范围） | `task-card-sop.md`、`contract-freeze-sop.md` |
 | **G2 质量门** | FE / BE / AI（执行）   | QA（监督）                                                 | `quality-gate-sop.md`                        |
-| **G3 准入门** | QA（准入）             | UX（设计走查）、FE/BE（修复）                              | `admission-sop.md`                           |
+| **G3 准入门** | QA（准入，含安全）     | UX（设计走查）、FE/BE（修复）                              | `admission-sop.md`                           |
 | **G4 发布门** | QA（准入）、LC（合规） | PO（决策）、FA（风险）、MP-PM（审核材料）                  | `release-sop.md`、`compliance-sop.md`        |
 
 ---
@@ -71,8 +71,8 @@ UX ──设计稿 + 设计评审结论──▶ FE
 CO ──审核通过的题库/图谱──▶ AI
 AI ──规则镜像（engine ↔ server/src/rules）──▶ BE
 FE / BE ──构建产物──▶ QA
-QA ──验收结论 + 发布准入单──▶ PO
-LC ──合规台账──▶ QA（G4 核验）
+QA ──验收结论 + 安全结论 + 发布准入单──▶ PO
+LC ──合规台账 + G4 合规签署──▶ QA
 ```
 
 交接必须落在**产物**上（任务卡、冻结单、评审结论、审核记录），不得口头交接。
@@ -94,24 +94,27 @@ LC ──合规台账──▶ QA（G4 核验）
 ## 7. 兼任与不可省略
 
 - 小团队可兼任多角色（如 PO 兼 MP-PM、FE 兼 UX）。
-- **不可省略**：QA、题库审核（CO）、AI 评测责任（文档 05）。
+- **安全与财务归属（2026-10-14 治理裁决）**：安全责任并入 **QA**（审查工具 `TRAE-security-review`，产物为书面安全结论）；财务核验并入 **LC**，不另设独立角色。
+- **评测与抽检主责（2026-10-14 治理裁决）**：评分量表 / 选题规则的评测执行主责为 **AI**（跑 `tests/evals/` 并出评测报告），**CO** 负责人工分层抽检，**PO** 裁决量表业务合理性；报告质量（事实性 / 公平性）抽检由 CO + AI 共同执行。纪律正本：`domain-content-sop.md` §6。
+- **不可省略**：QA（含安全）、题库审核（CO）、AI 评测责任、发布合规签署（LC）（文档 05 / 06）。
 - 兼任时仍须**分别产出**各角色的门禁产物，不得因兼任而跳过。
 
 ---
 
 ## 8. 承载 skill
 
-| 角色  | 承载 skill                                                                                                                                     |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| MP-PM | `mentorloop-role-miniprogram-pm`                                                                                                               |
-| FA    | `mentorloop-role-feasibility-analyst`                                                                                                          |
-| UX    | `mentorloop-role-uiux-designer`、`mentorloop-avatar-design`、`mentorloop-lipsync-spec`、`mentorloop-interview-room-ux`、`domain-design-sop.md` |
-| FE    | `mentorloop-system-spec`                                                                                                                       |
-| BE    | `mentorloop-server-conventions`                                                                                                                |
-| AI    | `mentorloop-role-ai-engineer`、`mentorloop-content-review`                                                                                     |
-| CO    | `mentorloop-content-review`                                                                                                                    |
-| QA    | `mentorloop-quality-gate`、`mentorloop-release-check`、`TRAE-code-review` / `TRAE-security-review`                                             |
-| PO    | `mentorloop-role-product-owner`、`mentorloop-task-card`、`mentorloop-contract-freeze`                                                          |
+| 角色  | 承载 skill                                                                                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MP-PM | `mentorloop-role-miniprogram-pm`                                                                                                                              |
+| FA    | `mentorloop-role-feasibility-analyst`                                                                                                                         |
+| UX    | `mentorloop-role-uiux-designer`、`mentorloop-interview-room-ux`、`mentorloop-mobile-design-adapter`、`mentorloop-design-intelligence`、`domain-design-sop.md` |
+| FE    | `mentorloop-system-spec`                                                                                                                                      |
+| BE    | `mentorloop-server-conventions`                                                                                                                               |
+| AI    | `mentorloop-role-ai-engineer`、`mentorloop-content-review`                                                                                                    |
+| CO    | `mentorloop-content-review`                                                                                                                                   |
+| QA    | `mentorloop-quality-gate`、`mentorloop-release-check`、`TRAE-code-review` / `TRAE-security-review`                                                            |
+| LC    | `mentorloop-release-check`、`compliance-sop.md`                                                                                                               |
+| PO    | `mentorloop-role-product-owner`、`mentorloop-task-card`、`mentorloop-contract-freeze`                                                                         |
 
 ---
 

@@ -2,23 +2,23 @@
 name: mentorloop-release-check
 description: Run the MentorLoop G4 release gate and compliance checklist before shipping. Use when preparing a milestone release, app submission or version bump. 中文触发 发布准入 提审 打包 合规 里程碑. Do not use for mid-iteration commits.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Release Check (G4)
 
 Run this before any external delivery: milestone release, mini-program submission, or app packaging. A failing gate blocks the release. Read `docs/sop/release-sop.md` and `docs/sop/compliance-sop.md`.
 
-## Preconditions — all must pass
+## Preconditions — all must pass (dependencies, not restatements)
 
-1. G1 contract gate passed — no unfrozen contract change.
-2. G2 quality gate passed — lint, format, test, uvue guard, server checks.
-3. G3 review gate passed — code review and security review have no blockers.
+1. G1 contract gate passed — `mentorloop-contract-freeze`; no unfrozen contract change.
+2. G2 quality gate passed — `mentorloop-quality-gate` owns the command list; do not re-run it here.
+3. G3 review gate passed — `docs/sop/admission-sop.md`; code and security review with no blockers.
 4. Milestone exit criteria met (`docs/project-execution-plan.md` §3).
-5. Compliance checklist complete (`docs/sop/compliance-sop.md`).
-6. Fixed evaluation set rerun if models or scoring rules changed.
+5. Compliance checklist complete (`docs/sop/compliance-sop.md` §2).
+6. Fixed evaluation set rerun if models or scoring rules changed (discipline: `docs/sop/domain-content-sop.md` §6).
 7. Performance verified on a release build, never a debug build.
 
 ## Compliance checklist
@@ -42,8 +42,8 @@ Run this before any external delivery: milestone release, mini-program submissio
 
 ## Deliverable
 
-Fill the release admission record at `docs/releases/YYYY-MM-DD-<version>.md`, including the precondition table, rollout and rollback plan, and the written QA/security conclusion.
+Fill the release admission record at `docs/releases/YYYY-MM-DD-<version>.md`, including the precondition table, rollout and rollback plan, the written QA/security conclusion, and the LC compliance signature.
 
 ## Fail
 
-Any failing precondition means do not release — return to the matching phase. Missing compliance is high risk and must not ship. A written QA/DevOps conclusion is mandatory; verbal approval is not enough.
+Any failing precondition means do not release — return to the matching phase. Missing compliance is high risk and must not ship. A written QA/DevOps conclusion plus the LC compliance signature are mandatory; verbal approval is not enough.

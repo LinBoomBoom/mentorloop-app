@@ -2,9 +2,9 @@
 name: mentorloop-contract-freeze
 description: Detect and record MentorLoop contract changes in types or api before implementation. Use when a task changes types, api or server response shapes. 中文触发 契约冻结 接口契约 双签 字段变更 端点. Do not use for refactors that keep the contract unchanged.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Contract Freeze (G1)
@@ -34,7 +34,7 @@ No freeze is needed for internal refactors that keep fields and semantics unchan
 ## After freezing
 
 - Changing a frozen contract again requires re-freezing and a note in the task card risks.
-- If the change affects scoring or question selection, rerun the fixed evaluation set.
+- If the change affects scoring or question selection, rerun the fixed evaluation set (discipline: `docs/sop/domain-content-sop.md` §6).
 - If it affects server logic, mirror it in `server/src/rules/*` to keep both sides aligned.
 
 ## Fail

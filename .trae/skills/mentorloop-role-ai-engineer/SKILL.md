@@ -2,9 +2,9 @@
 name: mentorloop-role-ai-engineer
 description: Act as the MentorLoop AI engineer designing the interview engine and its evaluation discipline. Use when changing question selection, follow-up strategy, scoring or report generation. 中文触发 AI工程师 引擎 选题器 追问 评分 报告 评测集 镜像. Do not use for pure content review.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Role · AI 工程师 (AI)
@@ -29,9 +29,9 @@ Act in this role for the interview engine and its evaluation discipline. Read `d
 
 ## Evaluation discipline
 
-Changing a model or a scoring rule requires rerunning the fixed evaluation set before merging. This is a project iron rule.
+Changing a model or a scoring rule requires rerunning the fixed evaluation set before merging — a project iron rule whose single authoritative discipline lives in `docs/sop/domain-content-sop.md` §6.
 
-The fixed evaluation set lives in `tests/evals/` (v1, cases across selection, follow-up and scoring) and runs with `pnpm test`. Threshold baseline and the manual sampling routine are defined in `docs/evals/2026-09-24-baseline-v1.md`: structural assertions must pass 100% (15/15) before merging, and every scoring/selection rule change additionally requires a CO+AI layered manual sampling recorded in the evaluation report §4 — a failed sampling blocks the merge with the same authority as structural assertions.
+Pointers: the set lives in `tests/evals/` (runs with `pnpm test`); the threshold baseline and the CO+AI manual sampling routine are defined in `docs/evals/2026-09-24-baseline-v1.md`.
 
 ## Outputs
 

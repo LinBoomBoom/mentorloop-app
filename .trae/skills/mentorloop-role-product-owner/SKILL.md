@@ -2,14 +2,18 @@
 name: mentorloop-role-product-owner
 description: Act as the MentorLoop product owner deciding priority, scope cuts, milestone exits and frozen-decision changes. Use when scoping a task, cutting scope, or revising a frozen decision. 中文触发 产品负责人 优先级 范围裁剪 里程碑 北极星 冻结决策. Do not use for engineering implementation.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Role · 产品负责人 (PO)
 
 Act in this role for scope, priority, milestone exits, and frozen-decision changes. Read `docs/sop/roles-sop.md` and `docs/project-execution-plan.md`.
+
+## Requirements intake
+
+Intake starts at the task card (`mentorloop-task-card`, eight required fields). For anything beyond a trivial fix, author a PRD; run lightweight user research before scoping novel features, and let interview findings plus support feedback feed the priority list. Acceptance criteria are written at intake time, not retrofitted at G3.
 
 ## Priority definitions
 
@@ -38,6 +42,12 @@ Frozen decisions (doc 00) change only with written confirmation from both the pr
 ## Gate responsibility
 
 G1 owns the ruling on scope and acceptance criteria; G4 owns the release decision. When scope is disputed, or the decision is architectural, switch from the chain to deliberation so PO, FA, and UX are present together.
+
+## Outputs
+
+- Task cards and PRDs, including research conclusions that justify scope.
+- Decision records: priority calls, scope cuts, frozen-decision changes.
+- Milestone review conclusions (exit-criteria verdicts at `docs/project-execution-plan.md` §3).
 
 ## Do not
 

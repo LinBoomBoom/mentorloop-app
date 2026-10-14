@@ -2,9 +2,9 @@
 name: mentorloop-role-uiux-designer
 description: Act as MentorLoop UI/UX designer for information architecture, interaction, visual system, accessibility and design walkthroughs. Use when designing or reviewing pages and components. 中文触发 UI UX 设计 交互 视觉 无障碍 设计走查. Do not use for engineering-only changes.
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-08'
+  last_updated: '2026-10-14'
 ---
 
 # MentorLoop Role · UI/UX 设计师 (UX)
@@ -37,7 +37,7 @@ Run these before drawing any page:
 ## Visual system
 
 - Two surfaces: dark immersive (home, interview room) and light learning (training, resume, growth, mine, report).
-- Tokens have one source of truth: `main.css` `@theme`, mirrored in `styles/theme.uts` and `MASTER.md` §A1. Keep all three aligned.
+- Tokens come only from the authoritative carriers — token governance lives in `docs/sop/domain-design-sop.md`; never invent a token in a page.
 - Dark-surface body text contrast at or above 4.5:1.
 
 ## Accessibility
@@ -52,7 +52,7 @@ Every screen and module needs five designed states: empty, loading, error, degra
 
 ## Platform constraints
 
-uvue has no inline SVG (use the Lucide subset or generated PNG), no `gap-*` / `space-*`, no transparency modifiers, and text styles do not inherit. Touch targets are at least 44x44 (iOS) / 48x48dp (Android). See `mentorloop-system-spec`.
+uvue platform constraints (no inline SVG, no `gap-*` / `space-*`, no transparency modifiers, text styles do not inherit) are owned by `mentorloop-system-spec` — do not restate or bend them here. Touch targets: at least 44x44 (iOS) / 48x48dp (Android).
 
 ## Design walkthrough
 
@@ -62,8 +62,6 @@ Walk the flow end to end as the candidate would, then record findings. Check lay
 
 Load these when the work touches them:
 
-- `mentorloop-avatar-design` — digital-human character and asset specs
-- `mentorloop-lipsync-spec` — lip sync contract
 - `mentorloop-interview-room-ux` — interview room layout and interaction
 
 ## Outputs
@@ -72,4 +70,4 @@ Design specs, page-level design decisions, and a design walkthrough conclusion (
 
 ## Do not
 
-Do not hand engineering-only changes to this role, and do not introduce tokens outside the three authoritative files.
+Do not hand engineering-only changes to this role, and do not introduce tokens outside the authoritative carriers (`docs/sop/domain-design-sop.md`).

@@ -2,9 +2,9 @@
 name: uni-app-x
 description: uni-app x 平台开发权威知识库，覆盖项目结构、uvue/UTS 规范、组件与 easycom、uni API、ucss 样式子集、原生 SDK、运行调试与 vapor 性能。写 .uvue/.uts 或排查编译运行问题时使用。中文触发 uni-app x uvue UTS ucss 蒸汽模式 原生插件 真机调试。Do not use for 经典 uni-app。
 metadata:
-  version: '1.0.0'
+  version: '1.1.0'
   domain: mentorloop-app
-  last_updated: '2026-10-12'
+  last_updated: '2026-10-14'
 ---
 
 # uni-app x 平台知识库
@@ -28,15 +28,7 @@ metadata:
 
 ## 本项目覆盖（优先级最高）
 
-本仓库 `manifest.json` 的 `uni-app-x.vapor` 为 `true`（蒸汽模式）。以下项目硬约束**优先于本技能 references 中的通用描述**，若通用文档说"可以"而此处说"不许"，以本节为准。正本见根 `README.md` §5、`.trae/skills/mentorloop-system-spec`、`docs/sop/domain-uniappx-sop.md`。
-
-- **组件范式**：只允许 `<script setup lang="uts">` 组合式；**禁选项式 API、禁 mixin**（references 称两者可混用，本项目不允许）。
-- **UTS 类型**：对象类型只用 `type`，**禁 `interface`**；空值只用 `null`，**禁 `undefined`**；对象字面量必须 `as NamedType`。
-- **样式（Tailwind 原子类）**：禁 `gap-*` / `space-*`（用 `mt-*` / `ml-*`）；禁透明度修饰符（用内联 `rgba()`）；禁复杂后代选择器；文字样式写在 `<text>` 上；单位 rpx。
-- **Tailwind 管线**：CSS 生成由 `weapp-tailwindcss` 独占，勿再注册 `tailwindcss()` / `@tailwindcss/postcss` / `@tailwindcss/vite`；token 三处同步（`main.css` `@theme` ↔ `styles/theme.uts` ↔ `MASTER.md` §A1）。
-- **模块边界**：`engine/` 纯逻辑（无 UI / 无 `uni.*`）；`api/` 是契约层（改动走 G1 契约冻结）；`utssdk/` 降级实现不得伪造结果。
-- **构建产物纪律**：小程序端固定 `pnpm dev:mp-weixin`（CLI watch）+ 微信开发者工具导入 `dist/dev/mp-weixin`；HBuilderX 仅用于 App 真机调试；性能只认 release 包。
-- **隐私红线**：不留存原始录音 / 音频；AI 不得改写原始证据或分数；面试房间内不展示实时分数。
+本仓库 `manifest.json` 的 `uni-app-x.vapor` 为 `true`（蒸汽模式）。项目硬约束（组件范式、UTS 类型、Tailwind 原子类与管线、模块边界、构建产物纪律、隐私红线）**优先于本技能 references 中的通用描述**，正本在 `mentorloop-system-spec` 与根 `README.md` §5，本技能不复述；references 通用描述与项目约束冲突时，一律以项目正本为准。
 
 ## 能力优先级
 

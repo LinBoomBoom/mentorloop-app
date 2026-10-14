@@ -55,12 +55,12 @@ SOP（定规则） → Skill（把规则变成 AI 可执行的流程） → 机�
 
 ### 2.2 四道门禁
 
-| Gate          | 位置   | 检查项                                                                          | 通过标准             | 失败动作     | 承载                                                             |
-| ------------- | ------ | ------------------------------------------------------------------------------- | -------------------- | ------------ | ---------------------------------------------------------------- |
-| **G1 契约门** | ① → ②  | 任务卡八要素齐全；`types/`·`api/` 变更双签；验收标准可测                        | 双签留痕、验收可判定 | 退回定义     | `mentorloop-task-card` + `contract-freeze-sop.md`                |
-| **G2 质量门** | ② → ③  | `pnpm check`、`check-uvue-css.mjs`、server typecheck/test/build、新增逻辑有单测 | 全绿                 | 不得进入验证 | `mentorloop-quality-gate`                                        |
-| **G3 准入门** | ③ → ④  | 代码审查无阻断、安全审查无高危、验收逐项核验、产品红线复核                      | 结论书面通过         | 打回构建     | `admission-sop.md` + `TRAE-code-review` / `TRAE-security-review` |
-| **G4 发布门** | ④ 出口 | 里程碑出口标准、合规清单、评测集回归、release 包性能                            | 全部勾选             | 不发布       | `release-sop.md` + `compliance-sop.md`                           |
+| Gate          | 位置   | 检查项                                                                                                     | 通过标准             | 失败动作     | 承载                                                             |
+| ------------- | ------ | ---------------------------------------------------------------------------------------------------------- | -------------------- | ------------ | ---------------------------------------------------------------- |
+| **G1 契约门** | ① → ②  | 任务卡八要素齐全；`types/`·`api/` 变更双签；验收标准可测                                                   | 双签留痕、验收可判定 | 退回定义     | `mentorloop-task-card` + `contract-freeze-sop.md`                |
+| **G2 质量门** | ② → ③  | `pnpm check`、`check-uvue-css.mjs`、`check-design-tokens.mjs`、server typecheck/test/build、新增逻辑有单测 | 全绿                 | 不得进入验证 | `mentorloop-quality-gate`                                        |
+| **G3 准入门** | ③ → ④  | 代码审查无阻断、安全审查无高危、验收逐项核验、产品红线复核                                                 | 结论书面通过         | 打回构建     | `admission-sop.md` + `TRAE-code-review` / `TRAE-security-review` |
+| **G4 发布门** | ④ 出口 | 里程碑出口标准、合规清单、评测集回归、release 包性能                                                       | 全部勾选             | 不发布       | `release-sop.md` + `compliance-sop.md`                           |
 
 铁律：
 
@@ -170,7 +170,7 @@ SOP（定规则） → Skill（把规则变成 AI 可执行的流程） → 机�
 
 ## 五、13 份 SOP 总览与核心内容
 
-### SOP-01 角色体系与协作（`roles-sop.md`，v1.0.0）
+### SOP-01 角色体系与协作（`roles-sop.md`，v1.2.0）
 
 角色目录、RACI、门禁职责、交接接口、FA 铁律、兼任规则（详见本文 §三）。更新触发：新增/移除角色 major；职责或门禁归属变更 minor。
 
@@ -211,7 +211,7 @@ SOP（定规则） → Skill（把规则变成 AI 可执行的流程） → 机�
 
 **冻结后纪律**：再变更须重新走流程重签并在任务卡「风险」登记；影响评分/选题规则 → 必须重跑固定评测集；影响服务端逻辑 → 同步 `server/src/rules/*` 镜像。
 
-### SOP-05 G2 质量门（`quality-gate-sop.md`，v1.1.0，构建 → 验证）
+### SOP-05 G2 质量门（`quality-gate-sop.md`，v1.3.0，构建 → 验证）
 
 **检查项与命令**：
 
@@ -245,7 +245,7 @@ SOP（定规则） → Skill（把规则变成 AI 可执行的流程） → 机�
 
 **失败动作**：阻断项失败 → 停止提交，修复后从第 1 项重跑；不得 `eslint-disable`、跳过测试、放宽规则过门，豁免须登记任务卡「风险」；修复涉及契约字段 → 回 G1 重新冻结。
 
-### SOP-06 G3 验收准入（`admission-sop.md`，v1.0.0，验证出口）
+### SOP-06 G3 验收准入（`admission-sop.md`，v1.1.0，验证出口）
 
 G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
@@ -261,14 +261,16 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
 失败动作：阻断项 → 打回「② 构建」修复后从 G2 重跑；验收不通过不得进入交付；不得以「时间紧」跳过安全审查或红线复核。
 
-### SOP-07 G4 发布准入（`release-sop.md`，v1.0.0，交付出口）
+**签字表**：审查 Agent / UX（设计走查）/ QA（含安全准入）三方签署（正本见 `admission-sop.md` §5）。
+
+### SOP-07 G4 发布准入（`release-sop.md`，v1.1.0，交付出口）
 
 任何对外交付（里程碑版本、小程序提审、App Beta 打包）前必须通过。
 
 **前置条件（全部满足才可提审）**：① G1 通过（无未冻结契约变更）→ ② G2 通过 → ③ G3 通过 → ④ 里程碑出口标准逐项达标（`project-execution-plan.md` §3）→ ⑤ 合规清单逐项勾选 → ⑥ 模型/评分规则变更已跑固定评测集 → ⑦ 性能验证用 **release 包**（非 debug）。
 
 **发布执行**：核验前置 → 填准入单 → 小范围灰度（观察北极星指标与崩溃率）→ 指标异常触发回滚 → 灰度稳定 → 全量。
-失败动作：任一前置不通过 → 不发布；合规未完成属高风险，不得带病发布；发布必须 QA/DevOps 书面准入结论。
+失败动作：任一前置不通过 → 不发布；合规未完成属高风险，不得带病发布；发布必须 QA/DevOps 书面准入结论 + LC 合规签署（合规台账落盘 `docs/compliance/compliance-ledger.md`），不得口头放行。
 
 ### SOP-08 服务端领域（`domain-server-sop.md`，v1.0.0）
 
@@ -295,7 +297,7 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
 **变更纪律**：改评分量表或选题规则 → 必跑固定评测集，未通过不得合入；改图谱/题库 → 走审核流程，影响契约先走冻结；规则逻辑变更同步 `engine/*` 与 `server/src/rules/*`。
 
-### SOP-10 设计系统领域（`domain-design-sop.md`，v1.0.0）
+### SOP-10 设计系统领域（`domain-design-sop.md`，v1.7.0）
 
 **Token 三方一致**：`main.css` 的 `@theme` 块（Tailwind 生成源，权威）、`styles/theme.uts`（UTS 侧运行时颜色）、`MASTER.md` §A1（设计决策记录）——三处必须同步，否则原子类与运行时颜色漂移。
 
@@ -303,21 +305,21 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
 **图标**：页内用 Lucide 子集字体（`scripts/build-icons.py` 生成，勿手改；微信端 base64 内联）；tabBar 用生成 PNG（`scripts/gen-tabbar-icons.cjs`）。
 
-**uvue 平台硬约束**：不支持内联 SVG；不支持 `gap-*`/`space-*`（`check-uvue-css.mjs` 拦截）；文字样式不继承（每个 `<text>` 显式设置）；禁透明度修饰符（`color-mix()` 不支持，用内联 `rgba()`）；触摸目标 ≥44×44（iOS）/ 48×48dp（Android）；按压反馈 opacity 0.7/0.85、80–150ms；安全区避让。
+**uvue 平台硬约束**：不支持内联 SVG；不支持 `gap-*`/`space-*`（`check-uvue-css.mjs` 拦截）；文字样式不继承（每个 `<text>` 显式设置）；禁透明度修饰符（`color-mix()` 不支持，用内联 `rgba()`）；模板静态属性须用 `:` 绑定（`label="a + b"` 会原样渲染，ESLint 本地规则拦截）；触摸目标 ≥44×44（iOS）/ 48×48dp（Android）；按压反馈 opacity 三档（pressed-row 0.7 / pressed-chip 0.8 / pressed-card 0.85）、80–150ms；安全区避让。
 
 **无障碍**：浅色面正文对比度 ≥4.5:1；不只靠颜色表状态；动效尊重 `prefers-reduced-motion`；面试场景提供字幕/文字模式。
 
-### SOP-11 原生插件领域（`domain-native-sop.md`，v1.0.0）
+### SOP-11 原生插件领域（`domain-native-sop.md`，v1.1.0）
 
-四个插件：`interviewer-audio`（录音/降噪/音频焦点/中断恢复）、`interviewer-realtime`（实时音频通道）、`interviewer-avatar`（数字人渲染桥）、`interviewer-device`（设备检测）。
+三个插件：`interviewer-audio`（录音/降噪/音频焦点/中断恢复）、`interviewer-realtime`（实时音频通道）、`interviewer-device`（设备检测）。
 
 **契约与降级**：UTS 不支持 `interface`，契约以类公开方法为准；降级必须显式（返回 `false`/空串/空数组，调用方保留既有降级路径）；**降级不得伪造**（ASR 不可用返回空转写，绝不编造文本污染证据链）；平台差异用条件编译 `// #ifdef APP-ANDROID` 隔离。
 
-**性能硬约束**：音频帧/口型不进响应式状态（振幅摘要约 12 次/秒回调）；单活跃数字人实例，退出即 `release()`；资产预加载失败静默不阻塞面试；设备端不做大模型推理。
+**性能硬约束**：音频帧不进响应式状态（振幅摘要约 12 次/秒回调）；单活跃音频会话实例，退出即 `release()`；资产预加载失败静默不阻塞面试；设备端不做大模型推理。
 
 **真机验证**：编译/运行只能在 HBuilderX；性能与稳定性验证必须用 release 包，禁止以 debug 或模拟器流畅度验收；`utssdk` 改动须真机回归后收口（可用 `computer-use` + `screenshot` 取证）。
 
-### SOP-12 上线合规（`compliance-sop.md`，v1.0.0）
+### SOP-12 上线合规（`compliance-sop.md`，v1.1.0）
 
 合规是发布前置条件，周期长必须提前启动（从 M0 启动、M2 前完成、M3 上线前核验）。
 
@@ -328,11 +330,11 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 **已落地**：本地数据清除 `pages/mine/privacy.uvue`；服务端账号删除 `DELETE /me/account`（幂等，级联 9 表 + 简历文件）+ 注销入口。
 **已知缺口**：协议/隐私 URL 待回填（依赖 ICP 备案）；删除响应时效承诺待 LC 明示；ICP/App 备案、算法评估未启动（预留 2–3 个月）。
 
-### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.2.0）
+### SOP-13 uni-app x 平台规范（`domain-uniappx-sop.md`，v1.3.0）
 
 解决「按 Vue/Web 直觉写 uni-app x 导致静默失效 bug」这一类高频问题。规范条款正本在根 `README.md` §5（与 `mentorloop-system-spec` 同源），本 SOP 只沉淀防线机制、bug 模式与检查清单。
 
-**三层防线**：① 编译期 `vite.config.ts` `uvueUnsupported: 'error'`（gap / space-* / 渐变直接报错，不静默失效）；② 提交/CI `scripts/check-uvue-css.mjs`（G2 第 4 项）；③ 评审/自查清单（SOP-13 §5）。新「静默失效」bug 必须三步收口：补 README §5 条款 → 能自动化则升防线 ①② → issue 登记。
+**三层防线**：① 编译期 `vite.config.ts` `uvueUnsupported: 'error'`（gap / space-* / 渐变直接报错，不静默失效）；② 提交/CI `scripts/check-uvue-css.mjs`（G2 第 4 项）+ `pnpm lint` 内的 ESLint 本地规则（G2 第 1 项，现拦「静态属性误写表达式」，按表达式语法解析判定）；③ 评审/自查清单（SOP-13 §5）。新「静默失效」bug 必须三步收口：补 README §5 条款 → 能自动化则升防线 ①② → issue 登记。
 
 **高频 bug 模式**：HBuilderX「运行」模式产物 app.wxss 聚合样式致 WXSS 编译错误（小程序端一律用 CLI watch 产物 `dist/dev/mp-weixin`，HBuilderX 仅 App 真机调试）；CLI watch 与 HBuilderX 双 watch 并行产物混淆；gap/space 静默失效；uvue 样式不继承致文字样式丢失；静态资源变量路径丢包；页面类 `uni.*` 命错栈顶页。
 
@@ -351,22 +353,22 @@ Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `descr
 | #   | Skill                                 | 版本  | 职责                                                                 | 典型触发                                 |
 | --- | ------------------------------------- | ----- | -------------------------------------------------------------------- | ---------------------------------------- |
 | 1   | `mentorloop-task-card`                | 1.0.0 | 任务卡八要素 + G1 入口校验                                           | 新任务 / 需求 / 缺口                     |
-| 2   | `mentorloop-contract-freeze`          | 1.0.0 | 契约变更检测与双签记录                                               | 改 types / api / 服务端出参              |
+| 2   | `mentorloop-contract-freeze`          | 1.1.0 | 契约变更检测与双签记录                                               | 改 types / api / 服务端出参              |
 | 3   | `mentorloop-system-spec`              | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                  | 客户端 pages / components / engine / api |
 | 4   | `mentorloop-server-conventions`       | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                    | server/ 改动                             |
-| 5   | `mentorloop-content-review`           | 1.0.0 | 题库/图谱/量表人工审核准备                                           | 题库 / 能力图谱 / 评分量表               |
-| 6   | `mentorloop-quality-gate`             | 1.0.0 | G2 质量门命令执行                                                    | 提交前                                   |
-| 7   | `mentorloop-release-check`            | 1.0.0 | G4 发布准入与合规清单                                                | 发布 / 提审                              |
-| 8   | `mentorloop-pipeline`                 | 1.0.0 | 链式流水线推进与链长裁剪                                             | 推进任务 / 走流程 / 下一步               |
-| 9   | `mentorloop-role-ai-engineer`         | 1.0.0 | AI 引擎：选题/追问/评分/评测集                                       | 引擎设计 / 评分规则                      |
+| 5   | `mentorloop-content-review`           | 1.1.0 | 题库/图谱/量表人工审核准备                                           | 题库 / 能力图谱 / 评分量表               |
+| 6   | `mentorloop-quality-gate`             | 1.3.0 | G2 质量门命令执行                                                    | 提交前                                   |
+| 7   | `mentorloop-release-check`            | 1.1.0 | G4 发布准入与合规清单                                                | 发布 / 提审                              |
+| 8   | `mentorloop-pipeline`                 | 1.1.0 | 链式流水线推进与上下文节流                                           | 推进任务 / 走流程 / 下一步               |
+| 9   | `mentorloop-role-ai-engineer`         | 1.1.0 | AI 引擎：选题/追问/评分/评测集                                       | 引擎设计 / 评分规则                      |
 | 10  | `mentorloop-role-feasibility-analyst` | 1.0.0 | 框架能力/版本兼容/POC 可行性                                         | 是否支持 / 版本兼容 / POC                |
-| 11  | `mentorloop-role-miniprogram-pm`      | 1.0.0 | 小程序端需求/包体积/审核/登录                                        | 小程序端需求 / 平台约束                  |
-| 12  | `mentorloop-role-product-owner`       | 1.0.0 | 优先级/范围裁剪/冻结决策                                             | 优先级 / 范围裁剪 / 冻结决策             |
-| 13  | `mentorloop-role-uiux-designer`       | 1.0.0 | UI/UX 信息架构/交互/视觉/无障碍                                      | UI/UX 设计走查                           |
-| 14  | `mentorloop-avatar-design`            | 1.0.0 | 2.5D 数字人资产与状态集                                              | 数字人 / 虚拟形象                        |
-| 15  | `mentorloop-lipsync-spec`             | 1.0.0 | 口型同步 viseme/音素/TTS 时序                                        | 口型 / 唇形 / TTS 时序                   |
-| 16  | `mentorloop-interview-room-ux`        | 1.0.0 | 面试房间布局/状态色/字幕/动效                                        | 面试房间 / 实时字幕                      |
-| 17  | `uni-app-x`                           | 1.0.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） | 平台结构 / 配置 / 编译运行排障           |
+| 11  | `mentorloop-role-miniprogram-pm`      | 1.0.1 | 小程序端需求/包体积/审核/登录                                        | 小程序端需求 / 平台约束                  |
+| 12  | `mentorloop-role-product-owner`       | 1.1.0 | 优先级/范围裁剪/冻结决策                                             | 优先级 / 范围裁剪 / 冻结决策             |
+| 13  | `mentorloop-role-uiux-designer`       | 1.1.0 | UI/UX 信息架构/交互/视觉/无障碍                                      | UI/UX 设计走查                           |
+| 14  | `mentorloop-interview-room-ux`        | 1.0.1 | 面试房间布局/语音状态色/字幕/动效                                    | 面试房间 / 实时字幕                      |
+| 15  | `uni-app-x`                           | 1.1.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） | 平台结构 / 配置 / 编译运行排障           |
+| 16  | `mentorloop-mobile-design-adapter`    | 1.2.0 | Web/多端概念稿 → uvue 移动端设计规格（rpx/安全区/触控/五态）         | Web/多端概念稿落地                       |
+| 17  | `mentorloop-design-intelligence`      | 1.0.0 | 设计灵感与选型：风格/配色/字体/布局候选 → 设计选型单                 | 风格选型 / 配色 / 字体 / 设计灵感        |
 
 外部 skill（非本项目承载，按需调用）：`TRAE-code-review` / `TRAE-security-review`（G3 审查）、`TRAE-debugger`（服务端排障）、`lark-approval`（审批留痕）、`screenshot` / `computer-use`（真机取证）。
 
@@ -387,7 +389,7 @@ Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `descr
 | server/                                  | `mentorloop-server-conventions`                    |
 | 题库 / 图谱 / 量表                       | `mentorloop-content-review`                        |
 | 引擎设计 / 选题 / 追问 / 评分规则        | `mentorloop-role-ai-engineer`                      |
-| UI/UX、数字人、口型、面试房间            | `mentorloop-role-uiux-designer`（+ 子 skill 按需） |
+| UI/UX、面试房间（含语音状态表现）        | `mentorloop-role-uiux-designer`（+ 子 skill 按需） |
 | 小程序端需求 / 平台约束                  | `mentorloop-role-miniprogram-pm`                   |
 | 框架能力 / 版本兼容 / POC                | `mentorloop-role-feasibility-analyst`              |
 | 优先级 / 范围裁剪 / 冻结决策             | `mentorloop-role-product-owner`                    |
@@ -398,17 +400,17 @@ Skill 正本在 `.trae/skills/<slug>/SKILL.md`；frontmatter 含 `name` / `descr
 
 单任务同时命中多个 skill 时按裁决表加载，**最多 3 个**，避免上下文税膨胀：
 
-| 改动类型            | 必载                            | 条件加载（命中才载）                                                                                                                                | 不载                     |
-| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| 客户端 UI 页面/组件 | `mentorloop-system-spec`        | 面试房间 → `interview-room-ux`；数字人资产 → `avatar-design`；口型 → `lipsync-spec`；新页面/交互设计 → `role-uiux-designer`；平台知识 → `uni-app-x` | 其余设计 skill           |
-| 服务端              | `mentorloop-server-conventions` | 契约变更 → `contract-freeze`                                                                                                                        | 客户端 skill             |
-| 引擎/选题/评分      | `mentorloop-role-ai-engineer`   | 契约变更 → `contract-freeze`；内容审核 → `content-review`                                                                                           | UI skill                 |
-| 题库/图谱/量表      | `mentorloop-content-review`     | 契约变更 → `contract-freeze`                                                                                                                        | 引擎 skill（除非改规则） |
-| 新任务入口          | `mentorloop-task-card`          | 契约/UI/服务端 → 对应 skill                                                                                                                         | 其余                     |
-| 提交前              | `mentorloop-quality-gate`       | —                                                                                                                                                   | 全部规划类 skill         |
-| 发布                | `mentorloop-release-check`      | —                                                                                                                                                   | 其余                     |
+| 改动类型            | 必载                            | 条件加载（命中才载）                                                                           | 不载                     |
+| ------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------ |
+| 客户端 UI 页面/组件 | `mentorloop-system-spec`        | 面试房间 → `interview-room-ux`；新页面/交互设计 → `role-uiux-designer`；平台知识 → `uni-app-x` | 其余设计 skill           |
+| 服务端              | `mentorloop-server-conventions` | 契约变更 → `contract-freeze`                                                                   | 客户端 skill             |
+| 引擎/选题/评分      | `mentorloop-role-ai-engineer`   | 契约变更 → `contract-freeze`；内容审核 → `content-review`                                      | UI skill                 |
+| 题库/图谱/量表      | `mentorloop-content-review`     | 契约变更 → `contract-freeze`                                                                   | 引擎 skill（除非改规则） |
+| 新任务入口          | `mentorloop-task-card`          | 契约/UI/服务端 → 对应 skill                                                                    | 其余                     |
+| 提交前              | `mentorloop-quality-gate`       | —                                                                                              | 全部规划类 skill         |
+| 发布                | `mentorloop-release-check`      | —                                                                                              | 其余                     |
 
-**三条规则**：①「必载」始终加载，「条件加载」按触达范围决定；② 禁止同时加载三个设计子 skill（数字人整体改动走 `role-uiux-designer` 统筹，子 skill 按需二选一）；③ 超过 3 个时保留「必载」+「最窄触达」，其余改用 SOP 文档按需读章节。
+**三条规则**：①「必载」始终加载，「条件加载」按触达范围决定；② 设计子 skill（如 `interview-room-ux`）按触达面加载，数字人资产 / 口型设计 skill 已下线（2026-10-14 治理裁决），相关诉求并入 `role-uiux-designer` 统筹；③ 超过 3 个时保留「必载」+「最窄触达」，其余改用 SOP 文档按需读章节。
 
 ---
 
@@ -473,7 +475,7 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 
 ## 十、产物模板集
 
-八类产物路径约定（slug 与任务卡一致）：
+九类产物路径约定（slug 与任务卡一致）：
 
 | 产物               | 产出路径                                      |
 | ------------------ | --------------------------------------------- |
@@ -485,6 +487,7 @@ frontmatter 七字段：问题编号（`ISS-{yyyymmdd}-{两位序号}`，与文�
 | 发布准入单         | `docs/releases/YYYY-MM-DD-<version>.md`       |
 | 评测报告（AI）     | `docs/evals/YYYY-MM-DD-<范围>.md`             |
 | 复盘报告           | `docs/releases/YYYY-MM-DD-<version>.retro.md` |
+| 合规台账（LC）     | `docs/compliance/compliance-ledger.md`        |
 
 模板正本：任务卡见 `task-card-sop.md` §3（`mentorloop-task-card/assets/` 有同款）；冻结单见 `contract-freeze-sop.md` §4；门禁记录见 `quality-gate-sop.md` §5；验收结论见 `admission-sop.md` §5；发布准入单见 `release-sop.md` §3；问题记录见 `docs/issues/_templates/issue.md`。
 
