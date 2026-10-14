@@ -41,6 +41,14 @@
   --color-chip-warn: #fff3e0;
   --color-chip-danger: #feecec;
 
+  /* 深色面加亮档（navy 面上的语义色提亮，保 ≥4.5:1）+ 中性强调描边
+     2026-10-14 亮色族收敛：吸收原散落 pages 的 #8FA0FF / #5CE8D8 / #F5C97B / #FF9E6D / #C9D2E3 */
+  --color-smart-light: #8fa0ff;
+  --color-reliable-light: #5ce8d8;
+  --color-warn-light: #f5c97b;
+  --color-motivation-light: #ff9e6d;
+  --color-line-strong: #c9d2e3;
+
   /* 六维能力色板（growth/training/report 维度画像统一消费，替代散落硬编码） */
   --color-dim-knowledge: #5b6cff;
   --color-dim-engineering: #1fb6a6;
@@ -64,6 +72,21 @@
   --shadow-sm: 0 1px 2px rgba(15, 44, 76, 0.06);
   --shadow-card: 0 4px 16px rgba(15, 44, 76, 0.08);
   --shadow-float: 0 16px 40px rgba(15, 44, 76, 0.14);
+
+  /* 圆角语义档（MASTER.md §A1 2026-10-14 token 补齐）：生成 rounded-chip/control/card 原子类；
+     不覆盖 Tailwind 默认 --radius-* 档，避免全站视觉回归 */
+  --radius-chip: 999px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --ease-standard: ease-out;
+
+  /* 动效/尺寸语义档（仅作 CSS 变量声明，非 Tailwind 标准命名空间，不生成原子类）：
+     按压 120ms（A3-5：80–150ms 中值）/ 呼吸淡入 400ms（A3-7：300–500ms 中值）；
+     触摸目标 88rpx（=44px@375，A3-4）/ 录音主按钮 128rpx（=64px@375，A4 面试房间） */
+  --duration-press: 120ms;
+  --duration-ambient: 400ms;
+  --size-touch: 88rpx;
+  --size-record-cta: 128rpx;
 }
 
 /* 全局基线：uvue 样式不继承，文字样式必须写在 text 上 */

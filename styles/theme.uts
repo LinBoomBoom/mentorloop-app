@@ -1,5 +1,5 @@
-// 设计系统 Token（uts 侧引用，例如状态机/原生层颜色与数字人状态）
-// 颜色与 main.css 的 @theme 块保持单一事实来源（MASTER.md §A1）
+// 设计系统 Token（uts 侧引用：状态机/原生层颜色、语音状态与圆角/动效/尺寸）
+// 与 main.css 的 @theme 块保持单一事实来源（MASTER.md §A1）；键名 = main.css 逻辑名的 camelCase
 
 export type StringMap = { [key: string]: string }
 
@@ -12,10 +12,43 @@ export const THEME: StringMap = {
   danger: '#DC2626',
   bgLight: '#F7F9FC',
   bgMuted: '#F1F5F9',
-  textPrimary: '#1A2433',
-  textSecondary: '#5B6472',
-  border: '#E3E8F0',
-  surface: '#FFFFFF'
+  surface: '#FFFFFF',
+  ink: '#1A2433',
+  inkSoft: '#5B6472',
+  line: '#E3E8F0',
+  // 以下为 2026-10-14 token 补齐（P0，任务卡 ds-1）：与 main.css @theme 对齐
+  mist: '#AEB9CC',
+  chipSmart: '#EEF1FF',
+  chipReliable: '#E6F7F4',
+  chipWarn: '#FFF3E0',
+  chipDanger: '#FEECEC',
+  // 深色面加亮档 + 中性强调描边（2026-10-14 亮色族收敛，吸收原散落 pages 的字面量）
+  smartLight: '#8FA0FF',
+  reliableLight: '#5CE8D8',
+  warnLight: '#F5C97B',
+  motivationLight: '#FF9E6D',
+  lineStrong: '#C9D2E3',
+  fontSans: "-apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif",
+  shadowSm: '0 1px 2px rgba(15, 44, 76, 0.06)',
+  shadowCard: '0 4px 16px rgba(15, 44, 76, 0.08)',
+  shadowFloat: '0 16px 40px rgba(15, 44, 76, 0.14)',
+  // 圆角 / 动效 / 尺寸（2026-10-14 F3 收敛，任务卡 ds-1）：与 main.css @theme 非颜色 token 对齐；
+  // 别名 textPrimary / textSecondary / border / amber 已移除，main.css 权威名唯一
+  radiusChip: '999px',
+  radiusControl: '12px',
+  radiusCard: '16px',
+  durationPress: '120ms',
+  durationAmbient: '400ms',
+  easeStandard: 'ease-out',
+  sizeTouch: '88rpx',
+  sizeRecordCta: '128rpx'
+}
+
+/** 取 THEME token 值（StringMap 索引在 UTS 下为 string|null，统一兜底）；
+ *  fallback 传该 token 的 §A1 值，既是类型兜底也是自文档 */
+export function themeValue(name: string, fallback: string): string {
+  const v = THEME[name]
+  return v != null ? v : fallback
 }
 
 // 六维能力色板（与 main.css @theme --color-dim-* 单源对齐；growth/training/report 统一消费）
@@ -37,7 +70,7 @@ export const DIM_TINT: StringMap = {
   motivation: '#FDEBE6'
 }
 
-// 数字人状态（文档 02 / 04：idle/asking/listening/followup/thinking/summary）
+// 语音状态（文档 02 / 04：idle/asking/listening/followup/thinking/summary）
 export type AvatarState = 'idle' | 'asking' | 'listening' | 'followup' | 'thinking' | 'summary'
 
 export const AVATAR_STATE_LABEL: StringMap = {

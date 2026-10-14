@@ -4,11 +4,15 @@
 > If that file exists, its rules **override** this Master file.
 > If not, strictly follow the rules below.
 
+> ⚠️ **非权威 · skill 溯源快照（2026-10-14 设计治理裁决）**
+> 本文件上半部（Global Rules 至 §A 区之前）为早期通用 Web 设计模板的生成快照，仅作溯源参考，**不作为实现权威**。
+> MentorLoop 实际实现的权威规范见文末 §A1–§A4 权威区，并与 `main.css` `@theme`、`styles/theme.uts` 三载体对齐；冲突时以权威区为准。
+
 ---
 
-**Project:** MentorLoop
+**Project:** MentorLoop（AI 模拟面试训练 App）
 **Generated:** 2026-09-24 00:45:09
-**Category:** Translator App
+**Category:** AI Mock-Interview Training App
 **Design Dials:** Variance 3/10 (Centered / Minimal) | Motion 4/10 (Standard) | Density 5/10 (Standard)
 
 ---
@@ -77,6 +81,10 @@ _Density: 5/10 — Standard_
 ---
 
 ## Component Specs
+
+> **权威组件规格**在 [components/](components/)（`ml-*.md`，2026-10-14 ds-1 F5 以 `components/ml-*.uvue` 实现为准反写）。以下 skill 原始模板仅为参考，不适用 MentorLoop（色值/圆角以 §A1 与 main.css token 为准）。
+>
+> 消费端取值纪律：取色一律经 Tailwind token 原子类或 `styles/theme.uts` 的 `themeValue(...)`，禁止引入 token 之外的 hex（**全 `.uvue`** 由机检检查 E 强制：hex 必须命中 token 值）；`ml-icon` 的 `name` 必须在 `ICON_GLYPH` 内（机检检查 F）。
 
 ### Buttons
 
@@ -251,17 +259,32 @@ Before delivering any UI code, verify:
 skill 推荐 `#2563EB` 蓝；项目既定品牌为「深海军蓝 + 靛紫 + 青绿 + 暖琥珀」，用户已有认知，
 **不替换主色**，改为角色映射，并补齐 skill 要求的语义层（on-* / ring / destructive / muted）：
 
-| Skill 角色  | 项目 Token      | Hex       | 用途                       |
-| ----------- | --------------- | --------- | -------------------------- |
-| Primary     | `smart` 靛紫    | `#5B6CFF` | 品牌主操作、选中、链接     |
-| Secondary   | `reliable` 青绿 | `#1FB6A6` | 成功、倾听状态、正向数据   |
-| Accent/CTA  | `amber` 暖琥珀  | `#E08A00` | 提示、关键引导（克制使用） |
-| Background  | `bg-light`      | `#F7F9FC` | 浅色学习页全局底           |
-| Foreground  | `ink`           | `#1A2433` | 主文字                     |
-| Muted Fg    | `ink-soft`      | `#5B6472` | 次级文字                   |
-| Border      | `line`          | `#E3E8F0` | 分隔线/描边                |
-| Destructive | `danger`        | `#DC2626` | 错误、危险操作             |
-| Ring        | 同 smart        | `#5B6CFF` | 焦点环/光晕                |
+| Skill 角色  | 项目 Token      | Hex       | 用途                                                                  |
+| ----------- | --------------- | --------- | --------------------------------------------------------------------- |
+| Primary     | `smart` 靛紫    | `#5B6CFF` | 品牌主操作、选中、链接                                                |
+| Secondary   | `reliable` 青绿 | `#1FB6A6` | 成功、倾听状态、正向数据                                              |
+| Accent/CTA  | `warn` 暖琥珀   | `#E08A00` | 提示、关键引导（克制使用）；别名 `amber` 已移除（2026-10-14 F3 收敛） |
+| Background  | `bg-light`      | `#F7F9FC` | 浅色学习页全局底                                                      |
+| Foreground  | `ink`           | `#1A2433` | 主文字                                                                |
+| Muted Fg    | `ink-soft`      | `#5B6472` | 次级文字                                                              |
+| Border      | `line`          | `#E3E8F0` | 分隔线/描边                                                           |
+| Destructive | `danger`        | `#DC2626` | 错误、危险操作                                                        |
+
+> Ring（焦点环）为 Web focus 范式，uvue 触摸交互不适用，**不实现**；选中/按压反馈由 `pressed-*` 三档与状态色承载（2026-10-14 治理裁决）。
+
+**实现侧扩展 token（2026-10-14 补齐登记，skill 无对应角色）**：
+
+| 项目 Token                        | Hex                                           | 用途                                     |
+| --------------------------------- | --------------------------------------------- | ---------------------------------------- |
+| `navy` / `navy-deep`              | `#0F2C4C` / `#0B2138`                         | 深色沉浸面底（首页/面试房间）            |
+| `mist`                            | `#AEB9CC`                                     | 深色面次级文字（仅大字号/非关键说明）    |
+| `bg-muted`                        | `#F1F5F9`                                     | 浅色面分区底                             |
+| `surface`                         | `#FFFFFF`                                     | 浅色面卡片底                             |
+| `chip-smart/reliable/warn/danger` | `#EEF1FF` / `#E6F7F4` / `#FFF3E0` / `#FEECEC` | 语义 chip 浅底                           |
+| `smart-light` / `reliable-light`  | `#8FA0FF` / `#5CE8D8`                         | 深色面上的主色/正向色加亮档（保 ≥4.5:1） |
+| `warn-light` / `motivation-light` | `#F5C97B` / `#FF9E6D`                         | 深色面上的提示/激励色加亮档              |
+| `line-strong`                     | `#C9D2E3`                                     | 可选中卡片未选中态描边（比 line 深一档） |
+| `dim-*` / `dim-*-tint`（六维）    | 见下方六维能力色板                            | 能力域标签与 chip                        |
 
 **双表面体系**：
 
@@ -277,6 +300,13 @@ skill 推荐 `#2563EB` 蓝；项目既定品牌为「深海军蓝 + 靛紫 + 青
 **按压反馈三档**（hover-class 统一前缀，main.css 全局定义）：`pressed-row` 0.7（列表行）/ `pressed-card` 0.85（卡片与按钮）/ `pressed-chip` 0.8（选项 chip）；禁各页自造 -pressed 命名。
 
 **D3 变更（2026-10-13）**：去数字人，改「语音状态可视化」。撤销 `--color-figure-head` / `--color-figure-body` 占位形象 token 与 `components/interviewer-avatar.uvue`、`data/avatar-assets.uts`、`utssdk/interviewer-avatar/`；状态语义仍由 `styles/theme.uts` 的 `AvatarState`（6 态）承载，由新组件 `components/ml-voice-visual.uvue` 消费。
+
+**圆角 / 动效 / 尺寸语义档（2026-10-14 token 补齐，main.css `@theme` 声明）**：
+
+- 圆角三档：`--radius-chip: 999px`（胶囊）/ `--radius-control: 12px`（按钮、输入）/ `--radius-card: 16px`（卡片）→ 原子类 `rounded-chip / rounded-control / rounded-card`；不覆盖 Tailwind 默认 `--radius-*` 档，避免全站视觉回归。
+- 动效两档：`--duration-press: 120ms`（按压反馈，A3-5 区间 80–150ms 中值）/ `--duration-ambient: 400ms`（呼吸/淡入，A3-7 区间 300–500ms 中值），缓动 `--ease-standard: ease-out`（原子类 `ease-standard`）。
+- 尺寸两档：`--size-touch: 88rpx`（最小触摸目标 44px@375，A3-4）/ `--size-record-cta: 128rpx`（录音主按钮 64px@375，A4 面试房间）。
+- `--duration-*` / `--size-*` 非 Tailwind 标准命名空间，仅作为 CSS 变量声明（供 var() 引用与三载体对齐），不生成原子类；样式值在 uvue 内联或 ucss 中消费。
 
 ## A2. 字体：中文优先系统字体，不加载 Lora，Raleway 仅作可选数字字体
 
@@ -295,7 +325,7 @@ skill 推荐 `#2563EB` 蓝；项目既定品牌为「深海军蓝 + 靛紫 + 青
 2. 不支持 `gap-*`：间距用显式 `mt-* / ml-*`。
 3. 文字样式不继承：每个 `<text>` 显式设置字号/颜色/字重。
 4. 触摸目标 ≥44×44（iOS）/48×48dp（Android），视觉元素小于此值时用外层容器扩大热区。
-5. 按压反馈：opacity 0.7 / 0.85，80–150ms；不做 hover-only 交互，不做引起布局位移的 transform。
+5. 按压反馈：opacity 三档 0.7（列表行）/ 0.8（chip）/ 0.85（卡片与按钮），80–150ms；不做 hover-only 交互，不做引起布局位移的 transform。
 6. 安全区：自定义导航页（首页/房间/登录）顶部避让状态栏，底部 CTA 避让 home indicator。
 7. 动效：呼吸/淡入 300–500ms，缓动 ease-out；全部尊重 `prefers-reduced-motion`（main.css 已全局处理）。
 

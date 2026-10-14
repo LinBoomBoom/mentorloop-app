@@ -32,6 +32,9 @@ jobs:
       - name: uvue CSS guard
         run: node scripts/check-uvue-css.mjs
 
+      - name: Design token guard
+        run: node scripts/check-design-tokens.mjs
+
       - name: Unit test
         run: pnpm test
 
