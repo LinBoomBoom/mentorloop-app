@@ -1,7 +1,7 @@
 // 桌面账号互通单测：vip 解析/映射 + 绑定同步（stub 网关）+ 开关语义 + SQLite 容错
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { buildApp } from './app.js'
-import { loadEnv, Env } from './config.js'
+import { loadEnv, ensureDataDirs, Env } from './config.js'
 import { getDb, closeDb, Db } from './db.js'
 import {
   LONG_TERM_VIP_UNTIL,
@@ -79,6 +79,7 @@ describe('syncDesktopLink 绑定与权益同步（stub 网关）', () => {
     const env = loadEnv()
     env.dbPath =
       './data/test-dl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.db'
+    ensureDataDirs(env) // 直连 getDb 绕过了 buildApp 的建目录步骤，CI 干净检出时 data/ 不存在
     db = getDb(env.dbPath)
   })
 
