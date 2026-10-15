@@ -1,0 +1,432 @@
+<template>
+  <view>
+    <!-- 空状态：报告页在无记录时不渲染本面板，此处为组件自洽兜底 -->
+    <view v-if="records.length === 0">
+      <ml-card>
+        <ml-empty
+          icon="chart-column"
+          :icon-color="RELIABLE"
+          :icon-bg="CHIP_RELIABLE"
+          title="还没有成长记录"
+          desc="完成第一次模拟面试后，这里会展示你的能力画像与变化趋势"
+        >
+          <ml-button text="开始第一次面试" type="primary" block @click="goStart"></ml-button>
+        </ml-empty>
+      </ml-card>
+    </view>
+
+    <template v-else>
+      <!-- 统计行（组件化收敛：ml-stat-bar） -->
+      <ml-stat-bar
+        :value1="String(records.length)"
+        label1="累计面试"
+        :value2="avgLevel"
+        label2="平均等级"
+        :color2="SMART"
+        :value3="strongest"
+        label3="最强维度"
+        :color3="RELIABLE"
+      ></ml-stat-bar>
+
+      <!-- 能力趋势 -->
+      <view class="mt-5">
+        <ml-section-header
+          title="能力趋势"
+          caption="最近 {{ chartItems.length }} 场综合得分"
+        ></ml-section-header>
+        <ml-card>
+          <view class="flex-row items-end h-36 px-1">
+            <view
+              v-for="(c, i) in chartItems"
+              :key="c.key"
+              class="flex-1 flex-col items-center justify-end h-full"
+              @click="showIdx = c.index"
+            >
+              <text
+                class="text-xs font-mono mb-1"
+                :class="i === chartItems.length - 1 ? 'text-smart font-semibold' : 'text-ink-soft'"
+              >
+                {{ c.score }}
+              </text>
+              <view
+                class="w-7 rounded-t-lg"
+                :style="barStyle(c.score, i === chartItems.length - 1, c.index === showIdx)"
+              ></view>
+            </view>
+          </view>
+          <view class="h-px bg-line mt-2"></view>
+          <view class="flex-row px-1 mt-1.5">
+            <view v-for="c in chartItems" :key="'x' + c.key" class="flex-1 flex-col items-center">
+              <text
+                class="text-xs"
+                :class="c.index === showIdx ? 'text-smart font-semibold' : 'text-ink-soft'"
+              >
+                {{ c.label }}
+              </text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+
+      <!-- 最近场次 -->
+      <view class="mt-5">
+        <ml-section-header title="最近场次" caption="点选查看该场维度画像"></ml-section-header>
+        <scroll-view scroll-x="true" class="whitespace-nowrap">
+          <view class="flex-row">
+            <view
+              v-for="(r, i) in records"
+              :key="r.sessionId + '_' + i"
+              class="flex-col items-center mr-2.5"
+              hover-class="pressed-card"
+              :hover-start-time="0"
+              @click="showIdx = i"
+            >
+              <view
+                class="w-[104px] rounded-card border px-2.5 py-2.5"
+                :style="sessionCardStyle(i === showIdx)"
+              >
+                <view class="flex-row items-center justify-between">
+                  <text class="text-xs text-ink-soft">第 {{ records.length - i }} 场</text>
+                  <ml-tag
+                    :label="avgLevelOf(r.report)"
+                    :bg="i === showIdx ? CHIP_SMART : BG_MUTED"
+                    :color="i === showIdx ? SMART : INK_SOFT"
+                  ></ml-tag>
+                </view>
+                <text
+                  class="text-sm font-semibold font-mono mt-1.5"
+                  :class="i === showIdx ? 'text-smart' : 'text-ink'"
+                >
+                  {{ formatDate(r.at) }}
+                </text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 维度画像 -->
+      <view class="mt-5">
+        <ml-section-header
+          title="维度画像"
+          :caption="'第 ' + (records.length - showIdx) + ' 场 · 六维能力评估'"
+        ></ml-section-header>
+        <ml-card>
+          <view
+            v-for="(d, i) in activeDimensions"
+            :key="d.dimension"
+            :class="i < activeDimensions.length - 1 ? 'mb-4' : ''"
+          >
+            <view class="flex-row items-center justify-between">
+              <view class="flex-row items-center flex-1">
+                <view
+                  class="w-7 h-7 rounded-control flex-row items-center justify-center mr-2"
+                  :style="{ backgroundColor: dimTint(d.dimension) }"
+                >
+                  <ml-icon
+                    :name="dimIcon(d.dimension)"
+                    :size="14"
+                    :color="dimColor(d.dimension)"
+                  ></ml-icon>
+                </view>
+                <text class="text-sm font-medium text-ink">{{ dimLabel(d.dimension) }}</text>
+              </view>
+              <view class="flex-row items-center">
+                <text class="text-xs text-ink-soft mr-1.5">
+                  权重 {{ weightOf(d.dimension) }}%
+                </text>
+                <ml-tag
+                  :label="d.level"
+                  :bg="levelTint(d.level)"
+                  :color="levelColor(d.level)"
+                ></ml-tag>
+              </view>
+            </view>
+            <view class="mt-2 ml-9">
+              <ml-progress
+                :percent="levelPercent(d.level)"
+                :color="levelColor(d.level)"
+                :show-value="false"
+              ></ml-progress>
+              <text class="text-xs mt-1" :class="diffTone(d.dimension)">
+                {{ diffText(d.dimension) }}
+              </text>
+            </view>
+          </view>
+        </ml-card>
+      </view>
+    </template>
+
+    <!-- 训练记录（薄弱项定向训练 + 错因追溯；无报告且无训练时不重复空态） -->
+    <view v-if="records.length > 0 || trainings.length > 0" class="mt-6">
+      <ml-section-header
+        title="训练记录"
+        caption="薄弱项定向训练 · 错因可对照报告追溯"
+      ></ml-section-header>
+      <template v-if="trainings.length > 0">
+        <view v-for="t in trainings" :key="'tr_' + t.id + '_' + t.completedAt" class="mb-2">
+          <ml-card>
+            <view class="flex-row items-center justify-between">
+              <view class="flex-col flex-1">
+                <view class="flex-row items-center">
+                  <text class="text-sm text-ink flex-1">{{ t.title }}</text>
+                  <view v-if="t.domain.length > 0" class="ml-2">
+                    <ml-tag
+                      :label="'定向·' + dimLabel(t.domain)"
+                      :bg="CHIP_SMART"
+                      :color="SMART"
+                    ></ml-tag>
+                  </view>
+                </view>
+                <text class="text-xs text-ink-soft mt-1">
+                  {{ formatDate(t.completedAt) }} · 完成 {{ t.questions }} 题{{
+                    t.skipped > 0 ? ' · 跳过 ' + t.skipped + ' 题' : ''
+                  }}
+                </text>
+              </view>
+              <view class="ml-2" v-if="t.reasons.length > 0">
+                <ml-tag
+                  :label="'错因 ' + t.reasons.join(' / ')"
+                  :bg="CHIP_WARN"
+                  :color="WARN"
+                ></ml-tag>
+              </view>
+              <view class="ml-2" v-else>
+                <ml-tag label="表现良好" :bg="CHIP_RELIABLE" :color="RELIABLE"></ml-tag>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+      </template>
+      <ml-card v-else>
+        <view class="flex-row items-center">
+          <ml-icon name="dumbbell" :size="14" :color="MIST"></ml-icon>
+          <text class="text-xs text-ink-soft ml-2">暂无训练记录，从报告薄弱项开始一次定向训练</text>
+        </view>
+      </ml-card>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+// 成长趋势面板（IA-1 D-IA2）：由报告页「成长趋势」分段消费，原 pages/growth 页删除
+// 数据源与报告页一致（store/report-history.uts），不再单独占一级导航层级
+import { ref, computed, watch, onMounted } from 'vue'
+import mlCard from './ml-card.uvue'
+import mlTag from './ml-tag.uvue'
+import mlButton from './ml-button.uvue'
+import mlIcon from './ml-icon.uvue'
+import mlSectionHeader from './ml-section-header.uvue'
+import mlStatBar from './ml-stat-bar.uvue'
+import mlEmpty from './ml-empty.uvue'
+import mlProgress from './ml-progress.uvue'
+import { DIM_COLOR, DIM_TINT, themeValue } from '../styles/theme.uts'
+import {
+  averageLevel,
+  dimIcon,
+  levelColor,
+  levelOrder,
+  levelPercent,
+  levelTint
+} from '../styles/score-display.uts'
+import { reportHistory, ReportRecord } from '../store/report-history.uts'
+import { trainingHistory, TrainingItem } from '../store/training-history.uts'
+import { useMock } from '../api/env.uts'
+import { DimensionScore, DIMENSION_LABEL, DIMENSION_WEIGHT } from '../types/scoring.uts'
+
+// MP 端 props 走序列化：父页 onShow 时递增 reloadToken 触发重载（跨 tab 复用页面实例）
+const props = defineProps({
+  reloadToken: { type: Number, default: 0 }
+})
+
+const SMART = themeValue('smart', '#5B6CFF')
+const RELIABLE = themeValue('reliable', '#1FB6A6')
+const WARN = themeValue('warn', '#E08A00')
+const BG_LIGHT = themeValue('bgLight', '#F7F9FC')
+const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const INK_SOFT = themeValue('inkSoft', '#5B6472')
+const LINE = themeValue('line', '#E3E8F0')
+const MIST = themeValue('mist', '#AEB9CC')
+const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
+
+const records = ref<ReportRecord[]>([])
+const showIdx = ref(0)
+const trainings = ref<TrainingItem[]>([])
+
+function load() {
+  reportHistory.load()
+  const all = reportHistory.recent(6)
+  records.value = all
+  if (showIdx.value >= all.length) showIdx.value = 0
+  trainingHistory.load()
+  trainings.value = trainingHistory.recent(5)
+  // 真后端：异步同步云端报告历史（跨设备），先展示本地再刷新
+  if (!useMock()) {
+    reportHistory.fetchFromServer().then(() => {
+      const sync = reportHistory.recent(6)
+      records.value = sync
+      if (showIdx.value >= sync.length) showIdx.value = 0
+    })
+  }
+}
+
+onMounted(() => load())
+// 父页 onShow 递增 token：分段已激活时刷新，避免新增报告后展示陈旧趋势
+watch(
+  () => props.reloadToken,
+  () => load()
+)
+
+const activeDimensions = computed((): DimensionScore[] => {
+  if (records.value.length === 0) return []
+  const i = showIdx.value < records.value.length ? showIdx.value : 0
+  return records.value[i].report.dimensions
+})
+
+const avgLevel = computed((): string => {
+  if (records.value.length === 0) return '--'
+  return avgLevelOf(records.value[0].report)
+})
+
+// 最强维度：取最近一场等级最高的维度
+const strongest = computed((): string => {
+  if (records.value.length === 0) return '--'
+  const dims = records.value[0].report.dimensions
+  let best = 0
+  let bestKey = ''
+  for (let i = 0; i < dims.length; i++) {
+    const v = levelOrder(dims[i].level)
+    if (v > best) {
+      best = v
+      bestKey = dims[i].dimension
+    }
+  }
+  return bestKey.length > 0 ? dimLabel(bestKey) : '--'
+})
+
+type ChartItem = { key: string; index: number; score: number; label: string }
+
+// 趋势图：时间正序（最早→最新），最新一场高亮
+const chartItems = computed((): ChartItem[] => {
+  const out: ChartItem[] = []
+  const n = records.value.length
+  for (let i = n - 1; i >= 0; i--) {
+    const r = records.value[i]
+    out.push({
+      key: r.sessionId + '_' + i,
+      index: i,
+      score: scoreOf(r.report),
+      label: '第' + (n - i) + '场'
+    } as ChartItem)
+  }
+  return out
+})
+
+// 场次综合刻度（U7：统一走 levelPercent 刻度）
+function scoreOf(r: typeof records.value[0]['report']): number {
+  const dims = r.dimensions
+  if (dims.length === 0) return 0
+  let total = 0
+  for (let i = 0; i < dims.length; i++) total += levelPercent(dims[i].level)
+  return Math.round(total / dims.length)
+}
+
+function barStyle(score: number, isLatest: boolean, isSelected: boolean): { [key: string]: string } {
+  const h = Math.round((score / 100) * 120)
+  const bg = isLatest ? SMART : isSelected ? SMART_LIGHT : LINE
+  const s: { [key: string]: string } = {
+    height: h + 'px',
+    backgroundColor: bg
+  }
+  if (isSelected) {
+    s['border'] = '1px solid ' + SMART
+  }
+  return s
+}
+
+function sessionCardStyle(active: boolean): { [key: string]: string } {
+  if (active) {
+    return { backgroundColor: SURFACE, borderColor: SMART }
+  }
+  return { backgroundColor: BG_LIGHT, borderColor: LINE }
+}
+
+function avgLevelOf(r: typeof records.value[0]['report']): string {
+  return averageLevel(reportLevels(r))
+}
+
+// 报告各维度等级 → 等级序列（供 averageLevel 消费）
+function reportLevels(r: typeof records.value[0]['report']): string[] {
+  const out: string[] = []
+  for (let i = 0; i < r.dimensions.length; i++) out.push(r.dimensions[i].level)
+  return out
+}
+
+function dimLabel(k: string): string {
+  const v = DIMENSION_LABEL[k]
+  return v != null && v.length > 0 ? v : k
+}
+
+function weightOf(k: string): number {
+  const w = DIMENSION_WEIGHT[k]
+  return w != null ? Math.round(w * 100) : 0
+}
+
+// 六维色板 / 图标单一来源：styles/theme.uts（DIM_COLOR / DIM_TINT）
+// 与 styles/score-display.uts（dimIcon）
+function dimColor(k: string): string {
+  const v = DIM_COLOR[k]
+  return v != null ? v : SMART
+}
+
+function dimTint(k: string): string {
+  const v = DIM_TINT[k]
+  return v != null ? v : CHIP_SMART
+}
+
+function diffTone(dim: string): string {
+  const t = diffOf(dim)
+  if (t.indexOf('提升') >= 0) return 'text-reliable'
+  if (t.indexOf('下降') >= 0) return 'text-danger'
+  return 'text-ink-soft'
+}
+
+// 维度对比：当前场次 vs 更早一场
+function diffText(dim: string): string {
+  return diffOf(dim)
+}
+
+function diffOf(dim: string): string {
+  if (records.value.length < 2) return '暂无对比数据'
+  const curIdx = showIdx.value < records.value.length ? showIdx.value : 0
+  const prevIdx = curIdx + 1
+  if (prevIdx >= records.value.length) return '已对比到最早一场'
+  const cur = records.value[curIdx].report
+  const prev = records.value[prevIdx].report
+  const getLvl = (r: typeof cur): number => {
+    for (let i = 0; i < r.dimensions.length; i++) {
+      if (r.dimensions[i].dimension === dim) return levelOrder(r.dimensions[i].level)
+    }
+    return 0
+  }
+  const c = getLvl(cur)
+  const p = getLvl(prev)
+  if (c > p) return '对比上一场：提升 ' + (c - p) + ' 级'
+  if (c < p) return '对比上一场：下降 ' + (p - c) + ' 级'
+  return '对比上一场：持平'
+}
+
+function formatDate(ts: number): string {
+  const d = new Date(ts)
+  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+}
+
+function goStart() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+</script>

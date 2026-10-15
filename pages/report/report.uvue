@@ -26,215 +26,260 @@
 
     <template v-else>
       <view class="p-4">
-        <!-- 历史报告选择（报告升为一级 tab 后的列表入口） -->
-        <scroll-view v-if="records.length > 1" scroll-x="true" class="whitespace-nowrap mb-3">
-          <view class="flex-row">
-            <view
-              v-for="r0 in records"
-              :key="r0.sessionId"
-              class="mr-2"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="selectSession(r0.sessionId)"
+        <!-- 复盘域分段（IA-1 D-IA2）：本场报告 / 成长趋势同层，不再跳二级页 -->
+        <view
+          class="flex-row rounded-control p-1 mb-3 border"
+          :style="{ backgroundColor: BG_MUTED, borderColor: LINE }"
+        >
+          <view
+            class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
+            :style="segItemStyle(seg === 'report')"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="seg = 'report'"
+          >
+            <text
+              class="text-xs font-medium"
+              :style="{ color: seg === 'report' ? SURFACE : INK_SOFT }"
             >
+              本场报告
+            </text>
+          </view>
+          <view
+            class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
+            :style="segItemStyle(seg === 'growth')"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="seg = 'growth'"
+          >
+            <text
+              class="text-xs font-medium"
+              :style="{ color: seg === 'growth' ? SURFACE : INK_SOFT }"
+            >
+              成长趋势
+            </text>
+          </view>
+        </view>
+
+        <template v-if="seg === 'report'">
+          <!-- 历史报告选择（报告升为一级 tab 后的列表入口） -->
+          <scroll-view v-if="records.length > 1" scroll-x="true" class="whitespace-nowrap mb-3">
+            <view class="flex-row">
               <view
-                class="h-11 px-3.5 rounded-chip flex-row items-center border"
-                :style="chipStyle(r0.sessionId)"
+                v-for="r0 in records"
+                :key="r0.sessionId"
+                class="mr-2"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="selectSession(r0.sessionId)"
               >
-                <text
-                  class="text-xs font-mono"
-                  :style="{ color: r0.sessionId === activeSid ? SURFACE : INK_SOFT }"
+                <view
+                  class="h-11 px-3.5 rounded-chip flex-row items-center border"
+                  :style="chipStyle(r0.sessionId)"
                 >
-                  {{ fmtDate(r0.at) }}
-                </text>
+                  <text
+                    class="text-xs font-mono"
+                    :style="{ color: r0.sessionId === activeSid ? SURFACE : INK_SOFT }"
+                  >
+                    {{ fmtDate(r0.at) }}
+                  </text>
+                </view>
               </view>
             </view>
-          </view>
-        </scroll-view>
+          </scroll-view>
 
-        <!-- 总体判断（深色品牌卡，去装饰；综合等级 + 置信度） -->
-        <view class="bg-navy rounded-card p-5">
-          <view class="flex-row items-center">
-            <ml-icon name="sparkles" :size="14" :color="MIST"></ml-icon>
-            <text class="text-xs text-mist ml-1.5">总体判断</text>
-          </view>
-          <view class="flex-row items-center mt-2">
-            <text class="text-lg font-semibold text-white flex-1 leading-6">
-              {{ report.overall }}
-            </text>
-            <view
-              class="w-12 h-12 rounded-control flex-col items-center justify-center ml-3"
-              :style="{
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.14)'
-              }"
-            >
-              <text class="text-lg font-bold font-mono" :style="{ color: overallLevelColor }">
-                {{ overallLevel }}
+          <!-- 总体判断（深色品牌卡，去装饰；综合等级 + 置信度） -->
+          <view class="bg-navy rounded-card p-5">
+            <view class="flex-row items-center">
+              <ml-icon name="sparkles" :size="14" :color="MIST"></ml-icon>
+              <text class="text-xs text-mist ml-1.5">总体判断</text>
+            </view>
+            <view class="flex-row items-center mt-2">
+              <text class="text-lg font-semibold text-white flex-1 leading-6">
+                {{ report.overall }}
               </text>
-              <text class="text-xs text-mist">综合</text>
-            </view>
-          </view>
-          <text class="text-xs text-mist mt-2">{{ overallConfidenceText }}</text>
-          <view class="flex-row mt-4">
-            <view
-              class="flex-1 rounded-control p-3 mr-2.5"
-              :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
-            >
-              <view class="flex-row items-center">
-                <ml-icon name="award" :size="12" :color="RELIABLE_LIGHT"></ml-icon>
-                <text class="text-xs text-mist ml-1">最强项</text>
-              </view>
-              <text class="text-sm text-white mt-1.5">{{ report.strongest }}</text>
-            </view>
-            <view
-              class="flex-1 rounded-control p-3"
-              :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
-            >
-              <view class="flex-row items-center">
-                <ml-icon name="target" :size="12" :color="WARN_LIGHT"></ml-icon>
-                <text class="text-xs text-mist ml-1">最该提升</text>
-              </view>
-              <text class="text-sm text-white mt-1.5">{{ report.topPriority }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 能力维度（证据卡：点击展开完整证据 + 优秀回答示例） -->
-        <view class="mt-5">
-          <ml-section-header
-            title="能力维度"
-            caption="点击卡片展开证据"
-            action-text="成长趋势"
-            @action="goGrowth"
-          ></ml-section-header>
-        </view>
-        <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
-          <ml-card pressable @tap="toggleEvidence(d.dimension)">
-            <view class="flex-row items-center justify-between">
-              <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
-              <view class="flex-row items-center">
-                <text class="text-xs font-mono text-ink-soft mr-2">{{
-                  confText(d.dimension)
-                }}</text>
-                <ml-tag
-                  :label="d.level"
-                  :bg="levelTint(d.level)"
-                  :color="levelColor(d.level)"
-                ></ml-tag>
-                <ml-icon
-                  class="ml-1.5"
-                  :name="isExpanded(d.dimension) ? 'chevron-up' : 'chevron-down'"
-                  :size="14"
-                  :color="MIST"
-                ></ml-icon>
-              </view>
-            </view>
-            <!-- 等级条 -->
-            <view class="mt-2.5 h-1.5 rounded-full bg-line">
               <view
-                class="h-1.5 rounded-full"
+                class="w-12 h-12 rounded-control flex-col items-center justify-center ml-3"
                 :style="{
-                  width: levelPercent(d.level) + '%',
-                  backgroundColor: levelColor(d.level)
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.14)'
                 }"
-              ></view>
-            </view>
-            <text class="text-xs text-ink-soft mt-2 leading-5">证据：{{ d.evidence }}</text>
-            <text v-if="isLowConf(d.dimension)" class="text-xs text-warn mt-1">
-              低置信度：证据不足，仅供参考
-            </text>
-            <text v-if="!isExpanded(d.dimension)" class="text-xs text-smart mt-1">
-              点击展开：对照锚点与参考答法
-            </text>
-
-            <!-- 展开区：证据对照（你的回答 ↔ 待补证据）+ 参考答法 + 建议加练 -->
-            <template v-if="isExpanded(d.dimension)">
-              <view class="mt-3">
-                <text class="text-xs font-mono text-ink-soft">你的回答摘录</text>
-                <view class="mt-1.5 rounded-control p-3 bg-bg-muted" :style="quoteStyle">
-                  <text class="text-xs text-ink leading-5">{{ d.evidence }}</text>
-                </view>
-              </view>
-              <view v-if="d.missingEvidence.length > 0" class="mt-2.5">
-                <text class="text-xs font-mono text-ink-soft">待补证据</text>
-                <view class="mt-1.5 rounded-control p-3 bg-chip-warn" :style="gapStyle">
-                  <text class="text-xs text-ink leading-5">{{ d.missingEvidence }}</text>
-                </view>
-              </view>
-              <view class="mt-2.5">
-                <text class="text-xs font-mono text-ink-soft">参考答法</text>
-                <view class="mt-1.5 rounded-control p-3 bg-chip-reliable" :style="refStyle">
-                  <text class="text-xs text-ink leading-5">{{ exampleFor(d.dimension) }}</text>
-                </view>
-              </view>
-              <view v-if="d.suggestQuestions.length > 0" class="mt-2.5">
-                <text class="text-xs font-semibold text-ink">建议加练</text>
-                <text
-                  v-for="(sq, i) in d.suggestQuestions"
-                  :key="'sq' + i"
-                  class="text-xs text-ink-soft mt-1 leading-5"
-                >
-                  · {{ sq }}
+              >
+                <text class="text-lg font-bold font-mono" :style="{ color: overallLevelColor }">
+                  {{ overallLevel }}
                 </text>
+                <text class="text-xs text-mist">综合</text>
               </view>
-            </template>
-          </ml-card>
-        </view>
-
-        <!-- 风险提示 -->
-        <view v-if="report.riskQuestions.length > 0">
-          <view class="mt-5">
-            <ml-section-header title="风险提示" caption="面试官视角的红旗信号"></ml-section-header>
+            </view>
+            <text class="text-xs text-mist mt-2">{{ overallConfidenceText }}</text>
+            <view class="flex-row mt-4">
+              <view
+                class="flex-1 rounded-control p-3 mr-2.5"
+                :style="{ backgroundColor: 'rgba(255,255,255,0.1)' }"
+              >
+                <view class="flex-row items-center">
+                  <ml-icon name="award" :size="12" :color="RELIABLE_LIGHT"></ml-icon>
+                  <text class="text-xs text-mist ml-1">最强项</text>
+                </view>
+                <text class="text-sm text-white mt-1.5">{{ report.strongest }}</text>
+              </view>
+              <view
+                class="flex-1 rounded-control p-3"
+                :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+              >
+                <view class="flex-row items-center">
+                  <ml-icon name="target" :size="12" :color="WARN_LIGHT"></ml-icon>
+                  <text class="text-xs text-mist ml-1">最该提升</text>
+                </view>
+                <text class="text-sm text-white mt-1.5">{{ report.topPriority }}</text>
+              </view>
+            </view>
           </view>
-          <view class="mb-2" v-for="(r, i) in report.riskQuestions" :key="i">
-            <ml-card>
+
+          <!-- 能力维度（证据卡：点击展开完整证据 + 优秀回答示例） -->
+          <view class="mt-5">
+            <ml-section-header
+              title="能力维度"
+              caption="点击卡片展开证据"
+              action-text="成长趋势"
+              @action="showGrowth"
+            ></ml-section-header>
+          </view>
+          <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
+            <ml-card pressable @tap="toggleEvidence(d.dimension)">
+              <view class="flex-row items-center justify-between">
+                <text class="text-base font-semibold text-ink">{{ dimLabel(d.dimension) }}</text>
+                <view class="flex-row items-center">
+                  <text class="text-xs font-mono text-ink-soft mr-2">{{
+                    confText(d.dimension)
+                  }}</text>
+                  <ml-tag
+                    :label="d.level"
+                    :bg="levelTint(d.level)"
+                    :color="levelColor(d.level)"
+                  ></ml-tag>
+                  <ml-icon
+                    class="ml-1.5"
+                    :name="isExpanded(d.dimension) ? 'chevron-up' : 'chevron-down'"
+                    :size="14"
+                    :color="MIST"
+                  ></ml-icon>
+                </view>
+              </view>
+              <!-- 等级条 -->
+              <view class="mt-2.5 h-1.5 rounded-full bg-line">
+                <view
+                  class="h-1.5 rounded-full"
+                  :style="{
+                    width: levelPercent(d.level) + '%',
+                    backgroundColor: levelColor(d.level)
+                  }"
+                ></view>
+              </view>
+              <text class="text-xs text-ink-soft mt-2 leading-5">证据：{{ d.evidence }}</text>
+              <text v-if="isLowConf(d.dimension)" class="text-xs text-warn mt-1">
+                低置信度：证据不足，仅供参考
+              </text>
+              <text v-if="!isExpanded(d.dimension)" class="text-xs text-smart mt-1">
+                点击展开：对照锚点与参考答法
+              </text>
+
+              <!-- 展开区：证据对照（你的回答 ↔ 待补证据）+ 参考答法 + 建议加练 -->
+              <template v-if="isExpanded(d.dimension)">
+                <view class="mt-3">
+                  <text class="text-xs font-mono text-ink-soft">你的回答摘录</text>
+                  <view class="mt-1.5 rounded-control p-3 bg-bg-muted" :style="quoteStyle">
+                    <text class="text-xs text-ink leading-5">{{ d.evidence }}</text>
+                  </view>
+                </view>
+                <view v-if="d.missingEvidence.length > 0" class="mt-2.5">
+                  <text class="text-xs font-mono text-ink-soft">待补证据</text>
+                  <view class="mt-1.5 rounded-control p-3 bg-chip-warn" :style="gapStyle">
+                    <text class="text-xs text-ink leading-5">{{ d.missingEvidence }}</text>
+                  </view>
+                </view>
+                <view class="mt-2.5">
+                  <text class="text-xs font-mono text-ink-soft">参考答法</text>
+                  <view class="mt-1.5 rounded-control p-3 bg-chip-reliable" :style="refStyle">
+                    <text class="text-xs text-ink leading-5">{{ exampleFor(d.dimension) }}</text>
+                  </view>
+                </view>
+                <view v-if="d.suggestQuestions.length > 0" class="mt-2.5">
+                  <text class="text-xs font-semibold text-ink">建议加练</text>
+                  <text
+                    v-for="(sq, i) in d.suggestQuestions"
+                    :key="'sq' + i"
+                    class="text-xs text-ink-soft mt-1 leading-5"
+                  >
+                    · {{ sq }}
+                  </text>
+                </view>
+              </template>
+            </ml-card>
+          </view>
+
+          <!-- 风险提示 -->
+          <view v-if="report.riskQuestions.length > 0">
+            <view class="mt-5">
+              <ml-section-header
+                title="风险提示"
+                caption="面试官视角的红旗信号"
+              ></ml-section-header>
+            </view>
+            <view class="mb-2" v-for="(r, i) in report.riskQuestions" :key="i">
+              <ml-card>
+                <view class="flex-row items-center">
+                  <ml-icon name="circle-help" :size="15" :color="WARN"></ml-icon>
+                  <text class="text-sm text-ink ml-2 flex-1">{{ r }}</text>
+                </view>
+              </ml-card>
+            </view>
+          </view>
+
+          <!-- 训练计划 -->
+          <view class="mt-5">
+            <ml-section-header
+              title="建议训练计划"
+              caption="出自本次评估报告 · 点击直达训练"
+            ></ml-section-header>
+          </view>
+          <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
+            <ml-card pressable @tap="startPlanTask(t)">
               <view class="flex-row items-center">
-                <ml-icon name="circle-help" :size="15" :color="WARN"></ml-icon>
-                <text class="text-sm text-ink ml-2 flex-1">{{ r }}</text>
+                <view
+                  class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
+                  :class="t.priority === 1 ? 'bg-chip-warn' : 'bg-chip-smart'"
+                >
+                  <ml-icon name="zap" :size="16" :color="t.priority === 1 ? WARN : SMART"></ml-icon>
+                </view>
+                <view class="flex-col flex-1">
+                  <text class="text-sm text-ink">{{ t.title }}</text>
+                  <view class="flex-row items-center mt-0.5">
+                    <text class="text-xs font-mono text-ink-soft">{{ t.durationMin }}</text>
+                    <text class="text-xs text-ink-soft ml-1">分钟 · 优先级</text>
+                    <text class="text-xs font-mono text-ink-soft ml-1">{{ t.priority }}</text>
+                  </view>
+                </view>
+                <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
               </view>
             </ml-card>
           </view>
-        </view>
 
-        <!-- 训练计划 -->
-        <view class="mt-5">
-          <ml-section-header
-            title="建议训练计划"
-            caption="出自本次评估报告 · 点击直达训练"
-          ></ml-section-header>
-        </view>
-        <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
-          <ml-card pressable @tap="startPlanTask(t)">
-            <view class="flex-row items-center">
-              <view
-                class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
-                :class="t.priority === 1 ? 'bg-chip-warn' : 'bg-chip-smart'"
-              >
-                <ml-icon name="zap" :size="16" :color="t.priority === 1 ? WARN : SMART"></ml-icon>
-              </view>
-              <view class="flex-col flex-1">
-                <text class="text-sm text-ink">{{ t.title }}</text>
-                <view class="flex-row items-center mt-0.5">
-                  <text class="text-xs font-mono text-ink-soft">{{ t.durationMin }}</text>
-                  <text class="text-xs text-ink-soft ml-1">分钟 · 优先级</text>
-                  <text class="text-xs font-mono text-ink-soft ml-1">{{ t.priority }}</text>
-                </view>
-              </view>
-              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
+          <!-- 底部操作 -->
+          <view class="mt-4 mb-6 flex-row">
+            <view class="flex-1 mr-2">
+              <ml-button text="再次模拟" type="primary" block @click="again"></ml-button>
             </view>
-          </ml-card>
-        </view>
+            <view class="flex-1 ml-2">
+              <ml-button text="返回首页" type="secondary" block @click="goHome"></ml-button>
+            </view>
+          </view>
+        </template>
 
-        <!-- 底部操作 -->
-        <view class="mt-4 mb-6 flex-row">
-          <view class="flex-1 mr-2">
-            <ml-button text="再次模拟" type="primary" block @click="again"></ml-button>
-          </view>
-          <view class="flex-1 ml-2">
-            <ml-button text="返回首页" type="secondary" block @click="goHome"></ml-button>
-          </view>
-        </view>
+        <!-- 成长趋势（IA-1：原 pages/growth 二级页并入复盘域，组件承载） -->
+        <template v-else>
+          <ml-growth-panel :reload-token="growthTick"></ml-growth-panel>
+        </template>
       </view>
     </template>
   </scroll-view>
@@ -249,6 +294,7 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
+import mlGrowthPanel from '../../components/ml-growth-panel.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
@@ -274,6 +320,7 @@ const SMART = themeValue('smart', '#5B6CFF')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const SURFACE = themeValue('surface', '#FFFFFF')
+const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
 const INK_SOFT = themeValue('inkSoft', '#5B6472')
 const LINE = themeValue('line', '#E3E8F0')
 const MIST = themeValue('mist', '#AEB9CC')
@@ -302,6 +349,19 @@ const hasReport = ref(false)
 const loading = ref(true)
 const records = ref<ReportRecord[]>([])
 const activeSid = ref('')
+
+// 复盘域分段（IA-1 D-IA2）：默认本场报告；growthTick 供成长面板在 onShow 时重载
+const seg = ref('report')
+const growthTick = ref(0)
+
+function segItemStyle(active: boolean): { [key: string]: string } {
+  if (active) return { backgroundColor: SMART }
+  return { backgroundColor: 'transparent' }
+}
+
+function showGrowth() {
+  seg.value = 'growth'
+}
 
 // 综合等级徽章（U7：等级映射与刻度单一来源 styles/score-display.uts）
 const overallLevel = computed((): string => averageLevel(reportLevels(report.value.dimensions)))
@@ -398,6 +458,8 @@ function exampleFor(key: string): string {
 }
 
 onShow(async () => {
+  // 分段面板重载信号：分段停留在成长趋势时，回到本 tab 也能看到最新场次
+  growthTick.value += 1
   reportHistory.load()
   const all = reportHistory.all()
   records.value = all
@@ -515,9 +577,5 @@ function again() {
 
 function goHome() {
   uni.reLaunch({ url: '/pages/index/index' })
-}
-
-function goGrowth() {
-  uni.navigateTo({ url: '/pages/growth/growth' })
 }
 </script>

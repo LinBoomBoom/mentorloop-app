@@ -2,7 +2,7 @@
 
 - 日期：2026-10-14
 - 关联：里程碑 M1；SOP-02 标准链；承接 `2026-10-14-engineering-workbench-redesign.md`（ui-1）遗留项「IA 收敛」；优先级 **P1**（商业 MVP）
-- 状态：**已定稿 · 待实现**。PO 于 2026-10-14 拍板 **方案 A（4 tab：首页 / 训练 / 结果 / 我的）+ 页内分段承载复盘域**（决策记录见 §9.1），范围已冻结
+- 状态：**已实现 · 待真机走查**。PO 于 2026-10-14 拍板 **方案 A（4 tab：首页 / 训练 / 结果 / 我的）+ 页内分段承载复盘域**（决策记录见 §9.1）。实现与门禁结果见进度记录。
 
 ## 0. 现状评估（IA 审计，逐条可复核）
 
@@ -55,21 +55,21 @@
 
 **共通（与方案无关）**：
 
-- [ ] 报告页内可切换「本场报告 / 成长趋势」，无需跳转其他页面。
-- [ ] 全站无「指向 tabBar 页面的 `navigateTo`」与「指向非 tabBar 页面的 `switchTab`」（grep + 真机点击双向复核）。
-- [ ] `pages.json` tabBar 项数与图标产物一致（每项 `iconPath` / `selectedIconPath` 文件均存在）。
-- [ ] 埋点事件名与改动前一致（`report_view` 等），无指标断点。
-- [ ] `pnpm lint` / `pnpm typecheck` / `pnpm test` / `pnpm build:mp-weixin` 全绿；三机检脚本 exit 0。
-- [ ] 微信开发者工具真机走查：tab 切换、首页各入口、报告/成长分段、退出登录后落到首页均无死链。
+- [x] 报告页内可切换「本场报告 / 成长趋势」，无需跳转其他页面。
+- [x] 全站无「指向 tabBar 页面的 `navigateTo`」与「指向非 tabBar 页面的 `switchTab`」（43 处导航逐条复核，见进度记录）。
+- [x] `pages.json` tabBar 项数与图标产物一致（每项 `iconPath` / `selectedIconPath` 文件均存在）。
+- [x] 埋点事件名与改动前一致（`report_view` 等），无指标断点。
+- [x] `pnpm lint` / `pnpm typecheck` / `pnpm test` / `pnpm build:mp-weixin` 全绿；三机检脚本 exit 0。
+- [ ] 微信开发者工具真机走查：tab 切换、首页各入口、报告/成长分段、退出登录后落到首页均无死链。**（人工环节，待执行）**
 
 **方案 A（4 tab：首页 / 训练 / 结果 / 我的）——定稿依据**：
 
-- [ ] tabBar 为 4 项，第 3 项文案为「结果」；`iconPath` / `selectedIconPath` 仍为 `static/tabbar/file(.png / -active.png)`。
-- [ ] 报告页顶部有「本场报告 / 成长趋势」分段，切换无需跳转；趋势内容来自 `components/ml-growth-panel.uvue`。
-- [ ] `pages/growth/growth.uvue` 与 `pages.json` 对应项已删除，全站无残留引用（grep `pages/growth` 零命中）。
-- [ ] 首页新增简历入口，点击可达 `resume`；数据条两项不再跳已删除的成长页。
-- [ ] 原 `report` 的 4 处 `switchTab` 仍指向 `pages/report/report`（页面未移出 tabBar，调用方式不变）。
-- [ ] 首页摘要卡改为深链，首屏不再重复渲染训练/报告的明细内容。
+- [x] tabBar 为 4 项，第 3 项文案为「结果」；`iconPath` / `selectedIconPath` 仍为 `static/tabbar/file(.png / -active.png)`（构建产物 `app.json` 已核验 `"text": "结果"`）。
+- [x] 报告页顶部有「本场报告 / 成长趋势」分段，切换无需跳转；趋势内容来自 `components/ml-growth-panel.uvue`（构建产物已生成该组件 4 个文件）。
+- [x] `pages/growth/growth.uvue` 与 `pages.json` 对应项已删除；全站无**可执行**引用（`pages/growth` 仅剩 2 处说明性注释，记录迁移来源）。
+- [x] 首页新增简历入口（参数卡下方「简历优化 · AI 解析 · 改写建议 · 投递版本」），点击可达 `resume`；数据条两项改指「结果」tab。
+- [x] 原 `report` 的 4 处 `switchTab` 仍指向 `pages/report/report`（页面未移出 tabBar，调用方式不变）。
+- [x] 首页摘要卡复核：本就是 tab 深链（`goTraining` / `goReport` 均为 `switchTab`），未重复渲染明细，无需改动。
 
 **方案 B / C：不适用**（PO 已选 A；§9 对比表保留作为决策留痕）。
 
@@ -151,3 +151,20 @@ PO 裁决 §9 方案（本卡范围随之冻结）；UX 主导 IA 与入口规�
 - PO 拍板两项：**D-IA1** 方案 A（4 tab：首页 / 训练 / 结果 / 我的；简历走首页入口，不设一级 tab）；**D-IA2** 复盘域页内分段承载（不新建 results 页，趋势视图抽为组件，原成长页删除）。记录见 §9.1，对比表降为 §9.2 留痕。
 - 范围随之冻结：§2「做」改为方案 A 的 7 条具体动作；§4 验收固定为「共通 + 方案 A」，B/C 标记为不适用；§6 产物路径固定（新增 1 组件、删除 1 页面、改 5 文件）。
 - 待办：进入实现（tab 文案与页面删除 → 趋势组件抽离 → 报告页分段 → 首页入口与深链 → 全站调用点改造 → G2 + `pnpm build:mp-weixin` 编译验证 → 真机走查）。
+
+### 2026-10-14 实现完成（门禁 + 编译全绿）
+
+- **交付**：
+  - 新增 `components/ml-growth-panel.uvue`（趋势视图抽离；props `reloadToken`，父页 `onShow` 递增触发重载，解决「分段停在成长趋势时回到 tab 看到陈旧数据」）；原品牌带、「查看全部报告」按钮随页面层级调整一并去掉。
+  - `pages/report/report.uvue`：顶部新增「本场报告 / 成长趋势」分段（页内状态，非路由）；能力维度 section 原 `action`「成长趋势」由跳转改为切段。
+  - `pages/index/index.uvue`：参数卡下方新增简历入口（修 P2）；数据条「累计面试 / 平均等级」两项由跳成长页改为 `switchTab`「结果」tab。
+  - `pages.json`：tabBar 第 3 项文案「报告」→「结果」；删除 `pages/growth/growth` 项。
+  - 删除 `pages/growth/growth.uvue`（修 P1）。
+- **导航复核（43 处逐条）**：全部 `switchTab` 目标均为 tabBar 页面（index / training / report / mine）；全部 `navigateTo` 目标均非 tabBar 页面；`reLaunch` 指向 tab 页面（index / login）符合平台规则。**无静默失败项。**
+- **构建产物核验**：`dist/build/mp-weixin/app.json` tabBar `"text": "结果"`；页面列表已无 `pages/growth/growth`；`ml-growth-panel` 产物 4 个文件（js 7.7KB / wxml 7.3KB / wxss 2.6KB / json）均已生成。
+- **门禁**：`check-design-tokens`（A 47 token / B 零偏差 / D 9 处字号 / E 141 处 hex / F 101 图标）、`check-uvue-css`（28 文件）、`check-sop-registry` exit 0；`pnpm lint`（`--max-warnings 0`）✅；`pnpm typecheck` ✅；`pnpm test` 6 files / **89 tests** ✅；`pnpm build:mp-weixin` ✅。
+- **未覆盖（登记）**：
+  1. **真机走查未做**（人工环节）：tab 切换、首页入口、报告/成长分段、退出登录落首页。
+  2. **无跨 tab 分段深链**：首页数据条点击落到「结果」tab 的默认分段（本场报告），需用户再点一次「成长趋势」。方案 A 未包含跨 tab 传参，故未新增 store/事件总线；若要精确落点，需补一个「待消费分段意图」（约 10 行，客户端）。
+  3. **P3 只做了一半**：首页摘要卡复核后发现本就是 tab 深链，未重复渲染明细，故未改动；「首页与 tab 功能重叠」的进一步收敛（例如删卡或改版式）属产品取舍，未做。
+  4. 跨 tab 复用页面实例时，成长面板依赖 `reloadToken` 重载；若后续在面板内增加就地展开态，需注意该重载会重置面板内部状态（当前面板无内部展开态）。

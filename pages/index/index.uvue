@@ -55,15 +55,36 @@
           </view>
         </view>
 
+        <!-- 简历优化入口（IA-1 P2：准备环节前移，免费层钩子不再只藏「我的」） -->
+        <view
+          class="mt-3 rounded-card border p-3.5 flex-row items-center"
+          :style="cardStyle"
+          hover-class="pressed-card"
+          :hover-start-time="0"
+          @click="goResume"
+        >
+          <view
+            class="w-8 h-8 rounded-control flex-row items-center justify-center"
+            :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
+          >
+            <ml-icon name="file-text" :size="15" :color="SMART_LIGHT"></ml-icon>
+          </view>
+          <view class="flex-col flex-1 ml-2.5">
+            <text class="text-sm font-semibold text-white">简历优化</text>
+            <text class="text-xs text-mist mt-0.5">AI 解析 · 改写建议 · 投递版本</text>
+          </view>
+          <ml-icon name="chevron-right" :size="15" :color="MIST"></ml-icon>
+        </view>
+
         <!-- 数据条（等宽数字） -->
         <view class="flex-row rounded-card border px-2 py-3 mt-3" :style="stripStyle">
-          <view class="flex-1 flex-col items-center" @click="goGrowth">
+          <view class="flex-1 flex-col items-center" @click="goResults">
             <ml-icon name="target" :size="16" :color="WARN_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ totalCount }}</text>
             <text class="text-xs text-mist mt-0.5">累计面试</text>
           </view>
           <view class="w-px h-9" :style="dividerV"></view>
-          <view class="flex-1 flex-col items-center" @click="goGrowth">
+          <view class="flex-1 flex-col items-center" @click="goResults">
             <ml-icon name="award" :size="16" :color="RELIABLE_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ avgLevel }}</text>
             <text class="text-xs text-mist mt-0.5">平均等级</text>
@@ -408,8 +429,13 @@ function goTraining() {
   uni.switchTab({ url: '/pages/training/training' })
 }
 
-function goGrowth() {
-  uni.navigateTo({ url: '/pages/growth/growth' })
+function goResults() {
+  // IA-1：原成长二级页已并入「结果」tab 的成长趋势分段，这里只做 tab 跳转
+  uni.switchTab({ url: '/pages/report/report' })
+}
+
+function goResume() {
+  uni.navigateTo({ url: '/pages/resume/resume' })
 }
 
 function goReport() {
