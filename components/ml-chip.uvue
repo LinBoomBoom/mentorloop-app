@@ -1,0 +1,110 @@
+<template>
+  <view
+    class="rounded-chip flex-row items-center"
+    :class="rootClass"
+    :hover-class="hoverClass"
+    :hover-start-time="0"
+    @click="onClick"
+  >
+    <!-- select：选项选择 chip（prep/onboarding/prefs/report 统一形态） -->
+    <template v-if="variant === 'select'">
+      <text :class="[selectTextBase, selectTextTone]">{{ label }}</text>
+      <ml-icon
+        v-if="selected && !disabled"
+        class="ml-1"
+        name="check"
+        :size="13"
+        :color="SMART"
+      ></ml-icon>
+      <text v-if="hint.length > 0 && !selected" class="text-xs text-ink-soft ml-1">{{ hint }}</text>
+    </template>
+    <!-- action：行内操作 chip（采用/忽略/导出/开始统一形态） -->
+    <template v-else>
+      <ml-icon v-if="icon.length > 0" :name="icon" :size="13" :color="actionIconColor"></ml-icon>
+      <text class="text-xs" :class="[actionTextClass, icon.length > 0 ? 'ml-1' : '']">{{
+        label
+      }}</text>
+    </template>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+import mlIcon from './ml-icon.uvue'
+import { themeValue } from '../styles/theme.uts'
+
+// 选择 chip（2026-10-17 全站 chip 收敛，任务卡 ui-design-system-unification）
+// select 选中态 = 白底 + smart 描边 + check（prep/onboarding 多数派；prefs 旧实底 smart 已归一）
+// action = 行内操作 chip：smart 实底 / outline 描边 / soft 弱描边 / muted 已完成置灰
+const props = defineProps({
+  label: { type: String, default: '' },
+  // select | action
+  variant: { type: String, default: 'select' },
+  selected: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
+  // select 选中后不可用时不可选；hint 为尾部弱说明（如「敬请期待」）
+  hint: { type: String, default: '' },
+  // select 内容为日期/编号等数据时用等宽小字（report 会话选择器）
+  mono: { type: Boolean, default: false },
+  // action 尾图标（ICON_GLYPH 内名称）
+  icon: { type: String, default: '' },
+  // action 色调：smart 实底 / outline 描边 / soft 弱描边
+  tone: { type: String, default: 'outline' },
+  // action 完成态置灰（不再响应点击）
+  muted: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['tap'])
+
+const SMART = themeValue('smart', '#5B6CFF')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const INK_SOFT = themeValue('inkSoft', '#5B6472')
+
+const rootClass = computed((): string => {
+  if (props.variant === 'action') {
+    let c = 'h-11 px-4 justify-center '
+    if (props.muted) c += 'bg-line'
+    else if (props.tone === 'smart') c += 'bg-smart'
+    else c += 'border border-line'
+    return c
+  }
+  let c = 'h-11 px-3.5 '
+  if (props.selected && !props.disabled) c += 'bg-surface border border-smart'
+  else if (props.disabled) c += 'bg-bg-muted opacity-60'
+  else c += 'bg-bg-muted'
+  return c
+})
+
+const hoverClass = computed((): string => {
+  if (props.variant === 'action') return props.muted ? 'none' : 'pressed-card'
+  return props.disabled ? 'none' : 'pressed-chip'
+})
+
+const selectTextBase = computed((): string => {
+  return props.mono ? 'text-xs font-mono' : 'text-sm'
+})
+
+const selectTextTone = computed((): string => {
+  if (props.disabled) return 'text-ink-soft'
+  return props.selected ? 'text-smart font-medium' : 'text-ink'
+})
+
+const actionTextClass = computed((): string => {
+  if (props.muted) return 'text-ink-soft'
+  if (props.tone === 'smart') return 'text-white'
+  return props.tone === 'soft' ? 'text-ink-soft' : 'text-smart'
+})
+
+const actionIconColor = computed((): string => {
+  if (props.muted) return INK_SOFT
+  if (props.tone === 'smart') return SURFACE
+  return props.tone === 'soft' ? INK_SOFT : SMART
+})
+
+function onClick() {
+  // muted（已完成）彻底吞点击；disabled 仅去视觉与按压反馈，点击仍回传
+  // ——消费端决定引导（如不可用方向 toast「题库建设中」），不得死路（五态原则）
+  if (props.muted) return
+  emit('tap')
+}
+</script>

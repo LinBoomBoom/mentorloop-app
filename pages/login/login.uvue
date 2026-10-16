@@ -8,7 +8,7 @@
     </view>
 
     <view class="px-6">
-      <view class="bg-surface rounded-card p-4 border border-line">
+      <ml-card>
         <text class="text-xs text-ink-soft">手机号</text>
         <input
           class="mt-1.5 text-base text-ink"
@@ -31,17 +31,16 @@
               @input="onCodeInput"
             />
           </view>
-          <view
-            class="ml-3 rounded-control px-3 h-11 justify-center items-center"
-            :class="canSend ? 'bg-chip-smart' : 'bg-line'"
-            @click="sendCode"
-          >
-            <text class="text-sm" :class="canSend ? 'text-smart' : 'text-ink-soft'">
-              {{ sendLabel }}
-            </text>
-          </view>
+          <ml-button
+            class="ml-3"
+            :text="sendLabel"
+            type="tonal"
+            size="sm"
+            :disabled="!canSend"
+            @tap="sendCode"
+          ></ml-button>
         </view>
-      </view>
+      </ml-card>
 
       <view class="mt-6">
         <ml-button
@@ -76,6 +75,7 @@
 <script setup lang="uts">
 import { ref, computed, onUnmounted } from 'vue'
 import mlButton from '../../components/ml-button.uvue'
+import mlCard from '../../components/ml-card.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { sendSmsCode, loginByPhone, applyAuth } from '../../api/auth.uts'
 import { trackEvent } from '../../api/tracking.uts'

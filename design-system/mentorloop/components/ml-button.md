@@ -9,7 +9,7 @@
 | 名称     | 类型    | 默认      | 说明                                                                      |
 | -------- | ------- | --------- | ------------------------------------------------------------------------- |
 | text     | String  | `''`      | 按钮文案                                                                  |
-| type     | String  | `primary` | 变体：`primary` / `secondary` / `ghost` / `danger`                        |
+| type     | String  | `primary` | 变体：`primary` / `secondary` / `ghost` / `danger` / `link` / `tonal`     |
 | size     | String  | `md`      | 尺寸：`sm` / `md` / `lg`                                                  |
 | block    | Boolean | `false`   | 是否撑满整行                                                              |
 | disabled | Boolean | `false`   | 禁用态：按变体给显式禁用样式（见「状态」），点击直接 return（无按压反馈） |
@@ -28,10 +28,14 @@
 | secondary | `bg-surface`     | `border border-line-strong` | `text-ink`           |
 | ghost     | `bg-transparent` | `border border-smart`       | `text-smart`         |
 | danger    | `bg-danger`      | —                           | `text-white`（继承） |
+| link      | `bg-transparent` | —                           | `text-smart`         |
+| tonal     | `bg-chip-smart`  | —                           | `text-smart`         |
 
 通用：`rounded-control`（= radius-control 8px，ui-1 收紧后取值）。
 
 > 描边用 `line-strong`（`#c9d2e3`）而非 `line`（`#e3e8f0`）：后者在白色卡片/弹层上 1px 几乎不可见（2026-10-16 真机反馈 → 按钮被看成纯文本）。
+
+> `link`（2026-10-17 增）：独立文字链按钮（onboarding「跳过」等），无底无描边 smart 字，h-10/h-11 热区；行内流式文本中的链接（如《会员服务协议》）不适用本变体，走 `text-xs text-smart` 内联规格。`tonal`（2026-10-17 增）：浅色调底按钮（login 发送验证码等），实底 chip-smart + smart 字。
 
 ## 尺寸
 
@@ -43,11 +47,11 @@
 
 ## 状态
 
-| 状态 | 表现                                                                                                                                                                             |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 默认 | 变体样式原样                                                                                                                                                                     |
-| 按压 | `hover-class="pressed-card"`（`hover-start-time=0`）                                                                                                                             |
-| 禁用 | primary / danger：原底色 + `opacity-50`；secondary：`bg-bg-muted border-line-strong` + `text-ink-soft`；ghost：`border-line-strong` + `text-ink-soft`。均无按压反馈，点击 return |
+| 状态 | 表现                                                                                                                                                                                                                          |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 默认 | 变体样式原样                                                                                                                                                                                                                  |
+| 按压 | `hover-class="pressed-card"`（`hover-start-time=0`）                                                                                                                                                                          |
+| 禁用 | primary / danger：原底色 + `opacity-50`；secondary：`bg-bg-muted border-line-strong` + `text-ink-soft`；ghost：`border-line-strong` + `text-ink-soft`；link：透明底灰字；tonal：`bg-bg-muted` 灰字。均无按压反馈，点击 return |
 
 > 禁用态曾只用 `opacity-50`：白色底的 secondary 半透明后与卡片同色 → 看上去像纯文本（2026-10-16 真机反馈）。浅底变体改为显式灰底灰字。
 

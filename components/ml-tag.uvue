@@ -1,14 +1,27 @@
 <template>
   <view class="flex-row items-center h-6 px-2.5 rounded-chip" :style="{ backgroundColor: bg }">
-    <text class="text-xs" :style="{ color: color }">{{ label }}</text>
+    <ml-icon
+      v-if="icon.length > 0"
+      :name="icon"
+      :size="11"
+      :color="iconColor.length > 0 ? iconColor : color"
+    ></ml-icon>
+    <text class="text-xs" :class="icon.length > 0 ? 'ml-0.5' : ''" :style="{ color: color }">{{
+      label
+    }}</text>
   </view>
 </template>
 
 <script setup lang="uts">
+import mlIcon from './ml-icon.uvue'
 import { themeValue } from '../styles/theme.uts'
 
 defineProps({
   label: { type: String, default: '' },
+  // 可选前导图标（ICON_GLYPH 内名称；深色面/文件名/徽标等带图标签用）
+  icon: { type: String, default: '' },
+  // 图标独立用色（深色面「彩图标+白字」标签用）；空则与文字同色
+  iconColor: { type: String, default: '' },
   bg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
   color: { type: String, default: themeValue('smart', '#5B6CFF') }
 })

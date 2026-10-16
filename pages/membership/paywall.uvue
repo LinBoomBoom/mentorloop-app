@@ -24,60 +24,51 @@
       <view class="mt-4">
         <text class="text-sm font-semibold text-ink">选择套餐</text>
         <view class="mt-2.5">
-          <view
-            v-for="s in skus"
-            :key="s.id"
-            class="rounded-card border p-4 mb-2.5 relative"
-            :style="skuStyle(s)"
-            hover-class="pressed-card"
-            :hover-start-time="0"
-            @click="selected = s.id"
-          >
-            <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
-              <view
-                class="h-5 px-2 rounded-chip flex-row items-center"
-                :style="{ backgroundColor: s.highlight ? SMART : CHIP_RELIABLE }"
-              >
-                <text class="text-xs" :style="{ color: s.highlight ? SURFACE : RELIABLE }">
-                  {{ s.badge }}
-                </text>
+          <view v-for="s in skus" :key="s.id" class="mb-2.5">
+            <ml-card :selected="selected === s.id" pressable @tap="selected = s.id">
+              <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
+                <ml-tag
+                  :label="s.badge"
+                  :bg="s.highlight ? SMART : CHIP_RELIABLE"
+                  :color="s.highlight ? SURFACE : RELIABLE"
+                ></ml-tag>
               </view>
-            </view>
-            <view class="flex-row items-center">
-              <view
-                class="w-5 h-5 rounded-full flex-row items-center justify-center mr-3"
-                :style="{
-                  backgroundColor: selected === s.id ? SMART : 'transparent',
-                  border: selected === s.id ? '1px solid ' + SMART : '1.5px solid ' + LINE_STRONG
-                }"
-              >
-                <ml-icon
-                  v-if="selected === s.id"
-                  name="check"
-                  :size="12"
-                  :color="SURFACE"
-                ></ml-icon>
-              </view>
-              <view class="flex-col flex-1">
-                <text class="text-base font-semibold text-ink">{{ s.name }}</text>
-                <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
-              </view>
-              <view class="flex-col items-end ml-2">
-                <view class="flex-row items-baseline">
-                  <text class="text-xs text-ink">¥</text>
-                  <text class="text-[22px] font-bold font-mono text-ink">{{
-                    formatPrice(s.priceCent)
-                  }}</text>
-                  <text class="text-xs text-ink-soft ml-0.5">/{{ s.unit }}</text>
-                </view>
-                <text
-                  v-if="s.originPriceCent > 0"
-                  class="text-xs font-mono text-ink-soft line-through mt-0.5"
+              <view class="flex-row items-center">
+                <view
+                  class="w-5 h-5 rounded-full flex-row items-center justify-center mr-3"
+                  :style="{
+                    backgroundColor: selected === s.id ? SMART : 'transparent',
+                    border: selected === s.id ? '1px solid ' + SMART : '1.5px solid ' + LINE_STRONG
+                  }"
                 >
-                  ¥{{ formatPrice(s.originPriceCent) }}
-                </text>
+                  <ml-icon
+                    v-if="selected === s.id"
+                    name="check"
+                    :size="12"
+                    :color="SURFACE"
+                  ></ml-icon>
+                </view>
+                <view class="flex-col flex-1">
+                  <text class="text-base font-semibold text-ink">{{ s.name }}</text>
+                  <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
+                </view>
+                <view class="flex-col items-end ml-2">
+                  <view class="flex-row items-baseline">
+                    <text class="text-xs text-ink">¥</text>
+                    <text class="text-[22px] font-bold font-mono text-ink">{{
+                      formatPrice(s.priceCent)
+                    }}</text>
+                    <text class="text-xs text-ink-soft ml-0.5">/{{ s.unit }}</text>
+                  </view>
+                  <text
+                    v-if="s.originPriceCent > 0"
+                    class="text-xs font-mono text-ink-soft line-through mt-0.5"
+                  >
+                    ¥{{ formatPrice(s.originPriceCent) }}
+                  </text>
+                </view>
               </view>
-            </view>
+            </ml-card>
           </view>
         </view>
       </view>
@@ -144,9 +135,7 @@ import { themeValue } from '../../styles/theme.uts'
 const SMART = themeValue('smart', '#5B6CFF')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const SURFACE = themeValue('surface', '#FFFFFF')
-const LINE = themeValue('line', '#E3E8F0')
 const LINE_STRONG = themeValue('lineStrong', '#C9D2E3')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
 const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
 const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 
@@ -178,18 +167,6 @@ const payButtonText = computed((): string => {
   const s = selectedSku.value
   return '立即开通 · ¥' + formatPrice(s.priceCent)
 })
-
-function skuStyle(s: Sku): Map<string, any> {
-  const m = new Map<string, any>()
-  if (selected.value === s.id) {
-    m.set('borderColor', SMART)
-    m.set('backgroundColor', CHIP_SMART)
-  } else {
-    m.set('borderColor', LINE)
-    m.set('backgroundColor', SURFACE)
-  }
-  return m
-}
 
 async function doPay() {
   if (paying.value) return

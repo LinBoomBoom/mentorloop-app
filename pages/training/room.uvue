@@ -19,13 +19,13 @@
     <!-- 训练舞台：当前任务卡 -->
     <view class="flex-1 flex-col justify-center px-6">
       <view class="flex-row items-center justify-center">
-        <view
-          class="flex-row items-center h-7 px-3 rounded-chip"
-          :style="{ backgroundColor: 'rgba(31,182,166,0.18)' }"
-        >
-          <ml-icon name="dumbbell" :size="12" :color="RELIABLE_LIGHT"></ml-icon>
-          <text class="text-xs text-white ml-1">{{ taskTitle }}</text>
-        </view>
+        <ml-tag
+          icon="dumbbell"
+          :label="taskTitle"
+          bg="rgba(31,182,166,0.18)"
+          :icon-color="RELIABLE_LIGHT"
+          :color="SURFACE"
+        ></ml-tag>
       </view>
 
       <!-- 当前题目 -->
@@ -134,6 +134,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
+import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { quotaStore } from '../../store/quota.uts'

@@ -25,22 +25,16 @@
             <text class="text-sm font-semibold text-ink ml-1.5">默认面试方向</text>
           </view>
           <view class="flex-row flex-wrap mt-3">
-            <view
+            <ml-chip
               v-for="p in positionOptions"
               :key="p.id"
-              class="h-11 pl-3.5 pr-3 rounded-chip flex-row items-center mr-2 mb-2"
-              :class="
-                positionId === p.id ? 'bg-smart' : p.available ? 'bg-line' : 'bg-line opacity-60'
-              "
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="selectPosition(p)"
-            >
-              <text class="text-sm" :class="positionId === p.id ? 'text-white' : 'text-ink'">
-                {{ p.name }}
-              </text>
-              <text v-if="!p.available" class="text-xs text-ink-soft ml-1">即将上线</text>
-            </view>
+              class="mr-2 mb-2"
+              :label="p.name"
+              :selected="positionId === p.id"
+              :disabled="!p.available"
+              :hint="p.available ? '' : '敬请期待'"
+              @tap="selectPosition(p)"
+            ></ml-chip>
           </view>
         </ml-card>
       </view>
@@ -53,19 +47,14 @@
             <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
           </view>
           <view class="flex-row flex-wrap mt-3">
-            <view
+            <ml-chip
               v-for="e in experienceOptions"
               :key="e.id"
-              class="px-3.5 h-11 rounded-chip flex-row items-center mr-2 mb-2"
-              :class="experienceLevel === e.id ? 'bg-smart' : 'bg-line'"
-              hover-class="pressed-chip"
-              :hover-start-time="0"
-              @click="experienceLevel = e.id"
-            >
-              <text class="text-sm" :class="experienceLevel === e.id ? 'text-white' : 'text-ink'">
-                {{ e.label }}
-              </text>
-            </view>
+              class="mr-2 mb-2"
+              :label="e.label"
+              :selected="experienceLevel === e.id"
+              @tap="experienceLevel = e.id"
+            ></ml-chip>
           </view>
         </ml-card>
       </view>
@@ -86,6 +75,7 @@
 import { ref } from 'vue'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'

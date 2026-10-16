@@ -64,27 +64,26 @@
           <view
             v-for="(d, i) in dimensions"
             :key="d.key"
-            class="bg-surface rounded-card border border-line p-3 mb-2.5 pressable"
-            :class="i % 2 === 0 ? 'w-[calc(50%-5px)] mr-2.5' : 'w-[calc(50%-5px)]'"
-            hover-class="pressed-card"
-            :hover-start-time="0"
-            @click="startTaskEntry('dim_' + d.key, d.label + '突破', 5)"
+            class="w-[calc(50%-5px)] mb-2.5"
+            :class="i % 2 === 0 ? 'mr-2.5' : ''"
           >
-            <view class="flex-row items-center justify-between">
-              <view
-                class="w-9 h-9 rounded-control flex-row items-center justify-center"
-                :style="{ backgroundColor: d.tint }"
-              >
-                <ml-icon :name="d.icon" :size="17" :color="d.color"></ml-icon>
+            <ml-card pressable @tap="startTaskEntry('dim_' + d.key, d.label + '突破', 5)">
+              <view class="flex-row items-center justify-between">
+                <view
+                  class="w-9 h-9 rounded-control flex-row items-center justify-center"
+                  :style="{ backgroundColor: d.tint }"
+                >
+                  <ml-icon :name="d.icon" :size="17" :color="d.color"></ml-icon>
+                </view>
+                <ml-tag
+                  :label="d.level.length > 0 ? d.level : '待评估'"
+                  :bg="d.levelBg.length > 0 ? d.levelBg : BG_MUTED"
+                  :color="d.levelColor.length > 0 ? d.levelColor : MIST"
+                ></ml-tag>
               </view>
-              <ml-tag
-                :label="d.level.length > 0 ? d.level : '待评估'"
-                :bg="d.levelBg.length > 0 ? d.levelBg : BG_MUTED"
-                :color="d.levelColor.length > 0 ? d.levelColor : MIST"
-              ></ml-tag>
-            </view>
-            <text class="text-sm font-medium text-ink mt-2.5">{{ d.label }}</text>
-            <text class="text-xs text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
+              <text class="text-sm font-medium text-ink mt-2.5">{{ d.label }}</text>
+              <text class="text-xs text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
+            </ml-card>
           </view>
         </view>
       </view>
@@ -113,9 +112,7 @@
                 {{ t.durationMin }} 分钟 · 单维突破
               </text>
             </view>
-            <view class="h-7 px-3 rounded-chip border border-line flex-row items-center">
-              <text class="text-xs text-smart">开始</text>
-            </view>
+            <ml-chip variant="action" tone="outline" label="开始"></ml-chip>
           </view>
         </ml-card>
       </view>
@@ -143,6 +140,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'

@@ -9,6 +9,8 @@
  *   检查 D  .uvue 字号白名单：text-[Npx] 仅允许 12/14/16/18/22/28（§A2 字号阶梯）
  *   检查 E  硬编码 hex 白名单（全 .uvue）：须命中 @theme token 值（亮色族已 token 化，无例外）
  *   检查 F  ml-icon 静态图标名须存在于 ICON_GLYPH（miss 会静默消失）
+ *   检查 G  pages/ 手搓卡片禁令：bg-surface+rounded-card 同行须走 ml-card（虚线投放区例外）
+ *   检查 H  pages/ 手搓 chip 禁令：rounded-chip 须走 ml-chip / ml-tag（复选框与深色面会员行动点例外）
  *
  * 静态比对，不注册 Tailwind 插件（ds-1 §5 对策）。退出码：0 = 全绿，1 = 存在发现。
  * 用法：node scripts/check-design-tokens.mjs [--root <repoRoot>]
@@ -314,6 +316,52 @@ if (!iconNames.size) {
   if (findings.length === fBefore) {
     ok(`检查 F · 图标名：ICON_GLYPH ${iconNames.size} 个 / 静态引用 ${fHits} 处全部命中`)
   }
+}
+
+// ---------- 检查 G：手搓卡片禁令（pages/） ----------
+// bg-surface + rounded-card 同行 = 绕过 ml-card 手搓白卡（圆角/内边距/阴影漂移根源）。
+// 例外：border-dashed 投放区（resume 上传卡，唯一虚线形态）。
+// 类串跨行暂不覆盖（现仓库无此形态）；深色面卡片（bg-navy/cardStyle）不在白卡语义内，天然不命中。
+const gBefore = findings.length
+const cardRe = /bg-surface[a-z0-9\-[\] ]*rounded-card|rounded-card[a-z0-9\-[\] ]*bg-surface/
+let gScan = 0
+for (const file of uvueFiles) {
+  const relPath = rel(file)
+  if (!relPath.startsWith('pages/')) continue
+  const lines = readFileSync(file, 'utf8').split('\n')
+  lines.forEach((line, idx) => {
+    gScan++
+    if (cardRe.test(line) && !line.includes('border-dashed')) {
+      fail(`检查 G · ${relPath}:${idx + 1} 手搓卡片（bg-surface+rounded-card）应使用 ml-card`)
+    }
+  })
+}
+if (findings.length === gBefore) {
+  ok(`检查 G · 手搓卡片禁令：pages/ 扫描 ${gScan} 行，零违规（ml-card 统一消费）`)
+}
+
+// ---------- 检查 H：手搓 chip 禁令（pages/） ----------
+// rounded-chip 在 pages/ 只允许经组件消费（ml-chip / ml-tag 内部实现才可出现）。
+// 例外（形态唯一、语义非 chip）：login 18px 复选框勾选框；mine 会员卡深色面行动点。
+const CHIP_EXCEPTION_MARKERS = ['w-[18px]', 'h-8 px-3 rounded-chip']
+const hBefore = findings.length
+const chipRe = /rounded-chip/
+let hScan = 0
+for (const file of uvueFiles) {
+  const relPath = rel(file)
+  if (!relPath.startsWith('pages/')) continue
+  const lines = readFileSync(file, 'utf8').split('\n')
+  lines.forEach((line, idx) => {
+    hScan++
+    if (!chipRe.test(line)) return
+    if (CHIP_EXCEPTION_MARKERS.some((m) => line.includes(m))) return
+    fail(`检查 H · ${relPath}:${idx + 1} 手搓 chip 应使用 ml-chip / ml-tag`)
+  })
+}
+if (findings.length === hBefore) {
+  ok(
+    `检查 H · 手搓 chip 禁令：pages/ 扫描 ${hScan} 行，零违规（例外 ${CHIP_EXCEPTION_MARKERS.length} 处已登记）`
+  )
 }
 
 // ---------- 汇总 ----------

@@ -1,7 +1,11 @@
 <template>
   <view
-    class="bg-surface rounded-card p-4 border border-line"
-    :class="[raised ? 'shadow-card' : '', padded ? '' : 'p-0']"
+    class="relative rounded-card p-4 border"
+    :class="[
+      selected ? 'bg-chip-smart border-smart' : 'bg-surface border-line',
+      raised ? 'shadow-card' : '',
+      padded ? '' : 'p-0'
+    ]"
     :hover-class="pressable ? 'pressed-card' : 'none'"
     :hover-start-time="0"
     :hover-stay-time="80"
@@ -18,7 +22,9 @@ defineProps({
   // pressable：是否显示按压反馈（可点击卡片传 true）
   pressable: { type: Boolean, default: false },
   // padded：默认内边距 p-4；自定义留白时传 false
-  padded: { type: Boolean, default: true }
+  padded: { type: Boolean, default: true },
+  // selected：可选中卡片选中态（paywall 套餐等）：chip-smart 底 + smart 描边
+  selected: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['tap'])

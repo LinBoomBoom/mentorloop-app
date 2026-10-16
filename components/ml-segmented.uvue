@@ -1,0 +1,51 @@
+<template>
+  <view class="flex-row rounded-control p-1 border border-line bg-bg-muted">
+    <view
+      v-for="(seg, i) in segments"
+      :key="i"
+      :id="i === 0 ? id1 : id2"
+      class="flex-1 h-9 rounded-chip flex-row items-center justify-center"
+      :class="i === active ? 'bg-smart' : ''"
+      hover-class="pressed-chip"
+      :hover-start-time="0"
+      @click="select(i)"
+    >
+      <text class="text-xs font-medium" :class="i === active ? 'text-white' : 'text-ink-soft'">
+        {{ seg }}
+      </text>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { computed } from 'vue'
+
+// 分段切换控件（2026-10-17 全站统一，任务卡 ui-design-system-unification）
+// 规格：muted 容器 + 选中实底 smart 白字（report「本场报告/成长趋势」形态反写）。
+// MP 端 props 走序列化，不收数组/函数（ml-stat-bar 先例）：双段标量 props + change 索引回传。
+// 渲染纪律：段项数据源必须是 string[]——对象包装会被 MP 序列化成 JSON 文本上屏（真机走查实证）。
+
+const props = defineProps({
+  label1: { type: String, default: '' },
+  label2: { type: String, default: '' },
+  // 当前选中段索引（0 | 1）
+  active: { type: Number, default: 0 },
+  // 段视图 id 透传（E2E 选择器契约，如 report 页 #seg-report / #seg-growth）
+  id1: { type: String, default: '' },
+  id2: { type: String, default: '' }
+})
+
+const emit = defineEmits(['change'])
+
+// 直接返回字符串数组：模板 {{ seg }} 渲染字符串本身（包装成对象会被 MP 序列化成 JSON 文本）
+const segments = computed((): string[] => {
+  const list: string[] = []
+  if (props.label1.length > 0) list.push(props.label1)
+  if (props.label2.length > 0) list.push(props.label2)
+  return list
+})
+
+function select(i: number) {
+  emit('change', i)
+}
+</script>

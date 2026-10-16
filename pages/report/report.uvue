@@ -27,65 +27,28 @@
     <template v-else>
       <view class="p-4">
         <!-- 复盘域分段（IA-1 D-IA2）：本场报告 / 成长趋势同层，不再跳二级页 -->
-        <view
-          class="flex-row rounded-control p-1 mb-3 border"
-          :style="{ backgroundColor: BG_MUTED, borderColor: LINE }"
-        >
-          <view
-            id="seg-report"
-            class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
-            :style="segItemStyle(seg === 'report')"
-            hover-class="pressed-chip"
-            :hover-start-time="0"
-            @click="seg = 'report'"
-          >
-            <text
-              class="text-xs font-medium"
-              :style="{ color: seg === 'report' ? SURFACE : INK_SOFT }"
-            >
-              本场报告
-            </text>
-          </view>
-          <view
-            id="seg-growth"
-            class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
-            :style="segItemStyle(seg === 'growth')"
-            hover-class="pressed-chip"
-            :hover-start-time="0"
-            @click="seg = 'growth'"
-          >
-            <text
-              class="text-xs font-medium"
-              :style="{ color: seg === 'growth' ? SURFACE : INK_SOFT }"
-            >
-              成长趋势
-            </text>
-          </view>
-        </view>
+        <ml-segmented
+          class="mb-3"
+          label1="本场报告"
+          label2="成长趋势"
+          :active="seg === 'report' ? 0 : 1"
+          id1="seg-report"
+          id2="seg-growth"
+          @change="onSegChange"
+        ></ml-segmented>
 
         <template v-if="seg === 'report'">
           <!-- 历史报告选择（报告升为一级 tab 后的列表入口） -->
           <scroll-view v-if="records.length > 1" scroll-x="true" class="whitespace-nowrap mb-3">
             <view class="flex-row">
-              <view
-                v-for="r0 in records"
-                :key="r0.sessionId"
-                class="mr-2"
-                hover-class="pressed-chip"
-                :hover-start-time="0"
-                @click="selectSession(r0.sessionId)"
-              >
-                <view
-                  class="h-11 px-3.5 rounded-chip flex-row items-center border"
-                  :style="chipStyle(r0.sessionId)"
-                >
-                  <text
-                    class="text-xs font-mono"
-                    :style="{ color: r0.sessionId === activeSid ? SURFACE : INK_SOFT }"
-                  >
-                    {{ fmtDate(r0.at) }}
-                  </text>
-                </view>
+              <view v-for="r0 in records" :key="r0.sessionId" class="mr-2">
+                <ml-chip
+                  variant="select"
+                  mono
+                  :label="fmtDate(r0.at)"
+                  :selected="r0.sessionId === activeSid"
+                  @tap="selectSession(r0.sessionId)"
+                ></ml-chip>
               </view>
             </view>
           </scroll-view>
@@ -294,6 +257,8 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlTag from '../../components/ml-tag.uvue'
+import mlChip from '../../components/ml-chip.uvue'
+import mlSegmented from '../../components/ml-segmented.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlEmpty from '../../components/ml-empty.uvue'
@@ -324,10 +289,6 @@ import { confidenceBand } from '../../engine/rubric.uts'
 const SMART = themeValue('smart', '#5B6CFF')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
-const SURFACE = themeValue('surface', '#FFFFFF')
-const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
-const INK_SOFT = themeValue('inkSoft', '#5B6472')
-const LINE = themeValue('line', '#E3E8F0')
 const MIST = themeValue('mist', '#AEB9CC')
 const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
@@ -359,9 +320,9 @@ const activeSid = ref('')
 const seg = ref('report')
 const growthTick = ref(0)
 
-function segItemStyle(active: boolean): { [key: string]: string } {
-  if (active) return { backgroundColor: SMART }
-  return { backgroundColor: 'transparent' }
+// ml-segmented 索引回传 → 复盘域切换（0=本场报告 / 1=成长趋势）
+function onSegChange(i: number) {
+  seg.value = i === 0 ? 'report' : 'growth'
 }
 
 function showGrowth() {
@@ -525,13 +486,6 @@ function selectSession(sid: string) {
   if (sid === activeSid.value) return
   activeSid.value = sid
   loadReport(sid)
-}
-
-function chipStyle(sid: string): { [key: string]: string } {
-  if (sid === activeSid.value) {
-    return { backgroundColor: SMART, borderColor: SMART }
-  }
-  return { backgroundColor: SURFACE, borderColor: LINE }
 }
 
 function fmtDate(ts: number): string {

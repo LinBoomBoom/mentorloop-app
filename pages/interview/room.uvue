@@ -37,13 +37,13 @@
     <view class="flex-1 flex-col justify-center px-4">
       <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
       <view class="flex-row items-center">
-        <view
-          class="flex-row items-center h-7 px-3 rounded-chip"
-          :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
-        >
-          <ml-icon name="bot" :size="12" :color="SMART_LIGHT"></ml-icon>
-          <text class="text-xs text-white ml-1">AI 面试官 · 系统生成</text>
-        </view>
+        <ml-tag
+          icon="bot"
+          label="AI 面试官 · 系统生成"
+          bg="rgba(91,108,255,0.18)"
+          :icon-color="SMART_LIGHT"
+          :color="SURFACE"
+        ></ml-tag>
       </view>
 
       <!-- 题目卡 -->
@@ -188,6 +188,7 @@ import { ref, computed } from 'vue'
 import { onLoad, onUnload, onBackPress } from '@dcloudio/uni-app'
 import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { AVATAR_STATE_LABEL, StringMap, themeValue } from '../../styles/theme.uts'
 import { interviewSession } from '../../store/interview-session.uts'

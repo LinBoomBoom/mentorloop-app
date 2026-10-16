@@ -16,7 +16,8 @@ import { computed } from 'vue'
 
 const props = defineProps({
   text: { type: String, default: '' },
-  type: { type: String, default: 'primary' }, // primary | secondary | ghost | danger
+  // primary | secondary | ghost | danger | link（文字链） | tonal（浅色调底）
+  type: { type: String, default: 'primary' },
   // sm=40px 行内操作 / md=48px 默认 / lg=56px 页面主 CTA
   size: { type: String, default: 'md' },
   block: { type: Boolean, default: false },
@@ -41,12 +42,16 @@ const bgClass = computed((): string => {
   if (props.disabled) {
     if (props.type === 'primary') return 'bg-smart'
     if (props.type === 'danger') return 'bg-danger'
+    if (props.type === 'link') return 'bg-transparent'
+    if (props.type === 'tonal') return 'bg-bg-muted'
     if (props.type === 'ghost') return 'bg-transparent border border-line-strong'
     return 'bg-bg-muted border border-line-strong'
   }
   if (props.type === 'secondary') return 'bg-surface border border-line-strong'
   if (props.type === 'ghost') return 'bg-transparent border border-smart'
   if (props.type === 'danger') return 'bg-danger'
+  if (props.type === 'link') return 'bg-transparent'
+  if (props.type === 'tonal') return 'bg-chip-smart'
   return 'bg-smart'
 })
 
@@ -57,7 +62,8 @@ const textColorClass = computed((): string => {
     return 'text-ink-soft'
   }
   if (props.type === 'secondary') return 'text-ink'
-  if (props.type === 'ghost') return 'text-smart'
+  if (props.type === 'ghost' || props.type === 'link' || props.type === 'tonal')
+    return 'text-smart'
   return 'text-white'
 })
 

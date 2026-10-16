@@ -18,42 +18,16 @@
               <text class="text-sm font-semibold text-ink ml-1.5">面试方向</text>
             </view>
             <view class="flex-row flex-wrap mt-3">
-              <view
+              <ml-chip
                 v-for="p in positionOptions"
                 :key="p.id"
-                class="h-11 pl-3.5 pr-3 rounded-chip flex-row items-center mr-2 mb-2"
-                :class="
-                  positionId === p.id
-                    ? 'bg-surface border border-smart'
-                    : p.available
-                      ? 'bg-bg-muted'
-                      : 'bg-bg-muted opacity-60'
-                "
-                :hover-class="p.available ? 'pressed-chip' : 'none'"
-                :hover-start-time="0"
-                @click="selectPosition(p)"
-              >
-                <text
-                  class="text-sm"
-                  :class="
-                    positionId === p.id
-                      ? 'text-smart font-medium'
-                      : p.available
-                        ? 'text-ink'
-                        : 'text-ink-soft'
-                  "
-                >
-                  {{ p.name }}
-                </text>
-                <ml-icon
-                  v-if="positionId === p.id"
-                  class="ml-1"
-                  name="check"
-                  :size="13"
-                  :color="SMART"
-                ></ml-icon>
-                <text v-if="!p.available" class="text-xs text-ink-soft ml-1">敬请期待</text>
-              </view>
+                class="mr-2 mb-2"
+                :label="p.name"
+                :selected="positionId === p.id"
+                :disabled="!p.available"
+                :hint="p.available ? '' : '敬请期待'"
+                @tap="selectPosition(p)"
+              ></ml-chip>
             </view>
           </ml-card>
         </view>
@@ -67,22 +41,14 @@
               <text class="text-xs text-ink-soft ml-2">决定题目难度区间</text>
             </view>
             <view class="flex-row flex-wrap mt-3">
-              <view
+              <ml-chip
                 v-for="e in experienceOptions"
                 :key="e.id"
-                class="px-3.5 h-11 rounded-chip flex-row items-center mr-2 mb-2"
-                :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
-                hover-class="pressed-chip"
-                :hover-start-time="0"
-                @click="experienceLevel = e.id"
-              >
-                <text
-                  class="text-sm"
-                  :class="experienceLevel === e.id ? 'text-smart font-medium' : 'text-ink'"
-                >
-                  {{ e.label }}
-                </text>
-              </view>
+                class="mr-2 mb-2"
+                :label="e.label"
+                :selected="experienceLevel === e.id"
+                @tap="experienceLevel = e.id"
+              ></ml-chip>
             </view>
           </ml-card>
         </view>
@@ -142,6 +108,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'

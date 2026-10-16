@@ -16,15 +16,12 @@
           <view class="flex-col flex-1">
             <text class="text-lg font-semibold text-white">{{ nickname }}</text>
             <view class="flex-row items-center mt-1">
-              <view
-                class="h-5 px-2 rounded-chip flex-row items-center"
-                :style="{ backgroundColor: planBadgeBg }"
-              >
-                <ml-icon :name="planBadgeIcon" :size="10" :color="planBadgeColor"></ml-icon>
-                <text class="text-xs ml-0.5" :style="{ color: planBadgeColor }">
-                  {{ planLabel }}
-                </text>
-              </view>
+              <ml-tag
+                :icon="planBadgeIcon"
+                :label="planLabel"
+                :bg="planBadgeBg"
+                :color="planBadgeColor"
+              ></ml-tag>
               <text class="text-xs text-mist ml-2">
                 {{ positionLabel }} · {{ experienceLabel }}
               </text>
@@ -63,6 +60,7 @@
           <text class="text-sm font-semibold text-white">{{ planLabel }}权益</text>
           <text class="text-xs text-mist mt-0.5">{{ quotaText }}</text>
         </view>
+        <!-- 深色面会员卡行动点：半透明底/琥珀底随状态切换，形态唯一（设计系统白名单） -->
         <view
           class="h-8 px-3 rounded-chip flex-row items-center"
           :style="{
@@ -129,6 +127,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
+import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { quotaStore } from '../../store/quota.uts'
