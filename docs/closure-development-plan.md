@@ -43,6 +43,8 @@
 
 ## 2. P0 · 前端可独立闭环（不依赖后端 / 原生）
 
+> ⚠️ 本节各小节的「现状 / 待办」是 **2026-09-24 的断点描述**，保留作历史留痕；**最新复核状态见 §8（2026-10-15）**。阅读排期时以 §7 + §8 为准。
+
 ### 2.1 训练闭环真正打通（最高优先）
 
 **现状**
@@ -60,6 +62,8 @@
 4. 成长页合并展示面试报告与训练记录，支持按维度追溯。
 
 **涉及文件**：`pages/report/report.uvue`、`pages/training/room.uvue`、`engine/question-selector.uts`、`store/training-history.uts`（新增）、`pages/growth/growth.uvue`
+
+> 📌 2026-10-15 更正：`pages/growth/growth.uvue` 已随 IA 收敛（任务卡 `2026-10-14-ia-consolidation.md`）删除，其职责由 `components/ml-growth-panel.uvue` 在报告页「成长趋势」分段承接。原文「成长页」一律读作「报告页 · 成长趋势分段」。
 
 **闭环判定标准**：报告薄弱项点进去，出的是该维度题；训练结果在成长页可追溯、可与面试报告对照。
 
@@ -206,6 +210,33 @@
 | 11   | `interviewer-avatar`   | ✅ P2-11 渲染桥已完成（2026-09-24：跨端契约（状态机/资产插槽位/预加载/释放）+ 资产清单 `data/avatar-assets.uts` + 组件接线（有帧图渲染帧图，无资产自动降级 CSS 形象）；2.5D 原生渲染与口型状态机待美术资产 + 原生层（app-android），美术资产先行）                                                                               |        |          |
 | 12   | `interviewer-device`   | ✅ P2-12 已完成（2026-09-24：跨端 UTS 实现——checkPermission（只读授权+网络，不弹窗）/onNetworkChange/onForeground/diagnose（mic: ok/denied/unavailable，net: ok/none，失败返回 unknown 不伪造）；prep 页接入只读预检 + 断网即时提示；Android 原生增强（RECORD_AUDIO 细粒度/AudioManager）留 app-android 扩展，真机验证归 P3-14） |        |          |
 | 13   | App 端 ASR             | ✅ P2-13 已完成（2026-09-24：服务端 ASR 驱动注册表 stub/aliyun + multipart 上传端点（鉴权/落盘/清理）；默认 stub 明确降级不伪造转写；aliyun NLS FileTrans 签名与轮询实现（需云账号密钥 + 对象存储公网链接，真实联调待部署项））                                                                                                  |        |          |
-| 14   | 真机编译验证           | 未开始                                                                                                                                                                                                                                                                                                                           |        |          |
-| 15   | 测试覆盖               | 未开始                                                                                                                                                                                                                                                                                                                           |        |          |
-| 16   | 合规项                 | 未开始                                                                                                                                                                                                                                                                                                                           |        |          |
+| 14   | 真机编译验证           | 🟡 进行中（小程序端 `pnpm build:mp-weixin` 已多次跑通并核验构建产物；Android / iOS 两端未验；真机交互走查归 G3）                                                                                                                                                                                                                 |        |          |
+| 15   | 测试覆盖               | 🟡 部分完成（2026-10-15 复核：`tests/` 6 个 spec；`pnpm test` 89 用例全绿；`tests/evals/` 固定评测集 25 条覆盖选题/追问/评分三层，基线见 `docs/evals/2026-09-24-baseline-v1.md`；服务端 `server/src/*.spec.ts` 齐备。缺口：客户端**闭环 E2E** 与 UI 层自动化仍缺）                                                               |        |          |
+| 16   | 合规项                 | 🟡 部分完成（2026-10-15 复核：数据自助删除入口已落地——`pages/mine/security.uvue` 注销账号双重确认 + `api/auth.uts` `deleteAccount()` 幂等；ICP/App 备案、隐私政策与用户协议真实链接仍未核）                                                                                                                                      |        |          |
+
+---
+
+## 8. 2026-10-15 复核记录（P0 缺口盘点）
+
+复核方式：逐项对照 §2 的「待办 / 闭环判定标准」与当前代码真值（文件 + 行号）。
+**结论：§2 描述的 P0 断裂项已全部修复；P0 口径内无实质缺口残留。** §2「现状」未回写（已加节首警示），另修正 4 处 stale 登记。
+
+| 缺口               | 台账 §2 声称的现状                                                                    | 代码真值（2026-10-15）                                                                                                                                                                                                                                                                                                   | 差距                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| 2.1 训练闭环       | 报告卡只 `switchTab` 不带参；训练房间不按维度出题；训练结果不落库；成长页不含训练记录 | 全链路打通：`pages/report/report.uvue` `startPlanTask()` 带 `taskId/title/durationMin/source=report/domain`；`pages/training/room.uvue` 接 `domain` 并 `selectNext({ focusDomain, maxQuestions })`；`finishTraining` 写 `store/training-history.uts`；`components/ml-growth-panel.uvue` 合并 `trainingHistory.recent(5)` | **已闭环**。唯一偏差：判定标准中的「成长页」已删，由 `ml-growth-panel` 承接 |
+| 2.2 简历线         | 保存 / 导出只 toast；投递版本为静态配置                                               | `pages/resume/resume.uvue`：`saveAll()` 经 `resumeDraft.save()` 真持久化；`exportVersion()` 按岗位 + 采用标记 `buildResumeContent()` 生成内容 → `addVersion()` 持久化 → `writeVersionFile()` 写文件 + 剪贴板保底；重进页面有草稿提示 `refreshDraftHint()`                                                                | **已闭环**。投递版本仍为 3 个固定 `name`（内容按岗位动态生成），非阻断      |
+| 2.3 题库与岗位内容 | 题库仅 25 题，且只有 `java-backend` 可用，其余 3 个方向置灰                           | 25 题（`data/question-bank.uts`，含 2 条 wrapup）；`data/position-options.uts` 中 `frontend` / `backend` 均 `available: true`（`devops` / `ai` 仍 false）                                                                                                                                                                | **判定标准达成**（第二个岗位可端到端）。扩到 devops/ai 仍属内容待办         |
+| 2.4「我的」页      | 账号与安全 / 面试偏好 / 隐私与数据 / 关于 均为 toast 占位                             | `pages/mine/mine.uvue` 四入口均 `navigateTo` 真实页面（`security` / `prefs` / `privacy` / `about`，页面文件齐备），无假 toast                                                                                                                                                                                            | **已闭环**                                                                  |
+
+### 8.1 本次修正的 stale 登记
+
+| #   | 位置                     | 原登记                          | 修正后                                                                       |
+| --- | ------------------------ | ------------------------------- | ---------------------------------------------------------------------------- |
+| 1   | §2.1 涉及文件 / 判定标准 | 引用 `pages/growth/growth.uvue` | 加更正批注：已随 IA 收敛删除，改由报告页「成长趋势」分段承载                 |
+| 2   | §7 第 14 行 真机编译验证 | 未开始                          | 🟡 进行中（小程序端编译已通，Android / iOS 未验）                            |
+| 3   | §7 第 15 行 测试覆盖     | 未开始                          | 🟡 部分完成（6 spec / 89 用例 / 25 条评测集；缺客户端闭环 E2E 与 UI 自动化） |
+| 4   | §7 第 16 行 合规项       | 未开始                          | 🟡 部分完成（数据自助删除入口已落地；备案与协议链接未核）                    |
+
+### 8.2 复核后的执行顺序（接 §6）
+
+P0 已清空，后续按 §6 第 6 条收口：P3 真机编译验证（App 两端）→ 客户端闭环 E2E 补测 → 合规公示项；内容侧可并行推进 2.3 的 devops / ai 题库。
