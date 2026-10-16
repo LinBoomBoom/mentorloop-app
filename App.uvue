@@ -99,4 +99,34 @@ onHide(() => {
 page {
   --tw-border-style: solid;
 }
+
+/* 按压反馈三档（MASTER.md A3-5：opacity 0.7 / 0.85 / 0.8）。
+   同为「cssEntries 只产出被用到的原子类」的受害者：main.css 里的 @utility pressed-*
+   不进 MP 产物（实测产物 wxss 中 pressed-card/chip/row 均 0 处），而 wxml 的
+   hover-class 用的是未哈希化的原名 → 在此以普通类重新声明，MP 端按压反馈才生效。
+   APP/H5 端由 main.css 的 @utility 提供，两边取值必须保持一致。 */
+.pressed-row {
+  opacity: 0.7;
+}
+.pressed-card {
+  opacity: 0.85;
+}
+.pressed-chip {
+  opacity: 0.8;
+}
+
+/* 尊重系统「减少动态效果」（MASTER.md A3-7 无障碍要求）。
+   MP 端不能用 `*`（wxss 不支持通配选择器），改列常见节点；
+   平台若不支持该 media feature 则整块被忽略，无副作用。 */
+@media (prefers-reduced-motion: reduce) {
+  page,
+  view,
+  text,
+  button,
+  image,
+  scroll-view {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 </style>

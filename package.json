@@ -28,6 +28,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:mp": "node e2e/mp/run.mjs",
+    "shot:mp": "node scripts/mp-shot.mjs",
     "audit": "pnpm audit --audit-level high",
     "prepare": "husky || true",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
