@@ -3,7 +3,8 @@
 // 评分规则本身（锚点、置信度档位）正本在 engine/rubric.uts，本模块不重复规则。
 // 取色一律经 styles/theme.uts 的 themeValue（SOP-10 §2 消费端取值纪律：不得引入 token 之外的 hex）。
 
-import { StringMap, NumberMap, themeValue } from './theme.uts'
+import { StringMap, themeValue } from './theme.uts'
+import { NumberMap } from '../types/scoring.uts'
 
 /** 等级 → 序数（A=4 … D=1） */
 export const LEVEL_ORDER: NumberMap = { A: 4, B: 3, C: 2, D: 1 }
