@@ -41,6 +41,13 @@ jobs:
         run: pnpm typecheck
         continue-on-error: true # uvue/uts 类型需 HBuilderX 环境，暂不阻断
 
+      # 软闸起步（SOP-05 §7.2：新检查先「提醒不拦截」观察 ≥2 周，有真实拦下场景后再评估升硬闸）
+      # 目的：UTS 跨文件导出错误 lint / typecheck 均拦不住（如 2026-10-16 的 NumberMap 未导出告警），
+      # 只有 uni-app x 编译器能暴露；本步骤让该缺陷类型不再溜过 CI。
+      - name: MP build (soft gate)
+        run: pnpm build:mp-weixin
+        continue-on-error: true
+
       # ---- @mentorloop/server（P1 后端）----
       - name: Server typecheck
         run: pnpm --filter @mentorloop/server typecheck
