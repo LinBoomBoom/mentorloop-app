@@ -130,12 +130,7 @@
             title="还没有个性化推荐"
             desc="完成一次模拟面试后，这里会根据你的薄弱维度生成训练计划"
           >
-            <ml-button
-              text="去完成一次面试"
-              type="primary"
-              block
-              @click="startInterview"
-            ></ml-button>
+            <ml-button text="去完成一次面试" type="primary" block @tap="startInterview"></ml-button>
           </ml-empty>
         </ml-card>
       </view>

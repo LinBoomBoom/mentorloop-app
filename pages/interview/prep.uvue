@@ -123,7 +123,7 @@
               :type="deviceOk && phoneOk ? 'primary' : 'secondary'"
               block
               :disabled="checking || !canStart || !phoneOk"
-              @click="onPrimary"
+              @tap="onPrimary"
             ></ml-button>
           </view>
         </ml-card>

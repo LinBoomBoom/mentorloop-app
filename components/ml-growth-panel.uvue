@@ -10,7 +10,7 @@
           title="还没有成长记录"
           desc="完成第一次模拟面试后，这里会展示你的能力画像与变化趋势"
         >
-          <ml-button text="开始第一次面试" type="primary" block @click="goStart"></ml-button>
+          <ml-button text="开始第一次面试" type="primary" block @tap="goStart"></ml-button>
         </ml-empty>
       </ml-card>
     </view>

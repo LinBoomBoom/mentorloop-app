@@ -88,14 +88,14 @@
           </ml-card>
         </view>
 
-        <!-- 主操作：确认并继续（id 与事件都挂按钮本身：ml-button 为 virtualHost，外层包裹层盒不可靠） -->
+        <!-- 主操作：确认并继续（ml-button 声明 emits(['tap'])，必须用 @tap；外层包裹层点击也拿不到） -->
         <ml-button
           id="ob-save"
           class="mt-4"
           :text="primaryText"
           type="primary"
           block
-          @click="save"
+          @tap="save"
         ></ml-button>
 
         <!-- 跳过：显式留痕，不伪装成已选 -->

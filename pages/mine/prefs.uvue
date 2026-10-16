@@ -76,7 +76,7 @@
       </text>
 
       <view class="mt-4">
-        <ml-button text="保存偏好" type="primary" block @click="save"></ml-button>
+        <ml-button text="保存偏好" type="primary" block @tap="save"></ml-button>
       </view>
     </view>
   </scroll-view>

@@ -169,13 +169,13 @@
           :auto-focus="true"
         />
         <view class="flex-row justify-end mt-3">
-          <ml-button text="取消" type="secondary" @click="cancelText"></ml-button>
+          <ml-button text="取消" type="secondary" @tap="cancelText"></ml-button>
           <view class="ml-2"></view>
           <ml-button
             :text="submittingText ? '提交中…' : '提交回答'"
             type="primary"
             :disabled="submittingText || textDraft.length === 0"
-            @click="submitText"
+            @tap="submitText"
           ></ml-button>
         </view>
       </view>

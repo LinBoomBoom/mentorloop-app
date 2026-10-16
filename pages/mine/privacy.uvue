@@ -34,7 +34,7 @@
           type="danger"
           block
           :disabled="clearing"
-          @click="confirmClear"
+          @tap="confirmClear"
         ></ml-button>
         <text class="text-xs text-ink-soft mt-2.5 text-center leading-4">
           清除后将删除本机的报告、训练记录、简历草稿与额度账本，且无法恢复；登录状态与账户数据来自服务端，不受影响

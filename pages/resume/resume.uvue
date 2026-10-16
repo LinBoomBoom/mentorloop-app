@@ -43,7 +43,7 @@
               <text class="text-xs text-ink-soft mt-0.5">{{ draftHint }}</text>
             </view>
             <view class="ml-2">
-              <ml-button text="恢复草稿" type="primary" @click="restoreDraft"></ml-button>
+              <ml-button text="恢复草稿" type="primary" @tap="restoreDraft"></ml-button>
             </view>
           </view>
         </ml-card>
@@ -251,10 +251,10 @@
           type="primary"
           block
           :disabled="adoptedCount === 0"
-          @click="saveAll"
+          @tap="saveAll"
         ></ml-button>
         <view class="h-2"></view>
-        <ml-button text="放弃全部修改" type="ghost" block @click="resetAll"></ml-button>
+        <ml-button text="放弃全部修改" type="ghost" block @tap="resetAll"></ml-button>
       </view>
 
       <!-- 多版本导出（文档 2.4：生成不同投递版本） -->

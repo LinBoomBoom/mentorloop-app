@@ -43,7 +43,7 @@
         :type="generating ? 'secondary' : 'primary'"
         block
         :disabled="generating"
-        @click="genReport"
+        @tap="genReport"
       ></ml-button>
     </view>
 
