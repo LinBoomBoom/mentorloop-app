@@ -118,6 +118,7 @@ CI（`.github/workflows/ci.yml`）：install → lint → format → uvue CSS gu
 - **原生端不支持** `gap` / `gap-x-*` / `gap-y-*` / `space-x-*` / `space-y-*` → 用 `mt-*` / `ml-*`。
 - 避免复杂后代选择器（`.a .b`），全部用扁平原子类（与蒸汽模式要求同向）。
 - 模板**静态属性不得承载表达式**：`label="'项目经历 ' + n + ' 段'"` 缺 `:` 会被当成字面字符串原样渲染 → 必须 `:label="'项目经历 ' + n + ' 段'"`。由 ESLint 本地规则 `uvue/no-expression-in-static-attr` 按**表达式语法解析（AST）**拦截（覆盖 `a + b`、`x.y`、`x ? a : b` 等无引号写法；`rgba(...)`、连字符值、纯字面量不误报）。
+- **自定义组件的事件名必须用其 `defineEmits` 声明**：`ml-button` / `ml-card` 只发 `tap`，`ml-stat-bar` 发 `stat-tap`，`ml-section-header` 发 `action`，`ml-login-sheet` 发 `success` / `exit`。在组件标签上写 `@click` 在真机上**点了没反应**（构建 / lint / typecheck 全不报错 —— 2026-10-16 实测全仓曾 18 处，含面试「进入面试」主 CTA）。`scripts/check-uvue-css.mjs` 已加该项提醒（按 SOP-05 §7.2 暂不阻断，观察后再评估升硬闸）。
 - 单位用 rpx（已开启 `rem2rpx`，直接写 Tailwind 的 rem 间距即可自动换算）。
 
 ### Tailwind

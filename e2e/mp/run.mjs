@@ -157,6 +157,9 @@ function makeCtx(mp) {
       await this.gotoTab('/pages/index/index')
     },
     async seed() {
+      await this.seedReport()
+    },
+    async seedReport() {
       await mp.callWxMethod('setStorageSync', 'ml_report_history', JSON.stringify(seedRecords()))
     },
     async shot(name) {
@@ -176,9 +179,14 @@ function makeCtx(mp) {
       e.skip = true
       throw e
     },
-    // 需要报告数据的场景先探一次：登录态下服务端拉取会覆盖 E2E 种子（台账 U10），
-    // 此时报告页为空态、分段按钮不存在，无法验证落点 → 跳过而不是误报失败
+    // 需报告数据的场景先备好数据：登录态下服务端拉取会覆盖本地种子（台账 U10），
+    // 故顺序为「先让拉取发生并进入 60s 节流窗口（FETCH_TTL）→ 再写回种子 → 重新加载」，
+    // 否则报告页停在空态、分段按钮不存在，会误报失败。
     async requireReportData() {
+      await this.gotoTab('/pages/report/report')
+      await delay(1200)
+      await this.seedReport()
+      await this.gotoTab('/pages/index/index')
       await this.gotoTab('/pages/report/report')
       if (!(await this.present('#seg-report', 4000))) {
         this.skip('环境无报告数据（服务端拉取覆盖了 E2E 种子，见台账 U10）')

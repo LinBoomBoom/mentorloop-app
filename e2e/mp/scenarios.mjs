@@ -130,7 +130,7 @@ export const scenarios = [
   },
   {
     id: 'ONBOARD-1',
-    title: '首页参数行 → 修改面试参数（保存回首页待人工确认）',
+    title: '首页参数行 → 修改面试参数 → 保存回首页',
     async run(c) {
       await c.home()
       await c.tap('#home-profile-edit')
@@ -138,9 +138,8 @@ export const scenarios = [
         await c.waitPath('pages/onboarding/onboarding'),
         `点参数行应进引导页，实际 ${await c.path()}`
       )
-      // 「保存→回首页」暂不可自动化：automator 的 el.tap() 无法触发 ml-button 的点击
-      // （探针证明 handler 从未被调用；平台 navigateBack 与普通 view 的点击均正常）→ 台账 U11
-      c.skip('保存步骤需人工在模拟器点击确认（见台账 U11）')
+      await c.tap('#ob-save')
+      c.assert(await c.waitPath(HOME), `保存后应回首页，实际 ${await c.path()}`)
     }
   }
 ]
