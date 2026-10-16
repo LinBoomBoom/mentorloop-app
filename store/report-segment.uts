@@ -1,0 +1,21 @@
+// 跨 tab 分段意图（承接 IA-1 未覆盖项 2：首页数据条 → 「结果」tab 的成长趋势分段）
+// 职责：tabBar 页面只能由 switchTab 打开、不经 URL 传参，故用模块级「待消费意图」传递落点分段。
+// 约定：写入方先 set，接收方在 onShow 消费一次即清空，避免用户下次被动落到同一分段。
+
+class ReportSegmentIntent {
+  private pending = ''
+
+  // 写入待消费分段（'' = 无意图）
+  set(seg: string) {
+    this.pending = seg
+  }
+
+  // 读取并清空；返回 '' 表示无意图
+  consume(): string {
+    const v = this.pending
+    this.pending = ''
+    return v
+  }
+}
+
+export const reportSegmentIntent = new ReportSegmentIntent()

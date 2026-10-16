@@ -298,6 +298,7 @@ import mlGrowthPanel from '../../components/ml-growth-panel.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
+import { reportSegmentIntent } from '../../store/report-segment.uts'
 import { getReport } from '../../api/report.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import {
@@ -460,6 +461,9 @@ function exampleFor(key: string): string {
 onShow(async () => {
   // 分段面板重载信号：分段停留在成长趋势时，回到本 tab 也能看到最新场次
   growthTick.value += 1
+  // 跨 tab 落点：首页数据条带「成长趋势」意图时，进入即切到该分段（消费一次即清空）
+  const segIntent = reportSegmentIntent.consume()
+  if (segIntent.length > 0) seg.value = segIntent
   reportHistory.load()
   const all = reportHistory.all()
   records.value = all

@@ -226,6 +226,7 @@ import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
+import { reportSegmentIntent } from '../../store/report-segment.uts'
 import { useMock } from '../../api/env.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { InterviewReport } from '../../types/scoring.uts'
@@ -430,7 +431,8 @@ function goTraining() {
 }
 
 function goResults() {
-  // IA-1：原成长二级页已并入「结果」tab 的成长趋势分段，这里只做 tab 跳转
+  // IA-1：原成长二级页已并入「结果」tab 的成长趋势分段；写入落点意图后跳 tab
+  reportSegmentIntent.set('growth')
   uni.switchTab({ url: '/pages/report/report' })
 }
 
