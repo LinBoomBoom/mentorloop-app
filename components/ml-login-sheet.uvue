@@ -66,8 +66,8 @@
       <!-- 协议 -->
       <view class="flex-row items-center mt-4" @click="toggleAgree">
         <view
-          class="w-4 h-4 rounded flex-row items-center justify-center border"
-          :class="agreed ? 'bg-smart border-smart' : 'border-line bg-surface'"
+          class="w-[18px] h-[18px] rounded-chip flex-row items-center justify-center border"
+          :class="agreed ? 'bg-smart border-smart' : 'bg-surface border-line-strong'"
         >
           <ml-icon v-if="agreed" name="check" :size="11" :color="SURFACE"></ml-icon>
         </view>

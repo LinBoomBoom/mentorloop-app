@@ -1,7 +1,7 @@
 <template>
   <view
     class="flex-row items-center justify-center rounded-control"
-    :class="[sizeClass, bgClass, block ? 'w-full' : '', disabled ? 'opacity-50' : '']"
+    :class="[sizeClass, bgClass, block ? 'w-full' : '', disabledClass]"
     :hover-class="disabled ? 'none' : 'pressed-card'"
     :hover-start-time="0"
     :hover-stay-time="80"
@@ -36,17 +36,35 @@ const sizeTextClass = computed((): string => {
 })
 
 // secondary 为白底描边（MASTER.md A1 语义层），不再用灰实底
+// 注：描边用 line-strong —— line 在浅色面上几乎不可见（2026-10-16 真机反馈）
 const bgClass = computed((): string => {
-  if (props.type === 'secondary') return 'bg-surface border border-line'
+  if (props.disabled) {
+    if (props.type === 'primary') return 'bg-smart'
+    if (props.type === 'danger') return 'bg-danger'
+    if (props.type === 'ghost') return 'bg-transparent border border-line-strong'
+    return 'bg-bg-muted border border-line-strong'
+  }
+  if (props.type === 'secondary') return 'bg-surface border border-line-strong'
   if (props.type === 'ghost') return 'bg-transparent border border-smart'
   if (props.type === 'danger') return 'bg-danger'
   return 'bg-smart'
 })
 
 const textColorClass = computed((): string => {
+  if (props.disabled) {
+    // 浅底变体的禁用态用灰字（配灰底/灰边），实底变体保持白字再叠透明度
+    if (props.type === 'primary' || props.type === 'danger') return 'text-white'
+    return 'text-ink-soft'
+  }
   if (props.type === 'secondary') return 'text-ink'
   if (props.type === 'ghost') return 'text-smart'
   return 'text-white'
+})
+
+// 禁用态：实底变体压暗即可；浅底变体已换成灰底灰字，再叠透明度会「看不见按钮」
+const disabledClass = computed((): string => {
+  if (!props.disabled) return ''
+  return props.type === 'primary' || props.type === 'danger' ? 'opacity-50' : ''
 })
 
 function onClick() {
