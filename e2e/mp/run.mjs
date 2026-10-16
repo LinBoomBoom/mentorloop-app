@@ -61,10 +61,39 @@ function build() {
 }
 
 async function launch() {
+  // 连接既有自动化会话（绕开 automator.launch 的 Windows 限制，见 README「已知限制」）
+  const ws =
+    process.env.WX_AUTO_WS ??
+    (process.argv.find((a) => a.startsWith('--ws=')) ?? '').slice('--ws='.length)
+  if (ws.length > 0) {
+    console.log(`[test:mp] 连接既有自动化会话 ${ws}`)
+    return { mp: await automator.connect({ wsEndpoint: ws }), owned: false }
+  }
   if (!existsSync(CLI)) throw new Error(`未找到 DevTools CLI：${CLI}（可用 WX_DEVTOOLS_CLI 覆盖）`)
   if (!existsSync(PROJECT))
     throw new Error(`未找到构建产物：${PROJECT}（先跑 pnpm build:mp-weixin）`)
-  return automator.launch({ cliPath: CLI, projectPath: PROJECT, timeout: 90000 })
+  return {
+    mp: await automator.launch({ cliPath: CLI, projectPath: PROJECT, timeout: 90000 }),
+    owned: true
+  }
+}
+
+// 连上后小程序可能仍在首次编译，此时取页面元信息会失败
+// （表现为 getPageMetaByWebviewId 返回 null），必须先等到就绪再跑场景
+async function waitReady(mp, timeout = 90000) {
+  const until = Date.now() + timeout
+  let last = ''
+  for (;;) {
+    try {
+      const p = await mp.currentPage()
+      if (p != null) return p
+      last = 'currentPage 为空'
+    } catch (e) {
+      last = e && e.message ? e.message : String(e)
+    }
+    if (Date.now() > until) throw new Error(`等待小程序就绪超时：${last}`)
+    await delay(1000)
+  }
 }
 
 function makeCtx(mp) {
@@ -137,10 +166,15 @@ if (picked.length === 0) {
 build()
 
 let mp = null
+let ownedSession = false
 const results = []
 try {
   console.log('[test:mp] 启动自动化实例 …')
-  mp = await launch()
+  const session = await launch()
+  mp = session.mp
+  ownedSession = session.owned
+  console.log('[test:mp] 等待小程序就绪 …')
+  await waitReady(mp)
   const c = makeCtx(mp)
   await c.seed()
   for (const s of picked) {
@@ -163,9 +197,17 @@ try {
   console.error(
     '请确认：微信开发者工具 → 设置 → 安全设置 → 服务端口「开启」；且工具未处于其它自动化会话中。'
   )
+  console.error(
+    '若报 cliPath 相关错误：Node ≥18.20 起非 shell spawn .bat 会 EINVAL（automator 自带 launch 的已知限制），'
+  )
+  console.error(
+    '改用：先在终端跑 `"<DevTools>\\cli.bat" auto --project dist\\build\\mp-weixin --auto-port 9420`，'
+  )
+  console.error('再跑 `pnpm test:mp -- --ws=ws://127.0.0.1:9420`。')
   process.exitCode = 2
 } finally {
-  if (mp != null) {
+  // 只关闭由本次运行自己拉起的会话；外部会话（--ws）保持存活，便于反复跑与排查
+  if (mp != null && ownedSession) {
     try {
       await mp.close()
     } catch {
