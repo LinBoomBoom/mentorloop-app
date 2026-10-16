@@ -2,8 +2,8 @@
 编号: SOP-05
 名称: G2 质量门
 适用范围: docs/sop/quality-gate-sop.md G2 检查项、命令、领域特化与门禁记录模板
-版本: 1.3.0
-最后更新: 2026-10-14
+版本: 1.4.0
+最后更新: 2026-10-15
 ---
 
 # G2 质量门 SOP（构建 → 验证）
@@ -95,6 +95,13 @@ pnpm lint && pnpm format:check && pnpm test && node scripts/check-uvue-css.mjs &
 | uvue 守卫  | node scripts/check-uvue-css.mjs      | ✅ / ❌ |
 | token 守卫 | node scripts/check-design-tokens.mjs | ✅ / ❌ |
 | 服务端     | typecheck / test / build             | ✅ / ❌ |
+
+## 覆盖要求核验（TDD 留痕，2026-10-15 起）
+
+> 目的：§2.3 的覆盖要求此前只靠人工判定、无留痕；G2 只校验「测试存在且绿」，看不出是否**先红后绿**。本节把 TDD 从纸面条款变为可审计记录。**不新增机检**（遵守 §7.2 预算哨兵）。
+
+- 新增 / 修改**纯逻辑**的测试路径：`<tests/xxx.spec.ts 或 server/src/*.spec.ts>`；无可测纯逻辑则写「无（改动为 UI / 文档）」
+- **修 Bug** 的复现测试（先红后绿证据）：`<测试路径 + 修复前失败输出摘要>`；非缺陷修复写「不适用（功能新增 / 文档）」
 
 ## 失败项与处理
 

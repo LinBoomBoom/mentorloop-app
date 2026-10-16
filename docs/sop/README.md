@@ -122,9 +122,9 @@
 | ------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------- |
 | [SOP-01 角色体系与协作](./roles-sop.md)                 | 1.2.0 | 角色目录 / RACI / 门禁职责 / 交接接口 / 安全与财务归属                                 |
 | [SOP-02 链式流水线](./pipeline-sop.md)                  | 1.0.0 | 链型裁剪 / 挂链位 / 瘦模式 / 节流                                                      |
-| [SOP-03 任务卡（G1 入口）](./task-card-sop.md)          | 1.0.0 | 八要素 + G1 检查清单                                                                   |
+| [SOP-03 任务卡（G1 入口）](./task-card-sop.md)          | 1.1.0 | 八要素 + 开工前质询 + G1 检查清单                                                      |
 | [SOP-04 契约冻结与双签（G1）](./contract-freeze-sop.md) | 1.0.0 | 冻结触发条件 / 双签 / 冻结后纪律                                                       |
-| [SOP-05 G2 质量门](./quality-gate-sop.md)               | 1.3.0 | lint / format / test / uvue 守卫 / token 守卫 / server                                 |
+| [SOP-05 G2 质量门](./quality-gate-sop.md)               | 1.4.0 | lint / format / test / uvue 守卫 / token 守卫 / server / TDD 留痕                      |
 | [SOP-06 G3 验收准入](./admission-sop.md)                | 1.1.0 | 代码审查 / 安全审查 / 验收 / 红线复核                                                  |
 | [SOP-07 G4 发布准入](./release-sop.md)                  | 1.1.0 | 前置条件 / 准入单 / 灰度回滚 / LC 合规签署                                             |
 | [SOP-08 服务端领域](./domain-server-sop.md)             | 1.0.0 | Fastify 分层 / 统一响应 / 鉴权 / 幂等                                                  |
@@ -138,7 +138,7 @@
 
 | Skill                                                                                                  | 版本  | 职责                                                                 |
 | ------------------------------------------------------------------------------------------------------ | ----- | -------------------------------------------------------------------- |
-| [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.0.0 | 任务卡八要素 + G1 入口校验                                           |
+| [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.1.0 | 任务卡八要素 + 开工前质询 + G1 入口校验                              |
 | [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.1.0 | 契约变更检测与双签记录                                               |
 | [mentorloop-system-spec](../../.trae/skills/mentorloop-system-spec/SKILL.md)                           | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                  |
 | [mentorloop-server-conventions](../../.trae/skills/mentorloop-server-conventions/SKILL.md)             | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                    |
