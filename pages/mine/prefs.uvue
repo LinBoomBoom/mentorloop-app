@@ -120,6 +120,7 @@ function save() {
     positionId: positionId.value,
     experienceLevel: experienceLevel.value,
     defaultMode: null,
+    onboarded: null,
     token: null,
     phone: null
   })

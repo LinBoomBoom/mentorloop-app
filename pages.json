@@ -5,6 +5,10 @@
       "style": { "navigationStyle": "custom", "navigationBarTitleText": "MentorLoop" }
     },
     {
+      "path": "pages/onboarding/onboarding",
+      "style": { "navigationBarTitleText": "完善你的画像" }
+    },
+    {
       "path": "pages/interview/prep",
       "style": { "navigationBarTitleText": "面试准备" }
     },

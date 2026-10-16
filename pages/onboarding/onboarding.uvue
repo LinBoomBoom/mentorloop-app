@@ -1,0 +1,218 @@
+<template>
+  <view class="h-screen bg-bg-light">
+    <scroll-view class="h-screen" scroll-y="true">
+      <view id="onboarding-page" class="p-4">
+        <!-- 顶部说明 -->
+        <view class="mb-4 mt-1">
+          <text class="text-[22px] font-bold text-ink">{{ title }}</text>
+          <text class="text-sm text-ink-soft mt-1">{{ desc }}</text>
+        </view>
+
+        <!-- 岗位方向 -->
+        <view id="ob-position-group" class="mb-3">
+          <ml-card>
+            <view class="flex-row items-center">
+              <ml-icon name="target" :size="14" :color="SMART"></ml-icon>
+              <text class="text-sm font-semibold text-ink ml-1.5">岗位方向</text>
+              <text class="text-xs text-ink-soft ml-2">决定题库与能力维度</text>
+            </view>
+            <view class="flex-row flex-wrap mt-3">
+              <view
+                v-for="p in positionOptions"
+                :id="'ob-position-' + p.id"
+                :key="p.id"
+                class="h-11 pl-3.5 pr-3 rounded-chip flex-row items-center mr-2 mb-2"
+                :class="
+                  positionId === p.id
+                    ? 'bg-surface border border-smart'
+                    : p.available
+                      ? 'bg-bg-muted'
+                      : 'bg-bg-muted opacity-60'
+                "
+                :hover-class="p.available ? 'pressed-chip' : 'none'"
+                :hover-start-time="0"
+                @click="selectPosition(p)"
+              >
+                <text
+                  class="text-sm"
+                  :class="
+                    positionId === p.id
+                      ? 'text-smart font-medium'
+                      : p.available
+                        ? 'text-ink'
+                        : 'text-ink-soft'
+                  "
+                >
+                  {{ p.name }}
+                </text>
+                <ml-icon
+                  v-if="positionId === p.id"
+                  class="ml-1"
+                  name="check"
+                  :size="13"
+                  :color="SMART"
+                ></ml-icon>
+                <text v-if="!p.available" class="text-xs text-ink-soft ml-1">敬请期待</text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 经验年限 -->
+        <view id="ob-experience-group" class="mb-3">
+          <ml-card>
+            <view class="flex-row items-center">
+              <ml-icon name="trending-up" :size="14" :color="SMART"></ml-icon>
+              <text class="text-sm font-semibold text-ink ml-1.5">经验年限</text>
+              <text class="text-xs text-ink-soft ml-2">决定题目难度区间</text>
+            </view>
+            <view class="flex-row flex-wrap mt-3">
+              <view
+                v-for="e in experienceOptions"
+                :id="'ob-experience-' + e.id"
+                :key="e.id"
+                class="px-3.5 h-11 rounded-chip flex-row items-center mr-2 mb-2"
+                :class="experienceLevel === e.id ? 'bg-surface border border-smart' : 'bg-bg-muted'"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="experienceLevel = e.id"
+              >
+                <text
+                  class="text-sm"
+                  :class="experienceLevel === e.id ? 'text-smart font-medium' : 'text-ink'"
+                >
+                  {{ e.label }}
+                </text>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 主操作：确认并继续 -->
+        <view id="ob-save" class="mt-4" @click="save">
+          <ml-button :text="primaryText" type="primary" block></ml-button>
+        </view>
+
+        <!-- 跳过：显式留痕，不伪装成已选 -->
+        <view
+          id="ob-skip"
+          class="mt-2 h-11 flex-row items-center justify-center"
+          hover-class="pressed-row"
+          :hover-start-time="0"
+          @click="skip"
+        >
+          <text class="text-xs text-ink-soft">先跳过，用默认值开始（之后可随时修改）</text>
+        </view>
+
+        <view class="h-6"></view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import mlCard from '../../components/ml-card.uvue'
+import mlButton from '../../components/ml-button.uvue'
+import mlIcon from '../../components/ml-icon.uvue'
+import { userStore } from '../../store/user-profile.uts'
+import {
+  POSITION_OPTIONS,
+  EXPERIENCE_OPTIONS,
+  PositionOption
+} from '../../data/position-options.uts'
+import { PositionId, ExperienceLevel } from '../../types/interview.uts'
+import { trackEvent } from '../../api/tracking.uts'
+import { themeValue } from '../../styles/theme.uts'
+
+const SMART = themeValue('smart', '#5B6CFF')
+
+const positionOptions = POSITION_OPTIONS
+const experienceOptions = EXPERIENCE_OPTIONS
+
+// 来源：first=首启引导；edit=从首页参数卡进入修改
+const from = ref('first')
+
+// 默认选中：沿用当前画像（首启时即 store 默认值）
+const positionId = ref<PositionId>(userStore.profile.positionId)
+const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
+
+const title = computed((): string => {
+  return from.value === 'first' ? '先定两件事' : '修改面试参数'
+})
+
+const desc = computed((): string => {
+  return from.value === 'first'
+    ? '选好岗位与年限，题目会按你的水平动态匹配；之后可随时修改'
+    : '改动后立即生效，下一场模拟面试按新参数抽题'
+})
+
+const primaryText = computed((): string => {
+  return from.value === 'first' ? '就这样，开始吧' : '保存'
+})
+
+onLoad((options) => {
+  if (options != null) {
+    const f = options.from != null ? (options.from as string) : 'first'
+    from.value = f.length > 0 ? f : 'first'
+  }
+})
+
+function selectPosition(p: PositionOption) {
+  if (!p.available) {
+    uni.showToast({ title: p.name + '题库建设中，敬请期待', icon: 'none' })
+    return
+  }
+  positionId.value = p.id
+}
+
+function back() {
+  // 正常从首页 navigateTo 进入；若被直接打开（无上一页）则回首页，避免死路
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack()
+  } else {
+    uni.reLaunch({ url: '/pages/index/index' })
+  }
+}
+
+function save() {
+  userStore.setProfile({
+    uid: null,
+    nickname: null,
+    plan: null,
+    positionId: positionId.value,
+    experienceLevel: experienceLevel.value,
+    defaultMode: null,
+    onboarded: true,
+    token: null,
+    phone: null
+  })
+  userStore.persist()
+  trackEvent('onboarding_complete', {
+    from: from.value,
+    positionId: positionId.value,
+    experienceLevel: experienceLevel.value
+  })
+  back()
+}
+
+function skip() {
+  // 跳过也标记已完成（避免每次启动重复弹），但不动画像值
+  userStore.setProfile({
+    uid: null,
+    nickname: null,
+    plan: null,
+    positionId: null,
+    experienceLevel: null,
+    defaultMode: null,
+    onboarded: true,
+    token: null,
+    phone: null
+  })
+  userStore.persist()
+  trackEvent('onboarding_skip', { from: from.value })
+  back()
+}
+</script>

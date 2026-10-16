@@ -49,6 +49,7 @@ export function applyAuth(r: AuthResult, phone: string) {
     positionId: null,
     experienceLevel: null,
     defaultMode: null,
+    onboarded: null,
     phone: phone
   } as UserProfilePatch)
   userStore.persist()

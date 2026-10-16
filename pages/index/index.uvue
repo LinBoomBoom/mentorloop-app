@@ -27,7 +27,14 @@
     <scroll-view class="flex-1" scroll-y="true">
       <view class="px-5 pt-3 pb-5">
         <!-- 本次模拟面试：首屏主任务（参数可读，去装饰） -->
-        <view class="rounded-card border p-4" :style="cardStyle">
+        <view
+          id="home-profile-card"
+          class="rounded-card border p-4"
+          :style="cardStyle"
+          hover-class="pressed-card"
+          :hover-start-time="0"
+          @click="goOnboarding"
+        >
           <view class="flex-row items-center">
             <ml-voice-visual state="idle" :show-label="false" :ring="88"></ml-voice-visual>
             <view class="flex-col flex-1 ml-4">
@@ -39,7 +46,7 @@
               <text class="text-xs text-mist mt-1">按岗位与经验抽题，答完可随时结束</text>
             </view>
           </view>
-          <view class="flex-row mt-3 pt-3" :style="dividerTop">
+          <view v-if="profileReady" class="flex-row mt-3 pt-3" :style="dividerTop">
             <view class="flex-col flex-1">
               <text class="text-xs text-mist">岗位方向</text>
               <text class="text-sm text-white mt-1">{{ positionLabel }}</text>
@@ -52,6 +59,16 @@
               <text class="text-xs text-mist">能力域</text>
               <text class="text-sm font-mono text-white mt-1">6 维</text>
             </view>
+          </view>
+          <!-- 未完成首启画像：不伪装成已选，显式引导去选 -->
+          <view
+            v-else
+            id="home-profile-hint"
+            class="flex-row items-center justify-between mt-3 pt-3"
+            :style="dividerTop"
+          >
+            <text class="text-sm text-warn">未设置 · 点此选择岗位与年限</text>
+            <ml-icon name="chevron-right" :size="15" :color="MIST"></ml-icon>
           </view>
         </view>
 
@@ -259,6 +276,10 @@ rightPad.value = 100
 
 const positionLabel = ref(positionDisplay(userStore.profile))
 const experienceLabel = ref(experienceDisplay(userStore.profile))
+// 首启画像是否完成：未完成时参数卡显示「未设置」，不伪装成用户已选
+const profileReady = ref(userStore.profile.onboarded === true)
+// 每次页面实例只自动引导一次，避免用户返回时反复弹
+const onboardingPrompted = ref(false)
 const loggedIn = ref(userStore.isLoggedIn())
 
 // 最近报告数据
@@ -395,6 +416,16 @@ onShow(() => {
   loggedIn.value = userStore.isLoggedIn()
   positionLabel.value = positionDisplay(userStore.profile)
   experienceLabel.value = experienceDisplay(userStore.profile)
+  profileReady.value = userStore.profile.onboarded === true
+  // 首启画像未完成 → 自动引导一次（可跳过；用户返回后不再重复弹）
+  if (!profileReady.value && !onboardingPrompted.value) {
+    onboardingPrompted.value = true
+    trackEvent('onboarding_prompt')
+    // 首页 onShow 会在启动首帧触发，此时直接 navigateTo 会被框架忽略，延后一帧再跳
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/onboarding/onboarding?from=first' })
+    }, 350)
+  }
 
   reportHistory.load()
   records.value = reportHistory.all()
@@ -406,6 +437,11 @@ onShow(() => {
     })
   }
 })
+
+// 参数卡 → 修改面试参数（复用首启引导页）
+function goOnboarding() {
+  uni.navigateTo({ url: '/pages/onboarding/onboarding?from=edit' })
+}
 
 function startInterview() {
   // 权益门控：免费层额度用尽 → 引导购买（额度在完成面试时扣减）

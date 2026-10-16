@@ -193,6 +193,12 @@ try {
   await waitReady(mp)
   const c = makeCtx(mp)
   await c.seed()
+  // 首启画像未完成时会自动弹引导页，先完成一次，避免干扰后续场景
+  if ((await c.path()) === 'pages/onboarding/onboarding') {
+    console.log('[test:mp] 检测到首启引导页，先完成一次前置')
+    await c.tap('#ob-save')
+    await c.waitPath('/pages/index/index')
+  }
   for (const s of picked) {
     try {
       await mp.reLaunch('/pages/index/index')

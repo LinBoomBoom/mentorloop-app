@@ -122,5 +122,19 @@ export const scenarios = [
       await c.gotoTab(REPORT)
       c.assert(await c.absent(GROWTH_PANEL), '意图被重放：往返后仍停在成长趋势')
     }
+  },
+  {
+    id: 'ONBOARD-1',
+    title: '首页参数卡 → 修改面试参数 → 保存回首页',
+    async run(c) {
+      await c.home()
+      await c.tap('#home-profile-card')
+      c.assert(
+        await c.waitPath('pages/onboarding/onboarding'),
+        `点参数卡应进引导页，实际 ${await c.path()}`
+      )
+      await c.tap('#ob-save')
+      c.assert(await c.waitPath(HOME), `保存后应回首页，实际 ${await c.path()}`)
+    }
   }
 ]
