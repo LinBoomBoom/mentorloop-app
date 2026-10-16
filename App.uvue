@@ -88,4 +88,15 @@ onHide(() => {
 /* #ifdef APP */
 @import './main.css';
 /* #endif */
+
+/* 小程序端 Tailwind v4 边框兜底（必须写在这里：cssEntries 只产出「被用到的原子类」，
+   main.css 里的普通规则不会进 MP 产物）。
+   背景：`border-*` 只写 border-width，线型依赖 --tw-border-style；Tailwind v4 用 @property
+   给它设初始值 solid，而小程序不支持 @property（产物里 0 处），工具链只在 border-dashed
+   之类非常规值时才就地定义 → 普通 border 的 var() 取空 → border-style 无效 → 全站边框
+   静默消失（2026-10-16 确认：协议复选框、岗位选中态、ml-button secondary/禁用态）。
+   写在 page 上由子节点继承，border-dashed 等仍会就地覆盖。 */
+page {
+  --tw-border-style: solid;
+}
 </style>
