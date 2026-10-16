@@ -1,0 +1,15 @@
+# 换行符统一（2026-10-15）：仓库存储与工作区检出一律 LF。
+#
+# 背景：Windows 上 `core.autocrlf=true` 会把工作区检出为 CRLF，而 `.prettierrc.json` 设 `endOfLine: "lf"`，
+# 于是 `pnpm format:check` 在本机对全仓 272 个文件全量报错（含本轮完全未改动的文件），而 LF 检出的 Linux CI 为绿。
+# 本文件优先于 `core.autocrlf`，与 `.editorconfig` 的 `end_of_line = lf` 保持一致。
+* text=auto eol=lf
+
+# 二进制资产不参与换行归一
+*.png binary
+*.ico binary
+*.ttf binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.db binary

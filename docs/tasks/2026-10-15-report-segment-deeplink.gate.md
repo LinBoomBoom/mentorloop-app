@@ -33,4 +33,4 @@
 4. 报错清单包含 `README.md`、`package.json`、`.prettierrc.json` 等本轮完全未触碰的文件；
 5. Linux CI（LF 检出）的 `format:check` 为绿。
 
-处置：**不**修改仓库格式规则、**不**用 `prettier --write` 掩盖、**不**放宽门禁。本轮改动文件已经 pre-commit 的 lint-staged `prettier --write` 处理，自身格式无违规。环境治理（`.gitattributes` 固定 `eol=lf`，或本机 `core.autocrlf=false`）**需另立任务**，本卡不处理。
+处置：**不**修改仓库格式规则、**不**用 `prettier --write` 掩盖、**不**放宽门禁。本轮改动文件已经 pre-commit 的 lint-staged `prettier --write` 处理，自身格式无违规。**环境治理已于同日单独提交**（新增 `.gitattributes`：`* text=auto eol=lf`，与 `.editorconfig` 的 `end_of_line = lf` 一致并优先于 `core.autocrlf`；工作区归一后 `pnpm format:check` 转绿，且 `git diff` 证明全仓 blob **零内容差异**）。
