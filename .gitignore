@@ -38,3 +38,6 @@ test-results/
 # 临时截图与快照导出
 .screenshots/
 .trae-html-share-packages/
+
+# 小程序自动化 E2E 失败截图产物
+e2e/mp/__screenshots__/

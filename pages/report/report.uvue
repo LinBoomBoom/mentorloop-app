@@ -32,6 +32,7 @@
           :style="{ backgroundColor: BG_MUTED, borderColor: LINE }"
         >
           <view
+            id="seg-report"
             class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
             :style="segItemStyle(seg === 'report')"
             hover-class="pressed-chip"
@@ -46,6 +47,7 @@
             </text>
           </view>
           <view
+            id="seg-growth"
             class="flex-1 h-9 flex-row items-center justify-center rounded-chip"
             :style="segItemStyle(seg === 'growth')"
             hover-class="pressed-chip"
@@ -278,7 +280,9 @@
 
         <!-- 成长趋势（IA-1：原 pages/growth 二级页并入复盘域，组件承载） -->
         <template v-else>
-          <ml-growth-panel :reload-token="growthTick"></ml-growth-panel>
+          <view id="growth-slot">
+            <ml-growth-panel :reload-token="growthTick"></ml-growth-panel>
+          </view>
         </template>
       </view>
     </template>

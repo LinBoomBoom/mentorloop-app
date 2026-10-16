@@ -57,6 +57,7 @@
 
         <!-- 简历优化入口（IA-1 P2：准备环节前移，免费层钩子不再只藏「我的」） -->
         <view
+          id="home-resume"
           class="mt-3 rounded-card border p-3.5 flex-row items-center"
           :style="cardStyle"
           hover-class="pressed-card"
@@ -78,19 +79,19 @@
 
         <!-- 数据条（等宽数字） -->
         <view class="flex-row rounded-card border px-2 py-3 mt-3" :style="stripStyle">
-          <view class="flex-1 flex-col items-center" @click="goResults">
+          <view id="stat-total" class="flex-1 flex-col items-center" @click="goResults">
             <ml-icon name="target" :size="16" :color="WARN_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ totalCount }}</text>
             <text class="text-xs text-mist mt-0.5">累计面试</text>
           </view>
           <view class="w-px h-9" :style="dividerV"></view>
-          <view class="flex-1 flex-col items-center" @click="goResults">
+          <view id="stat-avg" class="flex-1 flex-col items-center" @click="goResults">
             <ml-icon name="award" :size="16" :color="RELIABLE_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ avgLevel }}</text>
             <text class="text-xs text-mist mt-0.5">平均等级</text>
           </view>
           <view class="w-px h-9" :style="dividerV"></view>
-          <view class="flex-1 flex-col items-center" @click="goTraining">
+          <view id="stat-todo" class="flex-1 flex-col items-center" @click="goTraining">
             <ml-icon name="flame" :size="16" :color="MOTIVATION_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ todoCount }}</text>
             <text class="text-xs text-mist mt-0.5">待训练</text>
@@ -140,6 +141,7 @@
 
           <!-- 最近报告 -->
           <view
+            id="home-recent-report"
             class="mt-3 rounded-card border p-4"
             :style="cardStyle"
             hover-class="pressed-card"
