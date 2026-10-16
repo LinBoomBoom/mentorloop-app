@@ -114,11 +114,29 @@ function makeCtx(mp) {
       await delay(150)
     }
   }
+  async function pathOf() {
+    const p = await mp.currentPage()
+    return p == null ? '' : (p.path ?? '')
+  }
+  function normalize(url) {
+    return url.startsWith('/') ? url.slice(1) : url
+  }
+  async function waitPathOf(expected, timeout) {
+    const want = normalize(expected)
+    return poll(async () => (await pathOf()) === want, timeout)
+  }
   return {
     mp,
-    async path() {
-      const p = await mp.currentPage()
-      return p == null ? '' : (p.path ?? '')
+    path: pathOf,
+    // 导航类断言一律用轮询等路径，不用固定 sleep：点击 → 渲染 → 跳转的耗时不稳定
+    async waitPath(expected, timeout = 8000) {
+      return waitPathOf(expected, timeout)
+    },
+    async gotoTab(url, timeout = 8000) {
+      await mp.switchTab(url)
+      if (!(await waitPathOf(url, timeout))) {
+        throw new Error(`switchTab ${url} 后路径仍为 ${await pathOf()}`)
+      }
     },
     async present(sel, timeout = 4000) {
       return poll(async () => (await find(sel)) != null, timeout)
@@ -131,14 +149,12 @@ function makeCtx(mp) {
       const el = await find(sel)
       if (el == null) throw new Error(`找不到可点击元素 ${sel}`)
       await el.tap()
-      await delay(400)
+      await delay(300)
     },
     // 回首页：先过一次「结果」tab，让可能残留的分段意图被 onShow 消费掉，避免场景间串态
     async home() {
-      await mp.switchTab('/pages/report/report')
-      await delay(300)
-      await mp.switchTab('/pages/index/index')
-      await delay(300)
+      await this.gotoTab('/pages/report/report')
+      await this.gotoTab('/pages/index/index')
     },
     async seed() {
       await mp.callWxMethod('setStorageSync', 'ml_report_history', JSON.stringify(seedRecords()))
@@ -206,10 +222,15 @@ try {
   console.error('再跑 `pnpm test:mp -- --ws=ws://127.0.0.1:9420`。')
   process.exitCode = 2
 } finally {
-  // 只关闭由本次运行自己拉起的会话；外部会话（--ws）保持存活，便于反复跑与排查
-  if (mp != null && ownedSession) {
+  // 自己拉起的会话：close() 收干净；外部会话（--ws）：只 disconnect，让会话留着方便复跑，
+  // 同时释放连接，否则 WS 会吊住事件循环导致进程不退出
+  if (mp != null) {
     try {
-      await mp.close()
+      if (ownedSession) {
+        await mp.close()
+      } else {
+        await mp.disconnect()
+      }
     } catch {
       /* ignore */
     }
