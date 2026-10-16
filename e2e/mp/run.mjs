@@ -4,7 +4,7 @@
 //       pnpm test:mp --only=IA1-B2  只跑匹配的场景
 // 前置：微信开发者工具 → 设置 → 安全设置 → 服务端口「开启」
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import automator from 'miniprogram-automator'
 import { scenarios } from './scenarios.mjs'
@@ -12,8 +12,8 @@ import { scenarios } from './scenarios.mjs'
 const HERE = import.meta.dirname
 const ROOT = path.resolve(HERE, '..', '..')
 const PROJECT = path.join(ROOT, 'dist', 'build', 'mp-weixin')
-const CLI = process.env.WX_DEVTOOLS_CLI ?? 'D:\\Tencent\\微信web开发者工具\\cli.bat'
-const SHOTS = path.join(HERE, '__screenshots__')
+const CLI = process.env.WX_DEVTOOLS_CLI ?? 'E:\\微信web开发者工具\\cli.bat'
+const SHOTS = path.join(HERE, 'shots')
 const NO_BUILD = process.argv.includes('--no-build')
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) ?? '').slice('--only='.length)
 
@@ -128,8 +128,10 @@ function makeCtx(mp) {
   return {
     mp,
     path: pathOf,
-    // 导航类断言一律用轮询等路径，不用固定 sleep：点击 → 渲染 → 跳转的耗时不稳定
-    async waitPath(expected, timeout = 8000) {
+    // 导航类断言一律用轮询等路径，不用固定 sleep：点击 → 渲染 → 跳转的耗时不稳定。
+    // 默认 15s：MP 对「navigateTo 转场窗口内立即 navigateBack」有路由节流，实测回退可达 ~10s
+    // （2026-10-17 ONBOARD-1 误报根因：元素入树 ≠ 转场完成，tap#ob-save 后 9.94s 才回首页）
+    async waitPath(expected, timeout = 15000) {
       return waitPathOf(expected, timeout)
     },
     async gotoTab(url, timeout = 8000) {
@@ -202,6 +204,9 @@ if (picked.length === 0) {
 }
 
 build()
+
+// 调试截图目录「会话级保留」：每次运行开始清空，目录里只留最近一次调试的产物
+rmSync(SHOTS, { recursive: true, force: true })
 
 let mp = null
 let ownedSession = false
@@ -276,6 +281,6 @@ if (results.length > 0) {
   console.log(
     `\n[test:mp] 场景 ${results.length} 个：通过 ${results.length - failed - skipped}，跳过 ${skipped}，失败 ${failed}`
   )
-  if (failed > 0) console.log(`[test:mp] 失败场景截图见 ${SHOTS}`)
+  if (failed > 0) console.log(`[test:mp] 失败场景截图见 ${SHOTS}（下次运行开始时自动清除）`)
   process.exitCode = failed > 0 ? 1 : 0
 }

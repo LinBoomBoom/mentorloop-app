@@ -40,4 +40,4 @@ test-results/
 .trae-html-share-packages/
 
 # 小程序自动化 E2E 失败截图产物
-e2e/mp/__screenshots__/
+e2e/mp/shots/

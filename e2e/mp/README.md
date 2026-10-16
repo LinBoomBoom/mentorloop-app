@@ -12,7 +12,7 @@
 2. 建议同页开启「**自动化接口打开工具时默认信任项目**」，避免打开项目时弹信任框。
 3. 一次 `pnpm build:mp-weixin`（`--no-build` 可跳过）。
 
-CLI 路径默认 `D:\Tencent\微信web开发者工具\cli.bat`，可用环境变量 `WX_DEVTOOLS_CLI` 覆盖。
+CLI 路径默认 `E:\微信web开发者工具\cli.bat`，可用环境变量 `WX_DEVTOOLS_CLI` 覆盖。
 
 ## 用法（Windows 标准两步法）
 
@@ -27,7 +27,8 @@ pnpm test:mp -- --no-build --ws=ws://127.0.0.1:9420
 其他参数：
 
 - `--only=IA1-B2` 只跑匹配场景；不加 `--ws` 则走 `automator.launch()`（见下「已知限制」，本机不可用）。
-- 失败场景会截图到 `e2e/mp/__screenshots__/`（已 gitignore）。
+- 失败场景会截图到 `e2e/mp/shots/`（已 gitignore；每次运行/截图开始时自动清空，只保留最近一次调试的产物）。
+- 手动视觉核验 `pnpm shot:mp <页面> [文件名]`（onb/prep/index/report/login）写入同一目录，可用 `MP_SHOT_DIR` 覆盖。
 
 ## 已知限制（踩过的坑，务必先读）
 
