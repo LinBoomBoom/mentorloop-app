@@ -88,10 +88,15 @@
           </ml-card>
         </view>
 
-        <!-- 主操作：确认并继续 -->
-        <view id="ob-save" class="mt-4" @click="save">
-          <ml-button :text="primaryText" type="primary" block></ml-button>
-        </view>
+        <!-- 主操作：确认并继续（id 与事件都挂按钮本身：ml-button 为 virtualHost，外层包裹层盒不可靠） -->
+        <ml-button
+          id="ob-save"
+          class="mt-4"
+          :text="primaryText"
+          type="primary"
+          block
+          @click="save"
+        ></ml-button>
 
         <!-- 跳过：显式留痕，不伪装成已选 -->
         <view
@@ -168,13 +173,8 @@ function selectPosition(p: PositionOption) {
 }
 
 function back() {
-  // 正常从首页 navigateTo 进入；若被直接打开（无上一页）则回首页，避免死路
-  const pages = getCurrentPages()
-  if (pages.length > 1) {
-    uni.navigateBack()
-  } else {
-    uni.reLaunch({ url: '/pages/index/index' })
-  }
+  // 本页恒由首页 navigateTo 进入（首启引导 / 修改参数），返回上一页即可
+  uni.navigateBack({ delta: 1 })
 }
 
 function save() {

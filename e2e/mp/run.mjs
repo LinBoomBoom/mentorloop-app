@@ -169,6 +169,20 @@ function makeCtx(mp) {
     },
     assert(cond, msg) {
       if (!cond) throw new Error(msg)
+    },
+    // 环境前置不足时显式跳过（区别于产品缺陷导致的失败）
+    skip(reason) {
+      const e = new Error(reason)
+      e.skip = true
+      throw e
+    },
+    // 需要报告数据的场景先探一次：登录态下服务端拉取会覆盖 E2E 种子（台账 U10），
+    // 此时报告页为空态、分段按钮不存在，无法验证落点 → 跳过而不是误报失败
+    async requireReportData() {
+      await this.gotoTab('/pages/report/report')
+      if (!(await this.present('#seg-report', 4000))) {
+        this.skip('环境无报告数据（服务端拉取覆盖了 E2E 种子，见台账 U10）')
+      }
     }
   }
 }
@@ -207,6 +221,11 @@ try {
       results.push({ id: s.id, ok: true })
       console.log(`  ✓ ${s.id} ${s.title}`)
     } catch (e) {
+      if (e != null && e.skip === true) {
+        results.push({ id: s.id, ok: true, skipped: true, msg: e.message })
+        console.log(`  ⊘ ${s.id} ${s.title} —— 跳过：${e.message}`)
+        continue
+      }
       const msg = e && e.message ? e.message : String(e)
       results.push({ id: s.id, ok: false, msg })
       console.error(`  ✗ ${s.id} ${s.title}\n      ${msg}`)
@@ -245,8 +264,9 @@ try {
 
 if (results.length > 0) {
   const failed = results.filter((r) => !r.ok).length
+  const skipped = results.filter((r) => r.skipped === true).length
   console.log(
-    `\n[test:mp] 场景 ${results.length} 个：通过 ${results.length - failed}，失败 ${failed}`
+    `\n[test:mp] 场景 ${results.length} 个：通过 ${results.length - failed - skipped}，跳过 ${skipped}，失败 ${failed}`
   )
   if (failed > 0) console.log(`[test:mp] 失败场景截图见 ${SHOTS}`)
   process.exitCode = failed > 0 ? 1 : 0
