@@ -11,6 +11,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     abilityDomain: 'knowledge',
     subAbility: 'knowledge.concurrency-jvm',
     knowledgePoint: '内存溢出定位',
+    techStack: 'java',
     content: '请描述一次你定位过的内存溢出或内存持续增长问题。',
     purpose: '验证项目深度与个人贡献',
     difficulty: 'mid',
@@ -26,6 +27,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     abilityDomain: 'knowledge',
     subAbility: 'knowledge.concurrency-jvm',
     knowledgePoint: '线程池参数',
+    techStack: 'java',
     content: '你在项目中是如何确定线程池的核心参数的？',
     purpose: '评估参数决策是否有依据',
     difficulty: 'mid',
@@ -41,6 +43,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     abilityDomain: 'knowledge',
     subAbility: 'knowledge.concurrency-jvm',
     knowledgePoint: '锁与并发安全',
+    techStack: 'java',
     content: '讲一个你解决过的并发安全问题，比如数据不一致或死锁。',
     purpose: '验证真实排障经历',
     difficulty: 'mid',
@@ -58,6 +61,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     abilityDomain: 'knowledge',
     subAbility: 'knowledge.java-core',
     knowledgePoint: '集合选型',
+    techStack: 'java',
     content: 'HashMap 和 ConcurrentHashMap 你在项目中分别用在什么场景？为什么？',
     purpose: '评估选型是否结合场景',
     difficulty: 'junior',
@@ -73,6 +77,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     abilityDomain: 'knowledge',
     subAbility: 'knowledge.java-core',
     knowledgePoint: '异常与资源管理',
+    techStack: 'java',
     content: '你们项目中是如何规范处理异常和关闭资源的？',
     purpose: '评估工程习惯',
     difficulty: 'junior',
@@ -98,6 +103,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '缓存场景、过期策略、一致性处理',
     followupPrompts: ['缓存和数据库不一致时你们怎么处理？', '热点 key 失效瞬间会发生什么？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -113,6 +119,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '业务场景、可靠性处理、量化收益',
     followupPrompts: ['消息重复消费你们怎么防？', '如果消息积压了怎么办？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -128,6 +135,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: 'explain 分析、优化前后对比',
     followupPrompts: ['优化前后的耗时对比是多少？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -145,6 +153,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '个人贡献、决策依据、结果',
     followupPrompts: ['这个决策是你提出的还是团队决定的？', '当时有没有其他备选方案？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -160,6 +169,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '指标定义、采集方式、对比基线',
     followupPrompts: ['这个数据是从哪个监控或报表看到的？', '优化前的基线是多少？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -175,6 +185,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '具体模块、交付内容、协作方式',
     followupPrompts: ['这个模块的代码评审是谁做的？', '遇到跨模块问题时你怎么推动？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -190,6 +201,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '问题定义、排查路径、最终验证',
     followupPrompts: ['排查过程中走过哪些弯路？', '如果重来一次你会怎么做？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -207,6 +219,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '测试类型、覆盖重点、实际案例',
     followupPrompts: ['哪部分逻辑你们认为最值得测？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -222,6 +235,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '问题、发现方式、处理结果',
     followupPrompts: ['这个问题如果流到线上会怎样？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -239,6 +253,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '约束、估算过程、备选方案、取舍',
     followupPrompts: ['如果读流量是写的 100 倍，设计会有什么变化？', '发号器你会怎么选型？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -254,6 +269,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '限流、降级、超时、监控的优先级与理由',
     followupPrompts: ['预算有限时你先做哪一项？为什么？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -269,6 +285,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '数据量、团队能力、迁移成本的权衡',
     followupPrompts: ['分库分表后跨库查询怎么办？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -286,6 +303,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '从监控到代码的分层排查路径',
     followupPrompts: ['如果应用层指标正常，你下一步看什么？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -301,6 +319,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '时间线、止血动作、根因、改进项',
     followupPrompts: ['复盘后落地了哪些改进？', '如何避免同类故障再次发生？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -318,6 +337,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '结论、证据、反思',
     followupPrompts: ['如果重来，你会在哪个环节做得不一样？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -333,6 +353,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '业务价值表述、类比能力',
     followupPrompts: ['对方最可能追问什么？你怎么回答？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -350,6 +371,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '失败案例、纠偏动作、成长路径',
     followupPrompts: ['这个教训后来在哪个场景帮到了你？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
   {
@@ -365,6 +387,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '学习路径、实践产出',
     followupPrompts: ['学完后在项目中用上了吗？效果如何？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
   } as QuestionItem,
 
@@ -382,7 +405,408 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '目标与岗位的一致性',
     followupPrompts: ['你了解我们这个岗位的日常工作吗？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'backend'
+  } as QuestionItem,
+
+  // ---------- 运维（devops）岗位题库（2026-10-18 批次 A，人工审核通过：docs/drafts/2026-10-18-devops-content-draft.md） ----------
+
+  // 运维 · 基础知识
+  {
+    id: 'q-d01',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.linux-network',
+    knowledgePoint: 'CPU 负载与使用率',
+    techStack: '',
+    content: 'load average 很高但 CPU 使用率很低，你会从哪里查起？',
+    purpose: '区分对负载组成（D 状态进程、IO 等待）的真实理解',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['把 load 等同于 CPU 使用率', '不知道 D 状态进程会推高负载'],
+    expectedEvidence: '负载构成、IO 等待的确认方式（如 iostat / vmstat 逐列解读）',
+    followupPrompts: ['哪些状态的任务会计入 load？', '如何确认是存储瓶颈？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d02',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.linux-network',
+    knowledgePoint: 'TCP 连接状态',
+    techStack: '',
+    content: '服务器上 TIME_WAIT 很多，什么情况下需要处理，怎么处理？',
+    purpose: '验证对连接生命周期与复用的理解，而非背诵参数',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['见到 TIME_WAIT 就调 tcp_tw_reuse', '不分主动关闭方角色'],
+    expectedEvidence: '连接角色判断、短连接成因、应用层改造优先于内核参数',
+    followupPrompts: ['TIME_WAIT 由主动关闭方还是被动方产生？', '长连接为什么能缓解？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d03',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.linux-network',
+    knowledgePoint: '网络连通性排查',
+    techStack: '',
+    content: '应用报「连接下游超时」，但同机 curl 下游端口是通的，你的排查顺序是什么？',
+    purpose: '验证分层排查（DNS/连接池/超时配置/iptables）的完整链路',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['只查网络层不查应用连接池', '忽略 conntrack 表满'],
+    expectedEvidence: '逐层假设与验证（DNS 缓存、连接池上限、nf_conntrack 计数）',
+    followupPrompts: ['conntrack 满会有什么现象？', '连接池耗尽和网络超时怎么区分？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d04',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.web-middleware',
+    knowledgePoint: 'Nginx 反向代理',
+    techStack: '',
+    content: 'proxy_pass 与 upstream 配置里，什么情况下请求会打到与预期不一致的节点？',
+    purpose: '验证对负载均衡策略与 DNS 解析时机的理解',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['以为 upstream 域名会随 DNS 动态更新', '忽略 keepalive 复用旧连接'],
+    expectedEvidence: '解析时机、负载策略、健康检查配置三者的关系',
+    followupPrompts: ['Nginx 默认会重新解析 upstream 域名吗？', '健康检查怎么配才可靠？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d05',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.container-orch',
+    knowledgePoint: 'Pod 探针配置',
+    techStack: '',
+    content: '滚动更新时服务出现短暂 502，结合探针配置说说可能的原因与改法。',
+    purpose: '验证对就绪/存活探针与发布流程交互的理解',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['把存活探针当就绪探针用', '探针延迟阈值拍脑袋设置'],
+    expectedEvidence: '探针类型职责区分、优雅停机（preStop/drain）与探针配合',
+    followupPrompts: ['liveness 误杀会表现成什么？', 'preStop 里一般做什么？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d06',
+    abilityDomain: 'knowledge',
+    subAbility: 'knowledge.container-orch',
+    knowledgePoint: '有状态服务上 K8s',
+    techStack: '',
+    content: '把一套主从架构的数据库迁到 K8s，你需要解决哪些问题？哪些你会选择不上 K8s？',
+    purpose: '验证对有状态服务与编排平台边界的判断',
+    difficulty: 'senior',
+    type: 'design',
+    misconceptions: ['认为一切皆可容器化', '忽略存储、网络标识、故障域'],
+    expectedEvidence: '存储卷/调度约束/备份策略的取舍，及「不上」的判断依据',
+    followupPrompts: ['LocalPV 和网络存储怎么选？', '主从切换依赖什么能力？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+
+  // 运维 · 工程能力
+  {
+    id: 'q-d07',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.project-contribution',
+    knowledgePoint: 'CI/CD 体系搭建',
+    techStack: '',
+    content: '讲一个你从零搭建或深度改造 CI/CD 流水线的项目：你负责哪部分，量化收益是什么？',
+    purpose: '验证项目深度与个人贡献边界',
+    difficulty: 'mid',
+    type: 'project',
+    misconceptions: ['把团队流水线说成个人成果', '给不出构建时长/发布频率等量化'],
+    expectedEvidence: '改造前后指标对比、个人决策点、踩坑与修正',
+    followupPrompts: ['流水线失败率怎么降的？', '哪些环节是你拍板改的？'],
+    resumeRisk: true,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d08',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.project-contribution',
+    knowledgePoint: '大规模基础设施治理',
+    techStack: '',
+    content: '说一个你主导的多集群/多机房基础设施治理项目，约束是什么，你如何拆解？',
+    purpose: '验证大规模场景下的架构与推进能力',
+    difficulty: 'senior',
+    type: 'project',
+    misconceptions: ['只讲架构图不讲迁移路径', '无回滚预案'],
+    expectedEvidence: '分批迁移策略、灰度验证、回滚预案、量化结果',
+    followupPrompts: ['迁移中出过什么问题？', '怎么发现和纠正的？'],
+    resumeRisk: true,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d09',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.release-pipeline',
+    knowledgePoint: '回滚设计',
+    techStack: '',
+    content: '一次发布发现异常要回滚，回滚本身可能带来哪些风险？怎么避免？',
+    purpose: '验证回滚不是「无脑还原」的意识',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['忽略数据库逆向兼容', '忽略缓存与配置回滚'],
+    expectedEvidence: '前向兼容设计（新旧版本共存）、数据迁移可逆性',
+    followupPrompts: ['发版和数据库变更怎么解耦？', '灰度期间两个版本怎么共存？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d10',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.release-pipeline',
+    knowledgePoint: '发布策略选型',
+    techStack: '',
+    content: '一个核心服务的重大版本上线，你会怎么设计发布与观察方案？',
+    purpose: '验证灰度/监控/中止标准的完整设计能力',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['只有方案没有观察指标', '无明确中止标准'],
+    expectedEvidence: '灰度比例节奏、核心指标看板、中止阈值与责任人',
+    followupPrompts: ['灰度 5% 时错误率略升但未达阈值，你怎么决策？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d11',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.infra-as-code',
+    knowledgePoint: 'IaC 漂移处理',
+    techStack: '',
+    content: '线上有人手工改了安全组，与 Terraform 状态不一致，你怎么处理这次漂移？',
+    purpose: '验证 IaC 纪律与应急的平衡',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['直接 terraform apply 覆盖', '或永远放任手工变更'],
+    expectedEvidence: '先确认变更意图，再决定吸收进代码还是回滚，并堵流程口子',
+    followupPrompts: ['怎么防止再次发生？', 'state 文件的管理与锁你怎么做？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d12',
+    abilityDomain: 'engineering',
+    subAbility: 'engineering.infra-as-code',
+    knowledgePoint: 'IaC 体系设计',
+    techStack: '',
+    content:
+      '为多环境（开发/预发/生产）设计一套 Terraform 仓库结构与权限模型，说说你的设计与理由。',
+    purpose: '验证基础设施代码化的体系设计能力',
+    difficulty: 'senior',
+    type: 'design',
+    misconceptions: ['单仓大泥球', '环境差异靠复制粘贴', '权限不分层'],
+    expectedEvidence: '模块复用、状态隔离、审批分级、密钥管理的完整设计',
+    followupPrompts: ['模块版本怎么管理？', '生产 apply 的审批链怎么设计？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+
+  // 运维 · 系统设计
+  {
+    id: 'q-d13',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.incident-triage',
+    knowledgePoint: '磁盘空间告警应急',
+    techStack: '',
+    content: '凌晨收到磁盘 95% 告警，磁盘上日志正以每分钟数百 MB 增长，你的应急与善后步骤是什么？',
+    purpose: '验证应急止血与根因治理的分层意识',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['只删日志不停增长源', '删除正在写入的文件不解锁空间'],
+    expectedEvidence: '止血（限流/轮转/清理）→定位增长源→根因治理的完整链路',
+    followupPrompts: ['已删除但空间未释放是什么原因？', '怎么找到持有句柄的进程？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d14',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.incident-triage',
+    knowledgePoint: '区域性抖动定位',
+    techStack: '',
+    content: '高峰期接口 P99 周期性抖动，各项资源指标看起来都不高，你怎么定位？',
+    purpose: '验证在指标「都正常」时的假设生成能力（GC/竞争/定点任务/邻居噪音）',
+    difficulty: 'senior',
+    type: 'scenario',
+    misconceptions: ['只盯 CPU 内存', '忽略定时任务与相邻服务干扰'],
+    expectedEvidence: '按周期对齐时间线、逐项假设与证伪、最终定位手段',
+    followupPrompts: ['怎么区分是本服务 GC 还是宿主机邻居干扰？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d15',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.capacity-slo',
+    knowledgePoint: 'SLI/SLO/错误预算',
+    techStack: '',
+    content: '用你自己的话解释 SLO 和错误预算，它们如何影响发布决策？',
+    purpose: '验证可靠性语言体系的真实理解',
+    difficulty: 'junior',
+    type: 'concept',
+    misconceptions: ['把 SLA/SLO/SLI 混用', '不知道错误预算耗尽后的发布约束'],
+    expectedEvidence: '三者关系准确 + 与发布/变更节奏的联动',
+    followupPrompts: ['错误预算快耗尽时，团队应该把精力放在哪？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d16',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.capacity-slo',
+    knowledgePoint: '容量规划',
+    techStack: '',
+    content: '大促流量预估是日常 5 倍，给一个无状态服务做容量方案，你的推导过程是什么？',
+    purpose: '验证从单实例容量到集群方案的量化推导',
+    difficulty: 'mid',
+    type: 'design',
+    misconceptions: ['直接「扩 5 倍」', '忽略依赖服务与非线性瓶颈'],
+    expectedEvidence: '压测基线、瓶颈识别（连接数/带宽/下游配额）、余量设计',
+    followupPrompts: ['压测发现下游数据库先到瓶颈，方案怎么变？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d17',
+    abilityDomain: 'analysis',
+    subAbility: 'analysis.incident-triage',
+    knowledgePoint: '跨层故障定位',
+    techStack: '',
+    content: '容器频繁 OOMKilled，但应用日志看不到内存异常，你怎么定位？',
+    purpose: '验证容器内存模型（limit/实际占用/堆外内存）的综合理解',
+    difficulty: 'senior',
+    type: 'scenario',
+    misconceptions: ['无脑调大 limit', '不知道堆外内存与 page cache 计入口径'],
+    expectedEvidence: 'limit 与各内存口径对账、监控指标补齐、根因修正',
+    followupPrompts: ['JVM 容器化有哪些经典内存陷阱？', '怎么让 OOM 可复盘？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+
+  // 运维 · 沟通表达
+  {
+    id: 'q-d18',
+    abilityDomain: 'communication',
+    subAbility: 'communication.incident-comms',
+    knowledgePoint: '事故通告',
+    techStack: '',
+    content: '一次影响下单流程的 P1 事故中你是应急指挥，你的通告节奏和信息结构是什么？',
+    purpose: '验证事故沟通的结构化能力',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['通告无节奏（想起来才发）', '信息里只有情绪没有事实'],
+    expectedEvidence: '固定周期通告、影响面/进展/下一步三要素、升级路径',
+    followupPrompts: ['定位到根因前，对外口径怎么说？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d19',
+    abilityDomain: 'communication',
+    subAbility: 'communication.incident-comms',
+    knowledgePoint: '跨团队拉齐',
+    techStack: '',
+    content: '讲一次你需要两个团队配合才能恢复服务的经历，你是怎么组织的？',
+    purpose: '验证非职权协调能力',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['只描述自己做了什么，说不清怎么带动别人'],
+    expectedEvidence: '任务拆分、信息同步机制、卡点升级',
+    followupPrompts: ['如果对方团队响应慢，你怎么办？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d20',
+    abilityDomain: 'communication',
+    subAbility: 'communication.postmortem',
+    knowledgePoint: '复盘方法',
+    techStack: '',
+    content: '讲一次你写的复盘推动了真实改进的经历，改进项是怎么落地的？',
+    purpose: '验证复盘不是模板填空，而是推动机制改进',
+    difficulty: 'mid',
+    type: 'behavioral',
+    misconceptions: ['改进项是「加强意识」类空话', '无跟踪闭环'],
+    expectedEvidence: '根因到机制（流程/工具/监控）的转化、改进项验收',
+    followupPrompts: ['怎么证明改进项真的生效了？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d21',
+    abilityDomain: 'communication',
+    subAbility: 'communication.postmortem',
+    knowledgePoint: '无责复盘文化',
+    techStack: '',
+    content: '复盘时发现根因是某个同事的误操作，你怎么组织这场复盘？',
+    purpose: '验证对无责文化（对事不对人、归因到系统）的理解与实践',
+    difficulty: 'senior',
+    type: 'behavioral',
+    misconceptions: ['点名追责', '或完全回避人的因素导致机制问题被掩盖'],
+    expectedEvidence: '把误操作转化为系统问题（为何单人可绕过防护）并落地防护',
+    followupPrompts: ['如果操作者本人情绪很大，你怎么处理？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+
+  // 运维 · 学习与复盘
+  {
+    id: 'q-d22',
+    abilityDomain: 'learning',
+    subAbility: 'learning.tool-adoption',
+    knowledgePoint: '新技术上手',
+    techStack: '',
+    content: '最近半年你系统学习了什么新工具或平台？学习路径和产出是什么？',
+    purpose: '验证学习方法的可复用性',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['只列名词没有路径', '学习无产出沉淀'],
+    expectedEvidence: '具体学习路径（文档/实验/生产验证）与可验证产出',
+    followupPrompts: ['你怎么判断一个新工具值得投入学习？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+  {
+    id: 'q-d23',
+    abilityDomain: 'learning',
+    subAbility: 'learning.tool-adoption',
+    knowledgePoint: '技术迁移',
+    techStack: '',
+    content:
+      '把你在 A 工具上积累的运维方法迁移到 B 工具（如从虚拟机迁到 K8s），哪些经验能复用，哪些必须重建？',
+    purpose: '验证经验迁移的判断力，避免刻舟求剑',
+    difficulty: 'mid',
+    type: 'scenario',
+    misconceptions: ['认为经验全部通用', '或全部推倒重来'],
+    expectedEvidence: '方法论层（监控/变更/应急）与实现层的区分',
+    followupPrompts: ['迁移过程中最容易想当然的是什么？'],
+    resumeRisk: false,
+    positionId: 'devops'
+  } as QuestionItem,
+
+  // 运维 · 职业动机
+  {
+    id: 'q-d24',
+    abilityDomain: 'motivation',
+    subAbility: 'motivation.career-drive',
+    knowledgePoint: '职业选择',
+    techStack: '',
+    content: '你为什么选择做运维/稳定性方向？未来两年想在哪个具体能力上变强？',
+    purpose: '验证动机具体性与自我认知',
+    difficulty: 'junior',
+    type: 'behavioral',
+    misconceptions: ['「喜欢折腾服务器」类空泛表述', '目标与现状脱节'],
+    expectedEvidence: '与真实经历自洽的动因 + 可验证的能力目标',
+    followupPrompts: ['为此你已经在做什么？'],
+    resumeRisk: false,
+    positionId: 'devops'
   } as QuestionItem,
 
   // ---------- 前端岗位题库（P0-2.3 题库与岗位补齐，岗位隔离展示） ----------
@@ -401,6 +825,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '任务队列、渲染时机、实际场景',
     followupPrompts: ['如果这个任务改成 requestAnimationFrame 会有什么不同？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -416,6 +841,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '指标定义、瓶颈定位、优化与回测',
     followupPrompts: ['优化前后 FCP 和 LCP 各是多少？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -431,6 +857,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '选型依据、机制说明、性能权衡',
     followupPrompts: ['如果列表渲染大量数据，你会做哪些优化？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
 
@@ -448,6 +875,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '拆包策略、缓存方案、体积/加载指标',
     followupPrompts: ['优化后首包体积和加载耗时是多少？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -463,6 +891,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '测试类型、覆盖重点、实际案例',
     followupPrompts: ['哪类逻辑你们最优先覆盖测试？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
 
@@ -480,6 +909,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '约束、备选方案（直出/SSR/静态化）、取舍',
     followupPrompts: ['如果团队没有 Node 服务，方案会怎么变？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -495,6 +925,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '采样、复现、假设、验证的分层路径',
     followupPrompts: ['如果只有特定机型出现，你会怎么缩小范围？'],
     resumeRisk: true,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
 
@@ -512,6 +943,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '背景、行动、结果、反思',
     followupPrompts: ['推进过程中遇到阻力了吗？怎么说服的？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -527,6 +959,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '冲突点、沟通方式、结果与反思',
     followupPrompts: ['如果重来一次，哪个环节会做得不同？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
 
@@ -544,6 +977,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '失败案例、纠偏动作、成长路径',
     followupPrompts: ['这个教训后来在哪个场景避免了重蹈覆辙？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -559,6 +993,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '学习路径、实践产出',
     followupPrompts: ['学完后在项目里用上了吗？效果如何？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
 
@@ -576,6 +1011,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '目标与岗位的一致性',
     followupPrompts: ['你了解我们这个前端岗位的日常工作吗？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem,
   {
@@ -591,6 +1027,7 @@ export const QUESTION_BANK: QuestionItem[] = [
     expectedEvidence: '方向、理由、计划与已有行动',
     followupPrompts: ['这个方向上你已经做了哪些投入？'],
     resumeRisk: false,
+    techStack: '',
     positionId: 'frontend'
   } as QuestionItem
 ]
@@ -609,6 +1046,7 @@ export const WRAPUP_QUESTION: QuestionItem = {
   expectedEvidence: '自我评估的准确性',
   followupPrompts: [],
   resumeRisk: false,
+  techStack: '',
   positionId: 'backend'
 } as QuestionItem
 
@@ -626,12 +1064,32 @@ export const FRONTEND_WRAPUP_QUESTION: QuestionItem = {
   expectedEvidence: '自我评估的准确性',
   followupPrompts: [],
   resumeRisk: false,
+  techStack: '',
   positionId: 'frontend'
+} as QuestionItem
+
+// 运维岗位收束题（2026-10-18 批次 A：岗位化收束，与 backend/frontend 同构）
+export const DEVOPS_WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup-devops',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  techStack: '',
+  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  positionId: 'devops'
 } as QuestionItem
 
 // 按岗位取收束题（选择器收束阶段使用；未覆盖岗位回退 Java 收束题）
 export function getWrapupForPosition(positionId: PositionId): QuestionItem {
   if (positionId === 'frontend') return FRONTEND_WRAPUP_QUESTION
+  if (positionId === 'devops') return DEVOPS_WRAPUP_QUESTION
   return WRAPUP_QUESTION
 }
 

@@ -134,3 +134,29 @@ CREATE TABLE IF NOT EXISTS tracking_events (
   PRIMARY KEY (id),
   UNIQUE KEY uk_tracking_dedupe (event, user_id_n, session_id_n, client_ts_n)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- 第 10 表：内容库题目（2026-10-18 批次 A）
+-- 源：桌面库 mentorloop.interview_questions（同实例只读）→ 同步脚本预计算后幂等 upsert 本表；
+-- 出题直查本表，与桌面库解耦。列定义与 server/src/schema.sql 同结构。
+CREATE TABLE IF NOT EXISTS questions (
+  id              VARCHAR(64)  NOT NULL COMMENT '源 id（bq37/aq44…）',
+  position_id     VARCHAR(16)  NOT NULL COMMENT '适配：track（frontend/backend/devops/ai）',
+  track           VARCHAR(64)  NOT NULL COMMENT '源 track（保留追溯）',
+  subtrack        VARCHAR(64)  NULL COMMENT '源 subtrack（作 subAbility）',
+  difficulty      VARCHAR(16)  NOT NULL COMMENT '适配：easy/medium/hard → junior/mid/senior',
+  ability_domain  VARCHAR(32)  NOT NULL COMMENT '预计算：六维（dimension-classifier 输出）',
+  content         TEXT         NOT NULL COMMENT '预计算：题面生成后的问句',
+  content_raw     TEXT         NULL COMMENT '源 q（保留原标题）',
+  evidence        MEDIUMTEXT   NULL COMMENT '源 a（摘要化截断）',
+  knowledge_point VARCHAR(255) NULL,
+  keywords        TEXT         NULL COMMENT '源 keywords（JSON 串，供分类追溯）',
+  tech_token      VARCHAR(64)  NULL COMMENT '预计算：tech 中文名 → 词表 id（无对照 ''）',
+  weight          INT          NOT NULL DEFAULT 3,
+  q_type          VARCHAR(32)  NULL COMMENT '源 type（hot/special）',
+  license         VARCHAR(64)  NULL COMMENT '源（默认不过滤，保留合规审计）',
+  synced_at       BIGINT       NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_questions_position_difficulty (position_id, difficulty),
+  KEY idx_questions_position_domain (position_id, ability_domain),
+  KEY idx_questions_position_subtrack (position_id, subtrack)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

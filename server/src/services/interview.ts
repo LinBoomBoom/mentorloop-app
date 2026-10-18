@@ -2,7 +2,7 @@
 import { Db } from '../db.js'
 import { newId, now } from '../util.js'
 import { selectNext, SelectorInput, getModeBudget } from '../rules/question-selector.js'
-import { getQuestionById } from '../data/question-bank.js'
+import { loadCandidates, findQuestionById } from './content-bank.js'
 import {
   PositionBlueprint,
   QuestionItem,
@@ -62,15 +62,15 @@ async function getSession(
   return row != null ? (row as any) : null
 }
 
-// 该会话已出过的题目（出题即记录，去重；收束题不在 QUESTION_BANK，
-// 还原失败时以仅含 id 的最小桩参与去重）
+// 该会话已出过的题目（出题即记录，去重；收束题不在内容库，
+// 回查失败时以仅含 id 的最小桩参与去重）
 async function askedQuestions(db: Db, sessionId: string): Promise<QuestionItem[]> {
   const rows = (await db
     .prepare('SELECT question_id FROM session_asked WHERE session_id = ?')
     .all(sessionId)) as { question_id: string }[]
   const out: QuestionItem[] = []
   for (const r of rows) {
-    const q = getQuestionById(r.question_id)
+    const q = await findQuestionById(db, r.question_id)
     if (q != null) {
       out.push(q)
     } else {
@@ -87,7 +87,8 @@ async function askedQuestions(db: Db, sessionId: string): Promise<QuestionItem[]
         misconceptions: [],
         expectedEvidence: '',
         followupPrompts: [],
-        resumeRisk: false
+        resumeRisk: false,
+        techStack: ''
       } as QuestionItem)
     }
   }
@@ -100,6 +101,7 @@ export type NextQuestionParams = {
   askedComma: string // 客户端已答题 id（逗号串，作为参考，权威以服务端为准）
   remainSeconds: number
   resumeRiskTopicsComma: string
+  resumeTechStacksComma: string
 }
 
 export async function nextQuestion(
@@ -134,6 +136,10 @@ export async function nextQuestion(
     p.remainSeconds > 0 ? p.remainSeconds : budget.totalSeconds - asked.length * 150
   const topics =
     p.resumeRiskTopicsComma.length > 0 ? p.resumeRiskTopicsComma.split(',') : DEFAULT_TOPICS
+  // 简历技术栈（2026-10-18 契约冻结）：空数组=不过滤（现状兼容）；非空=非通用题须命中栈
+  const stacks = p.resumeTechStacksComma.length > 0 ? p.resumeTechStacksComma.split(',') : []
+  // 候选池：内容库本方向预取（批次 A：出题数据源切换为云端内容库）
+  const candidates = await loadCandidates(db, session.position_id)
 
   const input: SelectorInput = {
     blueprint,
@@ -141,8 +147,10 @@ export async function nextQuestion(
     asked,
     remainSeconds,
     resumeRiskTopics: topics,
+    resumeTechStacks: stacks,
     focusDomain: '',
-    maxQuestions: 0
+    maxQuestions: 0,
+    candidates
   }
   const out = selectNext(input)
   if (out == null) throw new Error('NO_MORE_QUESTIONS')

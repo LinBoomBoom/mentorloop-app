@@ -47,6 +47,7 @@ export type QuestionItem = {
   expectedEvidence: string
   followupPrompts: string[]
   resumeRisk: boolean
+  techStack: string // 技术栈标签（2026-10-18 契约冻结）：''=通用题；'java'/'go' 等绑定栈；选题器按简历栈过滤（docs/contracts/2026-10-18-question-techstack.freeze.md）
 }
 
 export type TranscriptEntry = {

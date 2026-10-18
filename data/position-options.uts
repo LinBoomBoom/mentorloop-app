@@ -18,7 +18,7 @@ export type ExperienceOption = {
 export const POSITION_OPTIONS: PositionOption[] = [
   { id: 'frontend', name: '前端', available: true } as PositionOption,
   { id: 'backend', name: '后端', available: true } as PositionOption,
-  { id: 'devops', name: '运维', available: false } as PositionOption,
+  { id: 'devops', name: '运维', available: true } as PositionOption, // 2026-10-18 批次 A：24 题入库（docs/drafts/2026-10-18-devops-content-draft.md 审核通过）
   { id: 'ai', name: 'AI 工程', available: false } as PositionOption
 ]
 

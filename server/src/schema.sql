@@ -111,3 +111,28 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_user ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_resumes_user ON resumes(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+
+-- 内容库题目表（2026-10-18 批次 A：出题数据源由代码常量题库切换为云端内容库）
+-- 源：桌面库 mentorloop.interview_questions（只读）→ 同步脚本预计算后落本库；出题直查本库。
+-- 本地 SQLite 由 fixture 灌入同结构（scripts/export-content-fixture.mjs）。
+CREATE TABLE IF NOT EXISTS questions (
+  id              TEXT PRIMARY KEY,                  -- 源 id（bq37/aq44…）
+  position_id     TEXT NOT NULL,                     -- 适配：track（frontend/backend/devops/ai）
+  track           TEXT NOT NULL,                     -- 源 track（保留追溯）
+  subtrack        TEXT,                              -- 源 subtrack（作 subAbility）
+  difficulty      TEXT NOT NULL,                     -- 适配：easy/medium/hard → junior/mid/senior
+  ability_domain  TEXT NOT NULL,                     -- 预计算：六维（dimension-classifier 输出）
+  content         TEXT NOT NULL,                     -- 预计算：题面生成后的问句
+  content_raw     TEXT,                              -- 源 q（保留原标题）
+  evidence        TEXT,                              -- 源 a（摘要化截断）
+  knowledge_point TEXT,
+  keywords        TEXT,                              -- 源 keywords（JSON 串，供分类追溯）
+  tech_token      TEXT,                              -- 预计算：tech 中文名 → 词表 id（无对照 ''）
+  weight          INTEGER NOT NULL DEFAULT 3,
+  q_type          TEXT,                              -- 源 type（hot/special）
+  license         TEXT,                              -- 源（默认不过滤，保留合规审计）
+  synced_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_questions_position_difficulty ON questions(position_id, difficulty);
+CREATE INDEX IF NOT EXISTS idx_questions_position_domain ON questions(position_id, ability_domain);
+CREATE INDEX IF NOT EXISTS idx_questions_position_subtrack ON questions(position_id, subtrack);

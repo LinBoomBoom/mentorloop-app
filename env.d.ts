@@ -15,6 +15,7 @@ declare module '*.uts' {
   export function selectNext(...args: any[]): any
   export function getModeBudget(...args: any[]): any
   export type SelectorInput = any
+  export type SelectorOutput = any
   // engine/followup-engine
   export function decideFollowup(...args: any[]): any
   export type AnswerSignal = any
@@ -26,6 +27,15 @@ declare module '*.uts' {
   // engine/rephrase（房间「换一种说法」）
   export function rephraseQuestion(...args: any[]): any
   export type RephraseInput = any
+  // engine/dimension-classifier（批次 A 六维分类，双端镜像）
+  export function classifyDimension(...args: any[]): any
+  export type DimensionInput = any
+  // engine/question-phrasing（批次 A 题面生成，双端镜像）
+  export function phraseQuestion(...args: any[]): any
+  // data/dimension-rules（批次 A）
+  export const DIMENSION_RULES: any[]
+  export const SUBTRACK_DOMAIN: any
+  export const DOMAIN_LABEL: any
   // engine/scorer
   export function scoreInterview(...args: any[]): any
   // store/interview-session

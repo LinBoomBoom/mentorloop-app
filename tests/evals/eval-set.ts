@@ -100,6 +100,7 @@ export const EVAL_CASES: EvalCase[] = [
     askedIds: [],
     remainSeconds: 1200,
     resumeRiskTopics: [],
+    resumeTechStacks: [],
     focusDomain: '',
     maxQuestions: 0,
     expect: {
@@ -118,6 +119,7 @@ export const EVAL_CASES: EvalCase[] = [
     askedIds: [],
     remainSeconds: 60,
     resumeRiskTopics: [],
+    resumeTechStacks: [],
     focusDomain: '',
     maxQuestions: 0,
     expect: { notNull: true, isWrapup: true }
@@ -131,6 +133,7 @@ export const EVAL_CASES: EvalCase[] = [
     askedIds: ['q-k01'],
     remainSeconds: 9999,
     resumeRiskTopics: [],
+    resumeTechStacks: [],
     focusDomain: '',
     maxQuestions: 1,
     expect: { notNull: true, isWrapup: true }
@@ -144,6 +147,7 @@ export const EVAL_CASES: EvalCase[] = [
     askedIds: [],
     remainSeconds: 9999,
     resumeRiskTopics: [],
+    resumeTechStacks: [],
     focusDomain: 'analysis',
     maxQuestions: 0,
     expect: { notNull: true, isWrapup: false, questionAbilityDomain: 'analysis' }
@@ -157,6 +161,7 @@ export const EVAL_CASES: EvalCase[] = [
     askedIds: [],
     remainSeconds: 9999,
     resumeRiskTopics: [],
+    resumeTechStacks: [],
     focusDomain: '',
     maxQuestions: 0,
     expect: { notNull: true, isWrapup: false, questionPositionId: 'frontend' }

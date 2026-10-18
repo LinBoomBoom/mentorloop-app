@@ -60,7 +60,8 @@ export default async function (app: FastifyInstance): Promise<void> {
             experienceLevel: { type: 'string' },
             asked: { type: 'string' },
             remainSeconds: { type: 'number' },
-            resumeRiskTopics: { type: 'string' }
+            resumeRiskTopics: { type: 'string' },
+            resumeTechStacks: { type: 'string' }
           }
         }
       }
@@ -74,7 +75,8 @@ export default async function (app: FastifyInstance): Promise<void> {
           mode: q.mode ?? 'standard',
           askedComma: q.asked ?? '',
           remainSeconds: typeof q.remainSeconds === 'number' ? q.remainSeconds : 0,
-          resumeRiskTopicsComma: q.resumeRiskTopics ?? ''
+          resumeRiskTopicsComma: q.resumeRiskTopics ?? '',
+          resumeTechStacksComma: q.resumeTechStacks ?? ''
         })
         return okData(question)
       } catch (e: any) {

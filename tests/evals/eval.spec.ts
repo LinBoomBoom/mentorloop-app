@@ -26,8 +26,10 @@ function runSelection(c: EvalCase) {
     asked: (c.askedIds ?? []).map(questionById),
     remainSeconds: c.remainSeconds ?? 0,
     resumeRiskTopics: c.resumeRiskTopics ?? [],
+    resumeTechStacks: c.resumeTechStacks ?? [],
     focusDomain: c.focusDomain ?? '',
-    maxQuestions: c.maxQuestions ?? 0
+    maxQuestions: c.maxQuestions ?? 0,
+    candidates: QUESTION_BANK
   } as SelectorInput
   return selectNext(input)
 }

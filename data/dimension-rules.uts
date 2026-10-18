@@ -1,0 +1,147 @@
+// 六维能力域分类规则表（客户端镜像，与 server/src/data/dimension-rules.ts 逐字一致）
+// 用途：内容库适配层把云题归入现有六维报告体系（knowledge/engineering/analysis/
+// communication/learning/motivation），保持报告与评分体系不变。
+// 规则：关键词命中打分（多者取胜，同分按本表顺序＝优先级）→ subtrack 兜底 → knowledge。
+
+export type DimensionRule = {
+  domain: string
+  keywords: string[]
+}
+
+// 顺序即同分优先级：analysis > engineering > knowledge > learning > communication > motivation
+export const DIMENSION_RULES: DimensionRule[] = [
+  {
+    domain: 'analysis',
+    keywords: [
+      '架构',
+      '设计',
+      '选型',
+      '权衡',
+      '取舍',
+      '容量',
+      '高可用',
+      '可用性',
+      '扩展',
+      '一致',
+      '分布式',
+      '系统',
+      '方案',
+      '限流',
+      '降级',
+      '熔断',
+      '容灾',
+      '容错',
+      '分库分表',
+      '分片',
+      '负载均衡',
+      '幂等',
+      '事务',
+      '隔离级别',
+      '并发控制',
+      '缓存策略',
+      '故障恢复',
+      '边界'
+    ]
+  },
+  {
+    domain: 'engineering',
+    keywords: [
+      '工程化',
+      '流程',
+      '规范',
+      '测试',
+      '单测',
+      '集成',
+      '持续集成',
+      '持续交付',
+      'CI/CD',
+      '构建',
+      '发布',
+      '部署',
+      '监控',
+      '告警',
+      '日志',
+      '排查',
+      '定位',
+      '重构',
+      '优化',
+      '调优',
+      '评审',
+      '协作',
+      '自动化',
+      '脚本',
+      '工具链',
+      '性能',
+      '瓶颈',
+      '流水线',
+      '灰度',
+      '回滚'
+    ]
+  },
+  {
+    domain: 'knowledge',
+    keywords: [
+      '原理',
+      '机制',
+      '底层',
+      '实现',
+      '概念',
+      '基础',
+      '区别',
+      '对比',
+      '参数',
+      '配置',
+      '组成',
+      '结构',
+      '算法',
+      '模型',
+      '定义',
+      '特性',
+      '作用',
+      '语法',
+      '协议',
+      '标准',
+      '类型',
+      '生命周期',
+      '内存',
+      '线程',
+      '进程',
+      '索引',
+      '存储',
+      '网络'
+    ]
+  },
+  {
+    domain: 'learning',
+    keywords: ['学习', '成长', '复盘', '总结', '沉淀', '方法论', '迁移', '反思', '提升路径']
+  },
+  {
+    domain: 'communication',
+    keywords: ['沟通', '表达', '推动', '汇报', '对齐', '演讲', '谈判']
+  },
+  {
+    domain: 'motivation',
+    keywords: ['动机', '职业', '规划', '为什么', '选择', '意愿', '目标岗位', '离职']
+  }
+]
+
+// 关键词规则全未命中时的赛道归属兜底
+export const SUBTRACK_DOMAIN: Record<string, string> = {
+  'fe-arch': 'analysis',
+  'be-micro': 'analysis',
+  'op-k8s': 'engineering',
+  'op-sre': 'engineering',
+  'op-devops': 'engineering',
+  'op-sec': 'engineering',
+  'op-trad': 'engineering',
+  'op-cloud': 'engineering'
+}
+
+export const DOMAIN_LABEL: Record<string, string> = {
+  knowledge: '基础知识',
+  engineering: '工程能力',
+  analysis: '系统设计',
+  communication: '沟通表达',
+  learning: '学习与复盘',
+  motivation: '职业动机'
+}

@@ -9,6 +9,7 @@ import {
   PositionBlueprint
 } from '../../types/interview.uts'
 import { selectNext, getModeBudget, SelectorInput } from '../../engine/question-selector.uts'
+import { QUESTION_BANK } from '../../data/question-bank.uts'
 
 export function mockCreateSession(_position: string): Promise<SessionRef> {
   return Promise.resolve({ sessionId: 'mock-' + Date.now() } as SessionRef)
@@ -37,8 +38,10 @@ export function mockNextQuestion(
     asked: asked,
     remainSeconds: remainSeconds,
     resumeRiskTopics: DEFAULT_RESUME_TOPICS,
+    resumeTechStacks: [], // mock 无简历栈数据：不过滤（现状兼容）
     focusDomain: '',
-    maxQuestions: 0
+    maxQuestions: 0,
+    candidates: QUESTION_BANK // mock 无后端：候选池用本地代码题库
   } as SelectorInput
   const out = selectNext(input)
   if (out == null) {

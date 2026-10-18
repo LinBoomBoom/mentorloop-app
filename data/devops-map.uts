@@ -1,0 +1,148 @@
+// 运维（devops）方向能力图谱 v1（2026-10-18 批次 A，任务卡 question-bank-expansion）
+// 人工审核通过：docs/drafts/2026-10-18-devops-content-draft.md（审核人：用户，2026-10-18）
+// 每个岗位由能力域、子能力、可观测行为、题目簇、评分锚点组成；权重对齐评分量表 25/25/20/15/10/5。
+// 变更须经产品与内容审核确认（文档 05 §3）。
+
+export type SubAbility = {
+  id: string
+  name: string
+  observableBehavior: string // 可观测行为：面试官能直接观察到的表现
+  scoringAnchor: string // 评分锚点：达到门槛等级的判断依据
+  questionCluster: string // 题目簇标签（题库按此归类）
+}
+
+export type AbilityDomain = {
+  id: string
+  name: string
+  weight: number // 与评分量表权重对齐（文档 02 §3.4）
+  subAbilities: SubAbility[]
+}
+
+export const DEVOPS_MAP: AbilityDomain[] = [
+  {
+    id: 'knowledge',
+    name: '基础知识',
+    weight: 0.25,
+    subAbilities: [
+      {
+        id: 'knowledge.linux-network',
+        name: 'Linux 与网络',
+        observableBehavior: '能否说出命令背后的原理与验证方式',
+        scoringAnchor: '能结合 /proc、日志或抓包说明排查依据，而非只报命令名',
+        questionCluster: 'linux-network'
+      } as SubAbility,
+      {
+        id: 'knowledge.web-middleware',
+        name: 'Web 服务与中间件运维',
+        observableBehavior: '能否说明 Nginx/网关/消息队列的配置语义与失效模式',
+        scoringAnchor: '能指出典型错误配置的后果与验证方法',
+        questionCluster: 'web-middleware'
+      } as SubAbility,
+      {
+        id: 'knowledge.container-orch',
+        name: '容器与编排',
+        observableBehavior: '能否说明容器化与 K8s 核心对象的适用边界',
+        scoringAnchor: '能说明 Pod/Service/探针等对象在生产配置中的取舍',
+        questionCluster: 'container-orch'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'engineering',
+    name: '工程能力',
+    weight: 0.25,
+    subAbilities: [
+      {
+        id: 'engineering.project-contribution',
+        name: '项目个人贡献',
+        observableBehavior: '能否区分团队成果与个人决策',
+        scoringAnchor: '能明确个人负责模块、决策依据与量化结果',
+        questionCluster: 'project-contribution'
+      } as SubAbility,
+      {
+        id: 'engineering.release-pipeline',
+        name: '变更管理与发布',
+        observableBehavior: '能否说明发布流程中的个人实践',
+        scoringAnchor: '能举出 CI/CD、灰度、回滚的具体案例与收益',
+        questionCluster: 'release-pipeline'
+      } as SubAbility,
+      {
+        id: 'engineering.infra-as-code',
+        name: '基础设施即代码',
+        observableBehavior: '能否说明 IaC 的版本管理与变更纪律',
+        scoringAnchor: '能说明 Terraform/Ansible 等的评审、漂移处理实践',
+        questionCluster: 'infra-as-code'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'analysis',
+    name: '系统设计',
+    weight: 0.2,
+    subAbilities: [
+      {
+        id: 'analysis.incident-triage',
+        name: '故障定位与应急',
+        observableBehavior: '能否说明现象→指标→假设→验证→结论链路',
+        scoringAnchor: '能完整还原一次故障的定位与恢复过程',
+        questionCluster: 'incident-triage'
+      } as SubAbility,
+      {
+        id: 'analysis.capacity-slo',
+        name: '容量与 SLO 权衡',
+        observableBehavior: '能否说明约束、备选方案与取舍',
+        scoringAnchor: '能先澄清约束，再给备选方案并量化取舍',
+        questionCluster: 'capacity-slo'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'communication',
+    name: '沟通表达',
+    weight: 0.15,
+    subAbilities: [
+      {
+        id: 'communication.incident-comms',
+        name: '事故协同沟通',
+        observableBehavior: '能否在事故中同步信息、组织分工',
+        scoringAnchor: '能说明通告节奏、角色分工与升级路径',
+        questionCluster: 'incident-comms'
+      } as SubAbility,
+      {
+        id: 'communication.postmortem',
+        name: '复盘表达',
+        observableBehavior: '能否区分事实与推断、归因到机制而非个人',
+        scoringAnchor: '能输出时间线、根因链与可执行改进项',
+        questionCluster: 'postmortem'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'learning',
+    name: '学习与复盘',
+    weight: 0.1,
+    subAbilities: [
+      {
+        id: 'learning.tool-adoption',
+        name: '新工具学习与迁移',
+        observableBehavior: '能否说明学习路径与迁移方法',
+        scoringAnchor: '能给出评估新工具的维度与落地案例',
+        questionCluster: 'tool-adoption'
+      } as SubAbility
+    ]
+  } as AbilityDomain,
+  {
+    id: 'motivation',
+    name: '职业动机',
+    weight: 0.05,
+    subAbilities: [
+      {
+        id: 'motivation.career-drive',
+        name: '职业动机',
+        observableBehavior: '能否说明选择运维方向的具体动因',
+        scoringAnchor: '动因具体、与经历自洽，不空泛',
+        questionCluster: 'career-drive'
+      } as SubAbility
+    ]
+  } as AbilityDomain
+]

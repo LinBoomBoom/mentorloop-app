@@ -1,7 +1,12 @@
 // 面试引擎单测：题目选择器 / 追问引擎 / 评分量表 / 会话补传（推进计划 0.4–0.6）
 // 纯逻辑，不依赖 UI / 后端 / uni API。
 import { describe, it, expect } from 'vitest'
-import { selectNext, getModeBudget, SelectorInput } from '../engine/question-selector.uts'
+import {
+  selectNext,
+  getModeBudget,
+  SelectorInput,
+  SelectorOutput
+} from '../engine/question-selector.uts'
 import { decideFollowup, AnswerSignal } from '../engine/followup-engine.uts'
 import { confidenceBand, displayLevel } from '../engine/rubric.uts'
 import { analyzeAnswer } from '../engine/answer-signal.uts'
@@ -35,8 +40,10 @@ function makeInput(
     asked: asked,
     remainSeconds: remainSeconds,
     resumeRiskTopics: topics,
+    resumeTechStacks: [],
     focusDomain: focusDomain,
-    maxQuestions: maxQuestions
+    maxQuestions: maxQuestions,
+    candidates: QUESTION_BANK
   } as SelectorInput
 }
 
@@ -385,8 +392,10 @@ describe('前端岗位选题（P0-2.3 题库与岗位补齐）', () => {
       asked: asked,
       remainSeconds: remainSeconds,
       resumeRiskTopics: [],
+      resumeTechStacks: [],
       focusDomain: '',
-      maxQuestions: 0
+      maxQuestions: 0,
+      candidates: QUESTION_BANK
     } as SelectorInput
   }
 
@@ -474,5 +483,163 @@ describe('换一种说法（rephrase）', () => {
         }
       }
     }
+  })
+})
+
+describe('devops 岗位选题（2026-10-18 批次 A：题库补齐）', () => {
+  const DEVOPS_BLUEPRINT: PositionBlueprint = {
+    positionId: 'devops',
+    position: '运维',
+    experienceLevel: 'junior',
+    experienceRange: '1-3年',
+    companyType: '互联网',
+    language: '中文',
+    target: '求职'
+  } as PositionBlueprint
+
+  function makeDevopsInput(
+    asked: QuestionItem[],
+    stacks: string[] = [],
+    remainSeconds = 1200
+  ): SelectorInput {
+    return {
+      blueprint: DEVOPS_BLUEPRINT,
+      mode: 'standard',
+      asked: asked,
+      remainSeconds: remainSeconds,
+      resumeRiskTopics: [],
+      resumeTechStacks: stacks,
+      focusDomain: '',
+      maxQuestions: 0,
+      candidates: QUESTION_BANK
+    } as SelectorInput
+  }
+
+  it('devops 岗 6 题覆盖 6 个能力域，全部为 devops 岗位且 techStack 为通用', () => {
+    const asked: QuestionItem[] = []
+    const domains = new Set<string>()
+    for (let i = 0; i < 6; i++) {
+      const out = selectNext(makeDevopsInput(asked))
+      expect(out).not.toBeNull()
+      expect(out!.isWrapup).toBe(false)
+      expect(out!.question.positionId).toBe('devops')
+      expect(out!.question.techStack).toBe('')
+      domains.add(out!.question.abilityDomain)
+      asked.push(out!.question)
+    }
+    expect(domains.size).toBe(6)
+  })
+
+  it('devops 岗收束题使用岗位专属收束题', () => {
+    // 达上限（标准模式 7 题）后返回 devops 收束题
+    const asked: QuestionItem[] = []
+    let last: SelectorOutput | null = null
+    for (let i = 0; i < 8; i++) {
+      const out = selectNext(makeDevopsInput(asked))
+      if (out == null) break
+      last = out
+      asked.push(out.question)
+      if (out.isWrapup) break
+    }
+    expect(last).not.toBeNull()
+    expect(last!.isWrapup).toBe(true)
+    expect(last!.question.id).toBe('q-wrapup-devops')
+  })
+
+  it('栈过滤：backend + 简历栈 go → 不抽 Java 专有题（techStack=java 被排除）', () => {
+    const BLUEPRINT: PositionBlueprint = {
+      positionId: 'backend',
+      position: '后端',
+      experienceLevel: 'junior',
+      experienceRange: '1-3年',
+      companyType: '互联网',
+      language: '中文',
+      target: '求职'
+    } as PositionBlueprint
+    const asked: QuestionItem[] = []
+    // junior 档 backend 通用题存在（q-k08 等），不应抽到任何 techStack='java' 的题
+    for (let i = 0; i < 5; i++) {
+      const out = selectNext({
+        blueprint: BLUEPRINT,
+        mode: 'standard',
+        asked: asked,
+        remainSeconds: 1200,
+        resumeRiskTopics: [],
+        resumeTechStacks: ['go'],
+        focusDomain: '',
+        maxQuestions: 0,
+        candidates: QUESTION_BANK
+      } as SelectorInput)
+      expect(out).not.toBeNull()
+      expect(out!.question.techStack).not.toBe('java')
+      asked.push(out!.question)
+    }
+  })
+
+  it('无简历栈（空数组）= 现状全量可抽：backend junior 首题仍可命中 Java 题（行为零变化）', () => {
+    const BLUEPRINT: PositionBlueprint = {
+      positionId: 'backend',
+      position: '后端',
+      experienceLevel: 'junior',
+      experienceRange: '1-3年',
+      companyType: '互联网',
+      language: '中文',
+      target: '求职'
+    } as PositionBlueprint
+    const out = selectNext({
+      blueprint: BLUEPRINT,
+      mode: 'standard',
+      asked: [],
+      remainSeconds: 1200,
+      resumeRiskTopics: [],
+      resumeTechStacks: [],
+      focusDomain: '',
+      maxQuestions: 0,
+      candidates: QUESTION_BANK
+    } as SelectorInput)
+    expect(out).not.toBeNull()
+    // knowledge 域 junior 首题为 q-k04（Java 集合选型），与改造前一致
+    expect(out!.question.id).toBe('q-k04')
+    expect(out!.question.techStack).toBe('java')
+  })
+
+  it('空池回退：简历栈与全库不匹配（python）时仍能出题（链路不中断）', () => {
+    const out = selectNext(makeDevopsInput([], ['python']))
+    // devops 题全部 techStack='' 恒可抽；断言不因栈过滤断链
+    expect(out).not.toBeNull()
+  })
+
+  it('backend + 简历栈 go 且通用题全部问完后，回退层仍能出题（链路不中断）', () => {
+    const BLUEPRINT: PositionBlueprint = {
+      positionId: 'backend',
+      position: '后端',
+      experienceLevel: 'junior',
+      experienceRange: '1-3年',
+      companyType: '互联网',
+      language: '中文',
+      target: '求职'
+    } as PositionBlueprint
+    // 把 backend 全部题（含通用与 java）当作已答之外的极端场景不现实；
+    // 这里验证第三层回退存在：asked 仅含通用题时仍能继续出题（java 题经回退层出现）
+    const generalIds = QUESTION_BANK.filter(
+      (q: QuestionItem) => q.positionId === 'backend' && q.techStack === ''
+    ).map((q: QuestionItem) => q.id)
+    const asked: QuestionItem[] = QUESTION_BANK.filter((q: QuestionItem) =>
+      generalIds.includes(q.id)
+    )
+    const out = selectNext({
+      blueprint: BLUEPRINT,
+      mode: 'standard',
+      asked: asked,
+      remainSeconds: 1200,
+      resumeRiskTopics: [],
+      resumeTechStacks: ['go'],
+      focusDomain: '',
+      maxQuestions: 0,
+      candidates: QUESTION_BANK
+    } as SelectorInput)
+    // 剩余仅 java 题：第三层回退（仅岗位过滤）兜底，不出 null
+    expect(out).not.toBeNull()
+    expect(out!.question.positionId).toBe('backend')
   })
 })

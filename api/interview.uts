@@ -26,7 +26,8 @@ export async function nextQuestion(
   blueprint: PositionBlueprint,
   asked: string[] = [],
   remainSeconds: number = 0,
-  resumeRiskTopics: string[] = []
+  resumeRiskTopics: string[] = [],
+  resumeTechStacks: string[] = []
 ): Promise<QuestionItem> {
   if (useMock()) return await mockNextQuestion(sessionId, mode, blueprint)
   const r = await get('/interview/next', {
@@ -36,7 +37,8 @@ export async function nextQuestion(
     experienceLevel: blueprint.experienceLevel,
     asked: asked.join(','),
     remainSeconds: remainSeconds,
-    resumeRiskTopics: resumeRiskTopics.join(',')
+    resumeRiskTopics: resumeRiskTopics.join(','),
+    resumeTechStacks: resumeTechStacks.join(',')
   })
   return r.data as QuestionItem
 }

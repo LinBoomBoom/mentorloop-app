@@ -1,6 +1,8 @@
 // 题目选择器 v3（文档 02 §3.2 + 岗位方向 / 经验等级个性化 + 专项训练定向）
-// 输入：岗位蓝图、简历风险、已答题目、剩余时间、实时可信度
+// 输入：候选池、岗位蓝图、简历风险、已答题目、剩余时间、实时可信度
 // 输出：下一道题及提问目的
+// 2026-10-18 批次 A：候选池改为调用方注入（服务端来自内容库仓储，客户端 mock/训练来自本地题库），
+// 选择器不再直接依赖代码常量题库；收束题仍为引擎侧固定模板（不进内容库）。
 // 选择规则（v1 原有 5 条 + v2 方向/等级过滤 + v3 训练定向）：
 // 0. 岗位过滤：只抽 positionId 与 blueprint.positionId 匹配的题；
 //    难度过滤：只抽 blueprint.experienceLevel 允许的难度，按档位优先级顺序选题
@@ -18,7 +20,7 @@ import {
   Difficulty,
   ExperienceLevel
 } from '../types/interview.js'
-import { QUESTION_BANK, getWrapupForPosition } from '../data/question-bank.js'
+import { getWrapupForPosition } from '../data/question-bank.js'
 import { getDomainIds } from '../data/domain-ids.js'
 import { DIFFICULTY_PRIORITY, getExperienceOption } from '../data/position-options.js'
 
@@ -28,8 +30,10 @@ export type SelectorInput = {
   asked: QuestionItem[] // 已答题目
   remainSeconds: number // 剩余时间
   resumeRiskTopics: string[] // 简历高价值项目关键词（命中 resumeRisk 题优先）
+  resumeTechStacks: string[] // 简历技术栈（小写；2026-10-18 契约冻结）：空=不过滤（现状兼容）；非空=非通用题须命中栈
   focusDomain: string // '' = 不限维度（正式面试）；非空 = 专项训练定向能力域
   maxQuestions: number // 0 = 使用 mode 预算；>0 = 覆盖（专项训练按任务题量控制）
+  candidates: QuestionItem[] // 候选池（批次 A 注入）：服务端=内容库本方向预取，客户端=mock/训练本地题库
 }
 
 export type SelectorOutput = {
@@ -76,10 +80,22 @@ function difficultyAllowed(diff: Difficulty, level: ExperienceLevel): boolean {
   return false
 }
 
-// 题目是否同时满足"岗位 + 难度"双重过滤
-function eligible(q: QuestionItem, blueprint: PositionBlueprint): boolean {
+// 规则0b-2：题目技术栈是否与简历栈匹配（2026-10-18 契约冻结 docs/contracts/2026-10-18-question-techstack.freeze.md）
+// 通用题（techStack=''）恒可抽；简历栈为空 = 不过滤（现状兼容）；否则非通用题须命中简历栈（大小写不敏感）
+function techStackAllowed(q: QuestionItem, stacks: string[]): boolean {
+  if (q.techStack.length === 0) return true
+  if (stacks.length === 0) return true
+  for (let i = 0; i < stacks.length; i++) {
+    if (stacks[i].toLowerCase() === q.techStack.toLowerCase()) return true
+  }
+  return false
+}
+
+// 题目是否同时满足"岗位 + 难度 + 技术栈"三重过滤
+function eligible(q: QuestionItem, blueprint: PositionBlueprint, stacks: string[]): boolean {
   if (!matchesPosition(q, blueprint)) return false
   if (!difficultyAllowed(q.difficulty, blueprint.experienceLevel)) return false
+  if (!techStackAllowed(q, stacks)) return false
   return true
 }
 
@@ -94,21 +110,28 @@ function coveredDomains(asked: QuestionItem[], blueprint: PositionBlueprint): st
   return domains
 }
 
-// 按档位难度优先级顺序遍历题库，返回第一道符合条件的题
+// 按档位难度优先级顺序遍历候选，返回第一道符合条件的题
+// 三层回退（链路不中断优先，冻结文档 §3）：①岗位+难度+栈 ②放宽难度仍守岗位+栈 ③栈过滤空池时回退仅岗位
 function pickByDifficultyPriority(
   candidates: QuestionItem[],
-  blueprint: PositionBlueprint
+  blueprint: PositionBlueprint,
+  stacks: string[]
 ): QuestionItem | null {
   const order = DIFFICULTY_PRIORITY[blueprint.experienceLevel]
   for (let p = 0; p < order.length; p++) {
     const want = order[p]
     for (let i = 0; i < candidates.length; i++) {
       const q = candidates[i]
-      if (!eligible(q, blueprint)) continue
+      if (!eligible(q, blueprint, stacks)) continue
       if (q.difficulty === want) return q
     }
   }
-  // 白名单内都没有时，放宽到所有难度，保证链路不中断
+  // 难度白名单内都没有时，放宽到所有难度，保证链路不中断
+  for (let i = 0; i < candidates.length; i++) {
+    const q = candidates[i]
+    if (matchesPosition(q, blueprint) && techStackAllowed(q, stacks)) return q
+  }
+  // 技术栈过滤导致候选为空（如简历栈与全库不匹配）时，回退到仅岗位过滤
   for (let i = 0; i < candidates.length; i++) {
     if (matchesPosition(candidates[i], blueprint)) return candidates[i]
   }
@@ -116,7 +139,12 @@ function pickByDifficultyPriority(
 }
 
 // 规则1：找第一个尚未覆盖的门槛能力域中的题目
-function pickForCoverage(asked: QuestionItem[], blueprint: PositionBlueprint): QuestionItem | null {
+function pickForCoverage(
+  asked: QuestionItem[],
+  blueprint: PositionBlueprint,
+  stacks: string[],
+  bank: QuestionItem[]
+): QuestionItem | null {
   const covered = coveredDomains(asked, blueprint)
   const allDomains = getDomainIds()
   const pool: QuestionItem[] = []
@@ -125,21 +153,20 @@ function pickForCoverage(asked: QuestionItem[], blueprint: PositionBlueprint): Q
     if (covered.includes(domainId)) continue
     // 收集该能力域下所有未答的题，按难度优先级排序选
     const forDomain: QuestionItem[] = []
-    for (let j = 0; j < QUESTION_BANK.length; j++) {
-      const q = QUESTION_BANK[j]
+    for (let j = 0; j < bank.length; j++) {
+      const q = bank[j]
       if (q.abilityDomain === domainId && !isAsked(asked, q.id)) forDomain.push(q)
     }
-    const picked = pickByDifficultyPriority(forDomain, blueprint)
+    const picked = pickByDifficultyPriority(forDomain, blueprint, stacks)
     if (picked != null) return picked
     // 若该域无符合要求的题，保留到 pool 兜底
     for (let k = 0; k < forDomain.length; k++) pool.push(forDomain[k])
   }
-  return pickByDifficultyPriority(pool, blueprint)
+  return pickByDifficultyPriority(pool, blueprint, stacks)
 }
 
 // 规则2：简历高价值项目验证题
-// 为 resumeRisk 题配置关键词表，按命中分数挑最贴合简历项目的题
-// 未命中任何关键词时，按序兜底返回第一道未答的 resumeRisk 题，保证追问链路不中断
+// 命中简历关键词评分挑最贴合项目的题；未命中时按序兜底返回第一道未答的 resumeRisk 题
 const RESUME_RISK_KEYWORDS: Record<string, string[]> = {
   'q-e01': ['决策', '选型', '方案', '架构', '设计', '重构', '技术栈'],
   'q-e02': [
@@ -172,7 +199,9 @@ function hitCount(text: string, keywords: string[]): number {
 function pickResumeRisk(
   asked: QuestionItem[],
   topics: string[],
-  blueprint: PositionBlueprint
+  blueprint: PositionBlueprint,
+  stacks: string[],
+  bank: QuestionItem[]
 ): QuestionItem | null {
   if (topics.length === 0) return null
   const merged = topics.join(',')
@@ -181,10 +210,11 @@ function pickResumeRisk(
   let bestScore = 0
   let fallback: QuestionItem | null = null
 
-  for (let j = 0; j < QUESTION_BANK.length; j++) {
-    const q = QUESTION_BANK[j]
+  for (let j = 0; j < bank.length; j++) {
+    const q = bank[j]
     if (!q.resumeRisk || isAsked(asked, q.id)) continue
     if (!matchesPosition(q, blueprint)) continue
+    if (!techStackAllowed(q, stacks)) continue
     if (fallback == null && difficultyAllowed(q.difficulty, blueprint.experienceLevel)) fallback = q
 
     const kw = RESUME_RISK_KEYWORDS[q.id]
@@ -201,20 +231,25 @@ function pickResumeRisk(
   if (best != null && bestScore > 0) return best
   if (fallback != null) return fallback
   // 难度白名单内没有合适的 resumeRisk 题时，放宽到任意难度
-  for (let j = 0; j < QUESTION_BANK.length; j++) {
-    const q = QUESTION_BANK[j]
+  for (let j = 0; j < bank.length; j++) {
+    const q = bank[j]
     if (q.resumeRisk && !isAsked(asked, q.id) && matchesPosition(q, blueprint)) return q
   }
   return null
 }
 
 // 兜底：任选一道未答、符合岗位+难度的题
-function pickAny(asked: QuestionItem[], blueprint: PositionBlueprint): QuestionItem | null {
+function pickAny(
+  asked: QuestionItem[],
+  blueprint: PositionBlueprint,
+  stacks: string[],
+  bank: QuestionItem[]
+): QuestionItem | null {
   const unasked: QuestionItem[] = []
-  for (let i = 0; i < QUESTION_BANK.length; i++) {
-    if (!isAsked(asked, QUESTION_BANK[i].id)) unasked.push(QUESTION_BANK[i])
+  for (let i = 0; i < bank.length; i++) {
+    if (!isAsked(asked, bank[i].id)) unasked.push(bank[i])
   }
-  return pickByDifficultyPriority(unasked, blueprint)
+  return pickByDifficultyPriority(unasked, blueprint, stacks)
 }
 
 // 规则0b：专项训练定向 —— 优先出目标能力域内未答、且满足岗位+难度的题
@@ -222,22 +257,26 @@ function pickAny(asked: QuestionItem[], blueprint: PositionBlueprint): QuestionI
 function pickForFocusDomain(
   asked: QuestionItem[],
   blueprint: PositionBlueprint,
-  domain: string
+  domain: string,
+  stacks: string[],
+  bank: QuestionItem[]
 ): QuestionItem | null {
   if (domain.length === 0) return null
   const forDomain: QuestionItem[] = []
-  for (let j = 0; j < QUESTION_BANK.length; j++) {
-    const q = QUESTION_BANK[j]
+  for (let j = 0; j < bank.length; j++) {
+    const q = bank[j]
     if (q.abilityDomain !== domain) continue
-    if (!eligible(q, blueprint)) continue
+    if (!eligible(q, blueprint, stacks)) continue
     if (isAsked(asked, q.id)) continue
     forDomain.push(q)
   }
-  return pickByDifficultyPriority(forDomain, blueprint)
+  return pickByDifficultyPriority(forDomain, blueprint, stacks)
 }
 
 export function selectNext(input: SelectorInput): SelectorOutput | null {
   const budget = getModeBudget(input.mode)
+  const stacks = input.resumeTechStacks
+  const bank = input.candidates
   // 专项训练可通过 maxQuestions 覆盖模式预算（训练房间按任务题量控制收尾）
   const budgetMax = input.maxQuestions > 0 ? input.maxQuestions : budget.maxQuestions
 
@@ -258,7 +297,13 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
 
   // 规则0b：训练定向优先（报告薄弱项 → 该能力域题目）
   if (input.focusDomain.length > 0) {
-    const focused = pickForFocusDomain(input.asked, input.blueprint, input.focusDomain)
+    const focused = pickForFocusDomain(
+      input.asked,
+      input.blueprint,
+      input.focusDomain,
+      stacks,
+      bank
+    )
     if (focused != null) {
       return {
         question: focused,
@@ -270,7 +315,7 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
   }
 
   // 规则1：优先覆盖未触达的能力域
-  const coverage = pickForCoverage(input.asked, input.blueprint)
+  const coverage = pickForCoverage(input.asked, input.blueprint, stacks, bank)
   if (coverage != null) {
     return {
       question: coverage,
@@ -280,7 +325,7 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
   }
 
   // 规则2：简历验证题
-  const risk = pickResumeRisk(input.asked, input.resumeRiskTopics, input.blueprint)
+  const risk = pickResumeRisk(input.asked, input.resumeRiskTopics, input.blueprint, stacks, bank)
   if (risk != null) {
     return {
       question: risk,
@@ -290,7 +335,7 @@ export function selectNext(input: SelectorInput): SelectorOutput | null {
   }
 
   // 兜底
-  const any = pickAny(input.asked, input.blueprint)
+  const any = pickAny(input.asked, input.blueprint, stacks, bank)
   if (any != null) {
     return { question: any, purpose: any.purpose, isWrapup: false } as SelectorOutput
   }

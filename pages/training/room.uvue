@@ -148,6 +148,7 @@ import { trackEvent } from '../../api/tracking.uts'
 import { selectNext } from '../../engine/question-selector.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
 import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
+import { QUESTION_BANK } from '../../data/question-bank.uts'
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
 import {
   SpeechRecorder,
@@ -354,7 +355,8 @@ function nextQuestion() {
     remainSeconds: 9999,
     resumeRiskTopics: [],
     focusDomain: domain.value,
-    maxQuestions: totalQuestions.value
+    maxQuestions: totalQuestions.value,
+    candidates: QUESTION_BANK
   })
   if (out == null || out.isWrapup) {
     // 题库耗尽：直接完成

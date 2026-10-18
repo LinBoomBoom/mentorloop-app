@@ -31,6 +31,12 @@ import {
   DIFFICULTY_PRIORITY as cDiffPriority
 } from '../data/position-options.uts'
 import { getDomainIds as cDomainIds } from '../data/backend-map.uts'
+import { classifyDimension as cClassify } from '../engine/dimension-classifier.uts'
+import { phraseQuestion as cPhrase } from '../engine/question-phrasing.uts'
+import {
+  DIMENSION_RULES as cDimRules,
+  SUBTRACK_DOMAIN as cSubtrackDomain
+} from '../data/dimension-rules.uts'
 
 // ---- 服务端侧（纯 TS）----
 import {
@@ -58,6 +64,12 @@ import {
   DIFFICULTY_PRIORITY as sDiffPriority
 } from '../server/src/data/position-options'
 import { getDomainIds as sDomainIds } from '../server/src/data/domain-ids'
+import { classifyDimension as sClassify } from '../server/src/rules/dimension-classifier'
+import { phraseQuestion as sPhrase } from '../server/src/rules/question-phrasing'
+import {
+  DIMENSION_RULES as sDimRules,
+  SUBTRACK_DOMAIN as sSubtrackDomain
+} from '../server/src/data/dimension-rules'
 import type { PositionBlueprint } from '../server/src/types/interview'
 
 const BACKEND_BLUEPRINT: PositionBlueprint = {
@@ -91,8 +103,10 @@ function makeInput(over: {
     asked: over.asked ?? [],
     remainSeconds: over.remainSeconds ?? 1200,
     resumeRiskTopics: over.topics ?? [],
+    resumeTechStacks: [],
     focusDomain: over.focusDomain ?? '',
-    maxQuestions: over.maxQuestions ?? 0
+    maxQuestions: over.maxQuestions ?? 0,
+    candidates: sBank
   }
 }
 
@@ -302,6 +316,52 @@ describe('双端换一种说法：澄清句一致且不泄题', () => {
       if (q.expectedEvidence.length > 0) {
         expect(out.includes(q.expectedEvidence)).toBe(false)
       }
+    }
+  })
+})
+
+describe('双端内容适配规则：六维分类器 / 题面生成（批次 A）', () => {
+  it('DIMENSION_RULES 与 SUBTRACK_DOMAIN 逐字段一致', () => {
+    expect(cDimRules).toEqual(sDimRules)
+    expect(cSubtrackDomain).toEqual(sSubtrackDomain)
+  })
+
+  // 覆盖三条路径：关键词命中（多者取胜）/ special 兜底 analysis / subtrack 兜底
+  const cases = [
+    { keywords: ['优先级', 'specificity', '层叠'], subtrack: 'fe-web', tech: 'CSS', qType: 'hot' },
+    { keywords: ['限流', '降级', '容量'], subtrack: 'be-web', tech: '系统设计', qType: 'hot' },
+    { keywords: ['单测', 'CI', '发布流程'], subtrack: 'be-test', tech: '自动化测试', qType: 'hot' },
+    { keywords: ['DNS', '解析'], subtrack: 'be-web', tech: '网络', qType: 'hot' },
+    { keywords: ['未知词'], subtrack: 'be-micro', tech: '微服务', qType: 'hot' },
+    { keywords: [], subtrack: 'ai-app', tech: 'RAG', qType: 'hot' },
+    { keywords: ['不可能的短语zzz'], subtrack: 'ai-algo', tech: '', qType: 'special' }
+  ]
+
+  it('classifyDimension 双端逐例一致', () => {
+    for (const c of cases) {
+      expect(cClassify(c)).toBe(sClassify(c))
+    }
+  })
+
+  it('classifyDimension 输出恒为六维之一', () => {
+    const domains = [
+      'knowledge',
+      'engineering',
+      'analysis',
+      'communication',
+      'learning',
+      'motivation'
+    ]
+    for (const c of cases) {
+      expect(domains.includes(sClassify(c))).toBe(true)
+    }
+  })
+
+  it('phraseQuestion 双端逐字一致（hot/special）', () => {
+    const titles = ['DNS 解析过程', 'K8s 中 Pod 的探针', 'CSS 优先级与层叠规则', '']
+    for (const t of titles) {
+      expect(cPhrase(t, 'hot')).toBe(sPhrase(t, 'hot'))
+      expect(cPhrase(t, 'special')).toBe(sPhrase(t, 'special'))
     }
   })
 })

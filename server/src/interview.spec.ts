@@ -58,8 +58,9 @@ describe('面试会话链路', () => {
       expect(body.data.positionId).toBe('backend')
       expect(typeof body.data.content).toBe('string')
       expect(Array.isArray(body.data.misconceptions)).toBe(true)
-      expect(body.data.misconceptions.length).toBeGreaterThan(0)
-      expect(body.data.followupPrompts).toBeDefined()
+      expect(Array.isArray(body.data.followupPrompts)).toBe(true)
+      // 批次 A：题目来自云端内容库，缺口字段（误区/预设追问）留空，由追问引擎动态生成
+      expect(body.data.misconceptions.length).toBe(0)
       expect(seen).not.toContain(body.data.id)
       seen.push(body.data.id)
     }

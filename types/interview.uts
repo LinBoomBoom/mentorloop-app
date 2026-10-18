@@ -63,6 +63,7 @@ export type QuestionItem = {
   expectedEvidence: string // 期望证据
   followupPrompts: string[] // 预设追问话术（按意图配套使用）
   resumeRisk: boolean // 是否用于简历高价值项目验证性追问（文档 02 §3.2 规则2）
+  techStack: string // 技术栈标签（2026-10-18 契约冻结）：''=通用题；'java'/'go' 等绑定栈；选题器按简历栈过滤（docs/contracts/2026-10-18-question-techstack.freeze.md）
 }
 
 export type TranscriptEntry = {
