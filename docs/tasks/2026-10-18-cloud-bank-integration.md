@@ -180,6 +180,7 @@
   - 原计划用 `SYNC_CONTENT_ON_BOOT=true` 开关，但**控制台环境变量区只支持改已有值、不支持新增键** → 改用已有 `DESKTOP_DB_NAME` 作为门控（零新增变量）。
 - 部署：`tcb cloudrun deploy -e prod-d6gaa83ds8accb61b -s mentorloop-mp-api --source server --port 8787 --min-num 1 --max-num 5 --open-access-types MINIAPP --wait --force`
   - 交互提示「是否启用灰度部署」需管道喂默认回车（`--force` 不会跳过该提示）。
+  - CLI 首次部署会在 `server/` 生成 `cloudbaserc.json`（仅 envId + 服务名，无密钥）——已随本卡提交，后续可从 `server/` 直接 `tcb cloudrun deploy --wait --force` 复现部署。
 
 ### 11.3 结果
 

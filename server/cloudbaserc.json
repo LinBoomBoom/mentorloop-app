@@ -1,0 +1,7 @@
+{
+  "envId": "prod-d6gaa83ds8accb61b",
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "cloudrun": {
+    "name": "mentorloop-mp-api"
+  }
+}
