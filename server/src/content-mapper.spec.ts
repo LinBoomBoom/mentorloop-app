@@ -17,6 +17,7 @@ import { techIdFor } from './data/tech-vocabulary.js'
 import { classifyDimension } from './rules/dimension-classifier.js'
 import { phraseQuestion } from './rules/question-phrasing.js'
 import { loadCandidates, findQuestionById } from './services/content-bank.js'
+import { buildBatchUpsertSql, runContentSync } from './scripts/sync-content-questions.js'
 import { selectNext, type SelectorInput } from './rules/question-selector.js'
 import type { PositionBlueprint, QuestionItem, PositionId } from './types/interview.js'
 
@@ -304,5 +305,40 @@ describe('fixture 驱动：四方向出题链路', () => {
     expect(hit!.id).toBe(sampleId)
     expect(hit!.content.length).toBeGreaterThan(0)
     expect(await findQuestionById(db, 'not-in-library')).toBeNull()
+  })
+})
+
+describe('同步脚本构建（buildBatchUpsertSql）', () => {
+  it('单行：16 个占位符，且方言已翻成 MySQL（无 excluded. 残留）', () => {
+    const one = buildBatchUpsertSql(1)
+    expect((one.match(/\?/g) ?? []).length).toBe(16)
+    expect(one.includes('ON DUPLICATE KEY UPDATE')).toBe(true)
+    expect(one.indexOf('excluded.')).toBe(-1)
+    expect(one.includes('VALUES(position_id)')).toBe(true)
+    // id 为主键，不进 SET 子句
+    expect(one.includes('id=VALUES(id)')).toBe(false)
+  })
+
+  it('批量 100 行：1600 个占位符', () => {
+    const many = buildBatchUpsertSql(100)
+    expect((many.match(/\?/g) ?? []).length).toBe(1600)
+    expect(many.includes('ON DUPLICATE KEY UPDATE')).toBe(true)
+  })
+
+  it('列序与 questionParams 输出长度一致（16）', () => {
+    const row = mapRawQuestion(SAMPLES[0], 1)!
+    expect(questionParams(row).length).toBe(16)
+  })
+})
+
+describe('同步脚本入参校验（不发起网络连接）', () => {
+  it('缺少 MYSQL_HOST 时明确报错', async () => {
+    const saved = process.env.MYSQL_HOST
+    delete process.env.MYSQL_HOST
+    try {
+      await expect(runContentSync()).rejects.toThrow(/MYSQL_HOST/)
+    } finally {
+      if (saved != null) process.env.MYSQL_HOST = saved
+    }
   })
 })
