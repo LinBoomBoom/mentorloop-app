@@ -160,3 +160,13 @@ CREATE TABLE IF NOT EXISTS questions (
   KEY idx_questions_position_domain (position_id, ability_domain),
   KEY idx_questions_position_subtrack (position_id, subtrack)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- 第 11 表：内容同步元数据（2026-10-19 · ISS-20261019-01 修复配套）
+-- 记录已落库的适配层版本（content_sync_meta.adapter_version）；服务启动时与代码内
+-- ADAPTER_VERSION 比对——不一致即全量重建 questions（题面/分类逻辑变更后自动生效）。
+-- 同步脚本（server/src/scripts/sync-content-questions.ts）亦会幂等自建本表，此处登记以备审计。
+CREATE TABLE IF NOT EXISTS content_sync_meta (
+  k VARCHAR(64)  NOT NULL,
+  v VARCHAR(255) NOT NULL,
+  PRIMARY KEY (k)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

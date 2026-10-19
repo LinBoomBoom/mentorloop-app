@@ -358,7 +358,15 @@ describe('双端内容适配规则：六维分类器 / 题面生成（批次 A�
   })
 
   it('phraseQuestion 双端逐字一致（hot/special）', () => {
-    const titles = ['DNS 解析过程', 'K8s 中 Pod 的探针', 'CSS 优先级与层叠规则', '']
+    const titles = [
+      'DNS 解析过程',
+      'K8s 中 Pod 的探针',
+      'CSS 优先级与层叠规则',
+      '',
+      // 问句型：命中设问特征 → 直通不包装（ISS-20261019-01）
+      '错误消息会跨进程透传给调用方，为什么必须脱敏？请举例说明哪些内容绝对不能放进 error message。',
+      '什么是闭包？'
+    ]
     for (const t of titles) {
       expect(cPhrase(t, 'hot')).toBe(sPhrase(t, 'hot'))
       expect(cPhrase(t, 'special')).toBe(sPhrase(t, 'special'))

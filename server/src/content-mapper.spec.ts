@@ -15,7 +15,7 @@ import {
 } from './services/content-mapper.js'
 import { techIdFor } from './data/tech-vocabulary.js'
 import { classifyDimension } from './rules/dimension-classifier.js'
-import { phraseQuestion } from './rules/question-phrasing.js'
+import { phraseQuestion, isQuestionShaped } from './rules/question-phrasing.js'
 import { loadCandidates, findQuestionById } from './services/content-bank.js'
 import { buildBatchUpsertSql, runContentSync } from './scripts/sync-content-questions.js'
 import { selectNext, type SelectorInput } from './rules/question-selector.js'
@@ -117,6 +117,20 @@ describe('六维分类器与题面生成', () => {
     expect(phraseQuestion('分库分表后的跨库查询', 'special')).toBe(
       '请结合具体案例，说明你在「分库分表后的跨库查询」上的设计与取舍。'
     )
+  })
+
+  it('问句型 q 直通不二次包装（ISS-20261019-01 锁定）', () => {
+    const raw =
+      '错误消息会跨进程透传给调用方，为什么必须脱敏？请举例说明哪些内容绝对不能放进 error message，并给出正确的写法。'
+    expect(isQuestionShaped(raw)).toBe(true)
+    expect(phraseQuestion(raw, 'hot')).toBe(raw)
+    expect(phraseQuestion(raw, 'special')).toBe(raw)
+    // 知识点标题不被误判，仍走模板
+    expect(isQuestionShaped('DNS 解析过程')).toBe(false)
+    expect(isQuestionShaped('K8s 中 Pod 的探针')).toBe(false)
+    expect(isQuestionShaped('CSS 优先级与层叠规则')).toBe(false)
+    // 空输入不再产出「请说明「」…」空引号模板
+    expect(phraseQuestion('   ', 'hot')).toBe('')
   })
 })
 

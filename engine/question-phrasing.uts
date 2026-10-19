@@ -1,9 +1,39 @@
 // 题面生成（客户端镜像，与 server/src/rules/question-phrasing.ts 逻辑一致）
-// 背景：云题 q 是知识点标题（「DNS 解析过程」）而非完整问句，出题前须包装为面试问句。
-// 设计：默认确定性模板（离线、可测、零成本）；LLM 润色为可选增强（批次 A 未接，避免阻塞出题）。
+// 背景：云题 q 多为知识点标题（「DNS 解析过程」），但**并非全部**——存在本身就是完整设问的条目
+//（如「…为什么必须脱敏？请举例说明…并给出正确的写法。」）。对后者再套模板会产出病句。
+// 设计：默认确定性模板（离线、可测、零成本）；问句型直通不包装；LLM 润色为可选增强（未接）。
+
+// 设问特征词/符号：命中即视为「已是问句」，不二次包装（ISS-20261019-01）
+const QUESTION_CUES: string[] = [
+  '？',
+  '?',
+  '为什么',
+  '如何',
+  '怎么',
+  '哪些',
+  '什么',
+  '请举例',
+  '请说明',
+  '请描述',
+  '请解释',
+  '试述',
+  '谈谈你的'
+]
+
+export function isQuestionShaped(rawTitle: string): boolean {
+  const t = rawTitle.trim()
+  if (t.length === 0) return false
+  for (let i = 0; i < QUESTION_CUES.length; i++) {
+    if (t.indexOf(QUESTION_CUES[i]) !== -1) return true
+  }
+  return false
+}
 
 export function phraseQuestion(rawTitle: string, qType: string): string {
   const t = rawTitle.trim()
+  if (t.length === 0) return ''
+  // 已是完整设问 → 直通（避免「请说明「…为什么…？」的原理」这类二次包装）
+  if (isQuestionShaped(t)) return t
   if (qType === 'special') {
     return '请结合具体案例，说明你在「' + t + '」上的设计与取舍。'
   }

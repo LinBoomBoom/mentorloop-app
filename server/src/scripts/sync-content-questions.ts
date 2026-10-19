@@ -1,7 +1,7 @@
-// 内容库同步（批次 A）：桌面库 mentorloop.interview_questions（只读）→ MP 库 questions（幂等 upsert）
+// 内容库同步（批次 A）：桌面库 mentorloop.interview_questions（只读）→ MP 库 questions（幂等重建）
 // 运行位置：必须在与云 MySQL 同内网的环境执行（云托管容器启动钩子 / 本地能连云库的环境）
-// CLI：cd server && npx tsx src/scripts/sync-content-questions.ts [--if-empty]
-// 容器内：由 server.ts 在 SYNC_CONTENT_ON_BOOT=true 时调用 runContentSync({ ifEmpty: true })
+// CLI：cd server && npx tsx src/scripts/sync-content-questions.ts [--force]
+// 容器内：由 server.ts 在服务启动后调用 runContentSync()（按适配层版本门控，见 ADAPTER_VERSION）
 // 依赖环境变量：MYSQL_HOST/MYSQL_PORT/MYSQL_USER/MYSQL_PASSWORD/MYSQL_DATABASE（目标=mentorloop_mp）
 //              DESKTOP_DB_NAME（源库名，默认 mentorloop；须与目标同实例，账号对其有 SELECT 权限）
 // 纪律：只读源库（仅 SELECT）；目标表结构幂等自建；同步后逐方向 count 校验，不一致即失败。
@@ -19,6 +19,12 @@ import {
 const TRACKS = ['frontend', 'backend', 'devops', 'ai']
 // 单条语句写入行数：控制占位符数量（16 列 × 100 = 1600 个 ?）
 const CHUNK = 100
+
+// 适配层版本：**任何**影响落库结果的改动（字段映射 / 题面生成 / 六维分类 / tech 词表）
+// 都必须在此 +1，容器下次启动即自动重建目标表 → 避免「改了适配层但线上仍是旧数据」。
+const ADAPTER_VERSION = 'v2'
+
+const META_KEY = 'adapter_version'
 
 // 目标表列序（与 content-mapper.questionParams 输出顺序必须一致）
 const COLS = [
@@ -62,6 +68,17 @@ const CREATE_TABLE_SQL = `CREATE TABLE IF NOT EXISTS questions (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`
 
+// 同步元数据（记录已落库的适配层版本；与题面/分类逻辑的版本比对，决定是否需要重建）
+const CREATE_META_SQL = `CREATE TABLE IF NOT EXISTS content_sync_meta (
+  k VARCHAR(64)  NOT NULL,
+  v VARCHAR(255) NOT NULL,
+  PRIMARY KEY (k)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`
+
+const META_UPSERT_SQL = translateUpsert(
+  'INSERT INTO content_sync_meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v'
+)
+
 const INDEXES: { name: string; sql: string }[] = [
   {
     name: 'idx_questions_position_difficulty',
@@ -85,11 +102,13 @@ export type ContentSyncResult = {
   skipped: number
   written: number
   counts: TrackCount[]
-  skippedBecauseNotEmpty: boolean
+  rebuilt: boolean
+  skippedUpToDate: boolean
 }
 
 export type ContentSyncOptions = {
-  ifEmpty?: boolean // true：目标表已有数据则跳过（容器启动钩子用，幂等且不重复耗时）
+  // 忽略版本门控强制重建（CLI --force / 排障用）
+  force?: boolean
   onLog?: (msg: string) => void
 }
 
@@ -104,16 +123,24 @@ function assertIdent(name: string): string {
   return name
 }
 
+async function tableExists(
+  conn: mysql.PoolConnection,
+  schema: string,
+  table: string
+): Promise<boolean> {
+  const [rows] = await conn.query(
+    'SELECT COUNT(*) AS c FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
+    [schema, table]
+  )
+  return Number((rows as any[])[0].c) > 0
+}
+
 async function ensureSchema(
   conn: mysql.PoolConnection,
   target: string,
   log: (m: string) => void
 ): Promise<void> {
-  const [tables] = await conn.query(
-    'SELECT COUNT(*) AS c FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
-    [target, 'questions']
-  )
-  if (Number((tables as any[])[0].c) === 0) {
+  if (!(await tableExists(conn, target, 'questions'))) {
     log('目标表 questions 不存在，先建表')
     await conn.query(CREATE_TABLE_SQL)
   }
@@ -126,6 +153,10 @@ async function ensureSchema(
       log('补建索引 ' + idx.name)
       await conn.query(idx.sql)
     }
+  }
+  if (!(await tableExists(conn, target, 'content_sync_meta'))) {
+    log('同步元数据表不存在，先建表')
+    await conn.query(CREATE_META_SQL)
   }
 }
 
@@ -171,7 +202,8 @@ export async function runContentSync(opts: ContentSyncOptions = {}): Promise<Con
     skipped: 0,
     written: 0,
     counts: [],
-    skippedBecauseNotEmpty: false
+    rebuilt: false,
+    skippedUpToDate: false
   }
 
   try {
@@ -179,13 +211,29 @@ export async function runContentSync(opts: ContentSyncOptions = {}): Promise<Con
     try {
       await ensureSchema(conn, target, log)
 
-      if (opts.ifEmpty === true) {
+      // 版本门控：目标表已有数据且已落库的适配层版本与当前一致 → 跳过（幂等，重启零开销）
+      if (opts.force !== true) {
         const [existing] = await conn.query('SELECT COUNT(*) AS c FROM questions')
         const c = Number((existing as any[])[0].c)
-        if (c > 0) {
-          log('目标表已有 ' + c + ' 行，按 ifEmpty 跳过同步（幂等）')
-          result.skippedBecauseNotEmpty = true
+        const [metaRows] = (await conn.query('SELECT v FROM content_sync_meta WHERE k = ?', [
+          META_KEY
+        ])) as any[]
+        const stored = metaRows.length > 0 ? String(metaRows[0].v) : ''
+        if (c > 0 && stored === ADAPTER_VERSION) {
+          log('目标表 ' + c + ' 行且适配层版本一致（' + ADAPTER_VERSION + '），跳过同步')
+          result.skippedUpToDate = true
           return result
+        }
+        if (c > 0) {
+          log(
+            '适配层版本变化（落库 ' +
+              (stored.length > 0 ? stored : '(空)') +
+              ' → 当前 ' +
+              ADAPTER_VERSION +
+              '），将全量重建 ' +
+              c +
+              ' 行'
+          )
         }
       }
 
@@ -213,6 +261,8 @@ export async function runContentSync(opts: ContentSyncOptions = {}): Promise<Con
 
       await conn.beginTransaction()
       try {
+        // 重建语义：目标 = f(源)。先清空再写，避免适配层调整后残留旧形态行
+        await conn.query('DELETE FROM questions')
         for (let i = 0; i < mapped.length; i += CHUNK) {
           const part = mapped.slice(i, i + CHUNK)
           const flat: (string | number)[] = []
@@ -222,12 +272,14 @@ export async function runContentSync(opts: ContentSyncOptions = {}): Promise<Con
           await conn.query(buildBatchUpsertSql(part.length), flat)
           result.written += part.length
         }
+        await conn.query(META_UPSERT_SQL, [META_KEY, ADAPTER_VERSION])
         await conn.commit()
       } catch (e) {
         await conn.rollback()
         throw e
       }
-      log('upsert 完成：' + result.written + ' 行')
+      result.rebuilt = true
+      log('写入完成：' + result.written + ' 行（适配层版本 ' + ADAPTER_VERSION + '）')
 
       // 逐方向 count 校验（源 vs 目标）
       let bad = 0
@@ -270,15 +322,15 @@ function invokedDirectly(): boolean {
 }
 
 if (invokedDirectly()) {
-  const ifEmpty = process.argv.includes('--if-empty')
-  runContentSync({ ifEmpty: ifEmpty })
+  const force = process.argv.includes('--force')
+  runContentSync({ force: force })
     .then((r) => {
       console.log(
         '[sync-content-questions] 完成：源 ' +
           r.sourceRows +
           ' / 写入 ' +
           r.written +
-          (r.skippedBecauseNotEmpty ? '（表非空，已跳过）' : '')
+          (r.skippedUpToDate ? '（版本一致，已跳过）' : '')
       )
     })
     .catch((e) => {
