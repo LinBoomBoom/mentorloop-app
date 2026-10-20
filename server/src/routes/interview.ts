@@ -4,6 +4,7 @@ import { writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createSession, nextQuestion as svcNext, submitAnswer } from '../services/interview.js'
 import { getAsrDriver } from '../services/asr.js'
+import { isCloudFileID, transcribeByCloudFileID } from '../services/asr-cloud.js'
 import { getTtsDriver, TTS_TIMEOUT_MS } from '../services/tts.js'
 import { requireAuth } from './auth-guard.js'
 import { ok, okData, fail } from '../util.js'
@@ -175,6 +176,41 @@ export default async function (app: FastifyInstance): Promise<void> {
         } catch {
           // 忽略清理异常
         }
+      }
+    }
+  )
+
+  // 录音作答上行（契约：docs/contracts/2026-10-21-asr-cloud-upload.freeze.md）
+  // 小程序端 wx.cloud.uploadFile → fileID → 服务端取音频 → 微信 ASR → 文本
+  // 诚实降级：任一环节失败 → text=''，客户端提示重录或改文字作答
+  app.post(
+    '/interview/asr-cloud',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['fileID'],
+          properties: { fileID: { type: 'string' } }
+        }
+      }
+    },
+    async (request) => {
+      const env = (app as any).env as import('../config.js').Env
+      const body = request.body as any
+      if (body == null || typeof body.fileID !== 'string') {
+        return fail(400, '缺少文件ID')
+      }
+      if (!isCloudFileID(body.fileID)) {
+        return fail(400, '文件ID格式不正确')
+      }
+      try {
+        const r = await transcribeByCloudFileID(env, body.fileID)
+        return okData(r)
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : 'ASR_CLOUD_ERROR'
+        console.warn('[interview] asr-cloud failed', msg)
+        return okData({ text: '', confidence: 0 })
       }
     }
   )

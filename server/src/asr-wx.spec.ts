@@ -29,8 +29,9 @@ function stubWxFetch(routes: WxRoutes) {
     if (u.indexOf('addvoicetorecofortext') >= 0) {
       return mkRes(routes.submit != null ? routes.submit(u) : { errcode: 0 })
     }
-    if (u.indexOf('queryvoicetorecofortext') >= 0) {
-      return mkRes(routes.query != null ? routes.query(u) : { errcode: 0, data: '' })
+    if (u.indexOf('queryrecoresultfortext') >= 0) {
+      // 官方出参：{ result, is_end }；处理中 result 为空串
+      return mkRes(routes.query != null ? routes.query(u) : { result: '', is_end: false })
     }
     throw new Error('unexpected fetch url: ' + u)
   })
@@ -67,14 +68,14 @@ describe('wx asr driver', () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  it('成功链路：取 token → 提交二进制 → 轮询处理中 → 返回识别文本', async () => {
+  it('成功链路：取 token → 提交 multipart → 轮询处理中 → 返回识别文本', async () => {
     const { calls } = stubWxFetch({
       token: () => ({ access_token: 'TOKEN_1', expires_in: 7200 }),
-      query: (_u) => {
-        // 第一次轮询处理中（data 空），第二次返回文本
-        return calls.filter(([url]) => url.indexOf('queryvoicetorecofortext') >= 0).length === 1
-          ? { errcode: 0, data: '' }
-          : { errcode: 0, data: '你好，面试官' }
+      query: () => {
+        // 第一次轮询处理中（result 空），第二次返回文本
+        return calls.filter(([url]) => url.indexOf('queryrecoresultfortext') >= 0).length === 1
+          ? { result: '', is_end: false }
+          : { result: '你好，面试官', is_end: true }
       }
     })
     const audioPath = join(dir, 'a.mp3')
@@ -86,16 +87,31 @@ describe('wx asr driver', () => {
     expect(urls.length).toBe(4)
     expect(urls[0]).toContain('/cgi-bin/token')
     expect(urls[1]).toContain('addvoicetorecofortext')
-    // 提交契约：format=mp3 / voice_id / lang=zh_CN / 音频二进制随 body 上送
+    // 提交契约：format=mp3 / voice_id / lang=zh_CN
     expect(urls[1]).toContain('format=mp3')
     expect(urls[1]).toContain('voice_id=')
     expect(urls[1]).toContain('lang=zh_CN')
     expect(urls[1]).toContain('access_token=TOKEN_1')
+    // 音频必须以 multipart 字段 media 上送（官方文档要求；裸二进制会被拒）
     const submitInit = calls[1][1]
     expect(submitInit.method).toBe('POST')
-    const body = submitInit.body as Uint8Array
-    expect(body.length).toBe(2048)
-    expect(body[0]).toBe(7)
+    expect(String(submitInit.headers['Content-Type'])).toContain('multipart/form-data; boundary=')
+    const body = Buffer.from(submitInit.body as Uint8Array)
+    const head = body.toString('utf8', 0, 120)
+    expect(head).toContain('name="media"')
+    expect(body.length).toBeGreaterThan(2048)
+    expect(body.indexOf(Buffer.alloc(2048, 7))).toBeGreaterThan(0)
+  })
+
+  it('识别结束但无文本（is_end=true 且 result 空）：诚实返回空，不抛错', async () => {
+    stubWxFetch({
+      token: () => ({ access_token: 'TOKEN_1', expires_in: 7200 }),
+      query: () => ({ result: '', is_end: true })
+    })
+    const audioPath = join(dir, 'silent.mp3')
+    await writeFile(audioPath, Buffer.alloc(100, 1))
+    const r = await makeDriver().transcribe(audioPath, { timeoutMs: 5000 })
+    expect(r).toEqual({ text: '', confidence: 0 })
   })
 
   it('提交失败（errcode 500）：抛 ASR_WX_SUBMIT_500，不进入轮询', async () => {
@@ -123,7 +139,7 @@ describe('wx asr driver', () => {
   it('轮询超时：识别一直未完成，抛 ASR_WX_TIMEOUT', async () => {
     stubWxFetch({
       token: () => ({ access_token: 'TOKEN_1', expires_in: 7200 }),
-      query: () => ({ errcode: 0, data: '' })
+      query: () => ({ result: '', is_end: false })
     })
     const audioPath = join(dir, 'a.mp3')
     await writeFile(audioPath, Buffer.alloc(100, 1))
@@ -145,7 +161,7 @@ describe('wx asr driver', () => {
         submitCalls++
         return submitCalls === 1 ? { errcode: 40001, errmsg: 'invalid credential' } : { errcode: 0 }
       },
-      query: () => ({ errcode: 0, data: '重试后成功' })
+      query: () => ({ result: '重试后成功', is_end: true })
     })
     const audioPath = join(dir, 'a.mp3')
     await writeFile(audioPath, Buffer.alloc(100, 1))

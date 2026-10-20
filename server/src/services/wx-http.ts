@@ -29,6 +29,8 @@ export type WxHttpRequest = {
   jsonBody?: any
   // 二进制请求体（如 ASR 音频）；与 jsonBody 二选一
   rawBody?: Uint8Array
+  // rawBody 的 Content-Type（默认 application/octet-stream；multipart 时需显式传 boundary）
+  contentType?: string
   timeoutMs: number
 }
 
@@ -45,7 +47,8 @@ export function wxApiRequestLoose(opts: WxHttpRequest): Promise<WxHttpResponse> 
   const headers: { [k: string]: string } = {}
   if (payload != null) {
     if (opts.rawBody != null) {
-      headers['Content-Type'] = 'application/octet-stream'
+      headers['Content-Type'] =
+        opts.contentType != null ? opts.contentType : 'application/octet-stream'
     } else {
       headers['Content-Type'] = 'application/json'
     }
@@ -87,7 +90,8 @@ export async function wxApiFetch(opts: WxHttpRequest): Promise<WxHttpResponse> {
   let body: string | Uint8Array | undefined
   if (opts.rawBody != null) {
     body = opts.rawBody
-    headers['Content-Type'] = 'application/octet-stream'
+    headers['Content-Type'] =
+      opts.contentType != null ? opts.contentType : 'application/octet-stream'
   } else if (opts.jsonBody != null) {
     body = JSON.stringify(opts.jsonBody)
     headers['Content-Type'] = 'application/json'

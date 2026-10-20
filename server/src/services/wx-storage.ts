@@ -114,3 +114,52 @@ export async function uploadToWxCloud(opts: WxCloudUploadOpts): Promise<string> 
   }
   return ticket.fileId
 }
+
+// fileID → 临时下载链接（官方 POST /tcb/batchdownloadfile，服务端专用）
+// 用途：客户端把录音上传到云存储后，服务端凭 fileID 取回音频字节做转写
+export async function getCloudFileTempUrl(opts: {
+  appId: string
+  secret: string
+  envId: string
+  fileID: string
+  maxAgeSeconds: number
+  timeoutMs: number
+}): Promise<string> {
+  const call = async (force: boolean) => {
+    const accessToken = await getWxAccessToken({
+      appId: opts.appId,
+      secret: opts.secret,
+      timeoutMs: opts.timeoutMs,
+      force
+    })
+    const res = await wxApiFetch({
+      url: API_BASE + '/tcb/batchdownloadfile?access_token=' + encodeURIComponent(accessToken),
+      method: 'POST',
+      jsonBody: {
+        env: opts.envId,
+        file_list: [{ fileid: opts.fileID, max_age: opts.maxAgeSeconds }]
+      },
+      timeoutMs: opts.timeoutMs
+    })
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error('WX_STORAGE_DL_HTTP_' + res.status)
+    }
+    return JSON.parse(res.body) as any
+  }
+
+  let r = await call(false)
+  if (r != null && r.errcode === 40001) {
+    r = await call(true)
+  }
+  if (r == null || r.errcode !== 0) {
+    const code = r != null ? r.errcode : 'null'
+    const msg = r != null && r.errmsg != null ? String(r.errmsg) : ''
+    throw new Error('WX_STORAGE_DL_' + code + (msg.length > 0 ? '_' + msg : ''))
+  }
+  const list = Array.isArray(r.file_list) ? r.file_list : []
+  const first = list.length > 0 ? list[0] : null
+  if (first == null || typeof first.download_url !== 'string' || first.download_url.length === 0) {
+    throw new Error('WX_STORAGE_DL_NO_URL')
+  }
+  return first.download_url
+}

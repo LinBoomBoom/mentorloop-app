@@ -28,16 +28,41 @@ export function resetWxAsrTokenCache(): void {
   resetWxAccessTokenCache()
 }
 
+// 构建 multipart/form-data 请求体（微信 ASR 要求音频以表单字段 media 上送）
+export function buildMultipartMedia(
+  data: Uint8Array,
+  filename: string
+): { body: Uint8Array; contentType: string } {
+  const boundary = '----wxasr' + randomUUID().replaceAll('-', '')
+  const head =
+    '--' +
+    boundary +
+    '\r\n' +
+    'Content-Disposition: form-data; name="media"; filename="' +
+    filename +
+    '"\r\n' +
+    'Content-Type: application/octet-stream\r\n\r\n'
+  const tail = '\r\n--' + boundary + '--\r\n'
+  const headBuf = Buffer.from(head, 'utf8')
+  const tailBuf = Buffer.from(tail, 'utf8')
+  const body = Buffer.concat([headBuf, Buffer.from(data), tailBuf])
+  return {
+    body: new Uint8Array(body),
+    contentType: 'multipart/form-data; boundary=' + boundary
+  }
+}
+
 // 微信 POST 并解析 JSON（统一走 wx-http 通道：云托管内自签证书自动定向放宽）
 async function wxPostJson(
   url: string,
-  opts: { rawBody?: Uint8Array },
+  opts: { rawBody?: Uint8Array; contentType?: string },
   timeoutMs: number
 ): Promise<any> {
   const res = await wxApiFetch({
     url: url,
     method: 'POST',
     rawBody: opts.rawBody,
+    contentType: opts.contentType,
     timeoutMs: timeoutMs
   })
   if (res.status < 200 || res.status >= 300) {
@@ -88,17 +113,19 @@ export function createWxAsrDriver(opts: {
       }
       const voiceId = randomUUID()
 
-      // 提交（40001 → 强制刷新 token 后重试一次）
-      const submitWith = (token: string) =>
-        wxPostJson(
+      // 提交（40001 → 强制刷新 token 后重试一次）；音频按官方要求以 multipart 字段 media 上送
+      const submitWith = (token: string) => {
+        const form = buildMultipartMedia(new Uint8Array(buf), voiceId + '.mp3')
+        return wxPostJson(
           wxQuery('/cgi-bin/media/voice/addvoicetorecofortext', token, {
             format: 'mp3',
             voice_id: voiceId,
             lang: lang
           }),
-          { rawBody: new Uint8Array(buf) },
+          { rawBody: form.body, contentType: form.contentType },
           reqTimeout
         )
+      }
       let token = await getToken(opts.appId, opts.secret, reqTimeout, false)
       let submitRes = await submitWith(token)
       if (submitRes != null && submitRes.errcode === 40001) {
@@ -115,7 +142,7 @@ export function createWxAsrDriver(opts: {
       let refreshed = false
       for (;;) {
         const r = await wxPostJson(
-          wxQuery('/cgi-bin/media/voice/queryvoicetorecofortext', token, {
+          wxQuery('/cgi-bin/media/voice/queryrecoresultfortext', token, {
             voice_id: voiceId,
             lang: lang
           }),
@@ -127,12 +154,17 @@ export function createWxAsrDriver(opts: {
           token = await getToken(opts.appId, opts.secret, reqTimeout, true)
           continue
         }
-        if (r == null || r.errcode !== 0) {
-          throw new Error('ASR_WX_QUERY_' + (r != null ? r.errcode : 'null'))
+        if (r != null && r.errcode != null && r.errcode !== 0) {
+          throw new Error('ASR_WX_QUERY_' + r.errcode)
         }
-        const text = typeof r.data === 'string' ? r.data : ''
+        // 官方出参：{ result: string, is_end: boolean }
+        const text = r != null && typeof r.result === 'string' ? r.result : ''
         if (text.length > 0) {
           return { text: text, confidence: 1 }
+        }
+        if (r != null && r.is_end === true) {
+          // 已结束但无文本（静音/过短）：诚实返回空，不伪造
+          return { text: '', confidence: 0 }
         }
         if (Date.now() >= deadline) {
           throw new Error('ASR_WX_TIMEOUT')

@@ -85,6 +85,20 @@
                 :disabled="parsing"
                 @tap="pick"
               ></ml-button>
+              <!-- 小程序无系统文件浏览器：唯一文档入口是「从微信聊天中选择」，
+                   必须明说来源，否则会被误认为在分享给好友（2026-10-21 用户反馈） -->
+              <text class="text-xs text-ink-soft mt-2 text-center"
+                >从微信聊天中选择；可先发给「文件传输助手」</text
+              >
+              <view class="mt-2">
+                <ml-button
+                  text="从相册选择图片"
+                  type="ghost"
+                  block
+                  :disabled="parsing"
+                  @tap="pickImage"
+                ></ml-button>
+              </view>
             </view>
             <view v-else class="mt-4 flex-row items-center">
               <ml-progress
@@ -577,6 +591,33 @@ function pick() {
 
   // #ifndef H5
   pickNative()
+  // #endif
+}
+
+// 从相册/相机选图片（截图简历、拍照简历）：小程序唯一能直接拿到本机图片的入口
+function pickImage() {
+  // #ifdef H5
+  uni.showToast({ title: 'H5 端使用演示数据', icon: 'none' })
+  doParse('h5-demo', 'demo-resume.png')
+  // #endif
+
+  // #ifndef H5
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success(res: any) {
+      const paths = res.tempFilePaths as string[]
+      if (paths == null || paths.length === 0) return
+      const p = paths[0]
+      const dot = p.lastIndexOf('.')
+      const ext = dot >= 0 ? p.substring(dot + 1) : 'jpg'
+      doParse(p, 'resume-image.' + ext)
+    },
+    fail() {
+      uni.showToast({ title: '未选择图片', icon: 'none' })
+    }
+  })
   // #endif
 }
 

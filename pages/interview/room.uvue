@@ -217,6 +217,7 @@ import {
   AsrResult,
   speechCapability
 } from '../../api/speech.uts'
+import { uploadAsrCloud, AsrResponse } from '../../api/asr.uts'
 
 const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
 const SMART = themeValue('smart', '#5B6CFF')
@@ -618,11 +619,30 @@ function stopRecord(_auto: boolean) {
   }
 }
 
-// 录音结束：按平台路由转写（微信用实时文本，App 用云端转写）
+// 录音结束：按平台路由转写
+// - MP-WEIXIN：优先用实时识别文本（若插件可用）；为空则走「云存储中转 → 服务端 ASR」
+// - App：云端 multipart 上传转写
 function handleRecordingStopped(result: RecordResult) {
   if (cap.platform === 'mp-weixin') {
-    // 微信端：实时识别文本已积累
-    finishTranscribe(liveTranscript.value)
+    const live = liveTranscript.value.trim()
+    if (live.length > 0) {
+      finishTranscribe(live)
+      return
+    }
+    // 实时识别不可用（个人主体无 wechatSI 插件）：录音落盘后走云存储中转转写
+    if (!result.ok || result.audioPath.length === 0) {
+      finishTranscribe('')
+      return
+    }
+    uploadAsrCloud(result.audioPath)
+      .then((r: AsrResponse) => {
+        finishTranscribe(r.text)
+      })
+      .catch((e: any) => {
+        const msg = e != null && e.message != null ? String(e.message) : 'unknown'
+        console.warn('[room] asr-cloud failed', msg)
+        finishTranscribe('')
+      })
     return
   }
   if (!result.ok || result.audioPath.length === 0) {

@@ -1,12 +1,14 @@
-// ASR 云端转写通道（App 端 / MP 文件转写兜底）
-// 职责：上传录音文件 → 云端 ASR → 返回转写文本
-// 统一走 client.upload()（multipart）：自动注入 Authorization、401 自动登出、
-// 业务码/HTTP 统一处理 —— 此前自拼 uni.uploadFile 无鉴权头，真模式会被 requireAuth 拒绝。
+// ASR 云端转写通道（App 端 / MP 云存储中转）
+// 职责：交付录音文件 → 云端 ASR → 返回转写文本
+// 两条上行通道：
+//   1) App/H5：uploadAsr → uni.uploadFile 走公网 BASE_URL（multipart）——需 API_BASE_URL 回填
+//   2) MP-WEIXIN：uploadAsrCloud → wx.cloud.uploadFile 传云存储（私有链路，免域名免备案）
+//      → POST /interview/asr-cloud { fileID } → 转写后立即删对象（不保留用户录音）
 // Mock 优先：mock 环境直接抛错降级（不伪造转写内容，避免污染证据链）。
-// 接真后端：POST /interview/asr（multipart 字段 audio），返回 { text, confidence }。
 // 服务端契约：转写失败时返回 code=0 + 空文本（明确降级，不伪造、不卡流程）。
 
-import { upload, useMock } from './client.uts'
+import { upload, post, useMock } from './client.uts'
+import { CLOUD_ENV_ID } from './env.uts'
 
 export type AsrResponse = {
   text: string
@@ -26,4 +28,61 @@ export async function uploadAsr(audioPath: string): Promise<AsrResponse> {
     throw new Error('ASR_EMPTY_RESPONSE')
   }
   return d as AsrResponse
+}
+
+// MP-WEIXIN：录音 → 云存储 → 服务端凭 fileID 取音频转写 → 删除对象
+// 为什么需要它：云托管默认域名不能配到小程序后台、个人主体也无备案域名，
+// uni.uploadFile 的 BASE_URL 通道在小程序端不可用；云存储走 cloud:// 私有协议可绕开域名。
+export async function uploadAsrCloud(audioPath: string): Promise<AsrResponse> {
+  if (useMock()) {
+    throw new Error('ASR_MOCK_UNAVAILABLE')
+  }
+  const g = globalThis as any
+  if (g.wx == null || g.wx.cloud == null || g.wx.cloud.uploadFile == null) {
+    throw new Error('ASR_CLOUD_UNAVAILABLE')
+  }
+  const cloudPath =
+    'asr/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.mp3'
+  const fileID = await new Promise<string>((resolve, reject) => {
+    g.wx.cloud.uploadFile({
+      cloudPath: cloudPath,
+      filePath: audioPath,
+      config: { env: CLOUD_ENV_ID },
+      success: (res: any) => {
+        const id = res != null && res.fileID != null ? String(res.fileID) : ''
+        if (id.length === 0) {
+          reject(new Error('ASR_CLOUD_NO_FILEID'))
+        } else {
+          resolve(id)
+        }
+      },
+      fail: (e: any) => {
+        reject(
+          new Error(e != null && e.errMsg != null ? String(e.errMsg) : 'ASR_CLOUD_UPLOAD_FAILED')
+        )
+      }
+    } as any)
+  })
+  try {
+    const r = await post('/interview/asr-cloud', { fileID: fileID })
+    const d = r.data
+    if (d == null) {
+      throw new Error('ASR_EMPTY_RESPONSE')
+    }
+    return d as AsrResponse
+  } finally {
+    // 隐私：无论成败都立刻删除云存储中的录音对象（best-effort，失败不阻塞）
+    try {
+      if (g.wx.cloud.deleteFile != null) {
+        g.wx.cloud.deleteFile({
+          fileList: [fileID],
+          config: { env: CLOUD_ENV_ID },
+          success: () => {},
+          fail: () => {}
+        } as any)
+      }
+    } catch {
+      // 忽略清理异常
+    }
+  }
 }
