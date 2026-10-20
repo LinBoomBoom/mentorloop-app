@@ -7,7 +7,8 @@ import { join } from 'node:path'
 import { createWxAsrDriver, resetWxAsrTokenCache } from './services/asr-wx.js'
 
 function mkRes(body: any) {
-  return { ok: true, status: 200, json: async () => body }
+  // text() 供 services/wx-http.ts 的 token 通道使用；json() 供 asr-wx 的提交/轮询使用
+  return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) }
 }
 
 type WxRoutes = {

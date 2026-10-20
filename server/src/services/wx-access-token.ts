@@ -4,6 +4,8 @@
 //   → { access_token, expires_in }（默认 7200s）
 // 策略：进程内模块级缓存，提前 5min 刷新；调用方遇 errcode 40001 时传 force=true 强制重取。
 // 注意：多个 appid 不能共用同一缓存（按 appId 分键）。
+import { wxApiFetch } from './wx-http.js'
+
 const API_BASE = 'https://api.weixin.qq.com'
 // token 提前刷新余量（5min）
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000
@@ -36,11 +38,25 @@ export async function getWxAccessToken(opts: {
     encodeURIComponent(opts.appId) +
     '&secret=' +
     encodeURIComponent(opts.secret)
-  const res = await fetch(url, { signal: AbortSignal.timeout(opts.timeoutMs) })
-  if (!res.ok) {
+  let res: { status: number; body: string }
+  try {
+    // 走统一通道：云托管容器内自签证书自动放宽（见 services/wx-http.ts）
+    res = await wxApiFetch({ url: url, method: 'GET', timeoutMs: opts.timeoutMs })
+  } catch (e: any) {
+    // 网络层失败（DNS/出网/TLS）：把底层原因带出来，便于云端定位
+    const cause = e != null && e.cause != null ? e.cause : null
+    const detail =
+      cause != null
+        ? String(cause.code ?? cause.message ?? cause)
+        : e != null
+          ? String(e.message ?? e)
+          : 'unknown'
+    throw new Error('WX_TOKEN_NET_' + detail)
+  }
+  if (res.status < 200 || res.status >= 300) {
     throw new Error('WX_TOKEN_HTTP_' + res.status)
   }
-  const r: any = await res.json()
+  const r: any = JSON.parse(res.body)
   if (r == null || typeof r.access_token !== 'string' || r.access_token.length === 0) {
     const code = r != null ? r.errcode : 'null'
     throw new Error('WX_TOKEN_FAILED_' + code)

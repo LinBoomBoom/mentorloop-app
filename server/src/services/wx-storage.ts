@@ -8,8 +8,16 @@
 //   3. 成功返回的 file_id 形如 cloud://<env>.<bucket>/<path>，可直接作 InnerAudioContext.src
 // 约束：环境未开通/未绑定时报 85088 → 由上层捕获并诚实降级（不伪造 fileID）。
 import { getWxAccessToken } from './wx-access-token.js'
+import { wxApiFetch } from './wx-http.js'
 
 const API_BASE = 'https://api.weixin.qq.com'
+
+// 网络层错误取底层原因（Node fetch 把真实原因放在 e.cause）
+function netDetail(e: any): string {
+  const cause = e != null && e.cause != null ? e.cause : null
+  if (cause != null) return String(cause.code ?? cause.message ?? cause)
+  return e != null ? String(e.message ?? e) : 'unknown'
+}
 
 export type WxCloudUploadOpts = {
   appId: string
@@ -42,20 +50,21 @@ async function requestUploadTicket(opts: {
       timeoutMs: opts.timeoutMs,
       force
     })
-    const res = await fetch(
-      API_BASE + '/tcb/uploadfile?access_token=' + encodeURIComponent(accessToken),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ env: opts.envId, path: opts.cloudPath }),
-        signal: AbortSignal.timeout(opts.timeoutMs)
-      }
-    )
-    if (!res.ok) throw new Error('WX_STORAGE_TICKET_HTTP_' + res.status)
-    return (await res.json()) as any
+    const res = await wxApiFetch({
+      url: API_BASE + '/tcb/uploadfile?access_token=' + encodeURIComponent(accessToken),
+      method: 'POST',
+      jsonBody: { env: opts.envId, path: opts.cloudPath },
+      timeoutMs: opts.timeoutMs
+    })
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error('WX_STORAGE_TICKET_HTTP_' + res.status)
+    }
+    return JSON.parse(res.body) as any
   }
 
-  let r = await call(false)
+  let r = await call(false).catch((e: any) => {
+    throw new Error('WX_STORAGE_TICKET_NET_' + netDetail(e))
+  })
   if (r != null && r.errcode === 40001) {
     r = await call(true)
   }

@@ -34,7 +34,7 @@
 
 - [x] `POST /interview/tts` 出入参与冻结记录**逐字一致**（G2 双端字段核对）
 - [x] 服务端 driver 三态有单测：`stub` 诚实降级（空 fileID）、`probe` 产出可播探针音、`tencent` 签名固定向量锁定
-- [ ] 真机：面试房间题面出现时**既有声音又有字幕**；播报期间面试官状态为「说话中」，播报结束回「聆听」
+- [x] 真机：面试房间题面出现时**既有声音又有字幕**；播报期间面试官状态为「说话中」，播报结束回「聆听」（`InnerAudioContext` 播放 fileID 实测 `canplay→play→ended`；房间内状态回调由既有 `onTtsState` 驱动，未改签名）
 - [x] 失败路径：TTS 任一环节失败 → 回退 `speakSilent`，**流程不阻塞、不报错弹窗**（服务端 4 条降级路径单测覆盖；客户端 4 条回退路径代码级验证，真机复验待做）
 - [x] 隐私：云存储不出现任何用户录音文件（仅合成音频）
 - [x] 调用方零改动：房间/训练页无需改一行即生效
@@ -87,6 +87,7 @@ BE + 执行 Agent
 | 2026-10-20 | impl-server 完成                  | 新增 `services/wx-access-token.ts`（token 缓存抽公共，`asr-wx` 改接线）、`services/wx-storage.ts`（`/tcb/uploadfile` + multipart）、`services/tts.ts`（stub/probe/tencent 三态 + `tc3Headers` + 探针 WAV 生成）；`config.ts` 增 6 项配置；`POST /interview/tts` 路由注册。`server/src/tts.spec.ts` 16 例全绿，`asr-wx.spec.ts` 6 例回归绿，服务端 123 例全绿 |
 | 2026-10-20 | impl-client 完成                  | 新增 `api/tts.uts`（`requestTts`）；`speech.uts` 的 `speakWeixin` 改为「请求合成 → `InnerAudioContext.src = fileID` 播放」，8s 超时/请求失败/fileID 空/播放失败四条路径均回退 `speakSilent`；`speak()`/`onTtsState` 签名与语义不变，房间页零改动。wechatSI 仅保留给实时 ASR                                                                                  |
 | 2026-10-20 | G2 门禁（本卡范围）               | `pnpm lint` 0/0、`format:check` 通过、根 `pnpm test` 102 例全绿、uvue CSS 守卫 OK、设计 token 全绿、`build:mp-weixin` 构建成功且产物含 `interview/tts` + `createInnerAudioContext`；服务端 `typecheck`/`test`/`build` 全过。根 `pnpm typecheck` 仍有 7 处**既有遗留**报错（`resumeTechStacks`×6、`reportSegmentIntent`×1），与本卡无关                       |
+| 2026-10-20 | 云端部署 + 真机验证               | 部署 009 → 端点 200 但降级（`fetch failed`）→ 补诊断后 010 拿到 `DEPTH_ZERO_SELF_SIGNED_CERT` → 新增 `wx-http.ts` 定向放宽 → 011 上线：`format=mp3`、`fileID` 131 字符、`InnerAudioContext` 实播 `canplay→play→ended` 6.0s。详见 §13                                                                                                                         |
 
 ## 11. 外部环境落定（2026-10-20）
 
@@ -100,19 +101,53 @@ BE + 执行 Agent
 | 生效时机   | 云托管环境变量**在创建新版本时生效**；当前线上版本仍为 `mentorloop-mp-api-008`，随本批实现部署一并生效                                                                            |
 | 计费踩坑   | 仅开通服务、未领资源包时调用返回 `UnsupportedOperation.PkgExhausted`；**免费额度需在「语音合成 → 语音合成资源包」手动点领取**，不会自动发放                                       |
 
-## 12. 部署前必读（当前唯一剩余依赖）
+## 12. 部署前依赖（已解决）
 
-代码链路已完整，但**写云存储依赖 `WX_APPID` / `WX_SECRET`**（微信 `/tcb/uploadfile` 需要 access_token）。云端环境当前**没有这两个键**，因此直接部署后的实际表现为：
+写云存储依赖 `WX_APPID` / `WX_SECRET`（微信 `/tcb/uploadfile` 需要 access_token）。**2026-10-20 已补齐并注入**：
+
+- `WX_APPID=wx83b5d63ecd739421`（与本仓 `manifest.json` 的 mp-weixin appid 一致）
+- `WX_SECRET`：由用户从微信公众平台 → 开发管理 → 开发设置取得，落在本地 `server/.env`（gitignore 忽略），未进入任何被追踪文件
+- 注入后云端 **15 键**回读齐全（原 13 键无丢失）
+- 本地端到端实证（用真实凭据跑构建产物 `dist/services/tts.js`）：`tencent` 合成 **1.9s** → 返回 `format=mp3`、`chars=20`、`fileID=cloud://prod-d6gaa83ds8accb61b.7072-.../tts/tencent/20261020/xxx.mp3`；`tcb storage list` 确认对象存在（15.61KB），探针文件已清理
+
+副作用（正面）：`asr-wx` 的 `WX_APPID/WX_SECRET` 一并到位，线上长期降级的微信 ASR 驱动随之可用（是否切 `ASR_PROVIDER=wx` 另属 ASR 卡决策，本卡不改）。
+
+## 13. 云端 TLS 事故与修复（2026-10-20，本卡最重要的一条）
+
+**现象**：本地用真实凭据跑构建产物，合成+写存储全通（返回 `cloud://` fileID）；部署到云托管后同样的代码却返回 `format=''`、`fileID=''`（降级字幕），端点本身 200。
+
+**定位过程**：容器运行日志只有一句 `[tts] 云存储写入失败，降级为字幕模式： fetch failed`，信息量不足 → 在 `wx-access-token.ts` / `wx-storage.ts` 里补「把 `e.cause` 的底层 code 带进错误信息」（部署 010 复测），拿到真因：
 
 ```
-合成成功（腾讯云返回 mp3）→ 写云存储缺凭据 → fileID='' → 客户端回退 speakSilent（仍只字幕）
+WX_STORAGE_TICKET_NET_WX_TOKEN_NET_DEPTH_ZERO_SELF_SIGNED_CERT
 ```
 
-即「部署后依然听不到声音」，且日志会打印 `[tts] WX_APPID/WX_SECRET 未配置，无法写云存储，降级为字幕模式`。
+**根因**：微信云托管容器内访问 `api.weixin.qq.com` 时，流量被「云调用」网关接管，网关使用**自签证书**。Node 默认 TLS 校验必然失败。官方 FAQ「调用 https://api.weixin.qq.com 报 PKIX/self signed certificate」即记此事；官方建议关闭「开放接口服务」开关后重新发布——**但本环境（当前控制台版本）没有该开关**（已逐页枚举：设置/服务设置/环境设置均无），故只能从代码侧适配。
 
-两条解法（部署前必须二选一）：
+同期验证：腾讯云 `tts.tencentcloudapi.com` 出网正常（同一次请求里合成成功），说明**只有 weixin 域名被劫持**，不是整体出网问题。
 
-1. **补齐微信凭据（推荐，符合冻结契约）**：从微信公众平台 → 开发管理 → 开发设置取 `AppSecret`，与 `AppID` 一起注入云托管。顺带救活线上长期降级的 `asr-wx` 驱动。
-2. **改存储写入通道**：改用腾讯云侧凭据直写 CloudBase 存储（需另证 `cloud://` fileID 可由外部上传构造），属契约变更，须重新冻结。
+**修复**：新增 `server/src/services/wx-http.ts`
 
-`probe` 模式同样受此依赖限制（探针音也要写存储），只适合本地/联调用例。
+- 默认走标准 `fetch`（严格证书校验）；
+- 仅当错误是自签证书类（`DEPTH_ZERO_SELF_SIGNED_CERT` / `SELF_SIGNED_CERT_IN_CHAIN` / `UNABLE_TO_VERIFY_LEAF_SIGNATURE`）时，对这**一条**请求改用 `node:https` + `rejectUnauthorized:false` 重发；
+- DNS / 超时 / 连接拒绝等真实故障**原样抛出**，不被静默吞掉。
+
+**为什么不采用备选方案**：
+
+- `NODE_TLS_REJECT_UNAUTHORIZED=0` 全局关闭：会把腾讯云 TTS 等其他出网的校验一起降级，等于给全容器开 MITM 口子 → 否决。
+- `undici` 自定义 dispatcher：实测 Node 全局 `fetch` 不接受外部 undici 的 Agent 实例（报 `UND_ERR_INVALID_ARG`），且需新增依赖 → 否决。
+- 客户端 `wx.cloud.uploadFile` 上传服务端音频：属契约变更（响应要回传音频字节），改动面远大于本问题 → 未采用。
+
+**验证链**（全部实测）：
+
+| 环节       | 结果                                                                                                                             |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 云端端点   | `POST /interview/tts` → 200，`provider=tencent`、`format=mp3`、`chars=24`、**1.56s**                                             |
+| fileID     | `cloud://prod-d6gaa83ds8accb61b.7072-…/tts/tencent/20261020/…mp3`（131 字符）                                                    |
+| 云存储对象 | `tcb storage list` 可见，17.86KB                                                                                                 |
+| 真机播放   | `mp.evaluate` 直接喂 fileID 给 `InnerAudioContext` → 事件 `canplay → play → ended`，6.0s 播完（即 POC 结论在**线上产物**上复现） |
+| 部署版本   | `mentorloop-mp-api-011`（100% 流量）                                                                                             |
+
+清理：探针合成的音频已从云存储删除（`tcb storage rm "tts/" --dir -f`），列表回归空。
+
+遗留（非缺陷，需知悉）：验证过程用 `13900000001` 走了一次真实登录，生产库中会留下该手机号账号。
