@@ -34,6 +34,10 @@
 
 ## 4. 当前阻塞（总闸）
 
+> **2026-10-20 更新：总闸已放行。** 腾讯云 TTS 已开通、免费额度已领取、最小权限子用户密钥已生成并注入生产云托管（13 键回读齐全）。CLI 注入通道此前被判死，实际存在可行路径（TC3 签名直调 `UpdateCloudRunServerConfig`），详见 [TTS 实施卡 §11](./2026-10-19-mp-voice-tts-outbound.md)。下文 §4 保留原阻塞记录作为留痕。
+
+## 4. 原阻塞（已解除）
+
 云端服务 EnvParams 现仅 9 键，`TENCENTCLOUD_SECRETID/SECRETKEY` 与 `WX_APPID/WX_SECRET` 无处注入。等待用户控制台确认**两处入口**：
 
 1. 「服务设置 → 环境变量」能否新增键（还是只能编辑已有 9 个的值）
@@ -44,8 +48,10 @@
 - 能新增 → 版本配置注入 5 个键（TTS 密钥 ×2 + `TTS_PROVIDER` + 顺带救活 asr-wx 的 `WX_APPID/WX_SECRET`），随即开工实施。
 - 不能新增 → 改「密钥入库（DB 配置表）」并重新冻结契约。
 
+**实际落定（2026-10-20）**：无需控制台手工——用 tcb 登录态 STS 临时凭据 TC3 签名直调 `tcbr.tencentcloudapi.com` 的 `UpdateCloudRunServerConfig`，一次注入 4 键成功。`WX_APPID/WX_SECRET` 仍缺（需微信公众平台侧 Secret，另属 ASR 卡）。
+
 ## 5. 代码影响与下一步
 
 - **本阶段 App 代码零改动**，全部为取证与 SOP 产物（2 张任务卡 + 1 份契约冻结 + 本汇报）。
-- 待总闸放行后按序：`impl-server`（TTS 驱动 + 云存储写入 + 路由）→ `impl-client`（tts.uts + speech.uts）→ 双侧单测 + G2 门禁 + 部署 + 真机复验出声。
-- 另：用户需在腾讯云开通语音合成并领取 800 万字符免费额度，取 `SecretId/SecretKey`。
+- 外部环境已就绪：TTS 开通、800 万字符免费包（至 2027-01-20）、子用户密钥、云端 4 键注入。
+- 下一步按序：`impl-server`（TTS 驱动 + 云存储写入 + 路由）→ `impl-client`（tts.uts + speech.uts）→ 双侧单测 + G2 门禁 + 部署（新版本才使环境变量生效）+ 真机复验出声。
