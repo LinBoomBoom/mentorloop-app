@@ -23,20 +23,33 @@ export function isSelfSignedCertError(e: any): boolean {
 
 export type WxHttpResponse = { status: number; body: string }
 
-// 以「放宽证书校验」方式发一次请求（仅用于 api.weixin.qq.com）
-export function wxApiRequestLoose(opts: {
+export type WxHttpRequest = {
   url: string
   method?: 'GET' | 'POST'
   jsonBody?: any
+  // 二进制请求体（如 ASR 音频）；与 jsonBody 二选一
+  rawBody?: Uint8Array
   timeoutMs: number
-}): Promise<WxHttpResponse> {
+}
+
+// 以「放宽证书校验」方式发一次请求（仅用于 api.weixin.qq.com）
+export function wxApiRequestLoose(opts: WxHttpRequest): Promise<WxHttpResponse> {
   const u = new URL(opts.url)
   const method = opts.method ?? 'GET'
-  const payload = opts.jsonBody != null ? JSON.stringify(opts.jsonBody) : null
+  const payload: Buffer | null =
+    opts.rawBody != null
+      ? Buffer.from(opts.rawBody)
+      : opts.jsonBody != null
+        ? Buffer.from(JSON.stringify(opts.jsonBody), 'utf8')
+        : null
   const headers: { [k: string]: string } = {}
   if (payload != null) {
-    headers['Content-Type'] = 'application/json'
-    headers['Content-Length'] = String(Buffer.byteLength(payload))
+    if (opts.rawBody != null) {
+      headers['Content-Type'] = 'application/octet-stream'
+    } else {
+      headers['Content-Type'] = 'application/json'
+    }
+    headers['Content-Length'] = String(payload.length)
   }
   return new Promise<WxHttpResponse>((resolve, reject) => {
     const req = httpsRequest(
@@ -68,16 +81,14 @@ export function wxApiRequestLoose(opts: {
 }
 
 // 统一入口：先走标准 fetch（严格校验）；命中自签证书错误才回退放宽通道
-export async function wxApiFetch(opts: {
-  url: string
-  method?: 'GET' | 'POST'
-  jsonBody?: any
-  timeoutMs: number
-}): Promise<WxHttpResponse> {
+export async function wxApiFetch(opts: WxHttpRequest): Promise<WxHttpResponse> {
   const method = opts.method ?? 'GET'
   const headers: { [k: string]: string } = {}
-  let body: string | undefined
-  if (opts.jsonBody != null) {
+  let body: string | Uint8Array | undefined
+  if (opts.rawBody != null) {
+    body = opts.rawBody
+    headers['Content-Type'] = 'application/octet-stream'
+  } else if (opts.jsonBody != null) {
     body = JSON.stringify(opts.jsonBody)
     headers['Content-Type'] = 'application/json'
   }

@@ -14,6 +14,7 @@ import { readFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { AsrDriver, AsrDriverOpts, AsrResult } from './asr.js'
 import { getWxAccessToken, resetWxAccessTokenCache } from './wx-access-token.js'
+import { wxApiFetch } from './wx-http.js'
 
 // 微信侧音频硬限 1MB（errcode 40010）
 const MAX_AUDIO_BYTES = 1024 * 1024
@@ -27,16 +28,22 @@ export function resetWxAsrTokenCache(): void {
   resetWxAccessTokenCache()
 }
 
-async function fetchJson(
+// 微信 POST 并解析 JSON（统一走 wx-http 通道：云托管内自签证书自动定向放宽）
+async function wxPostJson(
   url: string,
-  init: { method?: string; body?: Uint8Array } | undefined,
+  opts: { rawBody?: Uint8Array },
   timeoutMs: number
 ): Promise<any> {
-  const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) })
-  if (!res.ok) {
+  const res = await wxApiFetch({
+    url: url,
+    method: 'POST',
+    rawBody: opts.rawBody,
+    timeoutMs: timeoutMs
+  })
+  if (res.status < 200 || res.status >= 300) {
     throw new Error('ASR_WX_HTTP_' + res.status)
   }
-  return res.json()
+  return JSON.parse(res.body)
 }
 
 // 获取 access_token（force=true 强制重取，用于 40001 恢复）—— 复用共享缓存模块
@@ -83,13 +90,13 @@ export function createWxAsrDriver(opts: {
 
       // 提交（40001 → 强制刷新 token 后重试一次）
       const submitWith = (token: string) =>
-        fetchJson(
+        wxPostJson(
           wxQuery('/cgi-bin/media/voice/addvoicetorecofortext', token, {
             format: 'mp3',
             voice_id: voiceId,
             lang: lang
           }),
-          { method: 'POST', body: new Uint8Array(buf) },
+          { rawBody: new Uint8Array(buf) },
           reqTimeout
         )
       let token = await getToken(opts.appId, opts.secret, reqTimeout, false)
@@ -107,12 +114,12 @@ export function createWxAsrDriver(opts: {
       const deadline = Date.now() + timeoutMs
       let refreshed = false
       for (;;) {
-        const r = await fetchJson(
+        const r = await wxPostJson(
           wxQuery('/cgi-bin/media/voice/queryvoicetorecofortext', token, {
             voice_id: voiceId,
             lang: lang
           }),
-          { method: 'POST' },
+          {},
           reqTimeout
         )
         if (r != null && r.errcode === 40001 && !refreshed) {
