@@ -306,7 +306,7 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
-import { parseResume, optimizeResume } from '../../api/resume.uts'
+import { parseResume, optimizeResume, uploadResumeFile } from '../../api/resume.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
 import {
   resumeDraft,
@@ -671,9 +671,13 @@ async function doParse(path: string, name: string) {
   adopted.value = []
   // 埋点：上传简历（fileType 取扩展名）
   const dot = name.lastIndexOf('.')
-  trackEvent('resume_upload', { fileType: dot >= 0 ? name.substring(dot + 1) : 'unknown' })
+  const ext = dot >= 0 ? name.substring(dot + 1) : 'bin'
+  trackEvent('resume_upload', { fileType: ext.length > 0 ? ext : 'unknown' })
   try {
-    const r = await parseResume(path)
+    // 小程序端：先把文件真实上传到云存储（wx.cloud.uploadFile，无需域名），
+    // 再把 cloud:// fileID 交给服务端；否则服务端拿到的只是客户端本地临时路径，永远读不到。
+    const fileUrl = await uploadResumeFile(path, ext)
+    const r = await parseResume(fileUrl)
     parsed.value = r
     const sugg = await optimizeResume('简历项目经历', positionDisplay(userStore.profile))
     suggestions.value = sugg

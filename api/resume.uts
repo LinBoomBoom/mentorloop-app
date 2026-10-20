@@ -1,7 +1,44 @@
 // 简历解析 / 优化接口（来源文档 02 §2.4）
 import { post, useMock } from './client.uts'
+import { CLOUD_ENV_ID } from './env.uts'
 import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
+
+// MP-WEIXIN：把本地选中的简历文件真实上传到微信云存储，返回可直接交付服务端的 fileID
+// 为什么走 wx.cloud.uploadFile 而不是 uni.uploadFile：后者受「上传合法域名」白名单约束，
+// 而云托管默认公网域名不能配到小程序后台（个人主体也无备案域名）；
+// wx.cloud 走私有链路，仅凭环境 ID 即可，无需任何域名配置（官方社区明确口径）。
+export async function uploadResumeFile(filePath: string, ext: string): Promise<string> {
+  if (useMock()) {
+    // Mock 环境：不真实上传，返回本地路径占位
+    return filePath
+  }
+  const g = globalThis as any
+  if (g.wx == null || g.wx.cloud == null || g.wx.cloud.uploadFile == null) {
+    // 非小程序平台（App/H5）：沿用原有本地路径语义
+    return filePath
+  }
+  const cloudPath =
+    'resumes/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.' + ext
+  return new Promise<string>((resolve, reject) => {
+    g.wx.cloud.uploadFile({
+      cloudPath: cloudPath,
+      filePath: filePath,
+      config: { env: CLOUD_ENV_ID },
+      success: (res: any) => {
+        const id = res != null && res.fileID != null ? String(res.fileID) : ''
+        if (id.length === 0) {
+          reject(new Error('RESUME_UPLOAD_NO_FILEID'))
+        } else {
+          resolve(id)
+        }
+      },
+      fail: (e: any) => {
+        reject(new Error(e != null && e.errMsg != null ? String(e.errMsg) : 'RESUME_UPLOAD_FAILED'))
+      }
+    } as any)
+  })
+}
 
 export async function parseResume(fileUrl: string): Promise<ResumeParseResult> {
   if (useMock()) return await mockParseResume(fileUrl)
