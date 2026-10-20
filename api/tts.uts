@@ -1,0 +1,27 @@
+// TTS 下行通道（面试官念题）
+// 职责：把题面文本交给服务端合成 → 拿 cloud:// fileID → 由 speech.uts 用 InnerAudioContext 播放
+// 契约：docs/contracts/2026-10-19-tts-outbound.freeze.md
+//   POST /interview/tts  { text }  →  { fileID, provider, format, chars }
+//   诚实降级：fileID='' 表示合成不可用（缺密钥/写存储失败），调用方回退字幕模式
+// Mock 优先：mock 环境直接抛错降级（不伪造可播音频）
+import { post, useMock } from './client.uts'
+
+export type TtsResponse = {
+  fileID: string
+  provider: string
+  format: string
+  chars: number
+}
+
+// 请求合成。失败抛错（调用方 catch 后回退 speakSilent，不阻塞面试流程）。
+export async function requestTts(text: string): Promise<TtsResponse> {
+  if (useMock()) {
+    throw new Error('TTS_MOCK_UNAVAILABLE')
+  }
+  const r = await post('/interview/tts', { text: text })
+  const d = r.data
+  if (d == null) {
+    throw new Error('TTS_EMPTY_RESPONSE')
+  }
+  return d as TtsResponse
+}

@@ -4,6 +4,7 @@ import { writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createSession, nextQuestion as svcNext, submitAnswer } from '../services/interview.js'
 import { getAsrDriver } from '../services/asr.js'
+import { getTtsDriver, TTS_TIMEOUT_MS } from '../services/tts.js'
 import { requireAuth } from './auth-guard.js'
 import { ok, okData, fail } from '../util.js'
 import { newId } from '../util.js'
@@ -174,6 +175,40 @@ export default async function (app: FastifyInstance): Promise<void> {
         } catch {
           // 忽略清理异常
         }
+      }
+    }
+  )
+
+  // TTS 下行（契约：docs/contracts/2026-10-19-tts-outbound.freeze.md）
+  // 文本 → 合成音频 → 写微信云存储 → 返回 cloud:// fileID（客户端 InnerAudioContext 直接播）
+  // 诚实降级：任一环节不可用 → fileID='' 且 format=''，客户端回退字幕模式，不阻塞流程
+  app.post(
+    '/interview/tts',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['text'],
+          properties: { text: { type: 'string' } }
+        }
+      }
+    },
+    async (request) => {
+      const env = (app as any).env as import('../config.js').Env
+      const body = request.body as any
+      if (body == null || typeof body.text !== 'string') {
+        return fail(400, '缺少文本')
+      }
+      const driver = getTtsDriver(env)
+      try {
+        const r = await driver.synthesize(body.text, { timeoutMs: TTS_TIMEOUT_MS })
+        return okData(r)
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : 'TTS_ERROR'
+        console.warn('[interview] tts failed', msg)
+        // 合成失败同样降级（不伪造音频、不卡面试流程）
+        return okData({ fileID: '', provider: driver.name, format: '', chars: 0 })
       }
     }
   )

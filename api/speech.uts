@@ -86,10 +86,10 @@ export function speak(text: string): TtsHandle {
 }
 
 // #ifdef MP-WEIXIN
+// 微信同声传译插件（实时 ASR 用；manifest 未声明时 requirePlugin 抛错 → 返回 null 走降级）
 let pluginTranslator: any = null
 let pluginRequireTried = false
 
-// 微信同声传译插件（需在 manifest mp-weixin.plugins 声明后通过 requirePlugin 加载）
 function getWechatSI(): any {
   if (pluginTranslator != null) return pluginTranslator
   if (pluginRequireTried) return null
@@ -98,49 +98,93 @@ function getWechatSI(): any {
     const g = globalThis as any
     const requirePluginFn = g.requirePlugin
     if (requirePluginFn == null) {
-      console.warn('[speech] requirePlugin 不可用，TTS 降级')
+      console.warn('[speech] requirePlugin 不可用，实时识别降级')
       return null
     }
     pluginTranslator = requirePluginFn('wechatSI')
     return pluginTranslator
   } catch {
-    console.warn('[speech] wechatSI 插件未声明，TTS 降级')
+    console.warn('[speech] wechatSI 插件未声明，实时识别降级')
     return null
   }
 }
 
+// 微信端 TTS：服务端腾讯云合成 → 云存储 cloud:// fileID → InnerAudioContext 直接播放
+// （cloud:// 走微信私有协议，不经域名校验，个人主体也无需备案域名）
+// 任一步失败 → 回退 speakSilent（只字幕），面试流程不阻塞、不弹错误
+const TTS_REQUEST_TIMEOUT_MS = 8000
+
 function speakWeixin(text: string): TtsHandle {
-  const si = getWechatSI()
-  if (si == null) return speakSilent(text)
-  try {
-    const manager = si.createSpeechSynthesizer != null ? si.createSpeechSynthesizer() : si
-    let stopped = false
-    manager.onstart(() => {
-      if (!stopped) emitTtsState('start')
-    })
-    manager.oncomplete(() => {
-      if (!stopped) emitTtsState('end')
-    })
-    manager.onerror(() => {
-      // TTS 失败不阻塞面试流程（字幕仍显示题目）
-      if (!stopped) emitTtsState('end')
-    })
-    manager.start({ lang: 'zh_CN', content: text })
-    const handle: TtsHandle = {
-      stop: () => {
-        stopped = true
-        try {
-          manager.stop()
-        } catch {
-          // 忽略停止异常
-        }
-        emitTtsState('end')
-      }
-    } as TtsHandle
-    return handle
-  } catch {
-    return speakSilent(text)
+  let stopped = false
+  let audio: any = null
+  let fallback: TtsHandle | null = null
+  const timer = setTimeout(() => {
+    // 合成超时：先降级播字幕，避免房间长时间无声
+    if (!stopped && audio == null && fallback == null) {
+      fallback = speakSilent(text)
+    }
+  }, TTS_REQUEST_TIMEOUT_MS)
+
+  const destroyAudio = () => {
+    if (audio == null) return
+    try {
+      audio.stop()
+      audio.destroy()
+    } catch {
+      // 忽略销毁异常
+    }
+    audio = null
   }
+
+  import('./tts.uts')
+    .then((mod) => mod.requestTts(text))
+    .then((r) => {
+      if (stopped) return
+      if (r.fileID.length === 0) {
+        // 服务端明确降级（缺密钥/写存储失败）：回退字幕模式
+        fallback = speakSilent(text)
+        return
+      }
+      if (fallback != null) return // 已因超时降级，放弃本次播放
+      audio = uni.createInnerAudioContext()
+      audio.src = r.fileID
+      audio.onPlay(() => {
+        if (!stopped) emitTtsState('start')
+      })
+      audio.onEnded(() => {
+        if (!stopped) emitTtsState('end')
+        destroyAudio()
+      })
+      audio.onError((err: any) => {
+        // 播放失败不阻塞面试：字幕已展示题目
+        const msg = err != null && err.errMsg != null ? String(err.errMsg) : 'unknown'
+        console.warn('[speech] TTS 播放失败', msg)
+        if (!stopped) emitTtsState('end')
+        destroyAudio()
+      })
+      audio.play()
+    })
+    .catch((e: any) => {
+      if (stopped || fallback != null) return
+      const msg = e != null && e.message != null ? String(e.message) : 'unknown'
+      console.warn('[speech] TTS 请求失败，回退字幕模式', msg)
+      fallback = speakSilent(text)
+    })
+
+  const handle: TtsHandle = {
+    stop: () => {
+      if (stopped) return
+      stopped = true
+      clearTimeout(timer)
+      if (fallback != null) {
+        fallback.stop()
+        return
+      }
+      destroyAudio()
+      emitTtsState('end')
+    }
+  } as TtsHandle
+  return handle
 }
 // #endif
 

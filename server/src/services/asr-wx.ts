@@ -1,7 +1,6 @@
 // 微信「语音上传+翻译」ASR 驱动（免费能力，无需额外开通，复用 WX_APPID/WX_SECRET）
 // 契约（微信开放文档 · 语音上传+翻译）：
-//   1. access_token：GET /cgi-bin/token?grant_type=client_credential&appid=&secret=
-//      （7200s 有效；模块级缓存，提前 5min 刷新）
+//   1. access_token：见 services/wx-access-token.ts（与 TTS 云存储共享同一份缓存）
 //   2. 提交：POST /cgi-bin/media/voice/addvoicetorecofortext
 //      ?access_token=&format=mp3&voice_id=&lang=zh_CN，body 为音频二进制
 //      （音频硬限 1MB，超限 errcode 40010）
@@ -14,22 +13,18 @@
 import { readFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { AsrDriver, AsrDriverOpts, AsrResult } from './asr.js'
+import { getWxAccessToken, resetWxAccessTokenCache } from './wx-access-token.js'
 
 // 微信侧音频硬限 1MB（errcode 40010）
 const MAX_AUDIO_BYTES = 1024 * 1024
-// token 提前刷新余量（5min）
-const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000
 // 轮询间隔（微信语音 ≤60s，识别通常数秒内完成）
 const POLL_INTERVAL_MS = 500
 
 const API_BASE = 'https://api.weixin.qq.com'
 
-// access_token 模块级缓存
-let tokenCache: { token: string; expiresAt: number } | null = null
-
-// 测试辅助：清空 token 缓存（每个用例独立）
+// 测试辅助：清空 token 缓存（保留旧导出名，既有 spec 零改动）
 export function resetWxAsrTokenCache(): void {
-  tokenCache = null
+  resetWxAccessTokenCache()
 }
 
 async function fetchJson(
@@ -44,33 +39,14 @@ async function fetchJson(
   return res.json()
 }
 
-// 获取 access_token（force=true 强制重取，用于 40001 恢复）
-async function getToken(
+// 获取 access_token（force=true 强制重取，用于 40001 恢复）—— 复用共享缓存模块
+function getToken(
   appId: string,
   secret: string,
   timeoutMs: number,
   force: boolean
 ): Promise<string> {
-  if (!force && tokenCache != null && Date.now() < tokenCache.expiresAt) {
-    return tokenCache.token
-  }
-  const url =
-    API_BASE +
-    '/cgi-bin/token?grant_type=client_credential&appid=' +
-    encodeURIComponent(appId) +
-    '&secret=' +
-    encodeURIComponent(secret)
-  const r = await fetchJson(url, undefined, timeoutMs)
-  if (r == null || typeof r.access_token !== 'string' || r.access_token.length === 0) {
-    const code = r != null ? r.errcode : 'null'
-    throw new Error('ASR_WX_TOKEN_FAILED_' + code)
-  }
-  const expiresIn = typeof r.expires_in === 'number' ? r.expires_in : 7200
-  tokenCache = {
-    token: r.access_token,
-    expiresAt: Date.now() + Math.max(60, expiresIn * 1000 - TOKEN_REFRESH_MARGIN_MS)
-  }
-  return tokenCache.token
+  return getWxAccessToken({ appId, secret, timeoutMs, force })
 }
 
 function wxQuery(path: string, token: string, extra: Record<string, string>): string {

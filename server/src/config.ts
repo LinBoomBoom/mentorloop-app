@@ -37,6 +37,13 @@ export type Env = {
   asrAliyunAccessKeySecret: string
   asrAliyunAppKey: string
   asrAliyunRegion: string
+  // 面试官 TTS 下行（契约：docs/contracts/2026-10-19-tts-outbound.freeze.md）
+  ttsProvider: 'stub' | 'probe' | 'tencent'
+  tencentSecretId: string
+  tencentSecretKey: string
+  tencentTtsRegion: string
+  tencentTtsVoiceType: number
+  wxCloudEnvId: string // 云存储环境（写合成音频用；非密钥）
 }
 
 const DEFAULT_ENV: Env = {
@@ -74,7 +81,13 @@ const DEFAULT_ENV: Env = {
   asrAliyunAccessKeyId: '',
   asrAliyunAccessKeySecret: '',
   asrAliyunAppKey: '',
-  asrAliyunRegion: 'cn-shanghai'
+  asrAliyunRegion: 'cn-shanghai',
+  ttsProvider: 'stub', // 默认 stub：诚实降级（空 fileID），客户端回退字幕模式
+  tencentSecretId: '',
+  tencentSecretKey: '',
+  tencentTtsRegion: 'ap-guangzhou',
+  tencentTtsVoiceType: 101001, // 智瑜（基础女声，mp3 16k）
+  wxCloudEnvId: 'prod-d6gaa83ds8accb61b'
 }
 
 export function loadEnv(): Env {
@@ -115,7 +128,15 @@ export function loadEnv(): Env {
     asrAliyunAccessKeySecret:
       e.ASR_ALIYUN_ACCESS_KEY_SECRET ?? DEFAULT_ENV.asrAliyunAccessKeySecret,
     asrAliyunAppKey: e.ASR_ALIYUN_APPKEY ?? DEFAULT_ENV.asrAliyunAppKey,
-    asrAliyunRegion: e.ASR_ALIYUN_REGION ?? DEFAULT_ENV.asrAliyunRegion
+    asrAliyunRegion: e.ASR_ALIYUN_REGION ?? DEFAULT_ENV.asrAliyunRegion,
+    ttsProvider:
+      e.TTS_PROVIDER === 'tencent' ? 'tencent' : e.TTS_PROVIDER === 'probe' ? 'probe' : 'stub',
+    tencentSecretId: e.TENCENTCLOUD_SECRET_ID ?? DEFAULT_ENV.tencentSecretId,
+    tencentSecretKey: e.TENCENTCLOUD_SECRET_KEY ?? DEFAULT_ENV.tencentSecretKey,
+    tencentTtsRegion: e.TENCENT_TTS_REGION ?? DEFAULT_ENV.tencentTtsRegion,
+    tencentTtsVoiceType:
+      parseInt(e.TENCENT_TTS_VOICE_TYPE ?? '', 10) || DEFAULT_ENV.tencentTtsVoiceType,
+    wxCloudEnvId: e.WX_CLOUD_ENV_ID ?? DEFAULT_ENV.wxCloudEnvId
   }
 }
 
