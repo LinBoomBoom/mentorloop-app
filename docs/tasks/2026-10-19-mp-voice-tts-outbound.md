@@ -151,3 +151,44 @@ WX_STORAGE_TICKET_NET_WX_TOKEN_NET_DEPTH_ZERO_SELF_SIGNED_CERT
 清理：探针合成的音频已从云存储删除（`tcb storage rm "tts/" --dir -f`），列表回归空。
 
 遗留（非缺陷，需知悉）：验证过程用 `13900000001` 走了一次真实登录，生产库中会留下该手机号账号。
+
+### 13.1 关于「加白名单能否绕过」的答复（2026-10-20）
+
+不能。官方 FAQ 里的「白名单」属于「开放接口服务」开关的配套配置，而**本环境控制台已无该开关**（设置 / 服务设置 / 环境设置逐页枚举确认）。更重要的是：白名单控制的是「哪些微信接口允许通过云调用网关」，**网关本身仍是那个自签证书的来源**——放开白名单只会让更多接口走同一网关，证书问题不会消失。官方 SDK 之所以能在云托管内正常工作，正是因为它们内部同样做了证书信任处理。本卡 `wx-http.ts` 的定向放宽与之等价，且作用域更窄（仅 `api.weixin.qq.com`、仅证书类错误）。
+
+## 14. 真机无声事故（2026-10-20，用户实测反馈）
+
+**现象**：契约、端点、云存储、孤立播放验证全部通过，但用户进房间**听不到声音**。
+
+**根因**：`speech.uts` 里用了动态 `import('./tts.uts')`。uni-app x 的 mp-weixin 编译器**不支持动态 import**，把它错译成字符串字面量后直接调用 `.then`：
+
+```js
+// 编译产物（dist/build/mp-weixin/api/speech.js，修复前）
+"./tts.js".then(t=>t.requestTts(e)).then(...)
+```
+
+进入 `speakWeixin` 第一行就抛 `TypeError: "./tts.js".then is not a function`，整条 TTS 链路从未执行——连字幕降级都没走到。
+
+**修复**：`api/speech.uts` 改为**静态导入** `import { requestTts } from './tts.uts'`，并在导入处写明原因（防止后人再写成动态导入）。
+
+**验证**（真实房间页路径，非孤立探针）：深链 `/pages/interview/room?mode=quick&positionId=backend&experienceLevel=junior`，对 `wx.createInnerAudioContext` 与 `wx.cloud.callContainer` 装观测钩子，结果：
+
+```
+/interview/session → /interview/next?... → /interview/tts      （恰好 1 次）
+audioCreates = 1
+events: play-called → onPlay → onEnded
+ttsWarns = []                                                  （零降级警告）
+```
+
+**教训（已写入项目记忆）**：上一版验收用的是「把 fileID 直接喂给 InnerAudioContext」的**替代验证**，证明的是「音频可播」，而非「应用会播」。**替代验证不能当验收**——必须驱动真实页面路径并观测其副作用。
+
+## 15. 联调验证码改为 123456（2026-10-20）
+
+用户要求验证码改成易记的 `123456`。但 `assertCloudSafety` 的既有设计是**云端拒绝以万能验证码启动**（该守卫曾挡下真实漏洞）。因此不是简单改值，而是：
+
+- 新增配置 `allowWeakSmsCode`（env `ALLOW_WEAK_SMS_CODE`，默认 `false`）
+- 守卫逻辑改为：`MOCK_SMS_CODE === '123456' && !allowWeakSmsCode` → 拒绝启动；显式置 `ALLOW_WEAK_SMS_CODE=true` 才放行
+- 云端注入 `MOCK_SMS_CODE=123456` + `ALLOW_WEAK_SMS_CODE=true`（16 键，回读一致），部署 012 正常启动
+- `.env.example` 同步说明
+
+**上线前必须移除**：删掉 `ALLOW_WEAK_SMS_CODE`（或置 `false`）并把 `MOCK_SMS_CODE` 改成随机值，否则任何人可用 123456 接管任意手机号账号。

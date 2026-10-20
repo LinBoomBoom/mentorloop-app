@@ -25,6 +25,7 @@ export type Env = {
   wxSecret: string // 小程序 AppSecret：/auth/wechat body.code 换 openid（jscode2session）
   trustWxHeaders: boolean // 仅云托管私有链路部署时开启：采信网关注入的 X-WX-* 头；关闭时服务端强制剥离该类头
   wxMockLogin: boolean // 本地联调豁免：无 WX_SECRET 时用 'wx_'+code 作 openid（生产禁止）
+  allowWeakSmsCode: boolean // 显式放行「万能验证码 123456」上云（上线前联调专用，默认禁止）
   wxMchId: string
   wxMchSerial: string
   wxApiV3Key: string
@@ -70,6 +71,7 @@ const DEFAULT_ENV: Env = {
   wxSecret: '',
   trustWxHeaders: false, // 默认不信任：公网部署时客户端可伪造 X-WX-OPENID；云托管部署显式开启
   wxMockLogin: false, // 默认关闭：'wx_'+code 假 openid 仅限本地联调显式开启
+  allowWeakSmsCode: false, // 默认禁止：需显式 ALLOW_WEAK_SMS_CODE=true 才允许万能验证码上云
   wxMchId: '',
   wxMchSerial: '',
   wxApiV3Key: '',
@@ -116,6 +118,7 @@ export function loadEnv(): Env {
     wxSecret: e.WX_SECRET ?? DEFAULT_ENV.wxSecret,
     trustWxHeaders: e.TRUST_WX_HEADERS === 'true',
     wxMockLogin: e.WX_MOCK_LOGIN === 'true',
+    allowWeakSmsCode: e.ALLOW_WEAK_SMS_CODE === 'true',
     wxMchId: e.WX_MCHID ?? DEFAULT_ENV.wxMchId,
     wxMchSerial: e.WX_MCH_SERIAL ?? DEFAULT_ENV.wxMchSerial,
     wxApiV3Key: e.WX_API_V3_KEY ?? DEFAULT_ENV.wxApiV3Key,
@@ -175,8 +178,10 @@ export function assertCloudSafety(env: Env): void {
   if (env.jwtSecret === DEFAULT_ENV.jwtSecret) {
     problems.push('JWT_SECRET 仍为开发默认值 dev-only-change-me')
   }
-  if (env.mockSmsCode === DEFAULT_ENV.mockSmsCode) {
-    problems.push('MOCK_SMS_CODE 仍为万能验证码 123456')
+  if (env.mockSmsCode === DEFAULT_ENV.mockSmsCode && !env.allowWeakSmsCode) {
+    problems.push(
+      'MOCK_SMS_CODE 仍为万能验证码 123456（若确为上线前联调，需同时设 ALLOW_WEAK_SMS_CODE=true 显式放行）'
+    )
   }
   if (env.wxMockLogin) {
     problems.push('WX_MOCK_LOGIN=true（假 openid 登录）禁止在云端开启')

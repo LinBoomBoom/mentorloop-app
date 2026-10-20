@@ -136,8 +136,7 @@ function speakWeixin(text: string): TtsHandle {
     audio = null
   }
 
-  import('./tts.uts')
-    .then((mod) => mod.requestTts(text))
+  requestTts(text)
     .then((r) => {
       if (stopped) return
       if (r.fileID.length === 0) {
@@ -212,6 +211,10 @@ import { audioPlugin, AudioRecordConfig } from '../utssdk/interviewer-audio/inde
 import { realtimePlugin, RealtimeConfig } from '../utssdk/interviewer-realtime/index.uts'
 import { BASE_URL, useMock } from './client.uts'
 import { userStore } from '../store/user-profile.uts'
+// 注意：必须静态导入。uni-app x 的 mp-weixin 编译不支持动态 import()——
+// `import('./tts.uts')` 会被编译成字符串字面量 `"./tts.js".then(...)`，
+// 运行即抛 TypeError，TTS 整条链路失效（2026-10-20 真机无声根因）。
+import { requestTts } from './tts.uts'
 
 // 录音器封装：单例 RecorderManager，回调式 API
 export class SpeechRecorder {
