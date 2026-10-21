@@ -1,6 +1,7 @@
 // 简历解析 / 优化接口（来源文档 02 §2.4）
 import { post, useMock } from './client.uts'
 import { CLOUD_ENV_ID } from './env.uts'
+import { userStore } from '../store/user-profile.uts'
 import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
 import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
 
@@ -18,8 +19,20 @@ export async function uploadResumeFile(filePath: string, ext: string): Promise<s
     // 非小程序平台（App/H5）：沿用原有本地路径语义
     return filePath
   }
+  // 路径必须带 uid 段：服务端凭此做属主校验；无 uid 时不上云，走本地路径语义
+  const uid = userStore.profile.uid
+  if (uid.length === 0) {
+    return filePath
+  }
   const cloudPath =
-    'resumes/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.' + ext
+    'resumes/' +
+    uid +
+    '/' +
+    Date.now().toString() +
+    '-' +
+    Math.floor(Math.random() * 100000) +
+    '.' +
+    ext
   return new Promise<string>((resolve, reject) => {
     g.wx.cloud.uploadFile({
       cloudPath: cloudPath,

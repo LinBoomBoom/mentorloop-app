@@ -4,7 +4,9 @@ import { writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createSession, nextQuestion as svcNext, submitAnswer } from '../services/interview.js'
 import { getAsrDriver } from '../services/asr.js'
-import { isCloudFileID, transcribeByCloudFileID } from '../services/asr-cloud.js'
+import { transcribeByCloudFileID } from '../services/asr-cloud.js'
+import { isCloudFileID, isOwnedCloudFileID } from '../services/cloud-file.js'
+import { deleteCloudFiles } from '../services/wx-storage.js'
 import { getTtsDriver, TTS_TIMEOUT_MS } from '../services/tts.js'
 import { requireAuth } from './auth-guard.js'
 import { ok, okData, fail } from '../util.js'
@@ -195,14 +197,19 @@ export default async function (app: FastifyInstance): Promise<void> {
         }
       }
     },
-    async (request) => {
+    async (request, reply) => {
       const env = (app as any).env as import('../config.js').Env
+      const uid = (request.user as any).uid as string
       const body = request.body as any
       if (body == null || typeof body.fileID !== 'string') {
         return fail(400, '缺少文件ID')
       }
       if (!isCloudFileID(body.fileID)) {
         return fail(400, '文件ID格式不正确')
+      }
+      // 属主校验：只允许本人 asr/<uid>/ 路径，防止借 fileID 读取他人录音
+      if (!isOwnedCloudFileID(body.fileID, uid, 'asr')) {
+        return reply.code(403).send(fail(403, '无权访问该文件'))
       }
       try {
         const r = await transcribeByCloudFileID(env, body.fileID)
@@ -232,13 +239,14 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const env = (app as any).env as import('../config.js').Env
+      const uid = (request.user as any).uid as string
       const body = request.body as any
       if (body == null || typeof body.text !== 'string') {
         return fail(400, '缺少文本')
       }
       const driver = getTtsDriver(env)
       try {
-        const r = await driver.synthesize(body.text, { timeoutMs: TTS_TIMEOUT_MS })
+        const r = await driver.synthesize(body.text, { timeoutMs: TTS_TIMEOUT_MS, uid: uid })
         return okData(r)
       } catch (e: any) {
         const msg = e != null && e.message != null ? String(e.message) : 'TTS_ERROR'
@@ -246,6 +254,50 @@ export default async function (app: FastifyInstance): Promise<void> {
         // 合成失败同样降级（不伪造音频、不卡面试流程）
         return okData({ fileID: '', provider: driver.name, format: '', chars: 0 })
       }
+    }
+  )
+
+  // TTS 回收回执（契约：docs/contracts/2026-10-21-tts-ack-and-file-ownership.freeze.md）
+  // 客户端播放结束/失败/主动停止后回调；服务端只删本人 tts/<uid>/ 下的合成对象。
+  // best-effort：删除不可用（缺凭据/网络失败）只告警，仍返回成功，不打扰用户。
+  app.post(
+    '/interview/tts-ack',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['fileID'],
+          properties: { fileID: { type: 'string' } }
+        }
+      }
+    },
+    async (request, reply) => {
+      const env = (app as any).env as import('../config.js').Env
+      const uid = (request.user as any).uid as string
+      const body = request.body as any
+      if (body == null || typeof body.fileID !== 'string') {
+        return fail(400, '缺少文件ID')
+      }
+      if (!isCloudFileID(body.fileID)) {
+        return fail(400, '文件ID格式不正确')
+      }
+      if (!isOwnedCloudFileID(body.fileID, uid, 'tts')) {
+        return reply.code(403).send(fail(403, '无权访问该文件'))
+      }
+      try {
+        await deleteCloudFiles({
+          appId: env.wxAppId,
+          secret: env.wxSecret,
+          envId: env.wxCloudEnvId,
+          fileIDs: [body.fileID],
+          timeoutMs: 5000
+        })
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : 'TTS_ACK_DELETE_ERROR'
+        console.warn('[interview] tts-ack delete failed（best-effort）', msg)
+      }
+      return ok()
     }
   )
 }

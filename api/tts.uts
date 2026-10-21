@@ -3,8 +3,10 @@
 // 契约：docs/contracts/2026-10-19-tts-outbound.freeze.md
 //   POST /interview/tts  { text }  →  { fileID, provider, format, chars }
 //   诚实降级：fileID='' 表示合成不可用（缺密钥/写存储失败），调用方回退字幕模式
+// 回收：docs/contracts/2026-10-21-tts-ack-and-file-ownership.freeze.md
+//   POST /interview/tts-ack { fileID } → 服务端删除合成对象（best-effort，客户端不感知失败）
 // Mock 优先：mock 环境直接抛错降级（不伪造可播音频）
-import { post, useMock } from './client.uts'
+import { post, requestSilent, useMock } from './client.uts'
 
 export type TtsResponse = {
   fileID: string
@@ -24,4 +26,16 @@ export async function requestTts(text: string): Promise<TtsResponse> {
     throw new Error('TTS_EMPTY_RESPONSE')
   }
   return d as TtsResponse
+}
+
+// 播放结束/失败/主动停止后回收云对象。静默调用：失败不弹 toast、不阻塞面试流程。
+export function ackTts(fileID: string): Promise<void> {
+  if (useMock() || fileID.length === 0) return Promise.resolve()
+  return requestSilent('/interview/tts-ack', {
+    method: 'POST',
+    data: { fileID: fileID },
+    header: null
+  })
+    .then(() => {})
+    .catch(() => {})
 }

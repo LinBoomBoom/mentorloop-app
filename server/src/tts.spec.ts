@@ -144,9 +144,12 @@ describe('probe 驱动', () => {
     expect(wav.length).toBe(44 + Math.round(16000 * 0.1) * 2)
   })
 
-  it('走云存储 → 返回 cloud:// fileID，provider=probe', async () => {
+  it('走云存储 → 返回 cloud:// fileID，provider=probe，路径带 uid 段', async () => {
     const { calls } = stubFetch({})
-    const r = await createProbeDriver(storage).synthesize('测试', { timeoutMs: 5000 })
+    const r = await createProbeDriver(storage).synthesize('测试', {
+      timeoutMs: 5000,
+      uid: 'u_abc123'
+    })
     expect(r.fileID).toBe('cloud://test-env.7465-test/tts/probe/x.wav')
     expect(r.provider).toBe('probe')
     expect(r.format).toBe('wav')
@@ -156,6 +159,10 @@ describe('probe 驱动', () => {
     expect(urls[0]).toContain('/cgi-bin/token')
     expect(urls[1]).toContain('/tcb/uploadfile')
     expect(urls[2]).toContain('cos.example.com/upload')
+    // 上传路径：tts/<uid>/<tag>/<ymd>/<uuid>.<ext>（回收时凭 uid 段做属主校验）
+    const ticketCall = calls.find(([u]) => u.indexOf('/tcb/uploadfile') >= 0)
+    const ticketBody = JSON.parse(String(ticketCall![1].body))
+    expect(ticketBody.path.indexOf('tts/u_abc123/probe/')).toBe(0)
   })
 
   it('缺微信凭据 → 空 fileID（不伪造），但仍返回真实 chars', async () => {

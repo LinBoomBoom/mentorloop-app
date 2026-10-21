@@ -4,6 +4,7 @@ import { basename } from 'node:path'
 import { requireAuth } from './auth-guard.js'
 import { getReport } from '../services/report.js'
 import { parseResumeFile, optimizeResume } from '../services/resume.js'
+import { isCloudFileID, isOwnedCloudFileID } from '../services/cloud-file.js'
 import { ingestEvents } from '../services/track.js'
 import { ok, okData, fail } from '../util.js'
 
@@ -59,9 +60,13 @@ export default async function (app: FastifyInstance): Promise<void> {
         }
       }
     },
-    async (request) => {
+    async (request, reply) => {
       const { fileUrl } = request.body as { fileUrl: string }
       const uid = (request.user as any).uid as string
+      // 属主校验：cloud:// 只允许本人 resumes/<uid>/ 路径；本地路径（App/H5）语义不变
+      if (isCloudFileID(fileUrl) && !isOwnedCloudFileID(fileUrl, uid, 'resumes')) {
+        return reply.code(403).send(fail(403, '无权访问该文件'))
+      }
       const name = basename(fileUrl)
       return okData(await parseResumeFile(db, uid, fileUrl, name))
     }

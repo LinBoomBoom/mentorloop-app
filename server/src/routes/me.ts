@@ -3,6 +3,7 @@ import { FastifyInstance } from 'fastify'
 import { unlinkSync } from 'node:fs'
 import { requireAuth } from './auth-guard.js'
 import { getUserByUid } from '../services/auth.js'
+import { deleteCloudFiles } from '../services/wx-storage.js'
 import { okData, ok } from '../util.js'
 
 const MAX_REPORTS = 20
@@ -41,13 +42,20 @@ export default async function (app: FastifyInstance): Promise<void> {
     const userId = user.id
 
     // 磁盘简历文件先收集（删表前），original_url 格式为 'resumes/<rel>'（/resume/parse 直存任意字符串，需容错）
+    // 云存储对象（cloud://）单独收集，注销时同步清理（合规：云上副本不能残留）
     const resumeRows = (await db
       .prepare('SELECT original_url FROM resumes WHERE user_id = ?')
       .all(userId)) as unknown[]
     const files: string[] = []
+    const cloudFileIDs: string[] = []
     for (const row of resumeRows) {
       const url = (row as any).original_url as string | null
-      if (url != null && url.startsWith('resumes/')) {
+      if (url == null) continue
+      if (url.indexOf('cloud://') === 0) {
+        cloudFileIDs.push(url)
+        continue
+      }
+      if (url.startsWith('resumes/')) {
         files.push(env.uploadDir + '/' + url.substring('resumes/'.length))
       }
     }
@@ -77,6 +85,21 @@ export default async function (app: FastifyInstance): Promise<void> {
         unlinkSync(f)
       } catch {
         // ignore
+      }
+    }
+    // 删除云存储简历对象（best-effort：缺凭据/网络失败只告警，不阻断注销幂等语义）
+    if (cloudFileIDs.length > 0) {
+      try {
+        await deleteCloudFiles({
+          appId: env.wxAppId,
+          secret: env.wxSecret,
+          envId: env.wxCloudEnvId,
+          fileIDs: cloudFileIDs,
+          timeoutMs: 5000
+        })
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : 'CLOUD_DELETE_ERROR'
+        console.warn('[me] 云存储简历删除失败（不阻断注销）：', msg)
       }
     }
     return ok()

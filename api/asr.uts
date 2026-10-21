@@ -9,6 +9,7 @@
 
 import { upload, post, useMock } from './client.uts'
 import { CLOUD_ENV_ID } from './env.uts'
+import { userStore } from '../store/user-profile.uts'
 
 export type AsrResponse = {
   text: string
@@ -41,8 +42,13 @@ export async function uploadAsrCloud(audioPath: string): Promise<AsrResponse> {
   if (g.wx == null || g.wx.cloud == null || g.wx.cloud.uploadFile == null) {
     throw new Error('ASR_CLOUD_UNAVAILABLE')
   }
+  // 路径必须带 uid 段：服务端据此做属主校验，拒绝跨用户读取录音
+  const uid = userStore.profile.uid
+  if (uid.length === 0) {
+    throw new Error('ASR_CLOUD_NO_UID')
+  }
   const cloudPath =
-    'asr/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.mp3'
+    'asr/' + uid + '/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.mp3'
   const fileID = await new Promise<string>((resolve, reject) => {
     g.wx.cloud.uploadFile({
       cloudPath: cloudPath,

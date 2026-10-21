@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtemp, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { isCloudFileID, transcribeByCloudFileID } from './services/asr-cloud.js'
+import { isCloudFileID, cloudFilePath, isOwnedCloudFileID } from './services/cloud-file.js'
+import { transcribeByCloudFileID } from './services/asr-cloud.js'
 import { resetWxAccessTokenCache } from './services/wx-access-token.js'
 import type { Env } from './config.js'
 import type { AsrDriver } from './services/asr.js'
@@ -47,6 +48,27 @@ describe('isCloudFileID', () => {
     expect(isCloudFileID('cloud://a.b/c.mp3')).toBe(true)
     expect(isCloudFileID('https://evil.com/x.mp3')).toBe(false)
     expect(isCloudFileID('')).toBe(false)
+  })
+})
+
+describe('cloudFilePath / isOwnedCloudFileID', () => {
+  it('解析标准形态路径；畸形形态返回空串', () => {
+    expect(cloudFilePath('cloud://env.bucket/asr/u_1/x.mp3')).toBe('asr/u_1/x.mp3')
+    expect(cloudFilePath('cloud://env.bucket')).toBe('')
+    expect(cloudFilePath('cloud://env.bucket/')).toBe('')
+    expect(cloudFilePath('cloud:///x.mp3')).toBe('')
+    expect(cloudFilePath('https://evil.com/asr/u_1/x.mp3')).toBe('')
+  })
+
+  it('只认本人 <topDir>/<uid>/ 前缀', () => {
+    const id = 'cloud://env.bucket/asr/u_abc/x.mp3'
+    expect(isOwnedCloudFileID(id, 'u_abc', 'asr')).toBe(true)
+    expect(isOwnedCloudFileID(id, 'u_other', 'asr')).toBe(false)
+    expect(isOwnedCloudFileID(id, 'u_abc', 'resumes')).toBe(false)
+    // 前缀包含但非完整段（u_abc2 不能被 u_abc 认领）
+    expect(isOwnedCloudFileID('cloud://env.bucket/asr/u_abc2/x.mp3', 'u_abc', 'asr')).toBe(false)
+    expect(isOwnedCloudFileID(id, '', 'asr')).toBe(false)
+    expect(isOwnedCloudFileID('cloud://env.bucket/asr/x.mp3', 'u_abc', 'asr')).toBe(false)
   })
 })
 

@@ -135,7 +135,7 @@
         >
           <ml-icon :name="recording ? 'square' : 'mic'" :size="24" :color="SURFACE"></ml-icon>
         </view>
-        <text class="text-xs text-white mt-2">{{ recording ? '停止并转写' : '点击作答' }}</text>
+        <text class="text-xs text-white mt-2">{{ recordButtonText }}</text>
       </view>
 
       <!-- 跳过本题（跳过保留为证据） -->
@@ -227,6 +227,14 @@ const RELIABLE = themeValue('reliable', '#1FB6A6')
 const DANGER = themeValue('danger', '#DC2626')
 
 const recording = ref(false)
+// 单次录音上限（秒）：微信 ASR 硬限 60s / 1MB，留 5s 余量；到点自动停止并直接送转写
+const RECORD_MAX_SECONDS = 55
+const recordSeconds = ref(0)
+const recordButtonText = computed((): string => {
+  if (!recording.value) return '点击作答'
+  const remain = RECORD_MAX_SECONDS - recordSeconds.value
+  return remain > 0 ? '停止 · ' + remain + 's' : '转写中'
+})
 const elapsed = ref(0)
 // 时长语义 v2：正计时展示（用户自主控制时长：题池封顶 + 随时手动退出），不再倒计时自动收束
 const elapsedText = computed((): string => {
@@ -319,6 +327,32 @@ const emptyQuestion: QuestionItem = {
 const currentQuestion = ref(emptyQuestion)
 
 let timer: number = 0
+// 录音计时器（与面试总计时分离：到 55s 自动停止并转写）
+let recordTimer: number = 0
+
+function clearRecordTimer() {
+  if (recordTimer > 0) {
+    clearInterval(recordTimer)
+    recordTimer = 0
+  }
+}
+
+function startRecordTimer() {
+  clearRecordTimer()
+  recordSeconds.value = 0
+  recordTimer = setInterval(() => {
+    if (!recording.value) {
+      clearRecordTimer()
+      return
+    }
+    recordSeconds.value = recordSeconds.value + 1
+    if (recordSeconds.value >= RECORD_MAX_SECONDS) {
+      clearRecordTimer()
+      stopRecord(true)
+      uni.showToast({ title: '已达单次录音上限，自动转写', icon: 'none' })
+    }
+  }, 1000)
+}
 
 // 展示文本：追问时显示追问话术，否则显示原题
 const displayQuestion = computed((): string => {
@@ -396,6 +430,7 @@ onLoad((options: any) => {
 
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
+  clearRecordTimer()
   // 页面卸载时释放感知层资源（单活跃实例，退出即释放）
   try {
     if (speech.isRecording()) speech.stop()
@@ -457,6 +492,9 @@ function initRecorder() {
   speech.init({
     onStart: () => {},
     onStop: (result: RecordResult) => {
+      // 平台到点自动停止（duration）与手动停止共用收口：录音态与计时器一并复位
+      recording.value = false
+      clearRecordTimer()
       lastAudioPath.value = result.audioPath
       handleRecordingStopped(result)
     },
@@ -464,6 +502,7 @@ function initRecorder() {
       console.warn('[room] recorder error', errMsg)
       caption.value = '录音失败，请改用文字作答'
       recording.value = false
+      clearRecordTimer()
       avatarState.value = 'listening'
     }
   })
@@ -577,6 +616,7 @@ function toggleRecord() {
 
 function startRecord() {
   recording.value = true
+  startRecordTimer()
   avatarState.value = 'listening'
   lastAudioPath.value = ''
   liveTranscript.value = ''
@@ -605,14 +645,18 @@ function startRecord() {
 function stopRecord(_auto: boolean) {
   if (!recording.value) return
   recording.value = false
+  clearRecordTimer()
   caption.value = '转写中…'
   // 先停实时识别（微信端），再停录音
   if (asrSession != null) {
     asrSession.stop()
     asrSession = null
   }
-  if (speech.isReady() && speech.isRecording()) {
-    speech.stop()
+  if (speech.isReady()) {
+    if (speech.isRecording()) {
+      speech.stop()
+    }
+    // 已停止（平台 duration 到点先触发 onStop）：由 onStop 回调统一收口，避免空文本覆盖转写
   } else {
     // 无录音能力：用已积累的实时文本或提示降级
     finishTranscribe('')

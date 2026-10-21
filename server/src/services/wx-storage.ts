@@ -163,3 +163,53 @@ export async function getCloudFileTempUrl(opts: {
   }
   return first.download_url
 }
+
+// 批量删除云存储对象（官方 POST /tcb/batchdeletefile，单次上限 50）
+// 用途：账号注销清理简历对象、TTS 播完回收合成音频；失败由调用方降级为告警。
+const MAX_DELETE_BATCH = 50
+
+export async function deleteCloudFiles(opts: {
+  appId: string
+  secret: string
+  envId: string
+  fileIDs: string[]
+  timeoutMs: number
+}): Promise<number> {
+  const ids = opts.fileIDs.filter((id) => id.length > 0)
+  if (ids.length === 0) return 0
+  // 缺凭据/环境：无从调用，按 0 删除处理（调用方不视为错误）
+  if (opts.appId.length === 0 || opts.secret.length === 0 || opts.envId.length === 0) return 0
+
+  let deleted = 0
+  for (let i = 0; i < ids.length; i += MAX_DELETE_BATCH) {
+    const chunk = ids.slice(i, i + MAX_DELETE_BATCH)
+    const call = async (force: boolean) => {
+      const accessToken = await getWxAccessToken({
+        appId: opts.appId,
+        secret: opts.secret,
+        timeoutMs: opts.timeoutMs,
+        force
+      })
+      const res = await wxApiFetch({
+        url: API_BASE + '/tcb/batchdeletefile?access_token=' + encodeURIComponent(accessToken),
+        method: 'POST',
+        jsonBody: { env: opts.envId, fileid_list: chunk },
+        timeoutMs: opts.timeoutMs
+      })
+      if (res.status < 200 || res.status >= 300) {
+        throw new Error('WX_STORAGE_DELETE_HTTP_' + res.status)
+      }
+      return JSON.parse(res.body) as any
+    }
+
+    let r = await call(false)
+    if (r != null && r.errcode === 40001) r = await call(true)
+    if (r == null || r.errcode !== 0) {
+      const code = r != null ? r.errcode : 'null'
+      const msg = r != null && r.errmsg != null ? String(r.errmsg) : ''
+      throw new Error('WX_STORAGE_DELETE_' + code + (msg.length > 0 ? '_' + msg : ''))
+    }
+    deleted += chunk.length
+  }
+  return deleted
+}

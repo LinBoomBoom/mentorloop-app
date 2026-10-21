@@ -14,10 +14,6 @@ const MAX_AUDIO_BYTES = 1024 * 1024
 // 下载链接有效期（够本次请求取回即可）
 const TEMP_URL_MAX_AGE = 300
 
-export function isCloudFileID(fileID: string): boolean {
-  return fileID.indexOf('cloud://') === 0
-}
-
 export async function transcribeByCloudFileID(
   env: Env,
   fileID: string,

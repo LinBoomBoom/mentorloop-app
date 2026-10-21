@@ -1,9 +1,19 @@
 // 我的报告历史（跨设备同步）+ 账号自助删除 单测
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { buildApp } from './app.js'
 import { loadEnv } from './config.js'
 import { closeDb } from './db.js'
+import { resetWxAccessTokenCache } from './services/wx-access-token.js'
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
+
+function mkRes(body: any, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => JSON.stringify(body),
+    json: async () => body
+  } as any
+}
 
 function makeApp() {
   const env = loadEnv()
@@ -109,7 +119,11 @@ describe('跨设备报告历史 /me/reports', () => {
 })
 
 describe('账号自助删除 DELETE /me/account', () => {
-  beforeEach(() => closeDb())
+  beforeEach(() => {
+    closeDb()
+    resetWxAccessTokenCache()
+  })
+  afterEach(() => vi.unstubAllGlobals())
 
   it('无登录返回 401', async () => {
     const app = makeApp()
@@ -198,6 +212,80 @@ describe('账号自助删除 DELETE /me/account', () => {
     expect(r.json().code).toBe(0)
     expect(existsSync(filePath)).toBe(false)
     expect(((await db.prepare('SELECT COUNT(*) AS c FROM resumes').get()) as any).c).toBe(0)
+    closeDb()
+  })
+
+  it('注销时删除 cloud:// 简历对象（/tcb/batchdeletefile），失败不阻断注销', async () => {
+    const env = loadEnv()
+    env.dbPath = './data/test-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.db'
+    env.uploadDir = './data/test-uploads-' + Math.random().toString(36).slice(2, 8)
+    env.wxAppId = 'wxappid'
+    env.wxSecret = 'wxsecret'
+    env.wxCloudEnvId = 'prod-test'
+    const app = await buildApp({ env })
+
+    const token = await login(app, '13900000009')
+    const db = (app as any).db
+    const uid = (
+      (await db.prepare("SELECT uid FROM users WHERE phone = '13900000009'").get()) as any
+    ).uid
+    const fileID = 'cloud://prod-test.bucket/resumes/' + uid + '/resume.pdf'
+    await db
+      .prepare(
+        `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
+       VALUES ((SELECT id FROM users WHERE phone = '13900000009'), ?, NULL, NULL, ?)`
+      )
+      .run(fileID, Date.now())
+
+    const bodies: any[] = []
+    vi.stubGlobal('fetch', async (url: any, init: any) => {
+      const u = String(url)
+      if (u.indexOf('/cgi-bin/token') >= 0) return mkRes({ access_token: 'TK', expires_in: 7200 })
+      if (u.indexOf('/tcb/batchdeletefile') >= 0) {
+        bodies.push(JSON.parse(String(init.body)))
+        return mkRes({ errcode: 0, errmsg: 'ok' })
+      }
+      throw new Error('unexpected ' + u)
+    })
+
+    const r = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
+    expect(r.json().code).toBe(0)
+    expect(bodies.length).toBe(1)
+    expect(bodies[0].env).toBe('prod-test')
+    expect(bodies[0].fileid_list).toContain(fileID)
+    closeDb()
+  })
+
+  it('云删除失败仅告警，注销仍成功（幂等语义不变）', async () => {
+    const env = loadEnv()
+    env.dbPath = './data/test-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.db'
+    env.uploadDir = './data/test-uploads-' + Math.random().toString(36).slice(2, 8)
+    env.wxAppId = 'wxappid'
+    env.wxSecret = 'wxsecret'
+    env.wxCloudEnvId = 'prod-test'
+    const app = await buildApp({ env })
+
+    const token = await login(app, '13900000010')
+    const db = (app as any).db
+    const uid = (
+      (await db.prepare("SELECT uid FROM users WHERE phone = '13900000010'").get()) as any
+    ).uid
+    await db
+      .prepare(
+        `INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at)
+       VALUES ((SELECT id FROM users WHERE phone = '13900000010'), ?, NULL, NULL, ?)`
+      )
+      .run('cloud://prod-test.bucket/resumes/' + uid + '/resume.pdf', Date.now())
+
+    vi.stubGlobal('fetch', async (url: any) => {
+      const u = String(url)
+      if (u.indexOf('/cgi-bin/token') >= 0) return mkRes({ access_token: 'TK', expires_in: 7200 })
+      return mkRes({ errcode: 85088, errmsg: 'no qbase privilege' })
+    })
+
+    const r = await app.inject({ method: 'DELETE', url: '/me/account', headers: auth(token) })
+    expect(r.json().code).toBe(0)
+    expect(((await db.prepare('SELECT COUNT(*) AS c FROM users').get()) as any).c).toBe(0)
     closeDb()
   })
 })

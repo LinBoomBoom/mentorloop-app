@@ -24,7 +24,7 @@ export type TtsResult = {
   chars: number // 实际送入合成的字符数
 }
 
-export type TtsDriverOpts = { timeoutMs: number }
+export type TtsDriverOpts = { timeoutMs: number; uid?: string }
 
 export type TtsDriver = {
   name: TtsProvider
@@ -149,7 +149,7 @@ export function createProbeDriver(storage: StorageOpts): TtsDriver {
     name: 'probe',
     async synthesize(text: string, o: TtsDriverOpts): Promise<TtsResult> {
       const chars = clampTtsText(text).length
-      const fileID = await writeAudio(storage, buildProbeWav(), 'wav', o.timeoutMs, 'probe')
+      const fileID = await writeAudio(storage, buildProbeWav(), 'wav', o.timeoutMs, 'probe', o.uid)
       return {
         fileID: fileID,
         provider: 'probe',
@@ -227,7 +227,7 @@ export function createTencentDriver(opts: {
         throw new Error('TTS_EMPTY_AUDIO')
       }
       const audio = new Uint8Array(Buffer.from(r.Audio, 'base64'))
-      const fileID = await writeAudio(opts.storage, audio, 'mp3', o.timeoutMs, 'tencent')
+      const fileID = await writeAudio(opts.storage, audio, 'mp3', o.timeoutMs, 'tencent', o.uid)
       return {
         fileID: fileID,
         provider: 'tencent',
@@ -247,12 +247,14 @@ export type StorageOpts = {
 }
 
 // 写云存储；缺凭据或写入失败 → 空串（诚实降级，不抛给路由）
+// 路径带 uid 段：播放结束由 /interview/tts-ack 凭同段做属主校验后删除，避免对象堆积
 async function writeAudio(
   storage: StorageOpts,
   data: Uint8Array,
   ext: 'mp3' | 'wav',
   timeoutMs: number,
-  tag: string
+  tag: string,
+  uid?: string
 ): Promise<string> {
   if (storage.appId.length === 0 || storage.secret.length === 0) {
     console.warn('[tts] WX_APPID/WX_SECRET 未配置，无法写云存储，降级为字幕模式')
@@ -267,7 +269,8 @@ async function writeAudio(
     d.getFullYear().toString() +
     ('0' + (d.getMonth() + 1)).slice(-2) +
     ('0' + d.getDate()).slice(-2)
-  const cloudPath = 'tts/' + tag + '/' + ymd + '/' + randomUUID() + '.' + ext
+  const owner = uid != null && uid.length > 0 ? uid : 'anon'
+  const cloudPath = 'tts/' + owner + '/' + tag + '/' + ymd + '/' + randomUUID() + '.' + ext
   try {
     return await uploadToWxCloud({
       appId: storage.appId,
