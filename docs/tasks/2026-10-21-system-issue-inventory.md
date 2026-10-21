@@ -4,6 +4,7 @@
 > 口径：每条均已在代码/配置中取证，附文件与行号；未经证实的事项不列入。
 > 上游：语音链路批次已全部落地并推送（`d53112f` → `a5e3b0b`，工作区干净）。
 > 状态更新（2026-10-21）：P1-3 / P1-4 / P2-6 已由[批次 1+2 任务卡](./2026-10-21-voice-storage-hardening.md)关闭（代码 + 单测，G2/G3 通过）；真机走查与云端凭据联调待执行，见[验收结论](./2026-10-21-voice-storage-hardening.accept.md) §5。
+> 状态更新（2026-10-21）：P1-2 已由[简历 AI 深度评审任务卡](./2026-10-21-resume-ai-review.md)关闭批次 1（真实抽取 + 证据锚定评审 + 历史 + 额度，G2/G3 通过）；批注版 PDF（批次 2）待启动，见[验收结论](./2026-10-21-resume-ai-review.accept.md) §5。
 > 关联：[TTS 实施卡](./2026-10-19-mp-voice-tts-outbound.md) · [ASR 上行卡](./2026-10-21-mp-asr-upload-and-resume-picker.md) · [阶段汇报](./2026-10-20-mp-voice-channel-report.md)
 
 ## 1. 判定规则

@@ -64,6 +64,12 @@ async function grantBenefit(db: Db, order: OrderRow): Promise<void> {
     await db
       .prepare('UPDATE users SET member_until = ?, updated_at = ? WHERE id = ?')
       .run(base + sku.memberDays * DAY_MS, t, order.user_id)
+  } else if (sku.kind === 'resume') {
+    await db
+      .prepare(
+        'UPDATE users SET resume_single_total = resume_single_total + ?, updated_at = ? WHERE id = ?'
+      )
+      .run(sku.resumeCount, t, order.user_id)
   } else {
     await db
       .prepare(

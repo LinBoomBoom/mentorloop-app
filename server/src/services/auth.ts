@@ -16,6 +16,8 @@ export type UserRow = {
   free_quota_used: number
   single_quota_total: number
   single_quota_used: number
+  resume_single_total: number
+  resume_single_used: number
   member_until: number | null
   desktop_user_id: string | null
   created_at: number

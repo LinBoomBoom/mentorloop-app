@@ -1,9 +1,15 @@
 // 简历解析 / 优化接口（来源文档 02 §2.4）
-import { post, useMock } from './client.uts'
+import { post, get, del, useMock } from './client.uts'
 import { CLOUD_ENV_ID } from './env.uts'
 import { userStore } from '../store/user-profile.uts'
+import { quotaStore } from '../store/quota.uts'
 import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
-import { ResumeParseResult, ResumeSuggestion } from '../types/resume.uts'
+import {
+  ResumeHistoryItem,
+  ResumeParseResponse,
+  ResumeQuota,
+  ResumeSuggestion
+} from '../types/resume.uts'
 
 // MP-WEIXIN：把本地选中的简历文件真实上传到微信云存储，返回可直接交付服务端的 fileID
 // 为什么走 wx.cloud.uploadFile 而不是 uni.uploadFile：后者受「上传合法域名」白名单约束，
@@ -53,10 +59,55 @@ export async function uploadResumeFile(filePath: string, ext: string): Promise<s
   })
 }
 
-export async function parseResume(fileUrl: string): Promise<ResumeParseResult> {
-  if (useMock()) return await mockParseResume(fileUrl)
-  const r = await post('/resume/parse', { fileUrl: fileUrl })
-  return r.data as ResumeParseResult
+export async function parseResume(
+  fileUrl: string,
+  fileName: string,
+  position: string
+): Promise<ResumeParseResponse> {
+  if (useMock()) return await mockParseResume(fileUrl, fileName, position)
+  const r = await post('/resume/parse', {
+    fileUrl: fileUrl,
+    fileName: fileName,
+    position: position
+  })
+  return r.data as ResumeParseResponse
+}
+
+// 历史列表 / 详情 / 删除 / 额度（服务端权威账本）
+export async function fetchResumeHistory(limit: number = 20): Promise<ResumeHistoryItem[]> {
+  if (useMock()) return [] as ResumeHistoryItem[]
+  const r = await get('/resume/history', { limit: limit })
+  const d = r.data as any
+  const items = d != null && d.items != null ? (d.items as ResumeHistoryItem[]) : []
+  return items
+}
+
+export async function fetchResumeDetail(resumeId: string): Promise<ResumeParseResponse | null> {
+  if (useMock()) return await mockParseResume('mock', 'demo-resume.pdf', '')
+  const r = await get('/resume/detail', { resumeId: resumeId })
+  return r.data != null ? (r.data as ResumeParseResponse) : null
+}
+
+export async function deleteResumeRecord(resumeId: string): Promise<void> {
+  if (useMock()) return
+  await del('/resume/detail?resumeId=' + encodeURIComponent(resumeId))
+}
+
+export async function fetchResumeQuota(): Promise<ResumeQuota> {
+  if (useMock()) {
+    const member = quotaStore.isMember()
+    const single = quotaStore.state.resumeCreditsLeft
+    const memberLeft = member ? 5 : 0
+    return {
+      memberMonthlyTotal: 5,
+      memberMonthlyLeft: memberLeft,
+      singleLeft: single,
+      freePreviewLeftToday: 3,
+      canFull: memberLeft > 0 || single > 0
+    } as ResumeQuota
+  }
+  const r = await get('/resume/quota', null)
+  return r.data as ResumeQuota
 }
 
 export async function optimizeResume(text: string, position: string): Promise<ResumeSuggestion[]> {

@@ -17,6 +17,7 @@ export const FREE_QUOTA = {
 export type QuotaState = {
   freeInterviewsLeft: number
   singleCreditsLeft: number // 单次包余量（场）
+  resumeCreditsLeft: number // 简历深度评审单次包余量（次）
   trainingsToday: number
   trainingsDate: string // YYYY-MM-DD（每日重置）
   memberUntil: number // 会员到期时间戳（0=非会员）
@@ -41,6 +42,7 @@ function defaultState(): QuotaState {
   return {
     freeInterviewsLeft: FREE_QUOTA.interviews,
     singleCreditsLeft: 0,
+    resumeCreditsLeft: 0,
     trainingsToday: 0,
     trainingsDate: todayStr(),
     memberUntil: 0
@@ -126,7 +128,7 @@ class QuotaStore {
   }
 
   // 支付成功后发放权益
-  grant(skuKind: 'member' | 'single', skuId: string) {
+  grant(skuKind: 'member' | 'single' | 'resume', skuId: string) {
     if (skuKind === 'member') {
       // Mock 环境：月卡 30 天 / 年卡 365 天（真后端以 memberUntil 服务端下发为准）
       const days = skuId === 'member_yearly' ? 365 : 30
@@ -143,6 +145,9 @@ class QuotaStore {
         token: null
       })
       userStore.persist()
+    } else if (skuKind === 'resume') {
+      // 简历评审单次包：3 次/包（与 server/src/data/skus.ts 对齐）
+      this.state.resumeCreditsLeft = this.state.resumeCreditsLeft + 3
     } else {
       const credits = skuId === 'single_pack_10' ? 10 : 3
       this.state.singleCreditsLeft = this.state.singleCreditsLeft + credits

@@ -11,12 +11,20 @@
             <ml-icon name="crown" :size="22" :color="WARN_LIGHT"></ml-icon>
           </view>
           <view class="flex-col flex-1 ml-3">
-            <text class="text-lg font-bold text-white">MentorLoop 会员</text>
-            <text class="text-xs text-mist mt-0.5">按次购买或连续包月</text>
+            <text class="text-lg font-bold text-white">{{
+              from === 'resume' ? '简历深度评审' : 'MentorLoop 会员'
+            }}</text>
+            <text class="text-xs text-mist mt-0.5">{{
+              from === 'resume' ? 'AI 逐条批注 · 单次包' : '按次购买或连续包月'
+            }}</text>
           </view>
         </view>
         <text class="text-sm text-mist leading-5 mt-3">
-          会员解锁无限次模拟面试、深度证据报告与完整训练计划
+          {{
+            from === 'resume'
+              ? '解锁简历逐条 AI 批注、改写建议与历史记录；每包 3 次深度评审'
+              : '会员解锁无限次模拟面试、深度证据报告与完整训练计划'
+          }}
         </text>
       </view>
 
@@ -73,8 +81,8 @@
         </view>
       </view>
 
-      <!-- 会员权益 -->
-      <view class="mt-4">
+      <!-- 会员权益（简历入口不展示，避免信息干扰） -->
+      <view v-if="from !== 'resume'" class="mt-4">
         <ml-card :padded="false">
           <view class="p-4">
             <text class="text-sm font-semibold text-ink">会员权益</text>
@@ -111,7 +119,9 @@
       <view class="flex-row items-center justify-center mt-3">
         <text class="text-xs text-ink-soft">支付即同意</text>
         <text class="text-xs text-smart ml-0.5" @click="showAgreement">《会员服务协议》</text>
-        <text class="text-xs text-ink-soft">· 连续包月可随时取消</text>
+        <text class="text-xs text-ink-soft"
+          >· {{ from === 'resume' ? '单次包购买后立即生效' : '连续包月可随时取消' }}</text
+        >
       </view>
       <view v-if="isMock" class="flex-col items-center mt-2">
         <text class="text-xs text-ink-soft">Mock 环境：支付为模拟流程，权益即时发放</text>
@@ -126,7 +136,14 @@ import { onLoad } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
-import { SKUS, MEMBER_BENEFITS, Sku, SkuId, formatPrice } from '../../data/membership.uts'
+import {
+  SKUS,
+  RESUME_PACK,
+  MEMBER_BENEFITS,
+  Sku,
+  SkuId,
+  formatPrice
+} from '../../data/membership.uts'
 import { purchase } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { useMock } from '../../api/env.uts'
@@ -139,13 +156,13 @@ const LINE_STRONG = themeValue('lineStrong', '#C9D2E3')
 const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
 const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 
-const skus = SKUS
+// 入口来源（mine=我的页 / gating=权益拦截 / index=首页 / resume=简历页）
+const from = ref('mine')
 const benefits = MEMBER_BENEFITS
 const selected = ref<SkuId>('member_monthly')
 const paying = ref(false)
-
-// 入口来源（mine=我的页 / gating=权益拦截 / index=首页）
-const from = ref('mine')
+// 简历页入口只展示简历评审单次包，避免把会员主套餐混入
+const skus = computed((): Sku[] => (from.value === 'resume' ? [RESUME_PACK] : SKUS))
 // Mock 说明仅演示环境展示，真实环境不出现
 const isMock = useMock()
 
@@ -153,19 +170,24 @@ onLoad((opts: any) => {
   if (opts != null && opts['from'] != null) {
     from.value = String(opts['from'])
   }
+  if (from.value === 'resume') {
+    selected.value = 'resume_pack_3'
+    uni.setNavigationBarTitle({ title: '简历深度评审' })
+  }
   trackEvent('paywall_view', { from: from.value })
 })
 
 const selectedSku = computed((): Sku => {
-  for (let i = 0; i < skus.length; i++) {
-    if (skus[i].id === selected.value) return skus[i]
+  const list = skus.value
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id === selected.value) return list[i]
   }
-  return skus[0]
+  return list[0]
 })
 
 const payButtonText = computed((): string => {
   const s = selectedSku.value
-  return '立即开通 · ¥' + formatPrice(s.priceCent)
+  return (s.kind === 'resume' ? '立即购买 · ¥' : '立即开通 · ¥') + formatPrice(s.priceCent)
 })
 
 async function doPay() {

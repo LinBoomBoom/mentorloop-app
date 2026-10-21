@@ -20,6 +20,27 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+// 云端 MySQL 增量迁移（2026-10-21 简历 AI 评审）：逐条执行，便于幂等忽略单条失败
+const MYSQL_RESUME_MIGRATIONS: string[] = [
+  'ALTER TABLE users ADD COLUMN resume_single_total INT NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN resume_single_used INT NOT NULL DEFAULT 0',
+  'ALTER TABLE resumes ADD COLUMN file_name VARCHAR(255) NULL',
+  'ALTER TABLE resumes ADD COLUMN file_type VARCHAR(16) NULL',
+  'ALTER TABLE resumes ADD COLUMN content_hash VARCHAR(64) NULL',
+  'ALTER TABLE resumes ADD COLUMN target_position VARCHAR(64) NULL',
+  'ALTER TABLE resumes ADD COLUMN mode VARCHAR(16) NULL',
+  'CREATE INDEX idx_resumes_cache ON resumes (user_id, content_hash)',
+  `CREATE TABLE IF NOT EXISTS resume_usages (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    mode VARCHAR(16) NOT NULL,
+    created_at BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_resume_usages_user (user_id, mode, created_at),
+    CONSTRAINT fk_resume_usages_user FOREIGN KEY (user_id) REFERENCES users (id)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`
+]
+
 let instance: Db | null = null
 let instanceKey = ''
 
@@ -45,6 +66,27 @@ export class Db {
     }
   }
 
+  // 云端 MySQL 增量迁移（启动时执行；逐条幂等，重复列/索引/表忽略）
+  // 云端外网关闭，无法从本机直连 TDSQL-C，故由服务启动自动补齐 schema。
+  async ensureSchema(): Promise<void> {
+    if (this.driver !== 'mysql') return
+    for (const sql of MYSQL_RESUME_MIGRATIONS) {
+      try {
+        await this.d.exec(sql)
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : String(e)
+        if (
+          msg.indexOf('Duplicate column name') >= 0 ||
+          msg.indexOf('Duplicate key name') >= 0 ||
+          msg.indexOf('already exists') >= 0
+        ) {
+          continue
+        }
+        console.warn('[db] 云端迁移语句失败（继续启动）：', msg)
+      }
+    }
+  }
+
   // 轻量列迁移（仅本地 SQLite）：兼容升级前创建的旧库（新库 CREATE TABLE 已含新列，ALTER 重复会被忽略）
   private migrate(raw: DatabaseSync): void {
     try {
@@ -61,6 +103,29 @@ export class Db {
       raw.exec('ALTER TABLE users ADD COLUMN desktop_user_id TEXT')
     } catch {
       // 列已存在，忽略
+    }
+    try {
+      raw.exec('ALTER TABLE users ADD COLUMN resume_single_total INTEGER NOT NULL DEFAULT 0')
+    } catch {
+      // 列已存在，忽略
+    }
+    try {
+      raw.exec('ALTER TABLE users ADD COLUMN resume_single_used INTEGER NOT NULL DEFAULT 0')
+    } catch {
+      // 列已存在，忽略
+    }
+    for (const col of [
+      'file_name TEXT',
+      'file_type TEXT',
+      'content_hash TEXT',
+      'target_position TEXT',
+      'mode TEXT'
+    ]) {
+      try {
+        raw.exec('ALTER TABLE resumes ADD COLUMN ' + col)
+      } catch {
+        // 列已存在，忽略
+      }
     }
   }
 

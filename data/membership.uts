@@ -2,11 +2,12 @@
 // 客户端侧 SKU 展示配置；价格以分（cent）为单位，展示时格式化。
 // B 端席位不在客户端售卖（M3+），此处不配置。
 
-export type SkuId = 'member_monthly' | 'member_yearly' | 'single_pack_3' | 'single_pack_10'
+export type SkuId =
+  'member_monthly' | 'member_yearly' | 'single_pack_3' | 'single_pack_10' | 'resume_pack_3'
 
 export type Sku = {
   id: SkuId
-  kind: 'member' | 'single' // member=订阅会员 single=单次包
+  kind: 'member' | 'single' | 'resume' // member=订阅会员 single=面试单次包 resume=简历评审单次包
   name: string
   desc: string
   priceCent: number // 展示价（分）
@@ -78,6 +79,20 @@ export const SKUS: Sku[] = [
     highlight: false
   } as Sku
 ]
+
+// 简历 AI 深度评审单次包（仅从简历页付费入口展示，不混入会员主套餐列表）
+// 暂定 29 元 / 3 次，与服务端 server/src/data/skus.ts 对齐
+export const RESUME_PACK: Sku = {
+  id: 'resume_pack_3',
+  kind: 'resume',
+  name: '简历深度评审 · 3 次',
+  desc: 'AI 逐条批注 + 历史记录，单次包 3 次',
+  priceCent: 2900,
+  originPriceCent: 0,
+  unit: '包',
+  badge: '',
+  highlight: false
+} as Sku
 
 // 价格格式化：分 → 元字符串
 export function formatPrice(cent: number): string {

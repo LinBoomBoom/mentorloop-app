@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   free_quota_used    INT          NOT NULL DEFAULT 0,
   single_quota_total INT          NOT NULL DEFAULT 0,
   single_quota_used  INT          NOT NULL DEFAULT 0,
+  resume_single_total INT         NOT NULL DEFAULT 0,
+  resume_single_used  INT         NOT NULL DEFAULT 0,
   member_until       BIGINT       NULL COMMENT 'epoch ms；NULL=非会员',
   desktop_user_id    VARCHAR(64)  NULL COMMENT '桌面端 mentorloop.users.id（账号互通绑定，可空）',
   created_at         BIGINT       NOT NULL,
@@ -94,20 +96,36 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS resumes (
   id               BIGINT      NOT NULL AUTO_INCREMENT,
   user_id          BIGINT      NOT NULL,
-  original_url     TEXT        NULL COMMENT '本地磁盘暂存相对路径',
+  original_url     TEXT        NULL COMMENT '本地磁盘暂存相对路径或 cloud:// fileID',
+  file_name        VARCHAR(255) NULL COMMENT '原始文件名',
+  file_type        VARCHAR(16) NULL COMMENT 'pdf | docx',
+  content_hash     VARCHAR(64) NULL COMMENT 'SHA-256（缓存/幂等）',
+  target_position  VARCHAR(64) NULL COMMENT '目标岗位',
+  mode             VARCHAR(16) NULL COMMENT 'full | preview',
   parse_payload    MEDIUMTEXT  NULL COMMENT 'JSON ResumeParseResult',
-  optimize_payload MEDIUMTEXT  NULL COMMENT 'JSON ResumeSuggestion[]',
+  optimize_payload MEDIUMTEXT  NULL COMMENT 'JSON ResumeIssue[]',
   created_at       BIGINT      NOT NULL,
   PRIMARY KEY (id),
   KEY idx_resumes_user (user_id),
+  KEY idx_resumes_cache (user_id, content_hash),
   CONSTRAINT fk_resumes_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS resume_usages (
+  id         BIGINT      NOT NULL AUTO_INCREMENT,
+  user_id    BIGINT      NOT NULL,
+  mode       VARCHAR(16) NOT NULL COMMENT 'member | preview',
+  created_at BIGINT      NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_resume_usages_user (user_id, mode, created_at),
+  CONSTRAINT fk_resume_usages_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS orders (
   id             VARCHAR(64) NOT NULL COMMENT 'orderId',
   user_id        BIGINT      NOT NULL,
   sku_id         VARCHAR(64) NOT NULL,
-  sku_kind       VARCHAR(16) NOT NULL COMMENT 'member | single',
+  sku_kind       VARCHAR(16) NOT NULL COMMENT 'member | single | resume',
   amount         INT         NOT NULL COMMENT '分',
   status         VARCHAR(16) NOT NULL DEFAULT 'CREATED' COMMENT 'CREATED/PAID/CLOSED',
   transaction_id VARCHAR(64) NULL COMMENT '微信支付单号（回调写入）',

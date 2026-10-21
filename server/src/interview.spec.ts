@@ -174,7 +174,7 @@ describe('cloud fileID 属主校验', () => {
     closeDb()
   })
 
-  it('/resume/parse：他人 cloud 简历 → 403；本人/本地路径不拦截', async () => {
+  it('/resume/parse：他人 cloud 简历 → 403；本人通过属主校验，本地路径拒绝', async () => {
     const app = makeApp()
     const tokenA = await loginWithPhone(app, '13911110003')
     await loginWithPhone(app, '13911110004')
@@ -195,7 +195,8 @@ describe('cloud fileID 属主校验', () => {
       headers: auth(tokenA),
       payload: { fileUrl: 'cloud://prod-test.bucket/resumes/' + uidA + '/r.pdf' }
     })
-    expect(mine.json().code).toBe(0)
+    // 本人路径通过属主校验；测试环境无云凭据 → 503（文件存储不可用）
+    expect(mine.json().code).toBe(503)
 
     const local = await app.inject({
       method: 'POST',
@@ -203,7 +204,7 @@ describe('cloud fileID 属主校验', () => {
       headers: auth(tokenA),
       payload: { fileUrl: 'resumes/u_000003_r.pdf' }
     })
-    expect(local.json().code).toBe(0)
+    expect(local.statusCode).toBe(400)
     closeDb()
   })
 

@@ -1,20 +1,58 @@
 // 服务端权威 SKU 目录（P1.3；与前端 data/membership.uts 展示配置对齐）
 // 金额/天数/场次以本文件为准；下单仅认 skuId，拒绝客户端传价。
-export type SkuKind = 'member' | 'single'
+export type SkuKind = 'member' | 'single' | 'resume'
 
 export type SkuSpec = {
   id: string
   kind: SkuKind
   priceCent: number
   memberDays: number // kind=member 时生效
-  singleCount: number // kind=single 时生效
+  singleCount: number // kind=single 时生效（面试场次）
+  resumeCount: number // kind=resume 时生效（简历完整评审次数）
 }
 
 export const SKUS: SkuSpec[] = [
-  { id: 'member_monthly', kind: 'member', priceCent: 3900, memberDays: 30, singleCount: 0 },
-  { id: 'member_yearly', kind: 'member', priceCent: 22800, memberDays: 365, singleCount: 0 },
-  { id: 'single_pack_3', kind: 'single', priceCent: 2900, memberDays: 0, singleCount: 3 },
-  { id: 'single_pack_10', kind: 'single', priceCent: 7900, memberDays: 0, singleCount: 10 }
+  {
+    id: 'member_monthly',
+    kind: 'member',
+    priceCent: 3900,
+    memberDays: 30,
+    singleCount: 0,
+    resumeCount: 0
+  },
+  {
+    id: 'member_yearly',
+    kind: 'member',
+    priceCent: 22800,
+    memberDays: 365,
+    singleCount: 0,
+    resumeCount: 0
+  },
+  {
+    id: 'single_pack_3',
+    kind: 'single',
+    priceCent: 2900,
+    memberDays: 0,
+    singleCount: 3,
+    resumeCount: 0
+  },
+  {
+    id: 'single_pack_10',
+    kind: 'single',
+    priceCent: 7900,
+    memberDays: 0,
+    singleCount: 10,
+    resumeCount: 0
+  },
+  // 简历 AI 深度评审单次包（暂定 29 元 / 3 次，PO 可单点调整）
+  {
+    id: 'resume_pack_3',
+    kind: 'resume',
+    priceCent: 2900,
+    memberDays: 0,
+    singleCount: 0,
+    resumeCount: 3
+  }
 ]
 
 export function getSku(id: string): SkuSpec | null {

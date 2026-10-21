@@ -73,6 +73,20 @@ describe('支付与权益（P1.3）', () => {
     expect(q2.singleCreditsLeft).toBeGreaterThanOrEqual(10)
   })
 
+  it('简历单次包：发放 resume_single_total = 3', async () => {
+    const env = loadEnv()
+    const app = makeApp(env)
+    const token = await login(app)
+    const r = await orderMock(app, token, 'resume_pack_3')
+    expect(r.code).toBe(0)
+    const db = (app as any).db
+    const row = (await db
+      .prepare('SELECT resume_single_total, resume_single_used FROM users ORDER BY id DESC LIMIT 1')
+      .get()) as any
+    expect(row.resume_single_total).toBe(3)
+    expect(row.resume_single_used).toBe(0)
+  })
+
   it('会员叠加：连续两次月卡 ≈ 60 天', async () => {
     const env = loadEnv()
     const app = makeApp(env)

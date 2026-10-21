@@ -71,14 +71,15 @@
             <text class="text-base font-semibold text-ink mt-3">
               {{ parsing ? 'AI 解析中…' : fileName.length > 0 ? '重新上传简历' : '点击上传简历' }}
             </text>
-            <text class="text-xs text-ink-soft mt-1">支持 PDF / Word / 图片，最大 10MB</text>
+            <text class="text-xs text-ink-soft mt-1">支持 PDF / DOCX，最大 10MB</text>
 
             <!-- 已选文件 -->
             <view v-if="fileName.length > 0" class="flex-row justify-center mt-3">
               <ml-tag icon="file-check" :label="fileName" :bg="CHIP_SMART" :color="SMART"></ml-tag>
             </view>
 
-            <view v-if="!parsing" class="mt-4">
+            <!-- 操作区：stop 阻断冒泡，避免内层按钮同时触发外层「选择文件」造成双弹窗 -->
+            <view v-if="!parsing" class="mt-4" @click.stop>
               <ml-button
                 :text="fileName.length > 0 ? '重新选择' : '选择文件'"
                 type="primary"
@@ -90,15 +91,6 @@
               <text class="text-xs text-ink-soft mt-2 text-center"
                 >从微信聊天中选择；可先发给「文件传输助手」</text
               >
-              <view class="mt-2">
-                <ml-button
-                  text="从相册选择图片"
-                  type="ghost"
-                  block
-                  :disabled="parsing"
-                  @tap="pickImage"
-                ></ml-button>
-              </view>
             </view>
             <view v-else class="mt-4 flex-row items-center">
               <ml-progress
@@ -112,9 +104,49 @@
         </view>
 
         <!-- 隐私说明 -->
-        <view class="flex-row items-center justify-center mt-2.5">
+        <view class="flex-row items-start justify-center mt-2.5 px-1">
           <ml-icon name="lock" :size="11" :color="MIST"></ml-icon>
-          <text class="text-xs text-ink-soft ml-1">简历仅用于本次分析，不会上传至第三方</text>
+          <text class="text-xs text-ink-soft ml-1 flex-1 leading-4"
+            >简历仅用于本次分析；AI 评审脱敏调用，记录可随时删除</text
+          >
+        </view>
+
+        <!-- 额度与付费入口 -->
+        <view class="flex-row items-center justify-between mt-2.5">
+          <text class="text-xs text-ink-soft">{{ quotaText }}</text>
+          <ml-chip
+            v-if="quota != null && !quota.canFull"
+            variant="action"
+            tone="smart"
+            icon="sparkles"
+            label="开通会员"
+            @tap="goPaywall"
+          ></ml-chip>
+        </view>
+
+        <!-- 解析历史（服务端记录，仅本人可见） -->
+        <view v-if="history.length > 0" class="mt-5">
+          <ml-section-header title="解析历史" caption="仅本人可见 · 点击回看"></ml-section-header>
+          <ml-card :padded="false">
+            <view
+              v-for="(h, i) in history"
+              :key="h.resumeId"
+              class="flex-row items-center px-4 py-3"
+              :class="i < history.length - 1 ? 'border-b border-line' : ''"
+            >
+              <view class="flex-col flex-1" @click="openHistory(h)">
+                <text class="text-sm text-ink">{{ h.fileName }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">{{ historySubtitle(h) }}</text>
+              </view>
+              <ml-chip
+                variant="action"
+                tone="soft"
+                icon="trash-2"
+                label="删除"
+                @tap="removeHistory(h)"
+              ></ml-chip>
+            </view>
+          </ml-card>
         </view>
       </view>
 
@@ -190,19 +222,33 @@
               · {{ r }}
             </text>
           </view>
+          <!-- 免费预览解锁提示 -->
+          <view v-if="parsed.mode === 'preview'" class="mt-3 rounded-control p-3 bg-bg-muted">
+            <text class="text-sm font-semibold text-ink">当前为免费预览</text>
+            <text class="text-xs text-ink-soft mt-1 leading-5"
+              >已提取结构与风险项；开通会员或单次包可解锁逐条 AI 批注与改写建议。</text
+            >
+            <view class="mt-3">
+              <ml-button text="解锁深度评审" type="primary" block @tap="goPaywall"></ml-button>
+            </view>
+          </view>
         </ml-card>
       </view>
 
       <!-- 改写建议 -->
       <view v-if="suggestions.length > 0" class="mt-5">
         <ml-section-header
-          title="改写建议"
-          caption="均为建议稿，确认后才保存"
+          title="AI 逐条批注"
+          caption="每条均锚定原文，采用后写入草稿"
           action-text="全部采用"
           @action="adoptAll"
         ></ml-section-header>
         <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
           <ml-card>
+            <!-- 严重度 -->
+            <view v-if="issueSeverityLabel(i).length > 0" class="flex-row items-center mb-2">
+              <ml-tag :label="issueSeverityLabel(i)" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+            </view>
             <!-- 原句 -->
             <view class="rounded-control p-3 bg-bg-muted">
               <view class="flex-row items-center">
@@ -306,8 +352,21 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlProgress from '../../components/ml-progress.uvue'
-import { parseResume, optimizeResume, uploadResumeFile } from '../../api/resume.uts'
-import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+import {
+  parseResume,
+  fetchResumeHistory,
+  fetchResumeDetail,
+  deleteResumeRecord,
+  fetchResumeQuota,
+  uploadResumeFile
+} from '../../api/resume.uts'
+import {
+  ResumeParseResult,
+  ResumeParseResponse,
+  ResumeQuota,
+  ResumeHistoryItem,
+  ResumeSuggestion
+} from '../../types/resume.uts'
 import {
   resumeDraft,
   buildResumeContent,
@@ -376,6 +435,18 @@ const parsing = ref(false)
 const parsed = ref<ResumeParseResult | null>(null)
 const suggestions = ref<ResumeSuggestion[]>([])
 const adopted = ref<boolean[]>([])
+// 服务端额度 + 历史记录（付费门控与回看）
+const quota = ref<ResumeQuota | null>(null)
+const history = ref<ResumeHistoryItem[]>([])
+const loadingHistory = ref(false)
+
+const quotaText = computed((): string => {
+  const q = quota.value
+  if (q == null) return ''
+  if (q.memberMonthlyLeft > 0) return '会员本月剩余 ' + q.memberMonthlyLeft + ' 次深度评审'
+  if (q.singleLeft > 0) return '单次包剩余 ' + q.singleLeft + ' 次深度评审'
+  return '今日免费预览剩余 ' + q.freePreviewLeftToday + ' 次'
+})
 
 // 步骤：0 上传；解析完成 1；建议生成 2
 const currentStep = computed((): number => {
@@ -428,6 +499,144 @@ function resetAll() {
   parsed.value = null
   suggestions.value = []
   adopted.value = []
+}
+
+// ---------- 解析结果 / 历史 / 额度 ----------
+
+function issuesToSuggestions(r: ResumeParseResult): ResumeSuggestion[] {
+  const out: ResumeSuggestion[] = []
+  for (let i = 0; i < r.issues.length; i++) {
+    const it = r.issues[i]
+    out.push({
+      original: it.original,
+      suggested: it.suggested,
+      reason: it.reason,
+      needsUserEvidence: it.needsUserEvidence
+    } as ResumeSuggestion)
+  }
+  return out
+}
+
+// 把服务端出参落到页面状态（parsed 只保留结果字段，额度单独存）
+function applyParse(r: ResumeParseResponse) {
+  parsed.value = {
+    resumeId: r.resumeId,
+    fileName: r.fileName,
+    fileType: r.fileType,
+    pages: r.pages,
+    contact: r.contact,
+    projects: r.projects,
+    techStack: r.techStack,
+    quantified: r.quantified,
+    gaps: r.gaps,
+    formatRisks: r.formatRisks,
+    issues: r.issues,
+    mode: r.mode,
+    cached: r.cached
+  } as ResumeParseResult
+  quota.value = r.quota
+  const sugg = issuesToSuggestions(r)
+  suggestions.value = sugg
+  const init: boolean[] = []
+  for (let i = 0; i < sugg.length; i++) init.push(false)
+  adopted.value = init
+}
+
+function issueSeverityLabel(i: number): string {
+  const p = parsed.value
+  if (p == null || i >= p.issues.length) return ''
+  const s = p.issues[i].severity
+  if (s === 'high') return '高优先级'
+  if (s === 'medium') return '中优先级'
+  return '低优先级'
+}
+
+function fmtDate(ts: number): string {
+  const d = new Date(ts)
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  return (
+    String(d.getFullYear()) +
+    '-' +
+    (m < 10 ? '0' + m : String(m)) +
+    '-' +
+    (day < 10 ? '0' + day : String(day))
+  )
+}
+
+function historySubtitle(h: ResumeHistoryItem): string {
+  const kind = h.mode === 'full' ? '深度评审' : '免费预览'
+  return fmtDate(h.createdAt) + ' · ' + kind + ' · ' + h.issuesTotal + ' 条建议'
+}
+
+async function loadHistory() {
+  if (loadingHistory.value) return
+  loadingHistory.value = true
+  try {
+    history.value = await fetchResumeHistory(20)
+  } catch (e: any) {
+    console.warn('[resume] history failed', e)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+async function loadQuota() {
+  try {
+    quota.value = await fetchResumeQuota()
+  } catch (e: any) {
+    console.warn('[resume] quota failed', e)
+  }
+}
+
+function loadAccountData() {
+  loadQuota()
+  loadHistory()
+}
+
+function goPaywall() {
+  uni.navigateTo({ url: '/pages/membership/paywall?from=resume' })
+}
+
+async function openHistory(h: ResumeHistoryItem) {
+  try {
+    const r = await fetchResumeDetail(h.resumeId)
+    if (r == null) {
+      uni.showToast({ title: '记录不存在', icon: 'none' })
+      return
+    }
+    fileName.value = r.fileName
+    applyParse(r)
+    trackEvent('resume_history_open', { resumeId: h.resumeId })
+    uni.showToast({ title: '已载入历史记录', icon: 'none' })
+  } catch (e: any) {
+    console.warn('[resume] detail failed', e)
+    uni.showToast({ title: '载入失败，请重试', icon: 'none' })
+  }
+}
+
+async function doRemoveHistory(h: ResumeHistoryItem) {
+  try {
+    await deleteResumeRecord(h.resumeId)
+    if (parsed.value != null && parsed.value.resumeId === h.resumeId) resetAll()
+    await loadHistory()
+    trackEvent('resume_history_delete', { resumeId: h.resumeId })
+    uni.showToast({ title: '已删除', icon: 'none' })
+  } catch {
+    uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+  }
+}
+
+function removeHistory(h: ResumeHistoryItem) {
+  uni.showModal({
+    title: '删除解析记录',
+    content: '删除后不可恢复，并会清理云端简历文件。',
+    confirmText: '删除',
+    confirmColor: DANGER,
+    success: (res: any) => {
+      if (res.confirm) doRemoveHistory(h)
+    }
+  })
 }
 
 // ---------- 草稿持久化与投递版本（文档 02 §2.4） ----------
@@ -580,6 +789,7 @@ function restoreDraft() {
 
 onShow(() => {
   refreshDraftHint()
+  loadAccountData()
 })
 
 function pick() {
@@ -594,42 +804,16 @@ function pick() {
   // #endif
 }
 
-// 从相册/相机选图片（截图简历、拍照简历）：小程序唯一能直接拿到本机图片的入口
-function pickImage() {
-  // #ifdef H5
-  uni.showToast({ title: 'H5 端使用演示数据', icon: 'none' })
-  doParse('h5-demo', 'demo-resume.png')
-  // #endif
-
-  // #ifndef H5
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success(res: any) {
-      const paths = res.tempFilePaths as string[]
-      if (paths == null || paths.length === 0) return
-      const p = paths[0]
-      const dot = p.lastIndexOf('.')
-      const ext = dot >= 0 ? p.substring(dot + 1) : 'jpg'
-      doParse(p, 'resume-image.' + ext)
-    },
-    fail() {
-      uni.showToast({ title: '未选择图片', icon: 'none' })
-    }
-  })
-  // #endif
-}
-
+// 从相册/相机选图片：当前仅支持 PDF/DOCX，图片入口暂不提供（OCR 另立卡）
 // #ifndef H5
 function pickNative() {
   // #ifdef MP-WEIXIN
-  // 微信小程序：聊天会话选文件
+  // 微信小程序：聊天会话选文件（仅 PDF/DOCX）
   // @ts-expect-error chooseMessageFile 是小程序端特有 API
   uni.chooseMessageFile({
     count: 1,
     type: 'file',
-    extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    extension: ['pdf', 'docx'],
     success(res: any) {
       const files = res.tempFiles as any[]
       if (files == null || files.length === 0) return
@@ -647,7 +831,7 @@ function pickNative() {
   // @ts-expect-error chooseFile 为 App 端 API
   uni.chooseFile({
     count: 1,
-    extension: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    extension: ['pdf', 'docx'],
     success(res: any) {
       const paths = res.tempFilePaths as string[]
       if (paths == null || paths.length === 0) return
@@ -677,15 +861,30 @@ async function doParse(path: string, name: string) {
     // 小程序端：先把文件真实上传到云存储（wx.cloud.uploadFile，无需域名），
     // 再把 cloud:// fileID 交给服务端；否则服务端拿到的只是客户端本地临时路径，永远读不到。
     const fileUrl = await uploadResumeFile(path, ext)
-    const r = await parseResume(fileUrl)
-    parsed.value = r
-    const sugg = await optimizeResume('简历项目经历', positionDisplay(userStore.profile))
-    suggestions.value = sugg
-    const init: boolean[] = []
-    for (let i = 0; i < sugg.length; i++) init.push(false)
-    adopted.value = init
-  } catch {
-    uni.showToast({ title: '解析失败，请重试', icon: 'none' })
+    const r = await parseResume(
+      fileUrl,
+      name,
+      positionDisplay(userStore.profile)
+    )
+    applyParse(r)
+    loadHistory()
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : ''
+    if (msg.indexOf('会员') >= 0 || msg.indexOf('单次包') >= 0 || msg.indexOf('预览') >= 0) {
+      uni.showModal({
+        title: '需要开通',
+        content: msg,
+        confirmText: '查看权益',
+        cancelText: '稍后',
+        success: (res: any) => {
+          if (res.confirm) goPaywall()
+        }
+      })
+    } else if (msg.indexOf('仅支持') >= 0 || msg.indexOf('可复制文本') >= 0) {
+      uni.showToast({ title: msg, icon: 'none', duration: 3000 })
+    } else {
+      uni.showToast({ title: msg.length > 0 ? msg : '解析失败，请重试', icon: 'none' })
+    }
   } finally {
     parsing.value = false
   }

@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   free_quota_used    INTEGER NOT NULL DEFAULT 0,
   single_quota_total INTEGER NOT NULL DEFAULT 0,
   single_quota_used  INTEGER NOT NULL DEFAULT 0,
+  resume_single_total INTEGER NOT NULL DEFAULT 0,
+  resume_single_used  INTEGER NOT NULL DEFAULT 0,
   member_until       INTEGER,                         -- epoch ms；NULL=非会员
   desktop_user_id    TEXT,                            -- 桌面端 mentorloop.users.id（账号互通绑定，可空）
   created_at         INTEGER NOT NULL,
@@ -72,17 +74,32 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS resumes (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id          INTEGER NOT NULL REFERENCES users(id),
-  original_url     TEXT,                             -- 本地磁盘暂存相对路径
+  original_url     TEXT,                             -- 本地磁盘暂存相对路径或 cloud:// fileID
+  file_name        TEXT,                             -- 原始文件名（历史记录展示）
+  file_type        TEXT,                             -- pdf | docx
+  content_hash     TEXT,                             -- SHA-256（缓存/幂等）
+  target_position  TEXT,                             -- 目标岗位（评审口径）
+  mode             TEXT,                             -- full | preview
   parse_payload    TEXT,                             -- JSON ResumeParseResult
-  optimize_payload TEXT,                             -- JSON ResumeSuggestion[]
+  optimize_payload TEXT,                             -- JSON ResumeIssue[]（旧列，复用存 issues）
   created_at       INTEGER NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_resumes_cache ON resumes(user_id, content_hash);
+
+-- 简历额度消耗流水（会员月度额度按自然月计数；预览按日计数）
+CREATE TABLE IF NOT EXISTS resume_usages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL REFERENCES users(id),
+  mode       TEXT    NOT NULL,                        -- member | preview
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_resume_usages_user ON resume_usages(user_id, mode, created_at);
 
 CREATE TABLE IF NOT EXISTS orders (
   id             TEXT    PRIMARY KEY,                -- orderId
   user_id        INTEGER NOT NULL REFERENCES users(id),
   sku_id         TEXT    NOT NULL,
-  sku_kind       TEXT    NOT NULL,                   -- 'member' | 'single'
+  sku_kind       TEXT    NOT NULL,                   -- 'member' | 'single' | 'resume'
   amount         INTEGER NOT NULL,                   -- 分
   status         TEXT    NOT NULL DEFAULT 'CREATED', -- CREATED/PAID/CLOSED
   transaction_id TEXT,                               -- 微信支付单号（回调写入）

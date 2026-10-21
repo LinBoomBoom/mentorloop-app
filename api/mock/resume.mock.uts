@@ -1,15 +1,58 @@
-// 简历 mock 数据
-import { ResumeParseResult, ResumeSuggestion } from '../../types/resume.uts'
+// 简历 mock 数据（与 2026-10-21 契约字段一致）
+import { ResumeParseResponse, ResumeSuggestion } from '../../types/resume.uts'
 
-export function mockParseResume(_fileUrl: string): Promise<ResumeParseResult> {
+export function mockParseResume(
+  _fileUrl: string,
+  fileName: string,
+  _position: string
+): Promise<ResumeParseResponse> {
   return Promise.resolve({
+    resumeId: 'mock-resume-1',
+    fileName: fileName.length > 0 ? fileName : 'demo-resume.pdf',
+    fileType: 'pdf',
+    pages: 1,
     contact: true,
     projects: 3,
     techStack: ['Java', 'Spring Boot', 'MySQL', 'Redis'],
     quantified: false,
     gaps: ['缺少量化成果', '空档期未说明'],
-    formatRisks: ['一页超过 2 屏']
-  } as ResumeParseResult)
+    formatRisks: ['一页超过 2 屏'],
+    issues: [
+      {
+        issueId: 'mock-issue-1',
+        severity: 'high',
+        category: 'quantification',
+        page: 1,
+        paragraph: -1,
+        quote: '负责系统开发与维护',
+        original: '负责系统开发与维护',
+        suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（请补充真实数据）',
+        reason: '职责描述没有量化结果，面试官难以判断你的实际贡献与影响范围',
+        needsUserEvidence: true
+      },
+      {
+        issueId: 'mock-issue-2',
+        severity: 'medium',
+        category: 'ownership',
+        page: 1,
+        paragraph: -1,
+        quote: '参与团队项目开发',
+        original: '参与团队项目开发',
+        suggested: '负责订单模块的接口设计与实现，独立完成 3 个核心接口',
+        reason: '「参与」弱化了个人贡献，改成明确的负责范围更容易被追问时展开',
+        needsUserEvidence: false
+      }
+    ],
+    mode: 'full',
+    cached: false,
+    quota: {
+      memberMonthlyTotal: 5,
+      memberMonthlyLeft: 5,
+      singleLeft: 0,
+      freePreviewLeftToday: 3,
+      canFull: true
+    }
+  } as ResumeParseResponse)
 }
 
 export function mockOptimizeResume(_text: string, _position: string): Promise<ResumeSuggestion[]> {

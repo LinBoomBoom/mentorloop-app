@@ -1,14 +1,78 @@
-// 简历领域模型（来源文档 02 §2.4）
+// 简历领域模型（来源文档 02 §2.4；2026-10-21 深度评审版）
+// 契约：docs/contracts/2026-10-21-resume-ai-review.freeze.md
+
+export type ResumeIssueSeverity = 'high' | 'medium' | 'low'
+export type ResumeIssueCategory =
+  'quantification' | 'ownership' | 'techMatch' | 'format' | 'language' | 'completeness'
+
+export type ResumeIssue = {
+  issueId: string
+  severity: ResumeIssueSeverity
+  category: ResumeIssueCategory
+  page: number
+  paragraph: number
+  quote: string
+  original: string
+  suggested: string
+  reason: string
+  needsUserEvidence: boolean
+}
 
 export type ResumeParseResult = {
+  resumeId: string
+  fileName: string
+  fileType: 'pdf' | 'docx'
+  pages: number
   contact: boolean
   projects: number
   techStack: string[]
   quantified: boolean
   gaps: string[]
   formatRisks: string[]
+  issues: ResumeIssue[]
+  mode: 'full' | 'preview'
+  cached: boolean
 }
 
+export type ResumeQuota = {
+  memberMonthlyTotal: number
+  memberMonthlyLeft: number
+  singleLeft: number
+  freePreviewLeftToday: number
+  canFull: boolean
+}
+
+// 服务端 parse/detail 出参：结果字段 + 最新额度
+export type ResumeParseResponse = {
+  resumeId: string
+  fileName: string
+  fileType: 'pdf' | 'docx'
+  pages: number
+  contact: boolean
+  projects: number
+  techStack: string[]
+  quantified: boolean
+  gaps: string[]
+  formatRisks: string[]
+  issues: ResumeIssue[]
+  mode: 'full' | 'preview'
+  cached: boolean
+  quota: ResumeQuota
+}
+
+export type ResumeHistoryItem = {
+  resumeId: string
+  fileName: string
+  fileType: 'pdf' | 'docx'
+  createdAt: number
+  mode: 'full' | 'preview'
+  issuesHigh: number
+  issuesTotal: number
+  projects: number
+  quantified: boolean
+}
+
+// 旧投递版本入口保留（/resume/optimize 出参零变更）
 export type ResumeSuggestion = {
   original: string
   suggested: string

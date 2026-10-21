@@ -141,6 +141,12 @@ describe('账号自助删除 DELETE /me/account', () => {
     const count = async (sql: string, ...args: unknown[]): Promise<number> =>
       ((await db.prepare(sql).get(...args)) as any).c as number
 
+    await db
+      .prepare(
+        'INSERT INTO resume_usages (user_id, mode, created_at) VALUES ((SELECT id FROM users WHERE phone = ?), ?, ?)'
+      )
+      .run('13900000005', 'preview', Date.now())
+
     expect(await count('SELECT COUNT(*) AS c FROM users WHERE phone = ?', '13900000005')).toBe(1)
     expect(await count('SELECT COUNT(*) AS c FROM sessions')).toBeGreaterThan(0)
     expect(await count('SELECT COUNT(*) AS c FROM answers')).toBeGreaterThan(0)
@@ -156,6 +162,7 @@ describe('账号自助删除 DELETE /me/account', () => {
     expect(await count('SELECT COUNT(*) AS c FROM session_asked')).toBe(0)
     expect(await count('SELECT COUNT(*) AS c FROM reports')).toBe(0)
     expect(await count('SELECT COUNT(*) AS c FROM resumes')).toBe(0)
+    expect(await count('SELECT COUNT(*) AS c FROM resume_usages')).toBe(0)
     expect(await count('SELECT COUNT(*) AS c FROM orders')).toBe(0)
     expect(await count('SELECT COUNT(*) AS c FROM tracking_events')).toBe(0)
     expect(await count('SELECT COUNT(*) AS c FROM sms_codes WHERE phone = ?', '13900000005')).toBe(

@@ -26,7 +26,10 @@ export type OrderResult = {
 }
 
 // 创建订单并发起支付。成功后本地发放权益（Mock）或等待服务端回调（真后端）。
-export async function purchase(skuId: SkuId, skuKind: 'member' | 'single'): Promise<OrderResult> {
+export async function purchase(
+  skuId: SkuId,
+  skuKind: 'member' | 'single' | 'resume'
+): Promise<OrderResult> {
   if (useMock()) {
     // Mock：模拟 800ms 支付延迟后直接发放
     await new Promise<void>((resolve) => {

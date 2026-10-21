@@ -38,7 +38,8 @@ function doFetch(url: string, init: any): Promise<any> {
 // 调用 chat/completions（非流式），返回助手消息文本
 export async function chatComplete(
   envs: LmEnvs,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  opts: { maxTokens?: number; temperature?: number } = {}
 ): Promise<ChatCompleteResult | null> {
   if (envs.baseUrl.length === 0 || envs.model.length === 0) return null
   const url = envs.baseUrl.replace(/\/$/, '') + '/chat/completions'
@@ -54,8 +55,8 @@ export async function chatComplete(
       body: JSON.stringify({
         model: envs.model,
         messages,
-        temperature: 0.4,
-        max_tokens: 900
+        temperature: opts.temperature != null ? opts.temperature : 0.4,
+        max_tokens: opts.maxTokens != null ? opts.maxTokens : 900
       }),
       signal: controller.signal
     })

@@ -45,6 +45,9 @@ export type Env = {
   tencentTtsRegion: string
   tencentTtsVoiceType: number
   wxCloudEnvId: string // 云存储环境（写合成音频用；非密钥）
+  // 简历 AI 评审额度（2026-10-21）
+  resumeMemberMonthlyQuota: number // 会员每自然月完整评审次数
+  resumeFreePreviewDaily: number // 免费用户每日结构预览次数
 }
 
 const DEFAULT_ENV: Env = {
@@ -89,7 +92,9 @@ const DEFAULT_ENV: Env = {
   tencentSecretKey: '',
   tencentTtsRegion: 'ap-guangzhou',
   tencentTtsVoiceType: 101001, // 智瑜（基础女声，mp3 16k）
-  wxCloudEnvId: 'prod-d6gaa83ds8accb61b'
+  wxCloudEnvId: 'prod-d6gaa83ds8accb61b',
+  resumeMemberMonthlyQuota: 5,
+  resumeFreePreviewDaily: 3
 }
 
 export function loadEnv(): Env {
@@ -139,7 +144,11 @@ export function loadEnv(): Env {
     tencentTtsRegion: e.TENCENT_TTS_REGION ?? DEFAULT_ENV.tencentTtsRegion,
     tencentTtsVoiceType:
       parseInt(e.TENCENT_TTS_VOICE_TYPE ?? '', 10) || DEFAULT_ENV.tencentTtsVoiceType,
-    wxCloudEnvId: e.WX_CLOUD_ENV_ID ?? DEFAULT_ENV.wxCloudEnvId
+    wxCloudEnvId: e.WX_CLOUD_ENV_ID ?? DEFAULT_ENV.wxCloudEnvId,
+    resumeMemberMonthlyQuota:
+      parseInt(e.RESUME_MEMBER_MONTHLY_QUOTA ?? '', 10) || DEFAULT_ENV.resumeMemberMonthlyQuota,
+    resumeFreePreviewDaily:
+      parseInt(e.RESUME_FREE_PREVIEW_DAILY ?? '', 10) || DEFAULT_ENV.resumeFreePreviewDaily
   }
 }
 
