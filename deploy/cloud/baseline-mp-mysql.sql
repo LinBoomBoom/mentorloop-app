@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   uid                VARCHAR(64)  NOT NULL,
   phone              VARCHAR(32)  NULL,
   openid             VARCHAR(128) NULL,
+  session_key        VARCHAR(128) NULL COMMENT '微信会话密钥（仅服务端；不下发）',
+  session_key_updated_at BIGINT   NULL COMMENT 'epoch ms',
   nickname           VARCHAR(128) NULL,
   channel            VARCHAR(16)  NOT NULL COMMENT 'phone | wechat',
   free_quota_total   INT          NOT NULL DEFAULT 3,

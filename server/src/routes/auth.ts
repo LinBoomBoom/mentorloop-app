@@ -89,13 +89,14 @@ export default async function (app: FastifyInstance): Promise<void> {
     }
   )
 
-  // 微信静默登录（契约冻结 §2.2，2026-10-11 安全收紧）：
-  // 身份源优先级（逐级降级，互不兜底）：
-  // 1) X-WX-OPENID 头：仅 TRUST_WX_HEADERS=true（云托管私有链路）时采信，
-  //    否则 app 层 onRequest 已剥离该头，路由层再校验开关双保险
-  // 2) body.code → jscode2session 真实换取（需 WX_APPID + WX_SECRET）
+  // 微信静默登录（契约冻结 §2.2，2026-10-22 虚拟支付改造）：
+  // 身份源优先级：
+  // 1) body.code → jscode2session：拿到 code 且凭据齐全时始终真实换取，
+  //    同时把 session_key 落服务端（虚拟支付用户态签名依赖）；若同时存在可信
+  //    X-WX-OPENID，两者 openid 必须一致，否则拒绝（防身份错配）
+  // 2) X-WX-OPENID 头：仅 TRUST_WX_HEADERS=true 时采信，作为无 code / 无凭据时兜底
   // 3) WX_MOCK_LOGIN=true（仅本地联调）→ 'wx_' + code 作 openid
-  // 出参 { uid, nickname, token } 不变
+  // 出参 { uid, nickname, token } 不变；session_key 永不下发
   app.post(
     '/auth/wechat',
     {
@@ -105,28 +106,41 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const body = (request.body ?? {}) as { code?: string }
-      const headerOpenid = request.headers['x-wx-openid']
+      const rawHeader = request.headers['x-wx-openid']
+      const trustedHeaderOpenid =
+        env.trustWxHeaders && typeof rawHeader === 'string' ? rawHeader : ''
+      const code = typeof body.code === 'string' ? body.code : ''
       let openid = ''
-      if (env.trustWxHeaders && typeof headerOpenid === 'string' && headerOpenid.length > 0) {
-        openid = headerOpenid
-      }
-      if (openid.length === 0 && body.code != null && body.code.length > 0) {
-        if (env.wxAppId.length > 0 && env.wxSecret.length > 0) {
-          const wxOpenid = await code2Session(env, body.code)
-          if (wxOpenid == null) {
-            return reply.code(400).send(fail(400, '微信登录失败，请重试'))
-          }
-          openid = wxOpenid
-        } else if (env.wxMockLogin) {
-          openid = 'wx_' + body.code
-        } else {
-          return reply.code(400).send(fail(400, '微信登录未配置'))
+      let sessionKey = ''
+
+      // 1) code 优先：拿到 code 且有凭据时始终真实换取（含 session_key）
+      if (code.length > 0 && env.wxAppId.length > 0 && env.wxSecret.length > 0) {
+        const wx = await code2Session(env, code)
+        if (wx == null) {
+          return reply.code(400).send(fail(400, '微信登录失败，请重试'))
         }
+        if (trustedHeaderOpenid.length > 0 && trustedHeaderOpenid !== wx.openid) {
+          console.warn('[auth] openid mismatch: header != code2session')
+          return reply.code(400).send(fail(400, '微信身份校验失败'))
+        }
+        openid = wx.openid
+        sessionKey = wx.sessionKey
+      }
+      // 2) 云托管头兜底（无 code 或凭据未配置时）
+      if (openid.length === 0 && trustedHeaderOpenid.length > 0) {
+        openid = trustedHeaderOpenid
+      }
+      // 3) 本地联调假 openid
+      if (openid.length === 0 && code.length > 0 && env.wxMockLogin) {
+        openid = 'wx_' + code
       }
       if (openid.length === 0) {
+        if (code.length > 0 && !env.wxMockLogin) {
+          return reply.code(400).send(fail(400, '微信登录未配置'))
+        }
         return reply.code(400).send(fail(400, '缺少微信身份凭证'))
       }
-      const auth = await loginByWechat(db, env, openid)
+      const auth = await loginByWechat(db, env, openid, sessionKey)
       const token = app.jwt.sign({ uid: auth.uid })
       return okData({ uid: auth.uid, nickname: auth.nickname, token })
     }

@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS users (
   uid                TEXT    NOT NULL UNIQUE,
   phone              TEXT,
   openid             TEXT    UNIQUE,
+  session_key        TEXT,                            -- 微信会话密钥（仅服务端；不下发、不落日志）
+  session_key_updated_at INTEGER,                     -- epoch ms；NULL=未获取
   nickname           TEXT,
   channel            TEXT    NOT NULL,                -- 'phone' | 'wechat'
   free_quota_total   INTEGER NOT NULL DEFAULT 3,

@@ -20,8 +20,11 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// 云端 MySQL 增量迁移（2026-10-21 简历 AI 评审）：逐条执行，便于幂等忽略单条失败
-const MYSQL_RESUME_MIGRATIONS: string[] = [
+// 云端 MySQL 增量迁移：逐条执行，便于幂等忽略单条失败
+// 2026-10-21 简历 AI 评审；2026-10-22 虚拟支付 session_key
+const MYSQL_MIGRATIONS: string[] = [
+  'ALTER TABLE users ADD COLUMN session_key VARCHAR(128) NULL',
+  'ALTER TABLE users ADD COLUMN session_key_updated_at BIGINT NULL',
   'ALTER TABLE users ADD COLUMN resume_single_total INT NOT NULL DEFAULT 0',
   'ALTER TABLE users ADD COLUMN resume_single_used INT NOT NULL DEFAULT 0',
   'ALTER TABLE resumes ADD COLUMN file_name VARCHAR(255) NULL',
@@ -70,7 +73,7 @@ export class Db {
   // 云端外网关闭，无法从本机直连 TDSQL-C，故由服务启动自动补齐 schema。
   async ensureSchema(): Promise<void> {
     if (this.driver !== 'mysql') return
-    for (const sql of MYSQL_RESUME_MIGRATIONS) {
+    for (const sql of MYSQL_MIGRATIONS) {
       try {
         await this.d.exec(sql)
       } catch (e: any) {
@@ -101,6 +104,16 @@ export class Db {
     }
     try {
       raw.exec('ALTER TABLE users ADD COLUMN desktop_user_id TEXT')
+    } catch {
+      // 列已存在，忽略
+    }
+    try {
+      raw.exec('ALTER TABLE users ADD COLUMN session_key TEXT')
+    } catch {
+      // 列已存在，忽略
+    }
+    try {
+      raw.exec('ALTER TABLE users ADD COLUMN session_key_updated_at INTEGER')
     } catch {
       // 列已存在，忽略
     }
