@@ -23,7 +23,6 @@ import {
 } from '../types/scoring.js'
 import { confidenceBand } from './rubric.js'
 import { analyzeAnswer } from './answer-signal.js'
-import { QUESTION_BANK } from '../data/question-bank.js'
 
 // ------ 题型 → 维度映射（决定该题的回答主要影响哪些维度）------
 // knowledge: concept / design（基础概念+系统设计都要讲清楚原理）
@@ -396,11 +395,12 @@ export function scoreInterview(
     const level = scoreToLevel(r.score)
     const band = confidenceBand(r.confidence)
     const suffix = band === 'low' ? '（证据不足，仅供参考）' : ''
-    // 从题库里按 abilityDomain 抽一道题作建议题
+    // 从本场实际题目里按 abilityDomain 取知识点作建议题（不再依赖静态题库）
     const suggestQIds: string[] = []
-    for (let bi = 0; bi < QUESTION_BANK.length; bi++) {
-      if (QUESTION_BANK[bi].abilityDomain.indexOf(r.dimension) >= 0) {
-        suggestQIds.push(QUESTION_BANK[bi].knowledgePoint)
+    for (let bi = 0; bi < questions.length; bi++) {
+      const q = questions[bi]
+      if (q.abilityDomain === r.dimension && q.knowledgePoint.length > 0) {
+        if (!suggestQIds.includes(q.knowledgePoint)) suggestQIds.push(q.knowledgePoint)
         if (suggestQIds.length >= 2) break
       }
     }

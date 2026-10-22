@@ -3,7 +3,8 @@ import { Db } from '../db.js'
 import { now } from '../util.js'
 import { Env } from '../config.js'
 import { scoreInterview } from '../rules/scorer.js'
-import { getQuestionById } from '../data/question-bank.js'
+import { findQuestionById } from './content-bank.js'
+import { findWrapupById } from '../data/wrapup.js'
 import { QuestionItem, TranscriptEntry } from '../types/interview.js'
 import { InterviewReport } from '../types/scoring.js'
 import { consumeInterview } from './quota.js'
@@ -44,7 +45,8 @@ export async function getReport(
   const questions: QuestionItem[] = []
   const transcript: TranscriptEntry[] = []
   for (const a of answers) {
-    const q = getQuestionById(a.question_id)
+    // 题目权威源 = 内容库；收束题不在库中，按 id 回查固定模板兜底
+    const q = (await findQuestionById(db, a.question_id)) ?? findWrapupById(a.question_id)
     if (q == null) continue
     if (!questions.some((x) => x.id === q.id)) questions.push(q)
     transcript.push({

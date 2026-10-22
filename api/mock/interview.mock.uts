@@ -1,6 +1,6 @@
-// 面试 mock 数据（无后端时本地跑通流程）
-// 选题已接入题目选择器 v2（engine/question-selector.uts），按会话记录已答题目，
-// 并根据 blueprint.positionId / experienceLevel 做岗位过滤与难度过滤。
+// 面试 mock（无后端时的会话壳）
+// 2026-10-22 决策：本地静态题库不再参与运行时出题。mock 模式不再伪造题目，
+// 出题一律明确报错，联调请将 api/env.uts 的 API_ENV 切到 'dev' / 'prod' 连接线上题库。
 import {
   QuestionItem,
   InterviewMode,
@@ -8,48 +8,17 @@ import {
   AnswerAck,
   PositionBlueprint
 } from '../../types/interview.uts'
-import { selectNext, getModeBudget, SelectorInput } from '../../engine/question-selector.uts'
-import { QUESTION_BANK } from '../../data/question-bank.uts'
 
 export function mockCreateSession(_position: string): Promise<SessionRef> {
   return Promise.resolve({ sessionId: 'mock-' + Date.now() } as SessionRef)
 }
 
-// 每个会话的已答题目记录（mock 层内部状态）
-type SessionAskedMap = { [key: string]: QuestionItem[] }
-const sessionAsked: SessionAskedMap = {}
-
-// 默认简历关键词（mock 阶段固定给一个"订单系统"，简历解析接入后由外部传入）
-const DEFAULT_RESUME_TOPICS: string[] = ['订单系统', '性能优化', '架构设计']
-
 export function mockNextQuestion(
-  sessionId: string,
-  mode: InterviewMode,
-  blueprint: PositionBlueprint
+  _sessionId: string,
+  _mode: InterviewMode,
+  _blueprint: PositionBlueprint
 ): Promise<QuestionItem> {
-  let asked: QuestionItem[] = sessionAsked[sessionId]
-  if (asked == null) asked = []
-  const budget = getModeBudget(mode)
-  // mock 下按已答题数估算剩余时间（单题约 150 秒）
-  const remainSeconds = budget.totalSeconds - asked.length * 150
-  const input: SelectorInput = {
-    blueprint: blueprint,
-    mode: mode,
-    asked: asked,
-    remainSeconds: remainSeconds,
-    resumeRiskTopics: DEFAULT_RESUME_TOPICS,
-    resumeTechStacks: [], // mock 无简历栈数据：不过滤（现状兼容）
-    focusDomain: '',
-    maxQuestions: 0,
-    candidates: QUESTION_BANK // mock 无后端：候选池用本地代码题库
-  } as SelectorInput
-  const out = selectNext(input)
-  if (out == null) {
-    return Promise.reject(new Error('面试题目已收束'))
-  }
-  asked.push(out.question)
-  sessionAsked[sessionId] = asked
-  return Promise.resolve(out.question)
+  return Promise.reject(new Error('本地静态题库已下线，请将 API_ENV 切换为 dev/prod 连接线上题库'))
 }
 
 export function mockSubmitAnswer(

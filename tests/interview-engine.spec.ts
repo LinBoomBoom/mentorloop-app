@@ -14,7 +14,8 @@ import { rephraseQuestion } from '../engine/rephrase.uts'
 import { scoreInterview } from '../engine/scorer.uts'
 import { interviewSession } from '../store/interview-session.uts'
 import { reasonForAnswer, domainOfTaskId, SKIP_REASON } from '../store/training-history.uts'
-import { QUESTION_BANK, WRAPUP_QUESTION } from '../data/question-bank.uts'
+import { QUESTION_BANK } from '../data/question-bank.uts'
+import { WRAPUP_QUESTION } from '../data/wrapup.uts'
 import { QuestionItem, PositionBlueprint } from '../types/interview.uts'
 
 const BLUEPRINT: PositionBlueprint = {

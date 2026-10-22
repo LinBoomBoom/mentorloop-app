@@ -19,12 +19,12 @@ import {
 } from '../engine/rubric.uts'
 import { analyzeAnswer as cAnalyzeAnswer } from '../engine/answer-signal.uts'
 import { rephraseQuestion as cRephrase } from '../engine/rephrase.uts'
+import { QUESTION_BANK as cBank } from '../data/question-bank.uts'
 import {
-  QUESTION_BANK as cBank,
   WRAPUP_QUESTION as cWrapup,
   FRONTEND_WRAPUP_QUESTION as cFeWrapup,
   getWrapupForPosition as cWrapupFor
-} from '../data/question-bank.uts'
+} from '../data/wrapup.uts'
 import {
   POSITION_OPTIONS as cPositions,
   EXPERIENCE_OPTIONS as cExperiences,
@@ -52,12 +52,12 @@ import {
 } from '../server/src/rules/rubric'
 import { analyzeAnswer as sAnalyzeAnswer } from '../server/src/rules/answer-signal'
 import { rephraseQuestion as sRephrase } from '../server/src/rules/rephrase'
+import { QUESTION_BANK as sBank } from '../server/src/data/question-bank'
 import {
-  QUESTION_BANK as sBank,
   WRAPUP_QUESTION as sWrapup,
   FRONTEND_WRAPUP_QUESTION as sFeWrapup,
   getWrapupForPosition as sWrapupFor
-} from '../server/src/data/question-bank'
+} from '../server/src/data/wrapup'
 import {
   POSITION_OPTIONS as sPositions,
   EXPERIENCE_OPTIONS as sExperiences,

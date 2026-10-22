@@ -48,12 +48,15 @@ declare module '*.uts' {
   export const SKIP_REASON: any
   // store/resume-draft（P0-2.2 简历线闭环）
   export function buildResumeContent(...args: any[]): any
-  // data/question-bank
+  // data/question-bank（仅测试夹具，业务禁止引用）
   export const QUESTION_BANK: any[]
+  // data/wrapup（引擎固定收束题）
   export const WRAPUP_QUESTION: any
   export const FRONTEND_WRAPUP_QUESTION: any
+  export const DEVOPS_WRAPUP_QUESTION: any
   export function getWrapupForPosition(...args: any[]): any
-  export function getQuestionById(...args: any[]): any
+  // api/training（专项训练取题，2026-10-22 契约冻结）
+  export function fetchTrainingQuestions(...args: any[]): Promise<any>
   // data/position-options（rules-consistency.spec）
   export const POSITION_OPTIONS: any[]
   export const EXPERIENCE_OPTIONS: any[]

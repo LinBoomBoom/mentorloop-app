@@ -1,0 +1,66 @@
+// 收束题固定模板（引擎常量，不进入内容库）
+// 文档 02 §3.2 规则4：保留至少一道开放题评估学习能力与复盘能力。
+// 2026-10-22：从静态题库文件抽出，避免业务代码依赖题库夹具。
+
+import { QuestionItem, PositionId } from '../types/interview.uts'
+
+// 收束题：评估学习能力与复盘能力
+export const WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  content: '最后一个问题：回顾这次面试，你觉得自己哪个回答还可以讲得更好？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  techStack: '',
+  positionId: 'backend'
+} as QuestionItem
+
+// 前端岗位收束题（岗位化收束，避免跨岗位借用 Java 收束题）
+export const FRONTEND_WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup-fe',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  techStack: '',
+  positionId: 'frontend'
+} as QuestionItem
+
+// 运维岗位收束题（2026-10-18 批次 A：岗位化收束，与 backend/frontend 同构）
+export const DEVOPS_WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup-devops',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  techStack: '',
+  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  positionId: 'devops'
+} as QuestionItem
+
+// 按岗位取收束题（选择器收束阶段使用；未覆盖岗位回退 Java 收束题）
+export function getWrapupForPosition(positionId: PositionId): QuestionItem {
+  if (positionId === 'frontend') return FRONTEND_WRAPUP_QUESTION
+  if (positionId === 'devops') return DEVOPS_WRAPUP_QUESTION
+  return WRAPUP_QUESTION
+}

@@ -35,7 +35,13 @@
           <text class="text-xs text-mist">第 {{ doneCount + 1 }} 题</text>
         </view>
         <text class="text-base font-semibold text-white mt-2 leading-6">
-          {{ currentQuestion.content.length > 0 ? currentQuestion.content : '准备开始…' }}
+          {{
+            currentQuestion.content.length > 0
+              ? currentQuestion.content
+              : loadingQuestions
+                ? '正在加载题库…'
+                : '准备开始…'
+          }}
         </text>
         <text v-if="hint.length > 0" class="text-xs text-mist mt-2">{{ hint }}</text>
       </view>
@@ -145,10 +151,9 @@ import {
   SKIP_REASON
 } from '../../store/training-history.uts'
 import { trackEvent } from '../../api/tracking.uts'
-import { selectNext } from '../../engine/question-selector.uts'
+import { fetchTrainingQuestions } from '../../api/training.uts'
 import { analyzeAnswer } from '../../engine/answer-signal.uts'
 import { QuestionItem, PositionBlueprint } from '../../types/interview.uts'
-import { QUESTION_BANK } from '../../data/question-bank.uts'
 import { getPositionName, getExperienceRange } from '../../data/position-options.uts'
 import {
   SpeechRecorder,
@@ -193,7 +198,12 @@ const doneCount = ref(0)
 const remain = ref(180)
 const finished = ref(false)
 const hint = ref('')
-const askedIds = ref<string[]>([])
+// 本场题目（服务端内容库下发，进入房间时一次拉取）
+const questions = ref<QuestionItem[]>([])
+const questionIndex = ref(0)
+const loadingQuestions = ref(true)
+let quotaCharged = false
+let loadInFlight = false
 
 // 语音作答状态
 const recording = ref(false)
@@ -261,7 +271,7 @@ onLoad((options: any) => {
     domain.value = options.domain != null ? (options.domain as string) : ''
   }
 
-  // 统一权益门控 + 额度扣减（训练页/报告页等多入口收敛到此处，避免重复扣减）
+  // 统一权益门控（额度在题库拉取成功后扣减，避免加载失败损耗次数）
   quotaStore.restore()
   if (!quotaStore.canStartTraining()) {
     uni.showModal({
@@ -282,7 +292,6 @@ onLoad((options: any) => {
     })
     return
   }
-  quotaStore.consumeTraining()
   remain.value = durationMin.value * 60
   // 训练题量按时长估算：约 1 题/分钟，上限 5 题
   totalQuestions.value = durationMin.value < 5 ? 3 : durationMin.value < 10 ? 4 : 5
@@ -300,16 +309,79 @@ onLoad((options: any) => {
     target: '求职'
   } as PositionBlueprint
 
-  nextQuestion()
   initSpeech()
+  loadQuestions()
+})
 
+// 从服务端内容库拉取本场题目（失败不扣训练额度，弹窗可重试）
+function loadQuestions() {
+  if (loadInFlight) return
+  loadInFlight = true
+  loadingQuestions.value = true
+  hint.value = ''
+  currentQuestion.value = emptyQuestion
+  questions.value = []
+  questionIndex.value = 0
+  doneCount.value = 0
+  fetchTrainingQuestions(
+    blueprint.value.positionId,
+    blueprint.value.experienceLevel,
+    domain.value,
+    totalQuestions.value
+  )
+    .then((list: QuestionItem[]) => {
+      loadInFlight = false
+      loadingQuestions.value = false
+      if (list.length === 0) {
+        showLoadFailed('当前岗位暂无可训练题目，请稍后重试')
+        return
+      }
+      // 服务端可能因内容库不足返回少于请求的题量：进度点按实收题量展示
+      if (list.length < totalQuestions.value) totalQuestions.value = list.length
+      questions.value = list
+      if (!quotaCharged) {
+        quotaStore.consumeTraining()
+        quotaCharged = true
+      }
+      startTimer()
+      nextQuestion()
+    })
+    .catch((e: any) => {
+      loadInFlight = false
+      loadingQuestions.value = false
+      const msg = e != null && e.message != null ? String(e.message) : '题库加载失败'
+      showLoadFailed(msg)
+    })
+}
+
+function showLoadFailed(msg: string) {
+  uni.showModal({
+    title: '题库加载失败',
+    content: msg,
+    confirmText: '重试',
+    cancelText: '退出',
+    success: (r: any) => {
+      if (r.confirm) {
+        loadQuestions()
+      } else {
+        uni.navigateBack()
+      }
+    },
+    fail: () => {
+      uni.navigateBack()
+    }
+  })
+}
+
+function startTimer() {
+  if (timer > 0) return
   timer = setInterval(() => {
     if (remain.value > 0) remain.value = remain.value - 1
     if (remain.value === 0) {
       finishTraining()
     }
   }, 1000)
-})
+}
 
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
@@ -339,42 +411,15 @@ function initSpeech() {
   })
 }
 
-// 从题库选下一题（复用题目选择器，训练模式不问收束题）
+// 按服务端下发的题目顺序出下一题；题目用尽即收尾
 function nextQuestion() {
   hint.value = ''
-  // 构造已问列表（用 id 匹配 QUESTION_BANK）
-  const asked: QuestionItem[] = []
-  for (let i = 0; i < askedIds.value.length; i++) {
-    const q = findById(askedIds.value[i])
-    if (q != null) asked.push(q)
-  }
-  // 训练时间预算：给足余量，让选择器不因时间收束
-  // 定向训练（source=report / dim_*）：优先出目标能力域题目，并按任务题量收尾
-  const out = selectNext({
-    blueprint: blueprint.value,
-    mode: 'quick',
-    asked: asked,
-    remainSeconds: 9999,
-    resumeRiskTopics: [],
-    focusDomain: domain.value,
-    maxQuestions: totalQuestions.value,
-    candidates: QUESTION_BANK
-  })
-  if (out == null || out.isWrapup) {
-    // 题库耗尽：直接完成
+  if (questionIndex.value >= questions.value.length) {
     finishTraining()
     return
   }
-  currentQuestion.value = out.question
-  askedIds.value.push(out.question.id)
-}
-
-function findById(id: string): QuestionItem | null {
-  // 训练场景只需 id 匹配的题面，用于 asked 去重；空实现走 selectNext 内部去重
-  if (id.length === 0) return null
-  const stub = emptyQuestion
-  stub.id = id
-  return stub
+  currentQuestion.value = questions.value[questionIndex.value]
+  questionIndex.value = questionIndex.value + 1
 }
 
 // 即时反馈：基于答案信号给出提示（训练核心：单维突破 · 即时反馈）

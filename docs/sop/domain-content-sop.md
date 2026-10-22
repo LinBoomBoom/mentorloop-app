@@ -24,13 +24,13 @@
 
 ## 2. 内容资产与权威文件
 
-| 资产         | 权威文件                                  | 结构                                                                                                                                          |
-| ------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 岗位能力图谱 | `data/<position>-map.uts`                 | `AbilityDomain[]` → `SubAbility[]`（含 `observableBehavior`、`scoringAnchor`、`questionCluster`、`weight`）                                   |
-| 题库         | `data/question-bank.uts`                  | `QuestionItem[]`（含 `abilityDomain`、`subAbility`、`knowledgePoint`、`misconceptions`、`expectedEvidence`、`followupPrompts`、`resumeRisk`） |
-| 评分量表     | `engine/rubric.uts`                       | 六维度锚点 + 置信度分级                                                                                                                       |
-| 岗位开关     | `data/position-options.uts`               | `available: boolean`（题库未就绪时置灰「敬请期待」）                                                                                          |
-| 服务端镜像   | `server/src/data/*`、`server/src/rules/*` | 必须与前端一致                                                                                                                                |
+| 资产         | 权威文件                                                               | 结构                                                                                                                                                                                                 |
+| ------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 岗位能力图谱 | `data/<position>-map.uts`                                              | `AbilityDomain[]` → `SubAbility[]`（含 `observableBehavior`、`scoringAnchor`、`questionCluster`、`weight`）                                                                                          |
+| 题库         | 云端 `questions` 表（本地自举 `server/src/data/content-fixture.json`） | `QuestionItem[]`（含 `abilityDomain`、`subAbility`、`knowledgePoint`、`misconceptions`、`expectedEvidence`、`followupPrompts`、`resumeRisk`）；`data/question-bank.uts` 自 2026-10-22 起仅作测试夹具 |
+| 评分量表     | `engine/rubric.uts`                                                    | 六维度锚点 + 置信度分级                                                                                                                                                                              |
+| 岗位开关     | `data/position-options.uts`                                            | `available: boolean`（题库未就绪时置灰「敬请期待」）                                                                                                                                                 |
+| 服务端镜像   | `server/src/data/*`、`server/src/rules/*`                              | 必须与前端一致                                                                                                                                                                                       |
 
 ---
 
@@ -40,7 +40,7 @@
 - 图谱权重须与评分量表权重对齐（六维度 25/25/20/15/10/5）。
 - 每题必须填 `misconceptions` 与 `expectedEvidence`——它们是评分与追问的依据。
 - `resumeRisk` 用于标记「简历高价值项目验证性追问」。
-- 新增岗位：图谱 + 题库 + `position-options` 三处齐备后才可置 `available: true`。
+- 新增岗位：图谱 + 内容库 `questions` + `position-options` 三处齐备后才可置 `available: true`。
 
 ---
 

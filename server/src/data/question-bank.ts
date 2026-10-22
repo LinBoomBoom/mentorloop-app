@@ -1,8 +1,9 @@
+// 仅测试夹具：业务代码禁止引用。线上题目统一来自服务端 questions 内容库（2026-10-22）。
 // Java 后端首批题目卡（文档 02 §2.3 题目组织规范）
 // 来源说明：历史题库素材经人工审核、去重、重构后使用（文档 01 §2）；
 // 每题含知识点、常见误区、期望证据与预设追问话术。变更须经内容运营审核（文档 05 §4）。
 
-import { QuestionItem, PositionId } from '../types/interview.js'
+import { QuestionItem } from '../types/interview.js'
 
 export const QUESTION_BANK: QuestionItem[] = [
   // ---------- 基础知识 · 并发与JVM ----------
@@ -1031,71 +1032,3 @@ export const QUESTION_BANK: QuestionItem[] = [
     positionId: 'frontend'
   } as QuestionItem
 ]
-
-// 收束题：评估学习能力与复盘能力（文档 02 §3.2 规则4：保留至少一道开放题）
-export const WRAPUP_QUESTION: QuestionItem = {
-  id: 'q-wrapup',
-  abilityDomain: 'learning',
-  subAbility: 'learning.retrospective',
-  knowledgePoint: '开放复盘',
-  content: '最后一个问题：回顾这次面试，你觉得自己哪个回答还可以讲得更好？',
-  purpose: '开放评估自我认知与复盘能力',
-  difficulty: 'junior',
-  type: 'behavioral',
-  misconceptions: ['完全没有自我反思'],
-  expectedEvidence: '自我评估的准确性',
-  followupPrompts: [],
-  resumeRisk: false,
-  techStack: '',
-  positionId: 'backend'
-} as QuestionItem
-
-// 前端岗位收束题（岗位化收束，避免跨岗位借用 Java 收束题）
-export const FRONTEND_WRAPUP_QUESTION: QuestionItem = {
-  id: 'q-wrapup-fe',
-  abilityDomain: 'learning',
-  subAbility: 'learning.retrospective',
-  knowledgePoint: '开放复盘',
-  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
-  purpose: '开放评估自我认知与复盘能力',
-  difficulty: 'junior',
-  type: 'behavioral',
-  misconceptions: ['完全没有自我反思'],
-  expectedEvidence: '自我评估的准确性',
-  followupPrompts: [],
-  resumeRisk: false,
-  techStack: '',
-  positionId: 'frontend'
-} as QuestionItem
-
-// 运维岗位收束题（2026-10-18 批次 A：岗位化收束，与 backend/frontend 同构）
-export const DEVOPS_WRAPUP_QUESTION: QuestionItem = {
-  id: 'q-wrapup-devops',
-  abilityDomain: 'learning',
-  subAbility: 'learning.retrospective',
-  knowledgePoint: '开放复盘',
-  techStack: '',
-  content: '最后一个问题：回顾这次面试，你在哪个回答上还能讲得更完整？',
-  purpose: '开放评估自我认知与复盘能力',
-  difficulty: 'junior',
-  type: 'behavioral',
-  misconceptions: ['完全没有自我反思'],
-  expectedEvidence: '自我评估的准确性',
-  followupPrompts: [],
-  resumeRisk: false,
-  positionId: 'devops'
-} as QuestionItem
-
-// 按岗位取收束题（选择器收束阶段使用；未覆盖岗位回退 Java 收束题）
-export function getWrapupForPosition(positionId: PositionId): QuestionItem {
-  if (positionId === 'frontend') return FRONTEND_WRAPUP_QUESTION
-  if (positionId === 'devops') return DEVOPS_WRAPUP_QUESTION
-  return WRAPUP_QUESTION
-}
-
-export function getQuestionById(id: string): QuestionItem | null {
-  for (let i = 0; i < QUESTION_BANK.length; i++) {
-    if (QUESTION_BANK[i].id === id) return QUESTION_BANK[i]
-  }
-  return null
-}

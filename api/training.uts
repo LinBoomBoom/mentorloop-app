@@ -1,0 +1,29 @@
+// 专项训练取题（契约：docs/contracts/2026-10-22-training-online-question-bank.freeze.md）
+// 数据源：服务端 questions 内容库；本地静态题库不再参与运行时出题。
+import { post } from './client.uts'
+import { useMock } from './env.uts'
+import { QuestionItem } from '../types/interview.uts'
+
+type TrainingQuestionsData = {
+  questions: QuestionItem[]
+}
+
+export async function fetchTrainingQuestions(
+  positionId: string,
+  experienceLevel: string,
+  domain: string,
+  count: number
+): Promise<QuestionItem[]> {
+  if (useMock()) {
+    throw new Error('本地静态题库已下线，请将 API_ENV 切换为 dev/prod 连接线上题库')
+  }
+  const r = await post('/training/questions', {
+    positionId: positionId,
+    experienceLevel: experienceLevel,
+    domain: domain,
+    count: count
+  })
+  const data = r.data as TrainingQuestionsData | null
+  if (data == null || data.questions == null) return []
+  return data.questions
+}

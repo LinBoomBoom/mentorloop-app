@@ -289,11 +289,11 @@ G2 保证「代码是干净的」，G3 保证「**做对了**」。
 
 内容资产直接决定面试质量与评分公信力，**AI 产物必须经人工审核**。
 
-**权威文件**：能力图谱 `data/<position>-map.uts`；题库 `data/question-bank.uts`；评分量表 `engine/rubric.uts`；岗位开关 `data/position-options.uts`；服务端镜像 `server/src/data|rules/*`。
+**权威文件**：能力图谱 `data/<position>-map.uts`；题库为云端 `questions` 表（本地自举 `server/src/data/content-fixture.json`，`data/question-bank.uts` 自 2026-10-22 起仅作测试夹具）；评分量表 `engine/rubric.uts`；岗位开关 `data/position-options.uts`；服务端镜像 `server/src/data|rules/*`。
 
-**结构硬约束**：每题挂到图谱的 `abilityDomain` + `subAbility` 且 `questionCluster` 存在；图谱权重与量表对齐（六维度 25/25/20/15/10/5）；每题必填 `misconceptions` 与 `expectedEvidence`（评分与追问依据）；新增岗位三处齐备（图谱 + 题库 + position-options）才可置 `available: true`。
+**结构硬约束**：每题挂到图谱的 `abilityDomain` + `subAbility` 且 `questionCluster` 存在；图谱权重与量表对齐（六维度 25/25/20/15/10/5）；每题必填 `misconceptions` 与 `expectedEvidence`（评分与追问依据）；新增岗位三处齐备（图谱 + 内容库 questions + position-options）才可置 `available: true`。
 
-**审核流程（强制留痕）**：AI/CO 起草 → 自检 → 人工审核（PO + CO，可用 `lark-approval` 留痕）→ 登记审核人与日期 → 生效合入两侧 `data/`。
+**审核流程（强制留痕）**：AI/CO 起草 → 自检 → 人工审核（PO + CO，可用 `lark-approval` 留痕）→ 登记审核人与日期 → 生效合入内容库 `questions`（本地 fixture / 云端同步）。
 
 **变更纪律**：改评分量表或选题规则 → 必跑固定评测集，未通过不得合入；改图谱/题库 → 走审核流程，影响契约先走冻结；规则逻辑变更同步 `engine/*` 与 `server/src/rules/*`。
 

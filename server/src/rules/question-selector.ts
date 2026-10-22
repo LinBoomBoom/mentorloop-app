@@ -1,8 +1,8 @@
 // 题目选择器 v3（文档 02 §3.2 + 岗位方向 / 经验等级个性化 + 专项训练定向）
 // 输入：候选池、岗位蓝图、简历风险、已答题目、剩余时间、实时可信度
 // 输出：下一道题及提问目的
-// 2026-10-18 批次 A：候选池改为调用方注入（服务端来自内容库仓储，客户端 mock/训练来自本地题库），
-// 选择器不再直接依赖代码常量题库；收束题仍为引擎侧固定模板（不进内容库）。
+// 2026-10-22：候选池由调用方注入——正式面试、专项训练均由服务端 questions 内容库供给；
+// 客户端不再内嵌运行时题库（静态题库仅作测试夹具）。收束题仍为引擎侧固定模板（不进内容库）。
 // 选择规则（v1 原有 5 条 + v2 方向/等级过滤 + v3 训练定向）：
 // 0. 岗位过滤：只抽 positionId 与 blueprint.positionId 匹配的题；
 //    难度过滤：只抽 blueprint.experienceLevel 允许的难度，按档位优先级顺序选题
@@ -20,7 +20,7 @@ import {
   Difficulty,
   ExperienceLevel
 } from '../types/interview.js'
-import { getWrapupForPosition } from '../data/question-bank.js'
+import { getWrapupForPosition } from '../data/wrapup.js'
 import { getDomainIds } from '../data/domain-ids.js'
 import { DIFFICULTY_PRIORITY, getExperienceOption } from '../data/position-options.js'
 
@@ -33,7 +33,7 @@ export type SelectorInput = {
   resumeTechStacks: string[] // 简历技术栈（小写；2026-10-18 契约冻结）：空=不过滤（现状兼容）；非空=非通用题须命中栈
   focusDomain: string // '' = 不限维度（正式面试）；非空 = 专项训练定向能力域
   maxQuestions: number // 0 = 使用 mode 预算；>0 = 覆盖（专项训练按任务题量控制）
-  candidates: QuestionItem[] // 候选池（批次 A 注入）：服务端=内容库本方向预取，客户端=mock/训练本地题库
+  candidates: QuestionItem[] // 候选池（调用方注入）：服务端/训练=内容库；客户端测试=夹具
 }
 
 export type SelectorOutput = {

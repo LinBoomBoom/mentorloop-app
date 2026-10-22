@@ -1,5 +1,5 @@
 // 岗位方向与经验档位选项（prep 页选择器 + 选题器过滤共用）
-// 新增岗位方向时：1) 在此添加 PositionOption；2) 在 data/ 下新增对应岗位的 ability-map 与 question-bank
+// 新增岗位方向时：1) 在此添加 PositionOption；2) 新增对应岗位的 ability-map，并同步内容库 questions
 import { PositionId, ExperienceLevel, Difficulty } from '../types/interview.js'
 
 export type PositionOption = {
