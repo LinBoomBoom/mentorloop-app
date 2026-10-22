@@ -234,6 +234,9 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 登录半屏层：小程序端手机号+验证码（APP 端仍走 /pages/login/login） -->
+    <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
   </view>
 </template>
 
@@ -243,6 +246,7 @@ import { onShow } from '@dcloudio/uni-app'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
+import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
@@ -281,6 +285,8 @@ const profileReady = ref(userStore.profile.onboarded === true)
 // 每次页面实例只自动引导一次，避免用户返回时反复弹
 const onboardingPrompted = ref(false)
 const loggedIn = ref(userStore.isLoggedIn())
+// 登录半屏层（小程序端手机号+验证码；APP 端走登录页）
+const showLogin = ref(false)
 
 // 最近报告数据
 const records = ref<ReportRecord[]>([])
@@ -487,8 +493,21 @@ function goLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
   // #endif
   // #ifndef APP
-  uni.showToast({ title: '微信授权登录中，请稍候', icon: 'none' })
+  // 小程序端：拉起手机号+验证码登录半屏层（此前的 toast 占位已移除）
+  showLogin.value = true
   // #endif
+}
+
+function onLoginSuccess() {
+  showLogin.value = false
+  loggedIn.value = userStore.isLoggedIn()
+  positionLabel.value = positionDisplay(userStore.profile)
+  experienceLabel.value = experienceDisplay(userStore.profile)
+  uni.showToast({ title: '登录成功', icon: 'none' })
+}
+
+function onLoginExit() {
+  showLogin.value = false
 }
 </script>
 

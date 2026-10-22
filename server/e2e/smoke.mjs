@@ -128,7 +128,7 @@ async function main() {
   const pay = await api('/membership/order', {
     method: 'POST',
     token,
-    body: { skuId: 'member_monthly' }
+    body: { skuId: 'member_monthly', platform: 'app' }
   })
   step(
     'mock 下单返回 payParams=null 且含 orderId',

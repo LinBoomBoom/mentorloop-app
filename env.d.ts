@@ -65,4 +65,10 @@ declare module '*.uts' {
   // types/interview
   export type PositionBlueprint = any
   export type QuestionItem = any
+  // api/virtual-pay（W5 客户端拉起）
+  export const PAY_CANCELLED: string
+  export function isWechatVersionAtLeast(...args: any[]): any
+  export function describeVirtualPayError(...args: any[]): any
+  export function isSessionExpiredCode(...args: any[]): any
+  export function isDuplicateOrderCode(...args: any[]): any
 }

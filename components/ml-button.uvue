@@ -5,7 +5,7 @@
     :hover-class="disabled ? 'none' : 'pressed-card'"
     :hover-start-time="0"
     :hover-stay-time="80"
-    @click="onClick"
+    @click.stop="onClick"
   >
     <text class="font-semibold" :class="[sizeTextClass, textColorClass]">{{ text }}</text>
   </view>
@@ -73,6 +73,7 @@ const disabledClass = computed((): string => {
   return props.type === 'primary' || props.type === 'danger' ? 'opacity-50' : ''
 })
 
+// 根节点必须 @click.stop：与 ml-card 同因，避免原生 tap 冒泡叠加自定义 tap 造成父级触发两次
 function onClick() {
   if (props.disabled) return
   emit('tap')

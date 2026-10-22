@@ -4,7 +4,7 @@
     :class="rootClass"
     :hover-class="hoverClass"
     :hover-start-time="0"
-    @click="onClick"
+    @click.stop="onClick"
   >
     <!-- select：选项选择 chip（prep/onboarding/prefs/report 统一形态） -->
     <template v-if="variant === 'select'">
@@ -101,6 +101,7 @@ const actionIconColor = computed((): string => {
   return props.tone === 'soft' ? INK_SOFT : SMART
 })
 
+// 根节点必须 @click.stop：与 ml-card 同因，避免原生 tap 冒泡叠加自定义 tap 造成父级触发两次
 function onClick() {
   // muted（已完成）彻底吞点击；disabled 仅去视觉与按压反馈，点击仍回传
   // ——消费端决定引导（如不可用方向 toast「题库建设中」），不得死路（五态原则）

@@ -149,7 +149,9 @@ class QuotaStore {
       // 简历评审单次包：3 次/包（与 server/src/data/skus.ts 对齐）
       this.state.resumeCreditsLeft = this.state.resumeCreditsLeft + 3
     } else {
-      const credits = skuId === 'single_pack_10' ? 10 : 3
+      // 场次包：10 场 / 3 场；联调小额包 test_pay_01（Android）/ test_pay_1（iOS）均为 1 场（与 skus.ts 对齐）
+      const credits =
+        skuId === 'single_pack_10' ? 10 : skuId === 'test_pay_01' || skuId === 'test_pay_1' ? 1 : 3
       this.state.singleCreditsLeft = this.state.singleCreditsLeft + credits
       if (userStore.profile.plan === 'free') {
         userStore.setProfile({

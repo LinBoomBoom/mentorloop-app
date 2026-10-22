@@ -64,6 +64,18 @@ export function buildApp(opts: BuildOptions = {}): FastifyInstance {
   void app.register(jwt, { secret: env.jwtSecret })
   void app.register(multipart)
 
+  // XML 推送（虚拟支付发货/退款通知）：保留原文，交由 virtual-notify 解析
+  for (const contentType of ['application/xml', 'text/xml']) {
+    app.addContentTypeParser(
+      contentType,
+      { parseAs: 'string' },
+      (req: any, body: any, done: any) => {
+        req.rawBody = body
+        done(null, String(body))
+      }
+    )
+  }
+
   // 微信身份头门禁：仅当部署方显式声明 TRUST_WX_HEADERS=true（云托管私有链路）时采信
   // X-WX-* 头；否则一律剥离，防止公网调用方伪造 X-WX-OPENID 登录他人账号（契约冻结 §2.2）
   if (!env.trustWxHeaders) {

@@ -96,6 +96,35 @@ export async function payOrderMock(
   return { orderId: order.id, amount: order.amount }
 }
 
+// 回收权益（退款时）：按「剩余额度」回收，已使用部分不追缴
+// - member：member_until 回退 memberDays，但不早于当前时间
+// - single / resume：总额度减去本单数量，但不低于已使用量
+export async function revokeOrderBenefit(db: Db, order: OrderRow): Promise<void> {
+  const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get(order.user_id)) as
+    UserRow | undefined
+  if (user == null) return
+  const sku = getSku(order.sku_id)
+  if (sku == null) return
+  const t = now()
+  if (sku.kind === 'member') {
+    const until = user.member_until != null ? user.member_until : 0
+    const next = Math.max(t, until - sku.memberDays * DAY_MS)
+    await db
+      .prepare('UPDATE users SET member_until = ?, updated_at = ? WHERE id = ?')
+      .run(next, t, order.user_id)
+  } else if (sku.kind === 'resume') {
+    const total = Math.max(user.resume_single_used, user.resume_single_total - sku.resumeCount)
+    await db
+      .prepare('UPDATE users SET resume_single_total = ?, updated_at = ? WHERE id = ?')
+      .run(total, t, order.user_id)
+  } else {
+    const total = Math.max(user.single_quota_used, user.single_quota_total - sku.singleCount)
+    await db
+      .prepare('UPDATE users SET single_quota_total = ?, updated_at = ? WHERE id = ?')
+      .run(total, t, order.user_id)
+  }
+}
+
 // 微信回调结算：原子迁移 CREATED→PAID，成功后发放；重复回调返回 false（不重复发放）
 // 返回 true 表示本次完成发放；false 表示订单已处理（幂等）。
 export async function settleOrder(

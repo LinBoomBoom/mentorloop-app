@@ -9,7 +9,7 @@
     :hover-class="pressable ? 'pressed-card' : 'none'"
     :hover-start-time="0"
     :hover-stay-time="80"
-    @click="onClick"
+    @click.stop="onClick"
   >
     <slot></slot>
   </view>
@@ -29,6 +29,8 @@ defineProps({
 
 const emit = defineEmits(['tap'])
 
+// 根节点必须 @click.stop：小程序端 emit('tap') 与原生 tap 冒泡到组件节点会让父级 @tap 触发两次
+// （2026-10-22 真机：退出登录确认弹窗弹两次）
 function onClick() {
   emit('tap')
 }

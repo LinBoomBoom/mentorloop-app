@@ -3,7 +3,13 @@
 // B 端席位不在客户端售卖（M3+），此处不配置。
 
 export type SkuId =
-  'member_monthly' | 'member_yearly' | 'single_pack_3' | 'single_pack_10' | 'resume_pack_3'
+  | 'member_monthly'
+  | 'member_yearly'
+  | 'single_pack_3'
+  | 'single_pack_10'
+  | 'resume_pack_3'
+  | 'test_pay_01'
+  | 'test_pay_1'
 
 export type Sku = {
   id: SkuId
@@ -90,6 +96,34 @@ export const RESUME_PACK: Sku = {
   priceCent: 2900,
   originPriceCent: 0,
   unit: '包',
+  badge: '',
+  highlight: false
+} as Sku
+
+// 小额支付联调专用（隐藏入口：仅开发版/体验版可见，不进正式套餐列表）
+// 与 server/src/data/skus.ts 的 test_pay_01 对齐：0.1 元 / 1 场
+export const TEST_PACK: Sku = {
+  id: 'test_pay_01',
+  kind: 'single',
+  name: '支付联调 · 1 场',
+  desc: '仅用于验证支付链路，体验版/开发版可见',
+  priceCent: 10,
+  originPriceCent: 0,
+  unit: '次',
+  badge: '',
+  highlight: false
+} as Sku
+
+// iOS 端联调专用：Apple 支付最低 1 元，0.1 元道具 iOS 无法下单（同走隐藏入口，按平台分流）
+// 与 server/src/data/skus.ts 的 test_pay_1 对齐：1 元 / 1 场
+export const TEST_PACK_IOS: Sku = {
+  id: 'test_pay_1',
+  kind: 'single',
+  name: '支付联调 · 1 场',
+  desc: '仅用于验证支付链路（iOS 端 1 元），体验版/开发版可见',
+  priceCent: 100,
+  originPriceCent: 0,
+  unit: '次',
   badge: '',
   highlight: false
 } as Sku

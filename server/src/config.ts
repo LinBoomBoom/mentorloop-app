@@ -32,6 +32,11 @@ export type Env = {
   wxMchPrivateKey: string
   wxPlatformPublicKey: string
   wxNotifyUrl: string
+  // 小程序虚拟支付（契约：docs/contracts/2026-10-21-virtual-pay.freeze.md）
+  // 与 App 的 PAY_MODE 分离：MP_PAY_MODE 只作用于 platform=mp-weixin 的下单
+  mpPayMode: 'mock' | 'virtual'
+  mpOfferId: string // 虚拟支付 OfferID（非密钥）
+  mpAppKey: string // 现网 AppKey（密钥级：仅云端变量，不落日志/仓库）
   asrProvider: 'stub' | 'aliyun' | 'wx'
   asrTimeoutMs: number
   asrAliyunAccessKeyId: string
@@ -81,6 +86,10 @@ const DEFAULT_ENV: Env = {
   wxMchPrivateKey: '',
   wxPlatformPublicKey: '',
   wxNotifyUrl: '',
+  // 小程序虚拟支付：默认 mock（下单即发放，零配置可跑）；生产必须显式置 virtual
+  mpPayMode: 'mock',
+  mpOfferId: '',
+  mpAppKey: '',
   asrProvider: 'stub', // P2-13：默认 stub（明确降级，不伪造转写）；'wx' 复用 WX_APPID/WX_SECRET（音频≤1MB mp3）；'aliyun' 需 ASR_ALIYUN_* 齐全
   asrTimeoutMs: 30000,
   asrAliyunAccessKeyId: '',
@@ -130,6 +139,9 @@ export function loadEnv(): Env {
     wxMchPrivateKey: e.WX_MCH_PRIVATE_KEY ?? DEFAULT_ENV.wxMchPrivateKey,
     wxPlatformPublicKey: e.WX_PLATFORM_PUBLIC_KEY ?? DEFAULT_ENV.wxPlatformPublicKey,
     wxNotifyUrl: e.WX_NOTIFY_URL ?? DEFAULT_ENV.wxNotifyUrl,
+    mpPayMode: e.MP_PAY_MODE === 'virtual' ? 'virtual' : 'mock',
+    mpOfferId: e.MP_OFFER_ID ?? DEFAULT_ENV.mpOfferId,
+    mpAppKey: e.MP_APP_KEY ?? DEFAULT_ENV.mpAppKey,
     asrProvider: e.ASR_PROVIDER === 'aliyun' ? 'aliyun' : e.ASR_PROVIDER === 'wx' ? 'wx' : 'stub',
     asrTimeoutMs: parseInt(e.ASR_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.asrTimeoutMs,
     asrAliyunAccessKeyId: e.ASR_ALIYUN_ACCESS_KEY_ID ?? DEFAULT_ENV.asrAliyunAccessKeyId,
@@ -180,7 +192,18 @@ export function getModeBudget(mode: string): ModeBudget {
 // 云端部署（MYSQL_HOST 注入）启动安全守卫：拒绝以开发默认值上生产。
 // - 默认 JWT_SECRET → 任何人可伪造 token（越权全站）
 // - 默认万能验证码 → 任意手机号接管账号
+// - 虚拟支付 half-configured → 下单必然签名失败
+// - TTS 非精品音色 → 单场成本放大 4–21 倍（成本卡 §12）
 // 本地 SQLite（mysqlHost 为空）零配置可跑，不受影响。
+
+// 允许在云端使用的 TTS 音色白名单（均为精品音色，0.3 元/万字符）。
+// 成本对照（官方后付费）：大模型音色 1.2 元/万（4×）、超自然大模型音色 6.5 元/万（21×）。
+// 增删音色前必须先重跑 docs/tasks/2026-10-22-cost-and-pricing-decision.md §12 敏感性表。
+export const APPROVED_TTS_VOICE_TYPES: number[] = [101001]
+
+// 已弃用模型名（DeepSeek 于 2026-07-24 弃用，仍做兼容映射，但不保证能力与价格口径）
+export const DEPRECATED_LLM_MODELS: string[] = ['deepseek-chat', 'deepseek-reasoner']
+
 export function assertCloudSafety(env: Env): void {
   if (env.mysqlHost.length === 0) return
   const problems: string[] = []
@@ -195,7 +218,35 @@ export function assertCloudSafety(env: Env): void {
   if (env.wxMockLogin) {
     problems.push('WX_MOCK_LOGIN=true（假 openid 登录）禁止在云端开启')
   }
+  if (env.mpPayMode === 'virtual' && (env.mpOfferId.length === 0 || env.mpAppKey.length === 0)) {
+    problems.push('MP_PAY_MODE=virtual 但 MP_OFFER_ID / MP_APP_KEY 未配齐（签名必然失败）')
+  }
+  if (
+    env.ttsProvider === 'tencent' &&
+    APPROVED_TTS_VOICE_TYPES.indexOf(env.tencentTtsVoiceType) < 0
+  ) {
+    problems.push(
+      'TENCENT_TTS_VOICE_TYPE=' +
+        String(env.tencentTtsVoiceType) +
+        ' 不在已核准白名单（' +
+        APPROVED_TTS_VOICE_TYPES.join(',') +
+        '）：非精品音色单价为 1.2–6.5 元/万字符，成本放大 4–21 倍，须先重跑成本卡 §12'
+    )
+  }
   if (problems.length > 0) {
     throw new Error('[config] 拒绝启动（云模式安全守卫）：' + problems.join('；'))
+  }
+  // 非阻断告警：云端仍用 mock 会在下单时直接发放权益（免费白送），生产必须显式 virtual
+  if (env.mpPayMode === 'mock') {
+    console.warn(
+      '[config] MP_PAY_MODE=mock（云端）：mp-weixin 下单将直接发放权益，不产生支付；生产环境请置 virtual'
+    )
+  }
+  if (env.llmEnabled && DEPRECATED_LLM_MODELS.indexOf(env.llmModel) >= 0) {
+    console.warn(
+      '[config] LLM_MODEL=' +
+        env.llmModel +
+        ' 已于 2026-07-24 弃用（现映射 deepseek-v4-flash），建议显式改为 deepseek-v4-flash'
+    )
   }
 }

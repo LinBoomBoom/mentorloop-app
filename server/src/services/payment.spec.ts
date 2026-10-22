@@ -43,7 +43,7 @@ async function orderMock(app: any, token: string, skuId: string): Promise<any> {
     method: 'POST',
     url: '/membership/order',
     headers: { authorization: 'Bearer ' + token },
-    payload: { skuId }
+    payload: { skuId, platform: 'app' }
   })
   return r.json()
 }
@@ -120,7 +120,7 @@ describe('支付与权益（P1.3）', () => {
       method: 'POST',
       url: '/membership/order',
       headers: { authorization: 'Bearer ' + token },
-      payload: { skuId: 'member_monthly' }
+      payload: { skuId: 'member_monthly', platform: 'app' }
     })
     const order = r.json()
     expect(order.code).toBe(0)
@@ -192,7 +192,7 @@ describe('支付与权益（P1.3）', () => {
       method: 'POST',
       url: '/membership/order',
       headers: { authorization: 'Bearer ' + token },
-      payload: { skuId: 'single_pack_3' }
+      payload: { skuId: 'single_pack_3', platform: 'app' }
     })
     const orderId = r.json().data.orderId
     const ts = String(Math.floor(Date.now() / 1000))

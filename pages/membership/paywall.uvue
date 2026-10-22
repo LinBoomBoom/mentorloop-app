@@ -115,6 +115,19 @@
         ></ml-button>
       </view>
 
+      <!-- 小额支付联调入口：仅开发版/体验版可见，正式版不渲染 -->
+      <view v-if="showTestPay" class="mt-3">
+        <ml-button
+          :text="'支付联调 · ¥' + formatPrice(testPack.priceCent) + '（1 场）'"
+          block
+          :disabled="testPaying"
+          @tap="doTestPay"
+        ></ml-button>
+        <view class="flex-row items-center justify-center mt-1">
+          <text class="text-xs text-ink-soft">仅开发版/体验版可见，正式版不展示</text>
+        </view>
+      </view>
+
       <!-- 协议与说明 -->
       <view class="flex-row items-center justify-center mt-3">
         <text class="text-xs text-ink-soft">支付即同意</text>
@@ -139,12 +152,15 @@ import mlIcon from '../../components/ml-icon.uvue'
 import {
   SKUS,
   RESUME_PACK,
+  TEST_PACK,
+  TEST_PACK_IOS,
   MEMBER_BENEFITS,
   Sku,
   SkuId,
   formatPrice
 } from '../../data/membership.uts'
 import { purchase } from '../../api/membership.uts'
+import { PAY_CANCELLED } from '../../api/virtual-pay.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { useMock } from '../../api/env.uts'
 import { themeValue } from '../../styles/theme.uts'
@@ -161,10 +177,34 @@ const from = ref('mine')
 const benefits = MEMBER_BENEFITS
 const selected = ref<SkuId>('member_monthly')
 const paying = ref(false)
+// 联调支付独立 loading：不得驱动「立即开通」按钮的禁用/支付中态（2026-10-22 真机反馈串扰）
+const testPaying = ref(false)
 // 简历页入口只展示简历评审单次包，避免把会员主套餐混入
 const skus = computed((): Sku[] => (from.value === 'resume' ? [RESUME_PACK] : SKUS))
 // Mock 说明仅演示环境展示，真实环境不出现
 const isMock = useMock()
+// 小额联调入口：仅开发版/体验版可见（正式版恒为 false）
+const showTestPay = ref(false)
+// 联调道具：默认 0.1 元（Android）；iOS 端 Apple 支付最低 1 元，分流至 1 元道具 test_pay_1
+const testSkuId = ref<SkuId>('test_pay_01')
+const testPack = computed((): Sku => (testSkuId.value === 'test_pay_1' ? TEST_PACK_IOS : TEST_PACK))
+// #ifdef MP-WEIXIN
+const wxApiForEnv = (globalThis as any).wx
+if (wxApiForEnv != null && wxApiForEnv.getAccountInfoSync != null) {
+  const accountInfo: any = wxApiForEnv.getAccountInfoSync()
+  const envVersion: string =
+    accountInfo != null && accountInfo.miniProgram != null
+      ? String(accountInfo.miniProgram.envVersion)
+      : ''
+  showTestPay.value = envVersion === 'develop' || envVersion === 'trial'
+}
+if (wxApiForEnv != null && wxApiForEnv.getSystemInfoSync != null) {
+  const sys = wxApiForEnv.getSystemInfoSync()
+  if (sys != null && sys.platform === 'ios') {
+    testSkuId.value = 'test_pay_1'
+  }
+}
+// #endif
 
 onLoad((opts: any) => {
   if (opts != null && opts['from'] != null) {
@@ -203,6 +243,8 @@ async function doPay() {
     }, 1200)
   } catch (e: any) {
     const msg = e != null && e.message != null ? String(e.message) : '支付未完成'
+    // 用户主动取消：契约约定静默返回，不提示失败
+    if (msg === PAY_CANCELLED) return
     uni.showToast({ title: msg, icon: 'none' })
   } finally {
     paying.value = false
@@ -211,5 +253,21 @@ async function doPay() {
 
 function showAgreement() {
   uni.showToast({ title: '会员服务协议即将上线', icon: 'none' })
+}
+
+// 小额联调：走同一条真实支付链路（下单 → 拉起 → 推送发货），支付后停留本页便于复测
+async function doTestPay() {
+  if (testPaying.value) return
+  testPaying.value = true
+  try {
+    await purchase(testSkuId.value, 'single')
+    uni.showToast({ title: '联调支付成功', icon: 'success' })
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : '支付未完成'
+    if (msg === PAY_CANCELLED) return
+    uni.showToast({ title: msg, icon: 'none' })
+  } finally {
+    testPaying.value = false
+  }
 }
 </script>

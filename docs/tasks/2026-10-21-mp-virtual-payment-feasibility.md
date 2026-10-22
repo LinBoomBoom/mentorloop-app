@@ -225,4 +225,4 @@ FA + 执行 Agent
 5. W4 依赖 W3 的订单号与签名实现；W6 最后收口。
 6. 任一卡触发 §13 回退条件时，停止本批下发并回报 PO。
 
-**进度（2026-10-22）：** W1a 已双签并完成（[冻结单](../contracts/2026-10-21-virtual-pay.freeze.md)）；W2 已实施，`auth.spec.ts` 9 项与全量 171 项单测、typecheck、lint 均通过；云端凭据已注入并回读（24 键，RequestId `7d580a26-...`）；W0 仅剩 5 个道具 ID；其余待启动。
+**进度（2026-10-22）：** W1a 已双签并完成（[冻结单](../contracts/2026-10-21-virtual-pay.freeze.md)）；W2 已实施，`auth.spec.ts` 9 项与全量 171 项单测、typecheck、lint 均通过；云端凭据已注入并回读（24 键，RequestId `7d580a26-...`）；**W0 已完成**（5 个道具 2026-10-22 发布现网，见 [验收记录](./2026-10-22-mp-virtual-pay-w0-credentials-goods.accept.md)）；**W1b 已完成**（后台支持自定义 ID，`productId === skuId`，`skus.ts` 已回填 `wxProductId`，见 [验收记录](./2026-10-22-mp-virtual-pay-w1b-contract-values.accept.md)）；**W3 已完成**（`virtual-pay.ts` 双签名 + platform 分流 + 409 会话校验，全量 183 单测通过，见 [验收记录](./2026-10-22-mp-virtual-pay-w3-virtual-order.accept.md)）；**W5 已完成**（客户端 `wx.requestVirtualPayment` + `canIUse` / iOS ≥ 8.0.68 门控 + 409/-15007 重登重试一次，见 [验收记录](./2026-10-22-mp-virtual-pay-w5-client-invoke.accept.md)）；**W4 已完成**（发货推送 + 查单为权威 + 退款回收 + 5 分钟兜底，195 单测通过，见 [验收记录](./2026-10-22-mp-virtual-pay-w4-callback-query-refund.accept.md)）；仅剩 W6 测试与真单验收。

@@ -1,69 +1,74 @@
 <template>
-  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <view class="px-4 pt-4 pb-8">
-      <!-- 账号卡 -->
-      <view class="bg-navy rounded-card p-4">
-        <view class="flex-row items-center">
-          <view
-            class="w-12 h-12 rounded-full flex-row items-center justify-center mr-3"
-            :style="{ backgroundColor: 'rgba(255,255,255,0.14)' }"
-          >
-            <ml-icon name="user" :size="22" :color="SURFACE"></ml-icon>
-          </view>
-          <view class="flex-col">
-            <text class="text-lg font-semibold text-white">{{ nickname }}</text>
-            <text class="text-xs text-mist mt-1">
-              {{ loggedIn ? 'UID ' + uid : '未登录（访客模式）' }} · {{ planLabel }}
-            </text>
+  <view class="h-screen bg-bg-light">
+    <scroll-view class="h-screen" scroll-y="true">
+      <view class="px-4 pt-4 pb-8">
+        <!-- 账号卡 -->
+        <view class="bg-navy rounded-card p-4">
+          <view class="flex-row items-center">
+            <view
+              class="w-12 h-12 rounded-full flex-row items-center justify-center mr-3"
+              :style="{ backgroundColor: 'rgba(255,255,255,0.14)' }"
+            >
+              <ml-icon name="user" :size="22" :color="SURFACE"></ml-icon>
+            </view>
+            <view class="flex-col">
+              <text class="text-lg font-semibold text-white">{{ nickname }}</text>
+              <text class="text-xs text-mist mt-1">
+                {{ loggedIn ? 'UID ' + uid : '未登录（访客模式）' }} · {{ planLabel }}
+              </text>
+            </view>
           </view>
         </view>
-      </view>
 
-      <!-- 引导登录 -->
-      <view v-if="!loggedIn" class="mt-3">
-        <ml-button text="登录 / 注册" type="primary" block @tap="goLogin"></ml-button>
-      </view>
+        <!-- 引导登录 -->
+        <view v-if="!loggedIn" class="mt-3">
+          <ml-button text="登录 / 注册" type="primary" block @tap="goLogin"></ml-button>
+        </view>
 
-      <!-- 账号能力列表 -->
-      <view class="mt-3">
-        <ml-card :padded="false">
-          <view
-            v-for="(s, i) in securityRows"
-            :key="s.text"
-            class="flex-row items-center px-4 h-[56px]"
-            :class="i < securityRows.length - 1 ? 'border-b border-line' : ''"
-            @click="onSecurityRow(s)"
-          >
+        <!-- 账号能力列表 -->
+        <view class="mt-3">
+          <ml-card :padded="false">
             <view
-              class="w-8 h-8 rounded-control flex-row items-center justify-center mr-3"
-              :style="{ backgroundColor: s.tint }"
+              v-for="(s, i) in securityRows"
+              :key="s.text"
+              class="flex-row items-center px-4 h-[56px]"
+              :class="i < securityRows.length - 1 ? 'border-b border-line' : ''"
+              @click="onSecurityRow(s)"
             >
-              <ml-icon :name="s.icon" :size="16" :color="s.color"></ml-icon>
+              <view
+                class="w-8 h-8 rounded-control flex-row items-center justify-center mr-3"
+                :style="{ backgroundColor: s.tint }"
+              >
+                <ml-icon :name="s.icon" :size="16" :color="s.color"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink">{{ s.text }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
+              </view>
+              <ml-tag v-if="s.soon" label="即将上线" :bg="BG_MUTED" :color="MIST"></ml-tag>
             </view>
-            <view class="flex-col flex-1">
-              <text class="text-sm text-ink">{{ s.text }}</text>
-              <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
+          </ml-card>
+        </view>
+
+        <!-- 退出登录 -->
+        <view v-if="loggedIn" class="mt-3">
+          <ml-card pressable @tap="confirmLogout">
+            <view class="flex-row items-center justify-center">
+              <ml-icon name="log-out" :size="16" :color="DANGER"></ml-icon>
+              <text class="text-sm text-danger ml-1.5">退出登录</text>
             </view>
-            <ml-tag v-if="s.soon" label="即将上线" :bg="BG_MUTED" :color="MIST"></ml-tag>
-          </view>
-        </ml-card>
-      </view>
+          </ml-card>
+        </view>
 
-      <!-- 退出登录 -->
-      <view v-if="loggedIn" class="mt-3">
-        <ml-card pressable @tap="confirmLogout">
-          <view class="flex-row items-center justify-center">
-            <ml-icon name="log-out" :size="16" :color="DANGER"></ml-icon>
-            <text class="text-sm text-danger ml-1.5">退出登录</text>
-          </view>
-        </ml-card>
+        <text class="text-xs text-ink-soft mt-4 text-center leading-4">
+          手机号换绑、第三方绑定与设备管理需要后端支持，将随服务端上线开放
+        </text>
       </view>
+    </scroll-view>
 
-      <text class="text-xs text-ink-soft mt-4 text-center leading-4">
-        手机号换绑、第三方绑定与设备管理需要后端支持，将随服务端上线开放
-      </text>
-    </view>
-  </scroll-view>
+    <!-- 登录半屏层：小程序端手机号+验证码（APP 端仍走 /pages/login/login） -->
+    <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
+  </view>
 </template>
 
 <script setup lang="uts">
@@ -72,6 +77,7 @@ import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
+import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { deleteAccount } from '../../api/auth.uts'
@@ -94,6 +100,8 @@ const uid = ref(userStore.profile.uid)
 const planLabel = ref(planText(userStore.profile.plan))
 const loggedIn = ref(userStore.isLoggedIn())
 const deleting = ref(false)
+// 登录半屏层（小程序端手机号+验证码；APP 端走登录页）
+const showLogin = ref(false)
 
 function planText(p: string): string {
   if (p === 'member') return '会员'
@@ -142,8 +150,27 @@ function goLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
   // #endif
   // #ifndef APP
-  uni.showToast({ title: '微信授权登录中，请稍候', icon: 'none' })
+  // 小程序端：拉起手机号+验证码登录半屏层（此前的 toast 占位已移除）
+  showLogin.value = true
   // #endif
+}
+
+// 登录态与账号信息刷新（登录半屏层成功回调用）
+function refreshProfile() {
+  nickname.value = userStore.profile.nickname
+  uid.value = userStore.profile.uid
+  planLabel.value = planText(userStore.profile.plan)
+  loggedIn.value = userStore.isLoggedIn()
+}
+
+function onLoginSuccess() {
+  showLogin.value = false
+  refreshProfile()
+  uni.showToast({ title: '登录成功', icon: 'none' })
+}
+
+function onLoginExit() {
+  showLogin.value = false
 }
 
 function onSecurityRow(s: SecurityRow) {
@@ -160,7 +187,12 @@ function onSecurityRow(s: SecurityRow) {
   }
 }
 
+// 确认弹窗开着时忽略重复调用（小程序端 tap 事件可能重复送达，避免叠两个弹窗）
+let logoutModalOpen = false
+
 function confirmLogout() {
+  if (logoutModalOpen) return
+  logoutModalOpen = true
   uni.showModal({
     title: '退出登录',
     content: '退出后训练记录仍保留在本机，确认退出？',
@@ -174,6 +206,9 @@ function confirmLogout() {
         trackEvent('auth_logout')
         uni.showToast({ title: '已退出登录', icon: 'none' })
       }
+    },
+    complete: () => {
+      logoutModalOpen = false
     }
   })
 }

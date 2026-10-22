@@ -28,13 +28,13 @@ MP 端下单返回可直接拉起 `wx.requestVirtualPayment` 的签名参数，�
 
 ## 4. 验收标准
 
-- [ ] 签名单测使用官方示例固定向量，`paySig` / `signature` 可复算一致
-- [ ] `goodsPrice` 取自 `skus.ts`，请求体传价被忽略
-- [ ] `platform=mp-weixin` 且 `MP_PAY_MODE=virtual` 返回 `provider: 'virtual'`
-- [ ] `platform=app` 行为与改动前一致（回归测试）
-- [ ] -15002 / -15005 / -15006 / -15007 / -15010 / -15014 有明确映射
-- [ ] 订单号沿用 `newId('o')`，符合订单号规则
-- [ ] 既有 `payment.spec.ts` 的 mock / wx 用例已补 `platform` 并通过
+- [x] 签名单测覆盖官方算法：`paySig = HMAC(AppKey, "requestVirtualPayment&"+signData)`、`signature = HMAC(sessionKey, signData)` 可复算一致（官方文档只给算法未给固定向量，改为「按算法原文拼接复算 + 换密钥/换报文必变」双重断言）
+- [x] `goodsPrice` 取自 `skus.ts`，请求体传价被忽略
+- [x] `platform=mp-weixin` 且 `MP_PAY_MODE=virtual` 返回 `provider: 'virtual'`
+- [x] `platform=app` 行为与改动前一致（回归测试）
+- [ ] -15002 / -15005 / -15006 / -15007 / -15010 / -15014 有明确映射（**文案已在冻结单 §5.2 冻结，代码落点归 W5 客户端 fail 回调**；服务端 400/409/500 分支已实现并有单测）
+- [x] 订单号沿用 `newId('o')`，符合订单号规则
+- [x] 既有 `payment.spec.ts` 的 mock / wx 用例已补 `platform` 并通过
 
 ## 5. 风险与对策
 

@@ -90,9 +90,15 @@ function handleResponse(
     return
   }
   if (statusCode < 200 || statusCode >= 300) {
-    const msg = '网络异常（' + statusCode + '）'
+    // 非 2xx：优先透出服务端 message（如虚拟支付 409「会话已过期」），
+    // 并把 statusCode 挂到错误对象上，供调用方做分支（W5：409 → 重登重试一次）
+    const body0 = res.data as ApiResult | null
+    const serverMsg =
+      body0 != null && body0.message != null && body0.message.length > 0 ? body0.message : ''
+    const msg = serverMsg.length > 0 ? serverMsg : '网络异常（' + statusCode + '）'
     if (!silent) uni.showToast({ title: msg, icon: 'none' })
-    reject(new Error(msg))
+    const err: any = { message: msg, statusCode: statusCode }
+    reject(err as any)
     return
   }
 

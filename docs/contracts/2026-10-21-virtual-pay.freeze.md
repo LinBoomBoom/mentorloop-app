@@ -160,3 +160,74 @@ grep -n "platform" api/membership.uts server/src/routes/membership.ts
 grep -n "VirtualPayParams\|wxProductId" api/membership.uts server/src/services/virtual-pay.ts server/src/data/skus.ts
 cd server && npx vitest run src/services/payment.spec.ts src/services/wechat-pay.spec.ts
 ```
+
+## 11. 取值（W1b 追加，2026-10-22）
+
+> 本节只追加**取值**，不改 §1–§8 的结构与语义。取值来源：MP 后台【虚拟支付 → 基本配置 → 道具配置】，2026-10-22 已发布现网。
+
+### 11.1 非敏感常量
+
+| 项             | 取值                                 | 位置                               |
+| -------------- | ------------------------------------ | ---------------------------------- |
+| `AppID`        | `wx83b5d63ecd739421`                 | 云端变量 `WX_APPID`（与 ASR 共用） |
+| `OfferID`      | `1450672438`                         | 云端变量 `MP_OFFER_ID`             |
+| `env`          | `0`（现网；沙箱 1 会被 -15011 拒绝） | 服务端生成 `signData` 时硬编码     |
+| `currencyType` | `CNY`                                | 同上                               |
+| `buyQuantity`  | `1`                                  | 同上                               |
+
+### 11.2 密钥（不落明文）
+
+| 项               | 存放位置                                                        |
+| ---------------- | --------------------------------------------------------------- |
+| `AppKey`（现网） | 仅云端变量 `MP_APP_KEY`；仓库、日志、埋点、客户端一律不出现明文 |
+| 沙箱 `AppKey`    | **不使用**（现网 `env` 只能为 0）                               |
+
+### 11.3 `skuId → productId` 映射
+
+后台「道具管理」允许自定义道具 ID，5 个道具**直接使用 skuId**，故 `productId === skuId`；`skus.ts` 的 `wxProductId` 与之逐字一致。
+
+| `skuId`          | `wxProductId`    | 后台道具名称    | 价格（分） | 后台价格 | 一致 |
+| ---------------- | ---------------- | --------------- | ---------- | -------- | ---- |
+| `member_monthly` | `member_monthly` | AI面试会员30天  | 3900       | 39 元    | ✅   |
+| `member_yearly`  | `member_yearly`  | AI面试会员365天 | 22800      | 228 元   | ✅   |
+| `single_pack_3`  | `single_pack_3`  | 模拟面试3次包   | 2900       | 29 元    | ✅   |
+| `single_pack_10` | `single_pack_10` | 模拟面试10次包  | 7900       | 79 元    | ✅   |
+| `resume_pack_3`  | `resume_pack_3`  | 简历诊断3次包   | 2900       | 29 元    | ✅   |
+
+- 发布状态：5/5 已发布现网，发布时间 2026-10-22（见 [W0 验收记录 §1.3](../tasks/2026-10-22-mp-virtual-pay-w0-credentials-goods.accept.md)）。
+- 联调道具（隐藏入口，非本表正式 SKU，同样 `productId === skuId`）：`test_pay_01`（0.1 元 / 1 场，Android 联调）、`test_pay_1`（1 元 / 1 场，iOS 联调，Apple 支付最低 1 元）；均于 2026-10-22 发布现网，取值见 W0 验收记录 §1.3。
+- 生效等待：发布后 ≥ 10 分钟；W3 联调若报 `-15014` 属未生效，不是签名错误。
+- 价格唯一权威仍是 `skus.ts`，`goodsPrice` 必须与之逐分一致（客户端不得传价）。
+
+### 11.4 双签（取值）
+
+| 角色         | 结论 | 签署人                | 日期       |
+| ------------ | ---- | --------------------- | ---------- |
+| 客户端（FE） | 同意 | 执行 Agent（FE 视角） | 2026-10-22 |
+| 后端（BE）   | 同意 | 执行 Agent（BE 视角） | 2026-10-22 |
+
+### 11.5 取值核验
+
+```bash
+grep -n "wxProductId" server/src/data/skus.ts
+# 后台：MP 后台 → 虚拟支付 → 基本配置 → 道具配置 → 「线上版本」应列出 5 条且价格一致
+```
+
+### 11.6 签名算法确认（W3 实施时对齐官方 §5.5，2026-10-22）
+
+```text
+paySig    = HMAC-SHA256(AppKey,     "requestVirtualPayment" + "&" + signData)   # hex
+signature = HMAC-SHA256(sessionKey, signData)                                   # hex
+```
+
+- C 端调用 `wx.requestVirtualPayment` 时 uri **固定为 `requestVirtualPayment`**；B 端 `/xpay/*` 接口才用真实路径（如 `/xpay/query_order`）。
+- `signData` 只序列化一次，签名与下发共用同一字符串（不格式化、不改键序）。
+- 落点：`server/src/services/virtual-pay.ts`（`VIRTUAL_PAY_URI` / `calcPaySig` / `calcSignature`），单测 `virtual-pay.spec.ts`。
+- W4 查单需按 B 端规则另算 paySig（uri 为 `/xpay/query_order`），不可复用本常量。
+
+### 11.7 推送与查单实施口径（W4，2026-10-22）
+
+- 新增服务端内部端点 `POST /membership/virtual/notify`（客户端不调用，故不改客户端契约）：接收发货推送与退款通知，回 XML。
+- 已公开的官方接口：`POST https://api.weixin.qq.com/xpay/query_order?access_token=..&pay_sig=..`，请求体 `{openid, env, order_id}`，`pay_sig` 的 uri 为 `/xpay/query_order`。
+- **发货权威为查单结果**：道具直购推送的验签规则官方未公开细节，故推送仅作为触发信号，一律查单确认后才发货（详见 W4 验收记录 §5）。
+- 权益回收：退款确认后按「剩余额度」回收（面试包 / 简历包减总量、会员减天数），已使用部分不追缴。

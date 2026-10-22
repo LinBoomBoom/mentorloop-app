@@ -2,6 +2,7 @@
 import { buildApp } from './app.js'
 import { loadEnv } from './config.js'
 import { runContentSync } from './scripts/sync-content-questions.js'
+import { startVirtualOrderReconciler } from './services/virtual-notify.js'
 import type { Db } from './db.js'
 
 async function main(): Promise<void> {
@@ -14,6 +15,9 @@ async function main(): Promise<void> {
 
   const addr = await app.listen({ port: env.port, host: '0.0.0.0' })
   console.log('[mentorloop-server] listening on', addr)
+
+  // 虚拟支付查单兜底（仅 MP_PAY_MODE=virtual 且密钥齐全时启动；5 分钟一轮，CREATED 且 24h 内）
+  startVirtualOrderReconciler(db, env)
 
   // 内容库自举（批次 A · G3）：云端（MYSQL_HOST 非空）且内容源库已配置（DESKTOP_DB_NAME）
   // 时，后台检查内容库——目标表为空、或适配层版本（ADAPTER_VERSION）与落库版本不一致时

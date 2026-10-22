@@ -1,0 +1,53 @@
+// 小程序虚拟支付：纯逻辑（版本门控 + 错误码文案）
+// 契约：docs/contracts/2026-10-21-virtual-pay.freeze.md §5.2
+// 独立成文件（不依赖 client / store）以便单测，避免把 uni API 带进测试环境。
+
+// 取消支付：冻结单约定「静默返回，不提示失败」
+export const PAY_CANCELLED: string = 'PAY_CANCELLED'
+
+// 比较微信版本号（点分段数值比较，缺位按 0 计）
+// iOS 虚拟支付要求微信 ≥ 8.0.68（官方《虚拟支付：个人》§5.3）
+export function isWechatVersionAtLeast(current: string, base: string): boolean {
+  if (current.length === 0) return false
+  const cur = current.split('.')
+  const ref = base.split('.')
+  const len = cur.length > ref.length ? cur.length : ref.length
+  for (let i = 0; i < len; i++) {
+    const a = i < cur.length ? parseInt(cur[i]) : 0
+    const b = i < ref.length ? parseInt(ref[i]) : 0
+    // 版本号不可解析视为「无法确认」→ 不放行 iOS 支付（宁可提示升级，也不冒险）
+    if (isNaN(a) || isNaN(b)) return false
+    if (a > b) return true
+    if (a < b) return false
+  }
+  return true
+}
+
+// wx.requestVirtualPayment 失败码 → 用户可读文案
+// 返回 PAY_CANCELLED 表示用户主动取消（调用方静默处理，不报错）
+export function describeVirtualPayError(errCode: number): string {
+  if (errCode === -2) return PAY_CANCELLED
+  if (errCode === -4) return '支付被风控拦截，请稍后再试'
+  if (errCode === -15007) return '微信会话已过期，正在重新登录后重试'
+  if (errCode === -15002) return '订单号重复，请重新下单'
+  if (errCode === -15005 || errCode === -15006) return '支付参数异常，请稍后重试'
+  if (errCode === -15010 || errCode === -15018) return '商品暂不可售'
+  if (errCode === -15011) return '支付配置异常，请稍后重试'
+  if (errCode === -15013) return '商品价格已更新，请重试'
+  if (errCode === -15014) return '商品正在上架，请 10 分钟后重试'
+  if (errCode === -15020 || errCode === -15021) return '操作过于频繁，请稍后再试'
+  if (errCode === -1 || errCode === 1001 || errCode === -15001 || errCode === -15016) {
+    return '支付失败，请重试'
+  }
+  return '支付失败，请重试'
+}
+
+// 需要「重登后重试一次」的失败码（session_key 过期）
+export function isSessionExpiredCode(errCode: number): boolean {
+  return errCode === -15007
+}
+
+// 需要「换新单号重试一次」的失败码
+export function isDuplicateOrderCode(errCode: number): boolean {
+  return errCode === -15002
+}

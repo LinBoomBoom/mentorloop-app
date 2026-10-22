@@ -4,8 +4,9 @@ import {
   sendSmsCode,
   loginByPhone,
   loginByWechat,
-  code2Session,
-  getUserByUid
+  code2SessionAttempt,
+  getUserByUid,
+  BIND_OPENID_MISMATCH
 } from '../services/auth.js'
 import { getQuota } from '../services/quota.js'
 import { ok, okData, fail } from '../util.js'
@@ -97,6 +98,8 @@ export default async function (app: FastifyInstance): Promise<void> {
   // 2) X-WX-OPENID 头：仅 TRUST_WX_HEADERS=true 时采信，作为无 code / 无凭据时兜底
   // 3) WX_MOCK_LOGIN=true（仅本地联调）→ 'wx_' + code 作 openid
   // 出参 { uid, nickname, token } 不变；session_key 永不下发
+  // 若请求自带有效 token：把微信身份绑定到该账号（手机号登录用户首次支付的重登路径），
+  // 不再按 openid 另建/切换账号。
   app.post(
     '/auth/wechat',
     {
@@ -106,6 +109,17 @@ export default async function (app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const body = (request.body ?? {}) as { code?: string }
+      // 可选绑定态：token 无效按匿名处理，不影响静默登录
+      let bindUid = ''
+      const authHeader = request.headers['authorization']
+      if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        try {
+          const payload = app.jwt.verify(authHeader.substring(7)) as any
+          if (payload != null && typeof payload.uid === 'string') bindUid = payload.uid
+        } catch {
+          bindUid = ''
+        }
+      }
       const rawHeader = request.headers['x-wx-openid']
       const trustedHeaderOpenid =
         env.trustWxHeaders && typeof rawHeader === 'string' ? rawHeader : ''
@@ -115,10 +129,13 @@ export default async function (app: FastifyInstance): Promise<void> {
 
       // 1) code 优先：拿到 code 且有凭据时始终真实换取（含 session_key）
       if (code.length > 0 && env.wxAppId.length > 0 && env.wxSecret.length > 0) {
-        const wx = await code2Session(env, code)
-        if (wx == null) {
-          return reply.code(400).send(fail(400, '微信登录失败，请重试'))
+        const attempt = await code2SessionAttempt(env, code)
+        if (attempt.session == null) {
+          // 诊断口径：把微信侧 errcode 带回（不含任何密钥），便于真机区分
+          // 40125（AppSecret 无效）/ 40029（code 无效或已用）/ -1（网络）
+          return reply.code(400).send(fail(400, '微信登录失败（' + attempt.errcode + '），请重试'))
         }
+        const wx = attempt.session
         if (trustedHeaderOpenid.length > 0 && trustedHeaderOpenid !== wx.openid) {
           console.warn('[auth] openid mismatch: header != code2session')
           return reply.code(400).send(fail(400, '微信身份校验失败'))
@@ -140,7 +157,16 @@ export default async function (app: FastifyInstance): Promise<void> {
         }
         return reply.code(400).send(fail(400, '缺少微信身份凭证'))
       }
-      const auth = await loginByWechat(db, env, openid, sessionKey)
+      let auth
+      try {
+        auth = await loginByWechat(db, env, openid, sessionKey, bindUid)
+      } catch (e: any) {
+        const msg = e instanceof Error ? e.message : ''
+        if (msg === BIND_OPENID_MISMATCH) {
+          return reply.code(400).send(fail(400, '当前账号已绑定其他微信'))
+        }
+        throw e
+      }
       const token = app.jwt.sign({ uid: auth.uid })
       return okData({ uid: auth.uid, nickname: auth.nickname, token })
     }
