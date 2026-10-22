@@ -32,7 +32,7 @@
       <view class="mt-5">
         <ml-section-header
           title="能力趋势"
-          caption="最近 {{ chartItems.length }} 场综合得分"
+          :caption="'最近 ' + chartItems.length + ' 场综合得分'"
         ></ml-section-header>
         <ml-card>
           <view class="flex-row items-end h-36 px-1">
@@ -292,7 +292,16 @@ const avgLevel = computed((): string => {
   return avgLevelOf(records.value[0].report)
 })
 
-// 最强维度：取最近一场等级最高的维度
+// 最强维度：取最近一场等级最高的维度；统计条空间窄，用短名避免折行
+const DIM_SHORT: { [key: string]: string } = {
+  knowledge: '知识',
+  engineering: '工程',
+  analysis: '分析',
+  communication: '沟通',
+  learning: '学习',
+  motivation: '动机'
+}
+
 const strongest = computed((): string => {
   if (records.value.length === 0) return '--'
   const dims = records.value[0].report.dimensions
@@ -305,7 +314,9 @@ const strongest = computed((): string => {
       bestKey = dims[i].dimension
     }
   }
-  return bestKey.length > 0 ? dimLabel(bestKey) : '--'
+  if (bestKey.length === 0) return '--'
+  const short = DIM_SHORT[bestKey]
+  return short != null ? short : dimLabel(bestKey)
 })
 
 type ChartItem = { key: string; index: number; score: number; label: string }

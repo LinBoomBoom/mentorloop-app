@@ -77,7 +77,11 @@ class QuotaStore {
         uni.setStorageSync(QUOTA_VERSION_KEY, QUOTA_VERSION)
         this.persist()
       } else {
+        // 存储被清空（首装 / 隐私页清除）→ 内存账本也要回到默认值，
+        // 否则清除后本次会话仍能继续使用旧额度
+        this.state = defaultState()
         uni.setStorageSync(QUOTA_VERSION_KEY, QUOTA_VERSION)
+        this.persist()
       }
     } catch (e: any) {
       console.warn('[quota] restore failed', e)

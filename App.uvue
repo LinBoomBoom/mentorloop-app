@@ -42,7 +42,8 @@ onLaunch(() => {
         cancelText: '放弃',
         success: (r: any) => {
           if (r.confirm) {
-            uni.navigateTo({ url: '/pages/interview/room' })
+            // resume=1：房间复用快照 sessionId 与已答记录，不再新建一场
+            uni.navigateTo({ url: '/pages/interview/room?resume=1' })
           } else {
             interviewSession.clearSnapshot()
           }

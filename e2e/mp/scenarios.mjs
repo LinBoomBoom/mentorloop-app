@@ -47,14 +47,15 @@ export const scenarios = [
   },
   {
     id: 'IA1-B2',
-    title: '数据条「累计面试」→ 结果 tab 且落在成长趋势分段',
+    title: '数据条「累计面试」→ 结果 tab 且落在本场报告分段',
     seed: true,
     async run(c) {
       await c.requireReportData()
       await c.home()
       await c.tap('#stat-total')
       c.assert(await c.waitPath(REPORT), `期望结果 tab，实际 ${await c.path()}`)
-      c.assert(await c.present(GROWTH_PANEL), '未落在成长趋势分段：成长面板不存在')
+      c.assert(await c.present(SEG_REPORT), '未落在本场报告分段：分段控件不存在')
+      c.assert(await c.absent(GROWTH_PANEL), '累计面试入口不应落到成长趋势')
     }
   },
   {
@@ -110,7 +111,7 @@ export const scenarios = [
       await c.mp.reLaunch(HOME)
       await c.waitPath(HOME)
       await c.tap('#stat-total')
-      c.assert(await c.present(GROWTH_PANEL), '冷启动深链未落到成长趋势')
+      c.assert(await c.present(SEG_REPORT), '冷启动深链未落到本场报告分段')
     }
   },
   {
@@ -120,7 +121,7 @@ export const scenarios = [
     async run(c) {
       await c.requireReportData()
       await c.home()
-      await c.tap('#stat-total')
+      await c.tap('#stat-avg')
       c.assert(await c.present(GROWTH_PANEL), '前置不成立：首次点击应落在成长趋势')
       await c.tap(SEG_REPORT)
       await c.gotoTab(TRAINING)

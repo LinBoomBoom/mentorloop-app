@@ -58,10 +58,29 @@ export const DEVOPS_WRAPUP_QUESTION: QuestionItem = {
   positionId: 'devops'
 } as QuestionItem
 
+// AI 工程岗位收束题（2026-10-22：解除方向置灰，补齐岗位化收束）
+export const AI_WRAPUP_QUESTION: QuestionItem = {
+  id: 'q-wrapup-ai',
+  abilityDomain: 'learning',
+  subAbility: 'learning.retrospective',
+  knowledgePoint: '开放复盘',
+  techStack: '',
+  content: '最后一个问题：回顾这次面试，你在哪个 AI 方案或技术选型上还能讲得更完整？',
+  purpose: '开放评估自我认知与复盘能力',
+  difficulty: 'junior',
+  type: 'behavioral',
+  misconceptions: ['完全没有自我反思'],
+  expectedEvidence: '自我评估的准确性',
+  followupPrompts: [],
+  resumeRisk: false,
+  positionId: 'ai'
+} as QuestionItem
+
 // 按岗位取收束题（选择器收束阶段使用；未覆盖岗位回退 Java 收束题）
 export function getWrapupForPosition(positionId: PositionId): QuestionItem {
   if (positionId === 'frontend') return FRONTEND_WRAPUP_QUESTION
   if (positionId === 'devops') return DEVOPS_WRAPUP_QUESTION
+  if (positionId === 'ai') return AI_WRAPUP_QUESTION
   return WRAPUP_QUESTION
 }
 
@@ -70,5 +89,6 @@ export function findWrapupById(id: string): QuestionItem | null {
   if (id === WRAPUP_QUESTION.id) return WRAPUP_QUESTION
   if (id === FRONTEND_WRAPUP_QUESTION.id) return FRONTEND_WRAPUP_QUESTION
   if (id === DEVOPS_WRAPUP_QUESTION.id) return DEVOPS_WRAPUP_QUESTION
+  if (id === AI_WRAPUP_QUESTION.id) return AI_WRAPUP_QUESTION
   return null
 }

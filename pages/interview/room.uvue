@@ -1,7 +1,10 @@
 <template>
   <view class="flex-col h-screen bg-navy">
     <!-- 顶部状态条（安全区动态内边距） -->
-    <view class="flex-row items-center justify-between px-4" :style="{ paddingTop: topPad + 'px' }">
+    <view
+      class="flex-row items-center justify-between px-4"
+      :style="{ paddingTop: topPad + 'px', paddingRight: rightPad + 'px' }"
+    >
       <!-- 左：退出（放弃，不生成报告） -->
       <view class="flex-row items-center h-11" @click="confirmExit">
         <ml-icon name="arrow-left" :size="16" :color="MIST"></ml-icon>
@@ -14,7 +17,8 @@
             class="w-1.5 h-1.5 rounded-full mr-1.5"
             :style="{ backgroundColor: netOk ? RELIABLE : DANGER }"
           ></view>
-          <text class="text-xs" :class="netOk ? 'text-mist' : 'text-danger'">{{ netText }}</text>
+          <!-- 在线时只保留状态点，给右侧胶囊让位；断网时才显示文字 -->
+          <text v-if="!netOk" class="text-xs text-danger">{{ netText }}</text>
         </view>
         <view class="flex-row items-center mr-3">
           <ml-icon name="clock" :size="14" :color="SURFACE"></ml-icon>
@@ -205,13 +209,14 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
-import { onLoad, onUnload, onBackPress } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload, onBackPress } from '@dcloudio/uni-app'
 import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { AVATAR_STATE_LABEL, StringMap, themeValue } from '../../styles/theme.uts'
 import { interviewSession } from '../../store/interview-session.uts'
+import { userStore } from '../../store/user-profile.uts'
 import { createSession, nextQuestion, submitAnswer } from '../../api/interview.uts'
 import {
   QuestionItem,
@@ -292,6 +297,11 @@ const blueprint = ref<PositionBlueprint>({
 // 安全区内边距（onLoad 时从窗口信息读取）
 const topPad = ref(28)
 const bottomPad = ref(16)
+// MP 端顶栏右侧让出微信胶囊宽度，避免「结束」按钮被胶囊遮挡（同首页 C6）
+const rightPad = ref(20)
+// #ifdef MP-WEIXIN
+rightPad.value = 100
+// #endif
 
 // 文字辅助输入弹窗状态
 const textModalVisible = ref(false)
@@ -300,6 +310,15 @@ const submittingText = ref(false)
 
 // 暂停状态（暂停时冻结计时与录音入口）
 const paused = ref(false)
+
+// 续接标记（App 启动恢复快照时传入 resume=1，复用原会话而不是新建）
+let wantResume = false
+// 最后一条答案的上报 Promise（结束面试前必须等待落库，否则报告会漏最后一题）
+let answerInFlight: Promise<boolean> | null = null
+// 防止重复进入总结页
+let summarizing = false
+// 会话失效提示只弹一次
+let expiredShown = false
 
 // 网络状态（M6：真实探测，替代表头硬编码）
 const netOk = ref(true)
@@ -411,6 +430,7 @@ onLoad((options: any) => {
 
   // 接收 prep 页传入的模式、岗位方向、经验等级
   if (options != null) {
+    wantResume = options.resume != null && String(options.resume) === '1'
     if (options.mode != null) {
       const m = options.mode as string
       if (m === 'quick') {
@@ -447,6 +467,11 @@ onLoad((options: any) => {
     if (paused.value) return // 暂停时冻结计时
     elapsed.value = elapsed.value + 1
   }, 1000)
+})
+
+onShow(() => {
+  // 从总结页返回房间时恢复「结束」入口，避免 summarizing 卡死后续操作
+  summarizing = false
 })
 
 onUnload(() => {
@@ -543,18 +568,64 @@ function initRecorder() {
 }
 
 async function init() {
-  const s = await createSession(blueprint.value)
-  sessionId.value = s.sessionId
-  interviewSession.reset(s.sessionId)
-  interviewSession.transition('DEVICE_CHECK')
-  interviewSession.transition('READY')
-  // 北极星：进入面试房间
-  trackEvent('interview_start', {
-    mode: mode.value,
-    positionId: blueprint.value.positionId,
-    experienceLevel: blueprint.value.experienceLevel
+  // 续接上次未完成的面试：复用快照 sessionId 与已答记录，不新建会话
+  if (wantResume && interviewSession.prepareResume()) {
+    sessionId.value = interviewSession.sessionId
+    askedCount.value = interviewSession.getQuestions().length
+    const posId = userStore.profile.positionId
+    const expLv = userStore.profile.experienceLevel
+    blueprint.value = {
+      positionId: posId,
+      position: getPositionName(posId),
+      experienceLevel: expLv,
+      experienceRange: getExperienceRange(expLv),
+      companyType: '互联网',
+      language: '中文',
+      target: '求职'
+    } as PositionBlueprint
+    trackEvent('interview_resume', {
+      mode: mode.value,
+      positionId: posId,
+      answeredCount: askedCount.value
+    })
+    ask()
+    return
+  }
+  try {
+    const s = await createSession(blueprint.value)
+    sessionId.value = s.sessionId
+    interviewSession.reset(s.sessionId)
+    interviewSession.transition('DEVICE_CHECK')
+    interviewSession.transition('READY')
+    // 北极星：进入面试房间
+    trackEvent('interview_start', {
+      mode: mode.value,
+      positionId: blueprint.value.positionId,
+      experienceLevel: blueprint.value.experienceLevel
+    })
+    ask()
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : '网络异常'
+    console.warn('[room] create session failed', msg)
+    showInitFailed(msg)
+  }
+}
+
+// 建会话失败：给出重试 / 退出两条路，不把页面停在「准备开始…」
+function showInitFailed(msg: string) {
+  uni.showModal({
+    title: '无法开始面试',
+    content: msg.length > 0 ? msg : '网络异常，请检查网络后重试',
+    confirmText: '重试',
+    cancelText: '退出',
+    success: (r: any) => {
+      if (r.confirm) {
+        init()
+      } else {
+        uni.navigateBack()
+      }
+    }
   })
-  ask()
 }
 
 // 问新题（重置追问深度、清空追问话术、切到 ASKING）
@@ -562,7 +633,7 @@ async function ask() {
   interviewSession.resetDepth()
   followupPrompt.value = ''
   rephrasedText.value = ''
-  interviewSession.transition('ASKING')
+  if (interviewSession.getStatus() !== 'ASKING') interviewSession.transition('ASKING')
   avatarState.value = 'asking'
   caption.value = ''
   try {
@@ -583,9 +654,18 @@ async function ask() {
       timestamp: Date.now()
     })
   } catch (e: any) {
-    // 题目已收束（选择器返回 null）→ 进入总结
-    console.warn('[room] no more questions, wrap up', e)
-    goSummary()
+    const msg = e != null && e.message != null ? String(e.message) : '网络异常'
+    // 只有「题目已收束」才进入总结；网络错误 / 服务端 500 必须可重试，不能把中途断网当面试结束
+    if (msg.indexOf('已收束') >= 0 || msg.indexOf('NO_MORE_QUESTIONS') >= 0) {
+      goSummary()
+      return
+    }
+    if (msg.indexOf('会话不存在') >= 0 || msg.indexOf('404') >= 0) {
+      showSessionExpired()
+      return
+    }
+    console.warn('[room] next question failed', msg)
+    showAskFailed(msg)
     return
   }
   // 面试官语音 TTS 播报题目（真实感知层），播报结束进入倾听
@@ -623,6 +703,45 @@ function askFollowup(decision: FollowupDecision) {
   ttsHandle = speak(decision.prompt)
 }
 
+// 出题失败（非收束）：重试原流程；已答过题时可选择结束并生成报告
+function showAskFailed(msg: string) {
+  const answered = interviewSession.getQuestions().length > 0
+  uni.showModal({
+    title: '题目加载失败',
+    content: msg.length > 0 ? msg : '网络异常，请检查网络后重试',
+    confirmText: '重试',
+    cancelText: answered ? '结束面试' : '退出',
+    success: (r: any) => {
+      if (r.confirm) {
+        ask()
+        return
+      }
+      if (answered) {
+        goSummary()
+      } else {
+        interviewSession.saveSnapshot()
+        uni.navigateBack()
+      }
+    }
+  })
+}
+
+// 会话已失效（服务端清理 / 快照过期）：明确告知并退出，不伪造进度
+function showSessionExpired() {
+  if (expiredShown) return
+  expiredShown = true
+  interviewSession.clearSnapshot()
+  uni.showModal({
+    title: '面试会话已失效',
+    content: '服务端已清理该会话，请退回后重新开始一场面试。',
+    showCancel: false,
+    confirmText: '返回',
+    success: () => {
+      uni.navigateBack()
+    }
+  })
+}
+
 function toggleRecord() {
   if (paused.value) {
     uni.showToast({ title: '已暂停，请先恢复', icon: 'none' })
@@ -658,7 +777,14 @@ function startRecord() {
   if (speech.isReady()) {
     speech.start()
   } else {
-    // 平台不支持录音：提示文字作答
+    // 平台不支持录音：复位录音态并提示文字作答，不能停在「停止录音」按钮上
+    if (asrSession != null) {
+      asrSession.stop()
+      asrSession = null
+    }
+    recording.value = false
+    clearRecordTimer()
+    avatarState.value = 'listening'
     caption.value = '当前设备不支持录音，请切换文字作答'
   }
 }
@@ -759,6 +885,35 @@ function finishTranscribe(text: string) {
   handleAnswer(t, 'voice')
 }
 
+// 答案上报：首次失败后 800ms 重试一次；返回是否最终成功。
+// 不抛错（失败已记录事件），调用方通过返回值决定是否提示。
+function submitAnswerReliably(
+  sid: string,
+  questionId: string,
+  text: string,
+  isFollowup: boolean
+): Promise<boolean> {
+  return submitAnswer(sid, questionId, text, isFollowup)
+    .then(() => {
+      return true
+    })
+    .catch(() => {
+      return new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          submitAnswer(sid, questionId, text, isFollowup)
+            .then(() => {
+              resolve(true)
+            })
+            .catch((e: any) => {
+              console.warn('[room] answer upload failed after retry', e)
+              trackEvent('interview_answer_upload_failed', { questionId: questionId })
+              resolve(false)
+            })
+        }, 800)
+      })
+    })
+}
+
 // 录音结束 / 文字提交后的统一处理：写转写、决策追问/下一题
 function handleAnswer(answerText: string, inputMode: string = 'voice') {
   caption.value = '已记录你的回答'
@@ -783,14 +938,16 @@ function handleAnswer(answerText: string, inputMode: string = 'voice') {
   const decision = decideFollowup(signal, currentQuestion.value, depth)
 
   // 服务端答案上报（2026-10-12 P0 接线；mock 由 api 层内部短路）：
-  // 服务端报告/审计/配额结算依赖该链路。失败不阻塞本地流程 —— 答案已入
-  // transcript 与快照草稿，补传机制见 interview-session pendingEvents。
-  submitAnswer(sessionId.value, currentQuestion.value.id, answerText, depth > 0).catch(
-    (e: any) => {
-      console.warn('[room] answer upload failed', e)
-      trackEvent('interview_answer_upload_failed', { questionId: currentQuestion.value.id })
-    }
-  )
+  // 服务端报告/审计/配额结算依赖该链路。上报串行化并保留最后一个 Promise，
+  // 结束面试前 await 它，避免「最后一题还没落库就生成报告」。
+  const qid = currentQuestion.value.id
+  const task = submitAnswerReliably(sessionId.value, qid, answerText, depth > 0)
+  if (answerInFlight != null) {
+    const prev = answerInFlight
+    answerInFlight = prev.then((): Promise<boolean> => task)
+  } else {
+    answerInFlight = task
+  }
 
   if (decision.shouldFollowup) {
     setTimeout(() => {
@@ -804,9 +961,23 @@ function handleAnswer(answerText: string, inputMode: string = 'voice') {
   }
 }
 
-function goSummary() {
+async function goSummary() {
+  if (summarizing) return
+  summarizing = true
+  // 报告由服务端基于 answers 表生成：必须等最后一条答案落库后再进入总结页
+  if (answerInFlight != null) {
+    caption.value = '正在保存最后一条回答…'
+    const ok = await answerInFlight
+    answerInFlight = null
+    if (!ok) uni.showToast({ title: '最后一条回答保存失败，报告可能缺少该题', icon: 'none' })
+  }
   interviewSession.saveSnapshot()
-  uni.navigateTo({ url: '/pages/interview/summary' })
+  uni.navigateTo({
+    url: '/pages/interview/summary',
+    fail: () => {
+      summarizing = false
+    }
+  })
 }
 
 // 再说一遍：重播当前展示文本（已换说法则重播澄清句，否则重播题面/追问）

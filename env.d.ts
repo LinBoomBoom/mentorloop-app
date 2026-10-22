@@ -54,7 +54,10 @@ declare module '*.uts' {
   export const WRAPUP_QUESTION: any
   export const FRONTEND_WRAPUP_QUESTION: any
   export const DEVOPS_WRAPUP_QUESTION: any
+  export const AI_WRAPUP_QUESTION: any
   export function getWrapupForPosition(...args: any[]): any
+  // store/report-segment（跨 tab 分段意图，2026-10-22）
+  export const reportSegmentIntent: any
   // api/training（专项训练取题，2026-10-22 契约冻结）
   export function fetchTrainingQuestions(...args: any[]): Promise<any>
   // data/position-options（rules-consistency.spec）

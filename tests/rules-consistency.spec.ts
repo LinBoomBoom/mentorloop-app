@@ -23,6 +23,7 @@ import { QUESTION_BANK as cBank } from '../data/question-bank.uts'
 import {
   WRAPUP_QUESTION as cWrapup,
   FRONTEND_WRAPUP_QUESTION as cFeWrapup,
+  AI_WRAPUP_QUESTION as cAiWrapup,
   getWrapupForPosition as cWrapupFor
 } from '../data/wrapup.uts'
 import {
@@ -56,6 +57,7 @@ import { QUESTION_BANK as sBank } from '../server/src/data/question-bank'
 import {
   WRAPUP_QUESTION as sWrapup,
   FRONTEND_WRAPUP_QUESTION as sFeWrapup,
+  AI_WRAPUP_QUESTION as sAiWrapup,
   getWrapupForPosition as sWrapupFor
 } from '../server/src/data/wrapup'
 import {
@@ -133,11 +135,13 @@ describe('双端数据镜像：题库 / 收束题 / 岗位选项 / 能力域', (
     expect(cBank).toEqual(sBank)
   })
 
-  it('收束题（后端/前端）逐字段一致', () => {
+  it('收束题（后端/前端/AI）逐字段一致', () => {
     expect(cWrapup).toEqual(sWrapup)
     expect(cFeWrapup).toEqual(sFeWrapup)
+    expect(cAiWrapup).toEqual(sAiWrapup)
     expect(cWrapupFor('backend')).toEqual(sWrapupFor('backend'))
     expect(cWrapupFor('frontend')).toEqual(sWrapupFor('frontend'))
+    expect(cWrapupFor('ai')).toEqual(sWrapupFor('ai'))
   })
 
   it('岗位/经验选项与难度优先级一致', () => {

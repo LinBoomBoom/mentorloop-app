@@ -15,7 +15,8 @@ import { scoreInterview } from '../engine/scorer.uts'
 import { interviewSession } from '../store/interview-session.uts'
 import { reasonForAnswer, domainOfTaskId, SKIP_REASON } from '../store/training-history.uts'
 import { QUESTION_BANK } from '../data/question-bank.uts'
-import { WRAPUP_QUESTION } from '../data/wrapup.uts'
+import { POSITION_OPTIONS } from '../data/position-options.uts'
+import { WRAPUP_QUESTION, AI_WRAPUP_QUESTION, getWrapupForPosition } from '../data/wrapup.uts'
 import { QuestionItem, PositionBlueprint } from '../types/interview.uts'
 
 const BLUEPRINT: PositionBlueprint = {
@@ -262,6 +263,51 @@ describe('会话补传队列与草稿（文档 04）', () => {
     interviewSession.saveDraft('q1', '第二版回答')
     expect(interviewSession.getDrafts().length).toBe(1)
     expect(interviewSession.getDraft('q1')!.text).toBe('第二版回答')
+  })
+
+  it('用户可在作答中直接收口：ASKING → WRAP_UP 合法', () => {
+    interviewSession.reset('wrap-test')
+    interviewSession.transition('DEVICE_CHECK')
+    interviewSession.transition('READY')
+    interviewSession.transition('ASKING')
+    const ev = interviewSession.transition('WRAP_UP')
+    expect(ev).not.toBeNull()
+    expect(interviewSession.getStatus()).toBe('WRAP_UP')
+    interviewSession.transition('REPORT_GENERATING')
+    interviewSession.transition('COMPLETED')
+    expect(interviewSession.getStatus()).toBe('COMPLETED')
+  })
+
+  it('续接未完成会话：拉回 ASKING；已完成 / 无会话不可续接', () => {
+    interviewSession.reset('resume-test')
+    interviewSession.transition('DEVICE_CHECK')
+    expect(interviewSession.prepareResume()).toBe(true)
+    expect(interviewSession.getStatus()).toBe('ASKING')
+    interviewSession.transition('LISTENING')
+    interviewSession.transition('TRANSCRIBING')
+    interviewSession.transition('FOLLOW_UP_DECISION')
+    interviewSession.transition('WRAP_UP')
+    interviewSession.transition('REPORT_GENERATING')
+    interviewSession.transition('COMPLETED')
+    expect(interviewSession.prepareResume()).toBe(false)
+    interviewSession.reset('')
+    expect(interviewSession.prepareResume()).toBe(false)
+  })
+})
+
+describe('AI 工程方向开放（2026-10-22）', () => {
+  it('AI 方向在选择器中可用（不再置灰）', () => {
+    const ai = POSITION_OPTIONS.find((p: any) => p.id === 'ai')
+    expect(ai != null).toBe(true)
+    expect(ai!.available).toBe(true)
+  })
+
+  it('AI 岗收束题岗位化，不再回退 Java 收束题', () => {
+    const wrap = getWrapupForPosition('ai')
+    expect(wrap.id).toBe('q-wrapup-ai')
+    expect(wrap.positionId).toBe('ai')
+    expect(wrap.id).not.toBe(WRAPUP_QUESTION.id)
+    expect(AI_WRAPUP_QUESTION.id).toBe('q-wrapup-ai')
   })
 })
 

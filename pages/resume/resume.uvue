@@ -41,7 +41,7 @@
         <ml-card>
           <view class="flex-row items-center justify-between">
             <view class="flex-col flex-1">
-              <text class="text-sm text-ink">{{ draftFileName }}</text>
+              <text class="text-sm text-ink truncate block">{{ draftFileName }}</text>
               <text class="text-xs text-ink-soft mt-0.5">{{ draftHint }}</text>
             </view>
             <view class="ml-2">
@@ -63,7 +63,7 @@
           <view class="flex-col items-center py-8">
             <view class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center">
               <ml-icon
-                :name="parsing ? 'loader-circle' : 'cloud-upload'"
+                :name="parsing ? 'refresh-cw' : 'cloud-upload'"
                 :size="26"
                 :color="SMART"
               ></ml-icon>
@@ -74,8 +74,15 @@
             <text class="text-xs text-ink-soft mt-1">支持 PDF / DOCX，最大 10MB</text>
 
             <!-- 已选文件 -->
-            <view v-if="fileName.length > 0" class="flex-row justify-center mt-3">
-              <ml-tag icon="file-check" :label="fileName" :bg="CHIP_SMART" :color="SMART"></ml-tag>
+            <view v-if="fileName.length > 0" class="flex-row justify-center mt-3 px-6">
+              <ml-tag
+                class="max-w-[85%]"
+                icon="file-check"
+                :label="fileName"
+                :bg="CHIP_SMART"
+                :color="SMART"
+                truncate
+              ></ml-tag>
             </view>
 
             <!-- 操作区：stop 阻断冒泡，避免内层按钮同时触发外层「选择文件」造成双弹窗 -->
@@ -93,12 +100,8 @@
               >
             </view>
             <view v-else class="mt-4 flex-row items-center">
-              <ml-progress
-                class="w-40"
-                :percent="60"
-                :show-value="false"
-                :color="SMART"
-              ></ml-progress>
+              <ml-icon name="refresh-cw" :size="14" :color="SMART"></ml-icon>
+              <text class="text-xs text-ink-soft ml-1.5">正在解析文件内容，请稍候…</text>
             </view>
           </view>
         </view>
@@ -134,8 +137,8 @@
               class="flex-row items-center px-4 py-3"
               :class="i < history.length - 1 ? 'border-b border-line' : ''"
             >
-              <view class="flex-col flex-1" @click="openHistory(h)">
-                <text class="text-sm text-ink">{{ h.fileName }}</text>
+              <view class="flex-col flex-1 overflow-hidden" @click="openHistory(h)">
+                <text class="text-sm text-ink truncate block">{{ h.fileName }}</text>
                 <text class="text-xs text-ink-soft mt-0.5">{{ historySubtitle(h) }}</text>
               </view>
               <ml-chip
@@ -351,7 +354,6 @@ import mlChip from '../../components/ml-chip.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlSectionHeader from '../../components/ml-section-header.uvue'
-import mlProgress from '../../components/ml-progress.uvue'
 import {
   parseResume,
   fetchResumeHistory,

@@ -19,7 +19,9 @@
           title="暂无报告"
           desc="完成一次模拟面试后，这里会展示总体判断、六维评分与训练计划"
         >
-          <ml-button text="回首页开始面试" type="primary" block @tap="goHome"></ml-button>
+          <ml-button text="开始模拟面试" type="primary" block @tap="again"></ml-button>
+          <view class="h-2"></view>
+          <ml-button text="先做专项训练" type="secondary" block @tap="goTraining"></ml-button>
         </ml-empty>
       </ml-card>
     </view>
@@ -103,12 +105,7 @@
 
           <!-- 能力维度（证据卡：点击展开完整证据 + 优秀回答示例） -->
           <view class="mt-5">
-            <ml-section-header
-              title="能力维度"
-              caption="点击卡片展开证据"
-              action-text="成长趋势"
-              @action="showGrowth"
-            ></ml-section-header>
+            <ml-section-header title="能力维度" caption="点击卡片展开证据"></ml-section-header>
           </view>
           <view class="mb-2.5" v-for="d in report.dimensions" :key="d.dimension">
             <ml-card pressable @tap="toggleEvidence(d.dimension)">
@@ -326,10 +323,6 @@ function onSegChange(i: number) {
   seg.value = i === 0 ? 'report' : 'growth'
 }
 
-function showGrowth() {
-  seg.value = 'growth'
-}
-
 // 综合等级徽章（U7：等级映射与刻度单一来源 styles/score-display.uts）
 const overallLevel = computed((): string => averageLevel(reportLevels(report.value.dimensions)))
 
@@ -537,10 +530,15 @@ function again() {
     })
     return
   }
-  uni.reLaunch({ url: '/pages/interview/prep?mode=standard' })
+  // 从结果 tab 进入准备页：保留返回路径，避免 reLaunch 后登录层「返回」无上一页
+  uni.navigateTo({ url: '/pages/interview/prep?mode=standard' })
 }
 
 function goHome() {
-  uni.reLaunch({ url: '/pages/index/index' })
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
+function goTraining() {
+  uni.switchTab({ url: '/pages/training/training' })
 }
 </script>

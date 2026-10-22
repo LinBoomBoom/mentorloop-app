@@ -11,9 +11,9 @@
             >
               <ml-icon name="user" :size="22" :color="SURFACE"></ml-icon>
             </view>
-            <view class="flex-col">
-              <text class="text-lg font-semibold text-white">{{ nickname }}</text>
-              <text class="text-xs text-mist mt-1">
+            <view class="flex-col flex-1 mr-2">
+              <text class="text-lg font-semibold text-white truncate block">{{ nickname }}</text>
+              <text class="text-xs text-mist mt-1 truncate block">
                 {{ loggedIn ? 'UID ' + uid : '未登录（访客模式）' }} · {{ planLabel }}
               </text>
             </view>

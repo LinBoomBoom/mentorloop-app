@@ -130,8 +130,8 @@ function handleResponse(
 function handleFail(err: any, reject: (e: Error) => void, silent: boolean) {
   const errMsg = err != null && err.errMsg != null ? String(err.errMsg) : '网络不可用'
   if (!silent) {
-    // 超时 / 网络断开时提示（不把事件丢失，后续可从 pendingEvents 重放）
-    uni.showToast({ title: '网络连接失败，答案已本地保存', icon: 'none' })
+    // 通用请求失败提示：是否本地保留由调用方决定，这里不做虚假承诺
+    uni.showToast({ title: '网络连接失败，请稍后重试', icon: 'none' })
   }
   reject(new Error(errMsg))
 }

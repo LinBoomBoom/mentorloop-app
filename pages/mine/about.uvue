@@ -32,7 +32,7 @@
         <ml-card>
           <text class="text-xs text-ink-soft leading-5">
             {{ APP_NAME }} 面向 1–3 年经验求职者，提供岗位化模拟面试、证据化评分报告与专项训练闭环。
-            当前开放前端、后端与运维三个方向，AI 工程与更多能力陆续开放。
+            当前开放前端、后端、运维与 AI 工程四个方向，更多能力持续补齐。
           </text>
         </ml-card>
       </view>
@@ -104,7 +104,8 @@ const rows: AboutRow[] = [
     tint: CHIP_SMART,
     text: '用户协议',
     desc: '使用条款与服务约定',
-    soon: false,
+    // URL 未回填时如实展示「即将上线」，不伪装成可查看
+    soon: AGREEMENT_URL.length === 0,
     url: AGREEMENT_URL
   } as AboutRow,
   {
@@ -113,7 +114,7 @@ const rows: AboutRow[] = [
     tint: CHIP_RELIABLE,
     text: '隐私政策',
     desc: '数据收集、使用与删除说明',
-    soon: false,
+    soon: PRIVACY_URL.length === 0,
     url: PRIVACY_URL
   } as AboutRow,
   {
@@ -129,8 +130,8 @@ const rows: AboutRow[] = [
     icon: 'sparkles',
     color: DIM_COMMUNICATION,
     tint: DIM_COMMUNICATION_TINT,
-    text: '候选岗位',
-    desc: 'AI 工程 / 更多方向',
+    text: '更多岗位方向',
+    desc: '测试 / 数据等方向陆续开放',
     soon: true,
     url: ''
   } as AboutRow

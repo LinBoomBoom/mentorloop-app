@@ -301,15 +301,11 @@ describe('fixture 驱动：四方向出题链路', () => {
         maxQuestions: 0,
         candidates
       } as SelectorInput)
-      if (pos === 'ai') {
-        // ai 暂无专属收束题（回退题属 backend，岗位不匹配）→ 返回 null 结束面试；
-        // 专属收束题待内容审核（批次 D 解除 ai 置灰前补齐）
-        expect(wrap).toBeNull()
-      } else {
-        expect(wrap).not.toBeNull()
-        expect(wrap!.isWrapup).toBe(true)
-        expect(wrap!.question.positionId).toBe(pos)
-      }
+      expect(wrap).not.toBeNull()
+      expect(wrap!.isWrapup).toBe(true)
+      expect(wrap!.question.positionId).toBe(pos)
+      // 2026-10-22：AI 方向开放，补齐岗位专属收束题 q-wrapup-ai
+      if (pos === 'ai') expect(wrap!.question.id).toBe('q-wrapup-ai')
     }
   })
 

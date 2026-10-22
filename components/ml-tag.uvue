@@ -1,14 +1,21 @@
 <template>
-  <view class="flex-row items-center h-6 px-2.5 rounded-chip" :style="{ backgroundColor: bg }">
+  <view
+    class="flex-row items-center h-6 px-2.5 rounded-chip"
+    :class="truncate ? 'overflow-hidden' : ''"
+    :style="{ backgroundColor: bg }"
+  >
     <ml-icon
       v-if="icon.length > 0"
       :name="icon"
       :size="11"
       :color="iconColor.length > 0 ? iconColor : color"
     ></ml-icon>
-    <text class="text-xs" :class="icon.length > 0 ? 'ml-0.5' : ''" :style="{ color: color }">{{
-      label
-    }}</text>
+    <text
+      class="text-xs"
+      :class="[icon.length > 0 ? 'ml-0.5' : '', truncate ? 'truncate block flex-1' : '']"
+      :style="{ color: color }"
+      >{{ label }}</text
+    >
   </view>
 </template>
 
@@ -23,6 +30,8 @@ defineProps({
   // 图标独立用色（深色面「彩图标+白字」标签用）；空则与文字同色
   iconColor: { type: String, default: '' },
   bg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
-  color: { type: String, default: themeValue('smart', '#5B6CFF') }
+  color: { type: String, default: themeValue('smart', '#5B6CFF') },
+  // 长文本（文件名等）截断：需由父级给出宽度约束（如 max-w-[85%]）
+  truncate: { type: Boolean, default: false }
 })
 </script>

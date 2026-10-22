@@ -35,12 +35,13 @@ const SESSION_STORAGE_KEY = 'ml_interview_snapshot'
 const TRANSITIONS: TransitionMap = {
   CREATED: ['DEVICE_CHECK'],
   DEVICE_CHECK: ['READY'],
-  READY: ['ASKING'],
-  ASKING: ['LISTENING'],
-  LISTENING: ['TRANSCRIBING'],
-  TRANSCRIBING: ['FOLLOW_UP_DECISION'],
+  // 用户可在任意作答阶段主动「结束并生成报告」→ 各活跃态均允许收口到 WRAP_UP
+  READY: ['ASKING', 'WRAP_UP'],
+  ASKING: ['LISTENING', 'WRAP_UP'],
+  LISTENING: ['TRANSCRIBING', 'WRAP_UP'],
+  TRANSCRIBING: ['FOLLOW_UP_DECISION', 'WRAP_UP'],
   FOLLOW_UP_DECISION: ['NEXT_QUESTION', 'WRAP_UP'],
-  NEXT_QUESTION: ['ASKING'],
+  NEXT_QUESTION: ['ASKING', 'WRAP_UP'],
   WRAP_UP: ['REPORT_GENERATING'],
   REPORT_GENERATING: ['COMPLETED'],
   COMPLETED: []
@@ -165,6 +166,15 @@ class InterviewSession {
 
   getStatus(): InterviewStatus {
     return this.status
+  }
+
+  // 续接未完成会话：快照可能停在 LISTENING / TRANSCRIBING 等中间态，
+  // 继续时下一题会重新发起，故直接拉回 ASKING（跳表仅用于恢复，不参与正常迁移）。
+  // 返回 false 表示快照不可续接（无会话 / 已完成）。
+  prepareResume(): boolean {
+    if (this.sessionId.length === 0 || this.status === 'COMPLETED') return false
+    this.status = 'ASKING'
+    return true
   }
 
   // 异常退出自动保存快照（文档 03：异常退出自动保存会话；文档 04：可恢复状态）

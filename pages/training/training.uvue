@@ -109,7 +109,7 @@
             <view class="flex-col flex-1">
               <text class="text-sm text-ink">{{ t.title }}</text>
               <text class="text-xs text-ink-soft mt-0.5">
-                {{ t.durationMin }} 分钟 · 单维突破
+                {{ t.durationMin }} 分钟 · 不限维度
               </text>
             </view>
             <ml-chip variant="action" tone="outline" label="开始"></ml-chip>
@@ -181,10 +181,12 @@ type DimCard = {
   levelColor: string
 }
 
+// 通用快练不绑定具体岗位：题目仍由服务端按用户方向过滤，
+// 标题只描述训练形态，避免 AI / 前端用户看到「并发基础」这类后端专属文案
 const genericTasks: TrainingEntry[] = [
-  { id: 'gt1', title: '并发基础快练', durationMin: 3 } as TrainingEntry,
-  { id: 'gt2', title: '系统设计快练', durationMin: 5 } as TrainingEntry,
-  { id: 'gt3', title: '项目经历表达', durationMin: 10 } as TrainingEntry
+  { id: 'gt1', title: '高频基础快练', durationMin: 3 } as TrainingEntry,
+  { id: 'gt2', title: '场景设计快练', durationMin: 5 } as TrainingEntry,
+  { id: 'gt3', title: '项目表达快练', durationMin: 10 } as TrainingEntry
 ]
 
 const recommended = ref<TrainingTask[]>([])
@@ -283,7 +285,24 @@ function startTask(task: TrainingEntry | null = null) {
 }
 
 function startInterview() {
-  uni.switchTab({ url: '/pages/index/index' })
+  // 训练 tab 的「去完成一次面试」直接进准备页，避免只回首页让用户再点一次
+  quotaStore.restore()
+  if (!quotaStore.canStartInterview()) {
+    trackEvent('quota_exceeded', { scene: 'interview' })
+    uni.showModal({
+      title: '免费面试额度已用完',
+      content: '开通会员可无限次模拟面试，或购买单次包继续练习',
+      confirmText: '去开通',
+      cancelText: '暂不需要',
+      success: (r: any) => {
+        if (r.confirm) {
+          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
+        }
+      }
+    })
+    return
+  }
+  uni.navigateTo({ url: '/pages/interview/prep' })
 }
 
 function goReport() {

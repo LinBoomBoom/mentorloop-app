@@ -117,15 +117,15 @@
 
         <!-- 数据条（等宽数字） -->
         <view class="flex-row rounded-card border px-2 py-3 mt-3" :style="stripStyle">
-          <view id="stat-total" class="flex-1 flex-col items-center" @click="goResults">
+          <view id="stat-total" class="flex-1 flex-col items-center" @click="goReportList">
             <ml-icon name="target" :size="16" :color="WARN_LIGHT"></ml-icon>
             <text class="text-lg font-bold font-mono text-white mt-1">{{ totalCount }}</text>
             <text class="text-xs text-mist mt-0.5">累计面试</text>
           </view>
           <view class="w-px h-9" :style="dividerV"></view>
-          <view id="stat-avg" class="flex-1 flex-col items-center" @click="goResults">
+          <view id="stat-avg" class="flex-1 flex-col items-center" @click="goGrowth">
             <ml-icon name="award" :size="16" :color="RELIABLE_LIGHT"></ml-icon>
-            <text class="text-lg font-bold font-mono text-white mt-1">{{ avgLevel }}</text>
+            <text class="text-lg font-bold font-mono text-white mt-1">{{ avgLevelText }}</text>
             <text class="text-xs text-mist mt-0.5">平均等级</text>
           </view>
           <view class="w-px h-9" :style="dividerV"></view>
@@ -135,6 +135,9 @@
             <text class="text-xs text-mist mt-0.5">待训练</text>
           </view>
         </view>
+        <text v-if="totalCount === 0" class="text-xs text-mist text-center mt-2">
+          完成首场模拟面试后，这里会生成平均等级与成长趋势
+        </text>
 
         <!-- 有报告：今日任务 + 最近报告 -->
         <template v-if="hasReport">
@@ -295,6 +298,12 @@ const avgLevel = computed((): string => {
     for (let j = 0; j < dims.length; j++) levels.push(dims[j].level)
   }
   return averageLevel(levels)
+})
+
+// 空态用「未评估」表达，避免单看 '--' 不知含义（U6）
+const avgLevelText = computed((): string => {
+  if (totalCount.value === 0) return '未评估'
+  return avgLevel.value === '--' ? '未评估' : avgLevel.value
 })
 
 const topTask = computed((): { title: string; durationMin: number } => {
@@ -461,8 +470,13 @@ function goTraining() {
   uni.switchTab({ url: '/pages/training/training' })
 }
 
-function goResults() {
-  // IA-1：原成长二级页已并入「结果」tab 的成长趋势分段；写入落点意图后跳 tab
+// 累计面试 → 本场报告（历史列表）；平均等级 → 成长趋势（U5 入口语义拆分）
+function goReportList() {
+  reportSegmentIntent.set('report')
+  uni.switchTab({ url: '/pages/report/report' })
+}
+
+function goGrowth() {
   reportSegmentIntent.set('growth')
   uni.switchTab({ url: '/pages/report/report' })
 }
@@ -472,6 +486,8 @@ function goResume() {
 }
 
 function goReport() {
+  // 最近报告卡始终落到「本场报告」，不受上次分段意图影响
+  reportSegmentIntent.set('report')
   uni.switchTab({ url: '/pages/report/report' })
 }
 

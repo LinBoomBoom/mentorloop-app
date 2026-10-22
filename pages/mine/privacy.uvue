@@ -5,8 +5,8 @@
       <ml-card>
         <view class="flex-row items-center">
           <ml-icon name="shield" :size="14" :color="SMART"></ml-icon>
-          <text class="text-sm font-semibold text-ink ml-1.5">本地数据</text>
-          <text class="text-xs text-ink-soft ml-2">所有数据仅存储在本机</text>
+          <text class="text-sm font-semibold text-ink ml-1.5">本机数据</text>
+          <text class="text-xs text-ink-soft ml-2">可随时清除，不影响服务端账号数据</text>
         </view>
         <view class="mt-3">
           <view
@@ -73,6 +73,7 @@ import { reportHistory } from '../../store/report-history.uts'
 import { trainingHistory } from '../../store/training-history.uts'
 import { resumeDraft } from '../../store/resume-draft.uts'
 import { interviewSession } from '../../store/interview-session.uts'
+import { quotaStore } from '../../store/quota.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 
@@ -150,10 +151,10 @@ const dataRows = computed((): DataRow[] => {
 })
 
 const notices: string[] = [
-  '简历仅用于本次分析，不会上传至第三方',
+  '简历仅用于本次分析，不会提供给第三方训练模型',
   '录音不用于训练；转写文本仅用于当次面试评分与报告',
-  '正式评分与报告生成由服务端完成（当前 Mock 环境为本地规则评分）',
-  '你可以在本页随时清除全部本地数据'
+  '正式评分与报告生成由服务端完成，低置信度会明确标注',
+  '你可以在本页随时清除全部本机数据'
 ]
 
 function confirmClear() {
@@ -179,6 +180,8 @@ function clearLocal() {
   } catch (e: any) {
     console.warn('[privacy] clear quota failed', e)
   }
+  // 同步重置内存账本（否则本会话仍可按旧额度继续面试/训练）
+  quotaStore.restore()
   trackEvent('privacy_local_data_cleared')
   refresh()
   clearing.value = false

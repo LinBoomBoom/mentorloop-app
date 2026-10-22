@@ -37,19 +37,35 @@
       </ml-card>
     </view>
 
-    <view class="mt-4">
-      <ml-button
-        :text="generating ? '生成中…' : '生成面试报告'"
-        :type="generating ? 'secondary' : 'primary'"
-        block
-        :disabled="generating"
-        @tap="genReport"
-      ></ml-button>
-    </view>
+    <template v-if="count > 0">
+      <view class="mt-4">
+        <ml-button
+          :text="generating ? '生成中…' : '生成面试报告'"
+          :type="generating ? 'secondary' : 'primary'"
+          block
+          :disabled="generating"
+          @tap="genReport"
+        ></ml-button>
+      </view>
+      <text class="text-xs text-ink-soft mt-3 text-center">
+        报告包含：总体判断 · 六维评分 · 风险提示 · 训练计划
+      </text>
+    </template>
 
-    <text class="text-xs text-ink-soft mt-3 text-center">
-      报告包含：总体判断 · 六维评分 · 风险提示 · 训练计划
-    </text>
+    <!-- 没有作答时不生成空报告，给出明确出口 -->
+    <view v-else class="mt-4">
+      <ml-card>
+        <ml-empty
+          icon="circle-help"
+          :icon-color="WARN"
+          :icon-bg="CHIP_WARN"
+          title="本场没有可评分的回答"
+          desc="至少完成一道题后才能生成报告，请返回重新开始一场面试"
+        >
+          <ml-button text="返回首页" type="primary" block @tap="goHome"></ml-button>
+        </ml-empty>
+      </ml-card>
+    </view>
   </view>
 </template>
 
@@ -59,6 +75,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
+import mlEmpty from '../../components/ml-empty.uvue'
 import { interviewSession } from '../../store/interview-session.uts'
 import { reportHistory } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
@@ -70,6 +87,8 @@ import { themeValue } from '../../styles/theme.uts'
 
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const SMART = themeValue('smart', '#5B6CFF')
+const WARN = themeValue('warn', '#E08A00')
+const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
 
 const count = ref(0)
 const generating = ref(false)
@@ -140,5 +159,9 @@ async function genReport() {
 
   generating.value = false
   uni.switchTab({ url: '/pages/report/report' })
+}
+
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
 }
 </script>

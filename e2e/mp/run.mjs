@@ -181,14 +181,13 @@ function makeCtx(mp) {
       e.skip = true
       throw e
     },
-    // 需报告数据的场景先备好数据：登录态下服务端拉取会覆盖本地种子（台账 U10），
-    // 故顺序为「先让拉取发生并进入 60s 节流窗口（FETCH_TTL）→ 再写回种子 → 重新加载」，
-    // 否则报告页停在空态、分段按钮不存在，会误报失败。
+    // 需报告数据的场景先备好数据：登录态下 /me/reports 拉取会覆盖本地种子（台账 U10）。
+    // 真正发起拉取的是首页 onShow，故顺序必须是「首页先拉取并进入 60s 节流 →
+    // 再写回种子 → 进报告页读本地」，否则种子会被首页拉取覆盖。
     async requireReportData() {
-      await this.gotoTab('/pages/report/report')
-      await delay(1200)
-      await this.seedReport()
       await this.gotoTab('/pages/index/index')
+      await delay(2500)
+      await this.seedReport()
       await this.gotoTab('/pages/report/report')
       if (!(await this.present('#seg-report', 4000))) {
         this.skip('环境无报告数据（服务端拉取覆盖了 E2E 种子，见台账 U10）')

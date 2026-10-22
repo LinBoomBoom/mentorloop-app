@@ -14,16 +14,16 @@
             >
               <ml-icon name="user" :size="26" :color="SURFACE"></ml-icon>
             </view>
-            <view class="flex-col flex-1">
-              <text class="text-lg font-semibold text-white">{{ nickname }}</text>
-              <view class="flex-row items-center mt-1">
+            <view class="flex-col flex-1 overflow-hidden">
+              <text class="text-lg font-semibold text-white truncate block">{{ nickname }}</text>
+              <view class="flex-row items-center mt-1 overflow-hidden">
                 <ml-tag
                   :icon="planBadgeIcon"
                   :label="planLabel"
                   :bg="planBadgeBg"
                   :color="planBadgeColor"
                 ></ml-tag>
-                <text class="text-xs text-mist ml-2">
+                <text class="text-xs text-mist ml-2 truncate block">
                   {{ positionLabel }} · {{ experienceLabel }}
                 </text>
               </view>
@@ -238,7 +238,7 @@ const settings: SettingRow[] = [
     color: RELIABLE,
     tint: CHIP_RELIABLE,
     text: '面试偏好设置',
-    desc: '难度、时长、提醒',
+    desc: '默认方向、经验年限、昵称',
     onTap: prefs
   },
   {

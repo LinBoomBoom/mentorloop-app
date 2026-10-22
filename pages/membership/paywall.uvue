@@ -15,7 +15,7 @@
               from === 'resume' ? '简历深度评审' : APP_NAME + ' 会员'
             }}</text>
             <text class="text-xs text-mist mt-0.5">{{
-              from === 'resume' ? 'AI 逐条批注 · 单次包' : '按次购买或连续包月'
+              from === 'resume' ? 'AI 逐条批注 · 单次包' : '按月 / 年开通 · 不自动续费'
             }}</text>
           </view>
         </view>
@@ -133,7 +133,10 @@
         <text class="text-xs text-ink-soft">支付即同意</text>
         <text class="text-xs text-smart ml-0.5" @click="showAgreement">《会员服务协议》</text>
         <text class="text-xs text-ink-soft"
-          >· {{ from === 'resume' ? '单次包购买后立即生效' : '连续包月可随时取消' }}</text
+          >·
+          {{
+            from === 'resume' ? '单次包购买后立即生效' : '月卡 30 天 / 年卡 365 天，不自动续费'
+          }}</text
         >
       </view>
       <view v-if="isMock" class="flex-col items-center mt-2">
@@ -162,7 +165,7 @@ import {
 import { purchase } from '../../api/membership.uts'
 import { PAY_CANCELLED } from '../../api/virtual-pay.uts'
 import { trackEvent } from '../../api/tracking.uts'
-import { useMock } from '../../api/env.uts'
+import { AGREEMENT_URL, useMock } from '../../api/env.uts'
 import { APP_NAME } from '../../data/app-meta.uts'
 import { themeValue } from '../../styles/theme.uts'
 
@@ -253,7 +256,24 @@ async function doPay() {
 }
 
 function showAgreement() {
-  uni.showToast({ title: '会员服务协议即将上线', icon: 'none' })
+  if (AGREEMENT_URL.length > 0) {
+    uni.navigateTo({
+      url:
+        '/pages/mine/webview?url=' +
+        encodeURIComponent(AGREEMENT_URL) +
+        '&title=' +
+        encodeURIComponent('会员服务协议')
+    })
+    return
+  }
+  // 协议全文待 LC 回填；先给出与代码事实一致的要点，避免「即将上线」死路
+  uni.showModal({
+    title: '会员服务协议（要点）',
+    content:
+      '会员为一次性购买的数字权益：月卡有效期 30 天、年卡 365 天，不自动续费；支付成功后即时生效。完整协议将在提审前公示。',
+    showCancel: false,
+    confirmText: '我知道了'
+  })
 }
 
 // 小额联调：走同一条真实支付链路（下单 → 拉起 → 推送发货），支付后停留本页便于复测

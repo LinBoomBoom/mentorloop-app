@@ -47,6 +47,7 @@ export type EvalCase = {
   askedIds?: string[]
   remainSeconds?: number
   resumeRiskTopics?: string[]
+  resumeTechStacks?: string[]
   focusDomain?: string
   maxQuestions?: number
   // followup 输入

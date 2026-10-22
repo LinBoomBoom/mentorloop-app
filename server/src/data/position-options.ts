@@ -19,7 +19,7 @@ export const POSITION_OPTIONS: PositionOption[] = [
   { id: 'frontend', name: '前端', available: true } as PositionOption,
   { id: 'backend', name: '后端', available: true } as PositionOption,
   { id: 'devops', name: '运维', available: true } as PositionOption, // 2026-10-18 批次 A：24 题入库（docs/drafts/2026-10-18-devops-content-draft.md 审核通过）
-  { id: 'ai', name: 'AI 工程', available: false } as PositionOption
+  { id: 'ai', name: 'AI 工程', available: true } as PositionOption // 2026-10-22：云内容库 ai 2777 题已同步，解除遗留置灰
 ]
 
 // 经验档位 → 题目难度白名单（用于选题器过滤）
