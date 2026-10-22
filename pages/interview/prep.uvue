@@ -119,13 +119,19 @@ import { themeValue } from '../../styles/theme.uts'
 
 const SMART = themeValue('smart', '#5B6CFF')
 
-type CheckKey = 'mic' | 'net' | 'record'
+type CheckKey = 'mic' | 'net' | 'record' | 'speaker'
 
 type CheckItem = {
   key: CheckKey
   name: string
   ok: boolean
   checking: boolean
+}
+
+// 麦克风探测结果：ok=采集成功；path=落盘文件路径（空串表示无可回放音频）
+type MicProbe = {
+  ok: boolean
+  path: string
 }
 
 const positionOptions = POSITION_OPTIONS
@@ -144,7 +150,8 @@ const showLogin = ref(false)
 const initialChecks: CheckItem[] = [
   { key: 'net', name: '网络', ok: false, checking: false } as CheckItem,
   { key: 'record', name: '录音授权', ok: false, checking: false } as CheckItem,
-  { key: 'mic', name: '麦克风', ok: false, checking: false } as CheckItem
+  { key: 'mic', name: '麦克风', ok: false, checking: false } as CheckItem,
+  { key: 'speaker', name: '扬声器', ok: false, checking: false } as CheckItem
 ]
 const checks = ref(initialChecks)
 
@@ -307,45 +314,165 @@ function checkRecordAuth(): Promise<boolean> {
   })
 }
 
-// 3) 麦克风可用性：尝试启动一次短录音（1s）验证
-function checkMic(): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
+// 3) 麦克风：录 1.2s 并校验真实落盘（不是「onStop 被触发」就算通过）
+// RecorderManager 是全局单例：结束必须注销本次注册的监听，
+// 否则残留的 onStart 会在稍后房间录音时再次触发并提前 stop()，把作答掐断。
+function checkMic(): Promise<MicProbe> {
+  return new Promise<MicProbe>((resolve) => {
     setCheck('mic', false, true)
+    // #ifdef MP-WEIXIN || APP-PLUS || APP
+    let cleanup: () => void = () => {}
     try {
-      // #ifdef MP-WEIXIN || APP-PLUS || APP
-      const rm = uni.getRecorderManager()
-      let done = false
-      const finish = (ok: boolean) => {
-        if (done) return
-        done = true
-        setCheck('mic', ok, false)
-        resolve(ok)
+      const rm: any = uni.getRecorderManager()
+      let settled = false
+      let stopTimer: number = 0
+      let guardTimer: number = 0
+      cleanup = () => {
+        if (stopTimer > 0) {
+          clearTimeout(stopTimer)
+          stopTimer = 0
+        }
+        if (guardTimer > 0) {
+          clearTimeout(guardTimer)
+          guardTimer = 0
+        }
+        try {
+          rm.offStart(onStart)
+        } catch {
+          // 低版本基础库无 off*：注销失败不影响本次检测
+        }
+        try {
+          rm.offStop(onStop)
+        } catch {
+          // 同上
+        }
+        try {
+          rm.offError(onError)
+        } catch {
+          // 同上
+        }
       }
-      rm.onStart(() => {
-        setTimeout(() => {
+      const finish = (ok: boolean, path: string) => {
+        if (settled) return
+        settled = true
+        cleanup()
+        setCheck('mic', ok, false)
+        resolve({ ok: ok, path: path } as MicProbe)
+      }
+      const onStart = () => {
+        // 只求落盘、不求内容：1.2s 后主动停止
+        stopTimer = setTimeout(() => {
           try {
             rm.stop()
           } catch {
-            finish(false)
+            finish(false, '')
           }
-        }, 800)
-      })
-      rm.onStop(() => {
+        }, 1200)
+      }
+      const onStop = (res: any) => {
+        const path = res != null && res.tempFilePath != null ? (res.tempFilePath as string) : ''
+        if (path.length === 0) {
+          finish(false, '')
+          return
+        }
+        devicePlugin
+          .audioFileSize(path)
+          .then((size: number) => {
+            if (size === 0) {
+              finish(false, '')
+              return
+            }
+            console.log('[prep] 麦克风采集成功，字节数=' + size)
+            finish(true, path)
+          })
+          .catch(() => {
+            finish(true, path)
+          })
+      }
+      const onError = (e: any) => {
+        const msg = e != null && e.errMsg != null ? String(e.errMsg) : 'unknown'
+        console.warn('[prep] 麦克风检测失败', msg)
+        finish(false, '')
+      }
+      guardTimer = setTimeout(() => {
+        finish(false, '')
+      }, 6000)
+      rm.onStart(onStart)
+      rm.onStop(onStop)
+      rm.onError(onError)
+      rm.start({ format: 'mp3', duration: 3000 })
+    } catch {
+      cleanup()
+      setCheck('mic', false, false)
+      resolve({ ok: false, path: '' } as MicProbe)
+    }
+    // #endif
+    // #ifndef MP-WEIXIN || APP-PLUS || APP
+    setCheck('mic', true, false)
+    resolve({ ok: true, path: '' } as MicProbe)
+    // #endif
+  })
+}
+
+// 4) 扬声器：回放刚录的音频，播完才算通过（覆盖「发不出声」）
+function checkSpeaker(path: string): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    setCheck('speaker', false, true)
+    // #ifdef MP-WEIXIN || APP-PLUS || APP
+    let audio: any = null
+    const release = () => {
+      if (audio == null) return
+      try {
+        audio.stop()
+      } catch {
+        // 已停止/已销毁：忽略
+      }
+      try {
+        audio.destroy()
+      } catch {
+        // 已销毁：忽略
+      }
+      audio = null
+    }
+    try {
+      devicePlugin.configureAudioPlayback()
+      audio = uni.createInnerAudioContext()
+      let settled = false
+      let guardTimer: number = 0
+      const finish = (ok: boolean) => {
+        if (settled) return
+        settled = true
+        if (guardTimer > 0) {
+          clearTimeout(guardTimer)
+          guardTimer = 0
+        }
+        release()
+        setCheck('speaker', ok, false)
+        resolve(ok)
+      }
+      guardTimer = setTimeout(() => {
+        finish(false)
+      }, 8000)
+      audio.onEnded(() => {
         finish(true)
       })
-      rm.onError(() => {
+      audio.onError((e: any) => {
+        const msg = e != null && e.errMsg != null ? String(e.errMsg) : 'unknown'
+        console.warn('[prep] 扬声器回放失败', msg)
         finish(false)
       })
-      rm.start({ format: 'mp3', duration: 2000 })
-      // #endif
-      // #ifndef MP-WEIXIN || APP-PLUS || APP
-      setCheck('mic', true, false)
-      resolve(true)
-      // #endif
+      audio.src = path
+      audio.play()
     } catch {
-      setCheck('mic', false, false)
+      release()
+      setCheck('speaker', false, false)
       resolve(false)
     }
+    // #endif
+    // #ifndef MP-WEIXIN || APP-PLUS || APP
+    setCheck('speaker', true, false)
+    resolve(true)
+    // #endif
   })
 }
 
@@ -368,12 +495,29 @@ async function runCheck() {
   const netOk = await checkNet()
   const authOk = await checkRecordAuth()
   // 仅在网络+授权都通过时再探测麦克风（避免两次弹权限）
-  const micOk = netOk && authOk ? await checkMic() : false
+  let probe: MicProbe = { ok: false, path: '' } as MicProbe
+  let speakerOk = false
+  if (netOk && authOk) {
+    probe = await checkMic()
+    if (probe.ok && probe.path.length > 0) {
+      speakerOk = await checkSpeaker(probe.path)
+    } else if (probe.ok) {
+      // 非 MP/App 平台无文件级探测能力：沿用该平台既有放行口径
+      speakerOk = true
+      setCheck('speaker', true, false)
+    } else {
+      setCheck('speaker', false, false)
+    }
+  } else {
+    setCheck('mic', false, false)
+    setCheck('speaker', false, false)
+  }
 
   checking.value = false
   if (!netOk) checkError.value = '网络不可用，请连接网络后重试'
   else if (!authOk) checkError.value = '未获得录音授权，无法开始面试'
-  else if (!micOk) checkError.value = '麦克风不可用，请检查设备或权限'
+  else if (!probe.ok) checkError.value = '麦克风不可用，请检查设备或权限'
+  else if (!speakerOk) checkError.value = '回放没有出声，请调高音量；iPhone 请关闭静音开关后重试'
 }
 
 function start() {

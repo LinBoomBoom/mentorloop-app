@@ -238,6 +238,7 @@ import {
   speechCapability
 } from '../../api/speech.uts'
 import { uploadAsrCloud, AsrResponse } from '../../api/asr.uts'
+import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 
 const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
 const SMART = themeValue('smart', '#5B6CFF')
@@ -683,22 +684,51 @@ function stopRecord(_auto: boolean) {
   }
 }
 
-// 录音结束：按平台路由转写
+// 录音结束：先自检落盘，再按平台路由转写
+// 「没录到音频」与「录到了但转写为空」是两种故障，提示必须分开
+function handleRecordingStopped(result: RecordResult) {
+  const path = result.audioPath
+  if (!result.ok || path.length === 0) {
+    reportRecordEmpty('录音未落盘')
+    return
+  }
+  devicePlugin
+    .audioFileSize(path)
+    .then((size: number) => {
+      console.log('[room] 录音结束，字节数=' + size + '，path=' + path)
+      if (size === 0) {
+        reportRecordEmpty('录音文件为空')
+        return
+      }
+      routeTranscribe(path)
+    })
+    .catch(() => {
+      routeTranscribe(path)
+    })
+}
+
+// 采集失败：给出可执行的重试路径，不静默、不伪装成转写失败
+function reportRecordEmpty(reason: string) {
+  console.warn('[room] 没有录到音频：' + reason)
+  caption.value = '没有录到音频，请检查麦克风权限后重试，或切换文字作答'
+  avatarState.value = 'listening'
+  trackEvent('interview_asr_fallback', {
+    questionId: currentQuestion.value.id,
+    reason: 'record_empty'
+  })
+}
+
+// 音频有效：按平台路由转写
 // - MP-WEIXIN：优先用实时识别文本（若插件可用）；为空则走「云存储中转 → 服务端 ASR」
 // - App：云端 multipart 上传转写
-function handleRecordingStopped(result: RecordResult) {
+function routeTranscribe(path: string) {
   if (cap.platform === 'mp-weixin') {
     const live = liveTranscript.value.trim()
     if (live.length > 0) {
       finishTranscribe(live)
       return
     }
-    // 实时识别不可用（个人主体无 wechatSI 插件）：录音落盘后走云存储中转转写
-    if (!result.ok || result.audioPath.length === 0) {
-      finishTranscribe('')
-      return
-    }
-    uploadAsrCloud(result.audioPath)
+    uploadAsrCloud(path)
       .then((r: AsrResponse) => {
         finishTranscribe(r.text)
       })
@@ -709,12 +739,8 @@ function handleRecordingStopped(result: RecordResult) {
       })
     return
   }
-  if (!result.ok || result.audioPath.length === 0) {
-    finishTranscribe('')
-    return
-  }
   // App 端：云端 ASR
-  transcribe(result.audioPath).then((r: AsrResult) => {
+  transcribe(path).then((r: AsrResult) => {
     finishTranscribe(r.ok ? r.text : '')
   }).catch(() => {
     finishTranscribe('')

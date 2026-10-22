@@ -7,6 +7,7 @@
 //       - AudioManager 麦克风可用性诊断
 // 契约（framework-plan §interviewer-device）：
 //   checkPermission() / onNetworkChange(cb) / onForeground(cb) / diagnose()
+//   configureAudioPlayback() / audioFileSize(path)（2026-10-22：检测去伪，供 prep/room 复用）
 // 降级策略：所有检测失败时返回明确 false / 'unknown'，不伪造通过
 // （prep 页据此给出解决路径，文档 05：未通过给出解决路径）。
 // 注意：UTS 不支持 interface，契约以类的公开方法为准。
@@ -190,6 +191,68 @@ export class DevicePlugin {
   }
 
   private diagSettled = 0
+
+  // ---------------- 音频播放 / 录音文件自检 ----------------
+
+  // 小程序播放策略：obeyMuteSwitch 默认 true（iOS 跟随系统静音键），
+  // 静音键一开就完全无声。播放前显式关掉，幂等且失败静默（不伪造成功）。
+  private audioConfigured = false
+
+  configureAudioPlayback(): void {
+    // #ifdef MP-WEIXIN
+    if (this.audioConfigured) return
+    this.audioConfigured = true
+    try {
+      const g = globalThis as any
+      if (g.wx != null && g.wx.setInnerAudioOption != null) {
+        g.wx.setInnerAudioOption({ obeyMuteSwitch: false } as any)
+      }
+    } catch (e: any) {
+      console.warn('[device] setInnerAudioOption 不可用', e)
+    }
+    // #endif
+  }
+
+  // 本地录音文件字节数：0=空文件（未采到音频）；-1=平台不支持/读取失败（未知，不据此判失败）
+  audioFileSize(path: string): Promise<number> {
+    return new Promise<number>((resolve) => {
+      if (path.length === 0) {
+        resolve(0)
+        return
+      }
+      let settled = false
+      const done = (size: number): void => {
+        if (settled) return
+        settled = true
+        resolve(size)
+      }
+      // #ifdef MP-WEIXIN
+      try {
+        const g = globalThis as any
+        const fsm =
+          g.wx != null && g.wx.getFileSystemManager != null ? g.wx.getFileSystemManager() : null
+        if (fsm == null || fsm.getFileInfo == null) {
+          done(-1)
+          return
+        }
+        fsm.getFileInfo({
+          filePath: path,
+          success: (r: any) => {
+            const size = r != null && r.size != null ? (r.size as number) : -1
+            done(size)
+          },
+          fail: () => {
+            done(-1)
+          }
+        } as any)
+        return
+      } catch (e: any) {
+        console.warn('[device] getFileInfo 不可用', e)
+      }
+      // #endif
+      done(-1)
+    })
+  }
 }
 
 export const devicePlugin: DevicePlugin = new DevicePlugin()

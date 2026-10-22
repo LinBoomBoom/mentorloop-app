@@ -115,6 +115,8 @@ function getWechatSI(): any {
 const TTS_REQUEST_TIMEOUT_MS = 8000
 
 function speakWeixin(text: string): TtsHandle {
+  // iOS 静音键默认会让小程序音频完全无声：播放前先关掉 obeyMuteSwitch
+  devicePlugin.configureAudioPlayback()
   let stopped = false
   let audio: any = null
   let fallback: TtsHandle | null = null
@@ -235,6 +237,8 @@ import { userStore } from '../store/user-profile.uts'
 // `import('./tts.uts')` 会被编译成字符串字面量 `"./tts.js".then(...)`，
 // 运行即抛 TypeError，TTS 整条链路失效（2026-10-20 真机无声根因）。
 import { requestTts, ackTts } from './tts.uts'
+// 播放策略（iOS 静音键）与录音文件自检复用设备插件，避免各页面各写一份
+import { devicePlugin } from '../utssdk/interviewer-device/index.uts'
 
 // 录音器封装：单例 RecorderManager，回调式 API
 export class SpeechRecorder {
