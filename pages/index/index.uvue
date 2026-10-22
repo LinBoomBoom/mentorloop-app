@@ -218,20 +218,6 @@
             </view>
           </view>
         </template>
-
-        <!-- 无报告：引导卡 -->
-        <view v-else class="mt-3 rounded-card border p-5 flex-col items-center" :style="cardStyle">
-          <view
-            class="w-12 h-12 rounded-control flex-row items-center justify-center"
-            :style="{ backgroundColor: 'rgba(91,108,255,0.18)' }"
-          >
-            <ml-icon name="sparkles" :size="22" :color="SMART_LIGHT"></ml-icon>
-          </view>
-          <text class="text-base font-semibold text-white mt-3">完成第一场模拟面试</text>
-          <text class="text-xs text-mist mt-1.5 text-center leading-5">
-            生成能力评估报告后，这里会给出{'\n'}针对性的训练任务与成长追踪
-          </text>
-        </view>
       </view>
     </scroll-view>
 
@@ -250,6 +236,7 @@ import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
+import { fetchQuota } from '../../api/membership.uts'
 import { reportSegmentIntent } from '../../store/report-segment.uts'
 import { useMock } from '../../api/env.uts'
 import { trackEvent } from '../../api/tracking.uts'
@@ -431,6 +418,10 @@ onShow(() => {
 
   reportHistory.load()
   records.value = reportHistory.all()
+  // 额度对齐：真后端以服务端账本为准（Mock 下直接返回），首页门控读取本地前先收敛
+  if (loggedIn.value) {
+    fetchQuota().catch(() => {})
+  }
   // 真后端：异步同步云端报告历史（跨设备），先展示本地再刷新
   if (!useMock()) {
     reportHistory.fetchFromServer().then(() => {
@@ -451,7 +442,7 @@ function startInterview() {
   if (!quotaStore.canStartInterview()) {
     trackEvent('quota_exceeded', { scene: 'interview' })
     uni.showModal({
-      title: '免费额度已用完',
+      title: '免费面试额度已用完',
       content: '开通会员可无限次模拟面试，或购买单次包继续练习',
       confirmText: '去开通',
       cancelText: '暂不需要',

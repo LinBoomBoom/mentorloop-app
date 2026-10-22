@@ -1,0 +1,84 @@
+// 应用元信息：名称、版本号与运行环境统一从这里读取，避免页面硬编码随发版漂移。
+// - 名称 / 版本：manifest.json 的 name / versionName（uni.getAppBaseInfo）
+// - 版本优先取小程序线上版本号（正式版才有值），开发版 / 体验版回落到 manifest
+// - 环境：微信小程序 envVersion（开发版 / 体验版 / 正式版）
+type AppBaseSnapshot = {
+  name: string
+  version: string
+}
+
+type MiniProgramSnapshot = {
+  envVersion: string
+  onlineVersion: string
+}
+
+function readBaseSnapshot(): AppBaseSnapshot {
+  let name = ''
+  let version = ''
+  try {
+    const base = uni.getAppBaseInfo()
+    const appName = base.appName
+    const appVersion = base.appVersion
+    if (appName != null) {
+      name = appName
+    }
+    if (appVersion != null) {
+      version = appVersion
+    }
+  } catch (e) {
+    console.warn('[app-meta] 读取应用基础信息失败', e)
+  }
+  return { name: name, version: version } as AppBaseSnapshot
+}
+
+function readMiniProgramSnapshot(): MiniProgramSnapshot {
+  let envVersion = ''
+  let onlineVersion = ''
+  // #ifdef MP-WEIXIN
+  const wxApi = (globalThis as any).wx
+  if (wxApi != null && wxApi.getAccountInfoSync != null) {
+    try {
+      const info: any = wxApi.getAccountInfoSync()
+      if (info != null && info.miniProgram != null) {
+        if (info.miniProgram.envVersion != null) {
+          envVersion = String(info.miniProgram.envVersion)
+        }
+        // 线上版本号仅正式版返回；开发版 / 体验版为空（个别环境会返回 develop / trial）
+        if (info.miniProgram.version != null) {
+          const rawVersion = String(info.miniProgram.version)
+          if (rawVersion.length > 0 && rawVersion !== 'develop' && rawVersion !== 'trial') {
+            onlineVersion = rawVersion
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[app-meta] 读取小程序运行环境失败', e)
+    }
+  }
+  // #endif
+  return { envVersion: envVersion, onlineVersion: onlineVersion } as MiniProgramSnapshot
+}
+
+const BASE = readBaseSnapshot()
+const MINI = readMiniProgramSnapshot()
+
+export const APP_NAME: string = BASE.name.length > 0 ? BASE.name : '智面研学'
+export const APP_VERSION: string = MINI.onlineVersion.length > 0 ? MINI.onlineVersion : BASE.version
+
+function toEnvLabel(env: string): string {
+  if (env === 'develop') return '开发版'
+  if (env === 'trial') return '体验版'
+  if (env === 'release') return '正式版'
+  return ''
+}
+
+export const APP_ENV_LABEL: string = toEnvLabel(MINI.envVersion)
+
+// 版本行：v1.0.0 · 体验版（缺项自动省略分隔符）
+export function appVersionText(): string {
+  const versionText = APP_VERSION.length > 0 ? 'v' + APP_VERSION : ''
+  if (APP_ENV_LABEL.length === 0) {
+    return versionText
+  }
+  return versionText.length > 0 ? versionText + ' · ' + APP_ENV_LABEL : APP_ENV_LABEL
+}

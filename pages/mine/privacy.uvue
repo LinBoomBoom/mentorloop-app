@@ -133,7 +133,7 @@ const dataRows = computed((): DataRow[] => {
       value: draftCount.value + ' 个版本'
     } as DataRow,
     {
-      icon: 'database',
+      icon: 'server',
       color: DIM_COMMUNICATION,
       tint: DIM_COMMUNICATION_TINT,
       text: '额度账本与埋点队列',

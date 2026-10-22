@@ -114,10 +114,12 @@
           </ml-card>
         </view>
 
-        <!-- 版本信息 -->
+        <!-- 版本信息：名称与版本跟随 manifest / 小程序运行环境，避免硬编码漂移 -->
         <view class="flex-col items-center mt-6">
-          <text class="text-xs text-ink-soft">MentorLoop · 学面一体智能导师</text>
-          <text class="text-xs text-ink-soft mt-1">v0.9.0 · 内测版</text>
+          <text class="text-xs text-ink-soft">{{ APP_NAME }} · 学面一体智能导师</text>
+          <text v-if="versionText.length > 0" class="text-xs text-ink-soft mt-1">{{
+            versionText
+          }}</text>
         </view>
       </view>
     </scroll-view>
@@ -136,8 +138,10 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
-import { quotaStore } from '../../store/quota.uts'
+import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
+import { fetchQuota } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
+import { APP_NAME, appVersionText } from '../../data/app-meta.uts'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 
 const SMART = themeValue('smart', '#5B6CFF')
@@ -158,6 +162,7 @@ const DIM_COMMUNICATION_TINT = DIM_TINT['communication'] != null ? DIM_TINT['com
 const nickname = ref(userStore.profile.nickname)
 const plan = ref(userStore.profile.plan)
 const loggedIn = ref(userStore.isLoggedIn())
+const versionText = appVersionText()
 // 登录半屏层（小程序端手机号+验证码；APP 端走登录页）
 const showLogin = ref(false)
 
@@ -174,7 +179,13 @@ function refreshQuota() {
   } else if (quotaStore.state.singleCreditsLeft > 0) {
     quotaText.value = '单次包余量 ' + String(quotaStore.state.singleCreditsLeft) + ' 场'
   } else {
-    quotaText.value = '免费额度 ' + String(quotaStore.state.freeInterviewsLeft) + ' 场面试'
+    // 面试额度与每日训练额度是两个独立计数器，文案里分别标明，避免被当成同一个额度
+    quotaText.value =
+      '免费面试额度 ' +
+      String(quotaStore.state.freeInterviewsLeft) +
+      ' 场 · 每日训练 ' +
+      String(FREE_QUOTA.trainingsPerDay) +
+      ' 次'
   }
 }
 
@@ -250,7 +261,7 @@ const settings: SettingRow[] = [
     icon: 'info',
     color: DIM_COMMUNICATION,
     tint: DIM_COMMUNICATION_TINT,
-    text: '关于 MentorLoop',
+    text: '关于 ' + APP_NAME,
     desc: '版本、协议、反馈',
     onTap: about
   }
@@ -268,6 +279,12 @@ function refreshProfile() {
   positionLabel.value = positionDisplay(userStore.profile)
   experienceLabel.value = experienceDisplay(userStore.profile)
   refreshQuota()
+  // 真后端以服务端账本为准（Mock 下 fetchQuota 直接返回），避免本地旧账本与真实额度不一致
+  if (loggedIn.value) {
+    fetchQuota().then(() => {
+      refreshQuota()
+    }).catch(() => {})
+  }
 }
 
 function goPaywall() {

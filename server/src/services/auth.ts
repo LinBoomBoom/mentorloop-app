@@ -1,6 +1,6 @@
 // 认证服务：短信发码 / 手机号登录 / 微信静默登录 + 新用户配额创建
 import { Db } from '../db.js'
-import { Env } from '../config.js'
+import { Env, DEFAULT_FREE_QUOTA } from '../config.js'
 import { newId, now } from '../util.js'
 import { AuthResult } from '../types/domain.js'
 import { createDesktopGateway, syncDesktopLink } from './desktop-link.js'
@@ -57,7 +57,7 @@ async function findOrCreateUser(
     await db
       .prepare(
         `INSERT INTO users (uid, phone, openid, nickname, channel, free_quota_total, free_quota_used, single_quota_total, single_quota_used, member_until, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 3, 0, 0, 0, NULL, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, NULL, ?, ?)`
       )
       .run(
         newId('u'),
@@ -65,6 +65,7 @@ async function findOrCreateUser(
         key === 'openid' ? value : null,
         nickname,
         channel,
+        DEFAULT_FREE_QUOTA,
         t,
         t
       )

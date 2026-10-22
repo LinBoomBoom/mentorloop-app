@@ -137,7 +137,7 @@ import mlButton from '../../components/ml-button.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { userStore } from '../../store/user-profile.uts'
-import { quotaStore } from '../../store/quota.uts'
+import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
 import {
   trainingHistory,
   TrainingItem,
@@ -253,7 +253,9 @@ onLoad((options: any) => {
   // 接收训练任务参数
   if (options != null) {
     taskId.value = options.taskId != null ? (options.taskId as string) : 't_custom'
-    taskTitle.value = options.title != null ? (options.title as string) : '专项训练'
+    // title 由训练页/报告页以 encodeURIComponent 传入，这里必须解码，否则中文会显示成 %E4%B8%93...
+    taskTitle.value =
+      options.title != null ? decodeURIComponent(options.title as string) : '专项训练'
     durationMin.value = options.durationMin != null ? parseInt(options.durationMin as string) : 3
     source.value = options.source != null ? (options.source as string) : 'direct'
     domain.value = options.domain != null ? (options.domain as string) : ''
@@ -264,7 +266,7 @@ onLoad((options: any) => {
   if (!quotaStore.canStartTraining()) {
     uni.showModal({
       title: '今日训练次数已用完',
-      content: '免费版每日 3 次训练，开通会员不限次数',
+      content: '免费版每日 ' + String(FREE_QUOTA.trainingsPerDay) + ' 次训练，开通会员不限次数',
       confirmText: '去开通',
       cancelText: '返回',
       success: (r: any) => {

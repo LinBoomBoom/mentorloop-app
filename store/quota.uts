@@ -8,10 +8,12 @@
 import { userStore, UserPlan } from './user-profile.uts'
 
 // 免费层额度（文档 01 §6：免费层额度控制）
+// 面试额度必须与服务端 DEFAULT_FREE_QUOTA / users.free_quota_total 默认值一致，
+// 否则个人中心展示的「免费面试额度」会与真实可用额度不一致。
 export const FREE_QUOTA = {
-  interviews: 1, // 正式模拟面试 1 场
+  interviews: 3, // 正式模拟面试 3 场
   deepReports: 1, // 深度报告 1 份
-  trainingsPerDay: 3 // 每日专项训练 3 次
+  trainingsPerDay: 3 // 每日专项训练 3 次（独立计数器，与面试额度不共用）
 }
 
 export type QuotaState = {
@@ -24,6 +26,10 @@ export type QuotaState = {
 }
 
 const QUOTA_KEY = 'ml_quota_state'
+// 账本版本：v1 的免费面试默认值是 1（与服务端 3 不一致），v2 起统一为 3。
+// 升级时仅补齐「未消费过的 1」→ 3，已消费（0）的旧账本保持不动。
+const QUOTA_VERSION_KEY = 'ml_quota_version'
+const QUOTA_VERSION = '2'
 
 function todayStr(): string {
   const d = new Date()
@@ -58,11 +64,20 @@ class QuotaStore {
       const raw = uni.getStorageSync(QUOTA_KEY) as string
       if (raw != null && raw.length > 0) {
         const s = JSON.parse(raw) as QuotaState
+        const version = uni.getStorageSync(QUOTA_VERSION_KEY) as string
+        if (version !== QUOTA_VERSION && s.freeInterviewsLeft === 1) {
+          // v1 的默认值是 1，仍为 1 说明从未消费过 → 补齐到统一口径
+          s.freeInterviewsLeft = FREE_QUOTA.interviews
+        }
         if (s.trainingsDate !== todayStr()) {
           s.trainingsToday = 0
           s.trainingsDate = todayStr()
         }
         this.state = s
+        uni.setStorageSync(QUOTA_VERSION_KEY, QUOTA_VERSION)
+        this.persist()
+      } else {
+        uni.setStorageSync(QUOTA_VERSION_KEY, QUOTA_VERSION)
       }
     } catch (e: any) {
       console.warn('[quota] restore failed', e)

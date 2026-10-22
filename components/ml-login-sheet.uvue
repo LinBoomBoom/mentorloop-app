@@ -8,7 +8,7 @@
     <view class="absolute left-0 right-0 bottom-0 bg-surface rounded-t-2xl px-5 pt-4 pb-9">
       <!-- 标题行 -->
       <view class="flex-row items-center justify-between">
-        <text class="text-lg font-bold text-ink">登录 MentorLoop</text>
+        <text class="text-lg font-bold text-ink">登录 {{ APP_NAME }}</text>
         <view
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           hover-class="pressed-chip"
@@ -115,6 +115,7 @@ import { themeValue } from '../styles/theme.uts'
 import { sendSmsCode, loginByPhone, applyAuth } from '../api/auth.uts'
 import { trackEvent } from '../api/tracking.uts'
 import { AGREEMENT_URL, PRIVACY_URL } from '../api/env.uts'
+import { APP_NAME } from '../data/app-meta.uts'
 
 const MIST = themeValue('mist', '#AEB9CC')
 const SURFACE = themeValue('surface', '#FFFFFF')

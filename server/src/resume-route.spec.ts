@@ -261,3 +261,48 @@ describe('POST /resume/parse（免费预览 / AI 不可用）', () => {
     closeDb()
   })
 })
+
+describe('GET /resume/history（旧记录兼容）', () => {
+  it('简历 AI 评审上线前的旧 payload（无 issues）不再导致 500', async () => {
+    const app = makeApp()
+    const phone = '13922220004'
+    const token = await login(app, phone)
+    const uid = await uidOf(app, phone)
+    // 2026-10-21 前的规则版记录：parse_payload 无 issues/resumeId/mode 等字段
+    const legacy = {
+      contact: true,
+      projects: 3,
+      techStack: ['Java'],
+      quantified: false,
+      gaps: ['缺少量化成果'],
+      formatRisks: ['一页超过 2 屏']
+    }
+    await (app as any).db
+      .prepare(
+        'INSERT INTO resumes (user_id, original_url, parse_payload, optimize_payload, created_at) VALUES ((SELECT id FROM users WHERE uid = ?), ?, ?, NULL, ?)'
+      )
+      .run(uid, 'resumes/legacy.pdf', JSON.stringify(legacy), Date.now())
+
+    const h = await app.inject({
+      method: 'GET',
+      url: '/resume/history',
+      headers: auth(token)
+    })
+    expect(h.statusCode).toBe(200)
+    const items = h.json().data.items
+    expect(items.length).toBe(1)
+    expect(items[0].issuesTotal).toBe(0)
+    expect(items[0].issuesHigh).toBe(0)
+
+    // 历史详情同样补齐缺省字段，避免页面渲染 undefined
+    const d = await app.inject({
+      method: 'GET',
+      url: '/resume/detail?resumeId=' + items[0].resumeId,
+      headers: auth(token)
+    })
+    expect(d.statusCode).toBe(200)
+    expect(d.json().data.issues.length).toBe(0)
+    expect(d.json().data.gaps.length).toBe(1)
+    closeDb()
+  })
+})

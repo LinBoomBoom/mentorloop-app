@@ -12,7 +12,7 @@
           </view>
           <view class="flex-col flex-1 ml-3">
             <text class="text-lg font-bold text-white">{{
-              from === 'resume' ? '简历深度评审' : 'MentorLoop 会员'
+              from === 'resume' ? '简历深度评审' : APP_NAME + ' 会员'
             }}</text>
             <text class="text-xs text-mist mt-0.5">{{
               from === 'resume' ? 'AI 逐条批注 · 单次包' : '按次购买或连续包月'
@@ -163,6 +163,7 @@ import { purchase } from '../../api/membership.uts'
 import { PAY_CANCELLED } from '../../api/virtual-pay.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { useMock } from '../../api/env.uts'
+import { APP_NAME } from '../../data/app-meta.uts'
 import { themeValue } from '../../styles/theme.uts'
 
 const SMART = themeValue('smart', '#5B6CFF')

@@ -48,15 +48,25 @@ type ResumeRow = {
 function rowToResult(row: ResumeRow): ResumeParseResult | null {
   if (row.parse_payload == null) return null
   try {
-    const r = JSON.parse(row.parse_payload) as ResumeParseResult
-    if (r == null) return null
+    const r = JSON.parse(row.parse_payload) as any
+    if (r == null || typeof r !== 'object') return null
     // 历史读数以库内元信息为准，避免 payload 缺字段
     r.resumeId = String(row.id)
     r.fileName = row.file_name != null ? row.file_name : 'resume'
     r.fileType = (row.file_type === 'docx' ? 'docx' : 'pdf') as ResumeFileType
     r.mode = row.mode === 'preview' ? 'preview' : 'full'
     r.cached = true
-    return r
+    // 兼容 2026-10-21 简历 AI 评审上线前的旧记录：payload 只有结构统计，
+    // 无 issues/数组字段；不补齐会让历史列表迭代 undefined 抛错 → /resume/history 500
+    r.pages = typeof r.pages === 'number' ? r.pages : 0
+    r.contact = r.contact === true
+    r.projects = typeof r.projects === 'number' ? r.projects : 0
+    r.techStack = Array.isArray(r.techStack) ? r.techStack : []
+    r.quantified = r.quantified === true
+    r.gaps = Array.isArray(r.gaps) ? r.gaps : []
+    r.formatRisks = Array.isArray(r.formatRisks) ? r.formatRisks : []
+    r.issues = Array.isArray(r.issues) ? r.issues : []
+    return r as ResumeParseResult
   } catch {
     return null
   }

@@ -122,7 +122,27 @@
           class="w-11 h-11 rounded-full flex-row items-center justify-center"
           :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
         >
-          <ml-icon :name="paused ? 'play' : 'pause'" :size="18" :color="SURFACE"></ml-icon>
+          <ml-icon v-if="paused" name="play" :size="18" :color="SURFACE"></ml-icon>
+          <!-- 暂停态：图标子集未含 pause 字形，用两条竖条绘制，避免空白按钮 -->
+          <view v-else class="flex-row items-center justify-center">
+            <view
+              :style="{
+                width: '3px',
+                height: '16px',
+                borderRadius: '2px',
+                backgroundColor: SURFACE,
+                marginRight: '4px'
+              }"
+            ></view>
+            <view
+              :style="{
+                width: '3px',
+                height: '16px',
+                borderRadius: '2px',
+                backgroundColor: SURFACE
+              }"
+            ></view>
+          </view>
         </view>
         <text class="text-xs text-mist mt-1.5">{{ paused ? '继续' : '暂停' }}</text>
       </view>

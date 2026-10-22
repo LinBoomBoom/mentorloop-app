@@ -148,7 +148,7 @@ import mlEmpty from '../../components/ml-empty.uvue'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 import { dimIcon, levelColor, levelTint } from '../../styles/score-display.uts'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
-import { quotaStore } from '../../store/quota.uts'
+import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
@@ -252,7 +252,7 @@ function startTask(task: TrainingEntry | null = null) {
     trackEvent('quota_exceeded', { scene: 'training' })
     uni.showModal({
       title: '今日训练次数已用完',
-      content: '免费版每日 3 次训练，开通会员不限次数',
+      content: '免费版每日 ' + String(FREE_QUOTA.trainingsPerDay) + ' 次训练，开通会员不限次数',
       confirmText: '去开通',
       cancelText: '明天再练',
       success: (r: any) => {

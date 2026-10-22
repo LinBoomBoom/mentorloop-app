@@ -70,7 +70,7 @@ export function levelColorOnDark(level: string): string {
 
 /** 六维能力域 → 图标名（须存在于 components/ml-icon.uvue 的 ICON_GLYPH，check F 守卫） */
 export const DIM_ICON: StringMap = {
-  knowledge: 'book-open',
+  knowledge: 'book-marked',
   engineering: 'briefcase',
   analysis: 'brain',
   communication: 'message-square',

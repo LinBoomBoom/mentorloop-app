@@ -266,6 +266,7 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import mlGrowthPanel from '../../components/ml-growth-panel.uvue'
 import { reportHistory, ReportRecord } from '../../store/report-history.uts'
 import { quotaStore } from '../../store/quota.uts'
+import { fetchQuota } from '../../api/membership.uts'
 import { domainOfTaskId } from '../../store/training-history.uts'
 import { reportSegmentIntent } from '../../store/report-segment.uts'
 import { getReport } from '../../api/report.uts'
@@ -426,6 +427,8 @@ function exampleFor(key: string): string {
 onShow(async () => {
   // 分段面板重载信号：分段停留在成长趋势时，回到本 tab 也能看到最新场次
   growthTick.value += 1
+  // 额度对齐：真后端以服务端账本为准（Mock 下直接返回），「再次模拟」门控读取本地前先收敛
+  fetchQuota().catch(() => {})
   // 跨 tab 落点：首页数据条带「成长趋势」意图时，进入即切到该分段（消费一次即清空）
   const segIntent = reportSegmentIntent.consume()
   if (segIntent.length > 0) seg.value = segIntent
@@ -522,7 +525,7 @@ function again() {
   if (!quotaStore.canStartInterview()) {
     trackEvent('quota_exceeded', { scene: 'interview' })
     uni.showModal({
-      title: '免费额度已用完',
+      title: '免费面试额度已用完',
       content: '开通会员可无限次模拟面试，或购买单次包继续练习',
       confirmText: '去开通',
       cancelText: '暂不需要',
