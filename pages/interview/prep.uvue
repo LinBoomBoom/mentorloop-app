@@ -59,18 +59,24 @@
             <ml-icon name="shield-check" :size="14" :color="SMART"></ml-icon>
             <text class="text-sm font-semibold text-ink ml-1.5">设备检测</text>
           </view>
-          <view
-            class="flex-row justify-between items-center h-11 mt-1"
-            v-for="c in checks"
-            :key="c.key"
-          >
-            <text class="text-sm text-ink">{{ c.name }}</text>
-            <text
-              class="text-xs"
-              :class="c.ok ? 'text-reliable' : c.checking ? 'text-ink-soft' : 'text-warn'"
+          <view v-if="textFallback" class="flex-row justify-between items-center h-11 mt-1">
+            <text class="text-sm text-ink">作答方式</text>
+            <text class="text-xs text-warn">文字作答（未获得麦克风授权）</text>
+          </view>
+          <view v-else>
+            <view
+              class="flex-row justify-between items-center h-11 mt-1"
+              v-for="c in checks"
+              :key="c.key"
             >
-              {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
-            </text>
+              <text class="text-sm text-ink">{{ c.name }}</text>
+              <text
+                class="text-xs"
+                :class="c.ok ? 'text-reliable' : c.checking ? 'text-ink-soft' : 'text-warn'"
+              >
+                {{ c.ok ? '已通过' : c.checking ? '检测中…' : '待检测' }}
+              </text>
+            </view>
           </view>
           <text v-if="checkError.length > 0" class="text-xs text-danger mt-1">{{
             checkError
@@ -80,11 +86,13 @@
               :text="
                 !loggedIn
                   ? '登录后进入面试'
-                  : deviceOk
-                    ? '进入面试'
-                    : checking
-                      ? '检测中…'
-                      : '开始检测'
+                  : textFallback
+                    ? '文字作答进入面试'
+                    : deviceOk
+                      ? '进入面试'
+                      : checking
+                        ? '检测中…'
+                        : '开始检测'
               "
               :type="deviceOk && loggedIn ? 'primary' : 'secondary'"
               block
@@ -143,6 +151,8 @@ const positionId = ref<PositionId>(userStore.profile.positionId)
 const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
 const checking = ref(false)
 const checkError = ref('')
+// 麦克风授权被拒时的文字作答出口（设计稿 2026-10-23 premium redesign：去设置 / 先用文字作答）
+const textFallback = ref(false)
 
 // 登录门控（2026-10-23 PO 口径）：openid 静默登录即可面试；
 // 手机号改为购买会员时再绑定，不再作为进入面试的前置条件。
@@ -158,6 +168,14 @@ const initialChecks: CheckItem[] = [
 const checks = ref(initialChecks)
 
 const deviceOk = computed(() => {
+  // 文字作答：只要求网络可用，录音/麦克风/扬声器检测整体跳过
+  if (textFallback.value) {
+    let netOk = false
+    for (let i = 0; i < checks.value.length; i++) {
+      if (checks.value[i].key === 'net' && checks.value[i].ok) netOk = true
+    }
+    return netOk
+  }
   const list: CheckItem[] = checks.value
   return list.every((c: CheckItem) => c.ok)
 })
@@ -294,11 +312,12 @@ function checkRecordAuth(): Promise<boolean> {
         const authSetting = r.authSetting
         const scopeRecord = authSetting != null ? authSetting['scope.record'] : null
         if (scopeRecord === false) {
-          // 曾经被拒：引导用户手动开启
+          // 曾经被拒：可直接去设置，也可先用文字作答
           uni.showModal({
             title: '需要录音权限',
-            content: '请在设置中开启麦克风授权，否则无法进行面试。',
+            content: '可在设置中开启麦克风授权，或先用文字作答。',
             confirmText: '去设置',
+            cancelText: '文字作答',
             success: (m: any) => {
               if (m.confirm) {
                 uni.openSetting({
@@ -310,6 +329,7 @@ function checkRecordAuth(): Promise<boolean> {
                   }
                 })
               } else {
+                textFallback.value = true
                 setCheck('record', false, false)
                 resolve(false)
               }
@@ -330,8 +350,29 @@ function checkRecordAuth(): Promise<boolean> {
             resolve(true)
           },
           fail: () => {
+            // 刚被拒：同样给出去设置 / 文字作答两条路
             setCheck('record', false, false)
-            resolve(false)
+            uni.showModal({
+              title: '未获得麦克风授权',
+              content: '可先用文字作答；开启麦克风后可重新检测。',
+              confirmText: '去设置',
+              cancelText: '文字作答',
+              success: (m: any) => {
+                if (m.confirm) {
+                  uni.openSetting({
+                    success: (s: any) => {
+                      const ok =
+                        s.authSetting != null && s.authSetting['scope.record'] === true
+                      setCheck('record', ok, false)
+                      resolve(ok)
+                    }
+                  })
+                } else {
+                  textFallback.value = true
+                  resolve(false)
+                }
+              }
+            })
           }
         })
       },
@@ -515,6 +556,8 @@ async function runCheck() {
   if (checking.value) return
   checking.value = true
   checkError.value = ''
+  // 重新检测时先回到语音路径；被拒后可再次选择文字作答
+  textFallback.value = false
   // 重置所有状态为未通过
   const reset: CheckItem[] = []
   for (let i = 0; i < initialChecks.length; i++) {
@@ -543,16 +586,17 @@ async function runCheck() {
     } else {
       setCheck('speaker', false, false)
     }
-  } else {
+  } else if (!(netOk && textFallback.value)) {
     setCheck('mic', false, false)
     setCheck('speaker', false, false)
   }
 
   checking.value = false
   if (!netOk) checkError.value = '网络不可用，请连接网络后重试'
-  else if (!authOk) checkError.value = '未获得录音授权，无法开始面试'
-  else if (!probe.ok) checkError.value = '麦克风不可用，请检查设备或权限'
-  else if (!speakerOk) checkError.value = '回放没有出声，请调高音量；iPhone 请关闭静音开关后重试'
+  else if (!authOk && !textFallback.value) checkError.value = '未获得录音授权，无法开始面试'
+  else if (!textFallback.value && !probe.ok) checkError.value = '麦克风不可用，请检查设备或权限'
+  else if (!textFallback.value && !speakerOk)
+    checkError.value = '回放没有出声，请调高音量；iPhone 请关闭静音开关后重试'
 }
 
 function start() {
@@ -575,7 +619,8 @@ function start() {
     '&positionId=' +
     positionId.value +
     '&experienceLevel=' +
-    experienceLevel.value
+    experienceLevel.value +
+    (textFallback.value ? '&text=1' : '')
   uni.navigateTo({ url: url })
 }
 

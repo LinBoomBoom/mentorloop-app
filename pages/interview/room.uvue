@@ -640,6 +640,10 @@ onLoad((options: any) => {
       target: '求职'
     } as PositionBlueprint
   }
+  // prep 页麦克风授权被拒时以文字作答进入（text=1）
+  if (options != null && options.text != null && String(options.text) === '1') {
+    textInputActive.value = true
+  }
   initNetwork()
   initRecorder()
   init()
@@ -730,10 +734,15 @@ function initRecorder() {
     },
     onError: (errMsg: string) => {
       console.warn('[room] recorder error', errMsg)
-      caption.value = '录音失败，请改用文字作答'
+      // 停掉并行的实时识别，避免降级后仍有转写文本上屏
+      if (asrSession != null) {
+        asrSession.stop()
+        asrSession = null
+      }
       recording.value = false
       clearRecordTimer()
-      avatarState.value = 'listening'
+      // 麦克风拒绝 / 录音器不可用：自动切到文字作答，面试继续
+      fallbackToText('录音不可用，已切换为文字作答')
     }
   })
   // TTS 播放状态 → 语音状态切换
@@ -1003,8 +1012,7 @@ function startRecord() {
     }
     recording.value = false
     clearRecordTimer()
-    avatarState.value = 'listening'
-    caption.value = '当前设备不支持录音，请切换文字作答'
+    fallbackToText('当前设备不支持录音，已切换为文字作答')
   }
 }
 
@@ -1270,6 +1278,15 @@ function onTextInput(e: UniInputEvent) {
 
 function onReviewInput(e: UniInputEvent) {
   reviewText.value = e.detail.value
+}
+
+// 录音失败自动降级文字作答（麦克风拒绝 / 录音器不可用）：给用户可继续答题的出口
+function fallbackToText(msg: string) {
+  caption.value = msg
+  avatarState.value = 'listening'
+  if (reviewVisible.value || submittingText.value) return
+  textDraft.value = ''
+  textInputActive.value = true
 }
 
 function textMode() {
