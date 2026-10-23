@@ -41,6 +41,23 @@ const MYSQL_MIGRATIONS: string[] = [
     PRIMARY KEY (id),
     KEY idx_resume_usages_user (user_id, mode, created_at),
     CONSTRAINT fk_resume_usages_user FOREIGN KEY (user_id) REFERENCES users (id)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`,
+  // 2026-10-23 做题记录与 SRS（Phase 2.1）
+  `CREATE TABLE IF NOT EXISTS practice_records (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    question_id VARCHAR(64) NOT NULL,
+    subtrack VARCHAR(64) NOT NULL,
+    difficulty VARCHAR(16) NOT NULL,
+    result VARCHAR(16) NOT NULL,
+    attempts INT NOT NULL DEFAULT 1,
+    correct_streak INT NOT NULL DEFAULT 0,
+    interval_days INT NOT NULL DEFAULT 1,
+    due_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_practice_user_question (user_id, question_id),
+    KEY idx_practice_user_due (user_id, due_at)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`
 ]
 

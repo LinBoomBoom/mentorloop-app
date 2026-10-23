@@ -1,6 +1,14 @@
-// 做题进度（本机）：掌握度统计 + 错题本
-// 本期不做跨设备同步；Phase 2 随账号同步（见 docs/design/2026-10-23-practice-mode-proposal.md）。
+// 做题进度（本机缓存 + 服务端同步）
+// Phase 2.1（契约 2026-10-23-practice-sync）：登录后服务端为权威；离线作答进 pending 队列补传。
 import { QuestionItem } from '../types/interview.uts'
+import { userStore } from './user-profile.uts'
+import {
+  pushPracticeRecords,
+  fetchPracticeSummary,
+  fetchPracticeWrong,
+  PracticeAnswerPayload,
+  PracticeSummaryData
+} from '../api/practice.uts'
 
 export type PracticeResult = 'known' | 'fuzzy' | 'unknown'
 
@@ -19,19 +27,36 @@ export type PracticeStats = {
   fuzzy: number
   unknown: number
   wrongCount: number
+  dueCount: number
 }
 
 const STORAGE_KEY = 'ml_practice_progress'
 const MAX_WRONG = 100
+const MAX_PENDING = 200
+
+type PendingRecord = {
+  questionId: string
+  subtrack: string
+  difficulty: string
+  result: string
+  answeredAt: number
+}
 
 type Snapshot = {
   stats: SubtrackStat[]
   wrong: QuestionItem[]
+  pending: PendingRecord[]
+}
+
+function fireAndForget(p: Promise<void>) {
+  p.then(() => {}).catch(() => {})
 }
 
 class PracticeProgress {
   private stats: SubtrackStat[] = []
   private wrong: QuestionItem[] = []
+  private pending: PendingRecord[] = []
+  private dueCount: number = 0
   private loaded: boolean = false
 
   private ensureLoaded() {
@@ -43,6 +68,7 @@ class PracticeProgress {
       const snap = JSON.parse(raw) as Snapshot
       if (snap != null && snap.stats != null) this.stats = snap.stats
       if (snap != null && snap.wrong != null) this.wrong = snap.wrong
+      if (snap != null && snap.pending != null) this.pending = snap.pending
     } catch (e: any) {
       console.warn('[practice-progress] load failed', e)
     }
@@ -52,14 +78,18 @@ class PracticeProgress {
     try {
       uni.setStorageSync(
         STORAGE_KEY,
-        JSON.stringify({ stats: this.stats, wrong: this.wrong } as Snapshot)
+        JSON.stringify({
+          stats: this.stats,
+          wrong: this.wrong,
+          pending: this.pending
+        } as Snapshot)
       )
     } catch (e: any) {
       console.warn('[practice-progress] persist failed', e)
     }
   }
 
-  // 记录一题的自评结果；「不会」进入错题本，「会」移出错题本
+  // 记录一题的自评结果；「不会」进入错题本，「会」移出错题本；同时进入补传队列
   mark(q: QuestionItem, result: PracticeResult) {
     this.ensureLoaded()
     const key = q.subAbility
@@ -92,7 +122,80 @@ class PracticeProgress {
     } else if (result === 'unknown') {
       this.addWrong(q)
     }
+
+    this.pending.push({
+      questionId: q.id,
+      subtrack: q.subAbility,
+      difficulty: q.difficulty,
+      result: result,
+      answeredAt: Date.now()
+    } as PendingRecord)
+    if (this.pending.length > MAX_PENDING) {
+      this.pending = this.pending.slice(this.pending.length - MAX_PENDING, this.pending.length)
+    }
     this.persist()
+    // 登录且联网时立即补传；失败留在队列，下次 sync 重试
+    fireAndForget(this.flush())
+  }
+
+  // 补传 pending 队列（服务端按 answeredAt 去旧，重复提交幂等）
+  async flush(): Promise<void> {
+    this.ensureLoaded()
+    if (this.pending.length === 0) return
+    if (!userStore.isLoggedIn()) return
+    const items: PracticeAnswerPayload[] = []
+    for (let i = 0; i < this.pending.length; i++) {
+      const p = this.pending[i]
+      items.push({
+        questionId: p.questionId,
+        subtrack: p.subtrack,
+        difficulty: p.difficulty,
+        result: p.result,
+        answeredAt: p.answeredAt
+      } as PracticeAnswerPayload)
+    }
+    try {
+      const serverSummary = await pushPracticeRecords(items)
+      this.pending = []
+      this.persist()
+      if (serverSummary != null) this.applySummary(serverSummary)
+    } catch (e: any) {
+      // 网络失败：保留队列，避免丢作答
+      console.warn('[practice-progress] flush failed', e != null ? e.message : e)
+    }
+  }
+
+  // 跨设备同步：先补传本地队列，再以服务端汇总与错题覆盖本地
+  async sync(): Promise<void> {
+    this.ensureLoaded()
+    if (!userStore.isLoggedIn()) return
+    await this.flush()
+    try {
+      const summary = await fetchPracticeSummary()
+      if (summary != null) this.applySummary(summary)
+      const wrong = await fetchPracticeWrong()
+      if (wrong != null) this.wrong = wrong
+      this.persist()
+    } catch (e: any) {
+      console.warn('[practice-progress] sync failed', e != null ? e.message : e)
+    }
+  }
+
+  private applySummary(s: PracticeSummaryData) {
+    const list: SubtrackStat[] = []
+    for (let i = 0; i < s.subtracks.length; i++) {
+      const x = s.subtracks[i]
+      list.push({
+        subtrack: x.subtrack,
+        total: x.total,
+        known: x.known,
+        fuzzy: x.fuzzy,
+        unknown: x.unknown,
+        lastAt: 0
+      } as SubtrackStat)
+    }
+    this.stats = list
+    this.dueCount = s.dueCount
   }
 
   private addWrong(q: QuestionItem) {
@@ -153,13 +256,16 @@ class PracticeProgress {
       known: known,
       fuzzy: fuzzy,
       unknown: unknown,
-      wrongCount: this.wrong.length
+      wrongCount: this.wrong.length,
+      dueCount: this.dueCount
     } as PracticeStats
   }
 
   clear() {
     this.stats = []
     this.wrong = []
+    this.pending = []
+    this.dueCount = 0
     this.loaded = true
     try {
       uni.removeStorageSync(STORAGE_KEY)

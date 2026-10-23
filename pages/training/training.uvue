@@ -134,6 +134,27 @@
           </view>
         </view>
 
+        <!-- 今日复习（SRS 到期） -->
+        <view v-if="stats.dueCount > 0" class="mt-4">
+          <ml-card pressable @tap="startDueReview">
+            <view class="flex-row items-center">
+              <view
+                class="w-9 h-9 rounded-control flex-row items-center justify-center"
+                :style="{ backgroundColor: CHIP_SMART }"
+              >
+                <ml-icon name="refresh-cw" :size="17" :color="SMART"></ml-icon>
+              </view>
+              <view class="flex-col flex-1 ml-3">
+                <text class="text-sm font-semibold text-ink"
+                  >今日复习 · {{ stats.dueCount }} 题</text
+                >
+                <text class="text-xs text-ink-soft mt-0.5">按记忆曲线到期，先复习再刷新题</text>
+              </view>
+              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
+            </view>
+          </ml-card>
+        </view>
+
         <!-- 错题本 -->
         <view v-if="stats.wrongCount > 0" class="mt-4">
           <ml-card pressable @tap="startWrongReview">
@@ -238,7 +259,8 @@ const stats = ref<PracticeStats>({
   known: 0,
   fuzzy: 0,
   unknown: 0,
-  wrongCount: 0
+  wrongCount: 0,
+  dueCount: 0
 } as PracticeStats)
 
 const statsStyle = {
@@ -284,6 +306,20 @@ function startWrongReview() {
   uni.navigateTo({ url: '/pages/training/room?mode=wrong' })
 }
 
+function startDueReview() {
+  uni.navigateTo({ url: '/pages/training/room?mode=due' })
+}
+
+// 先展示本地缓存，登录后再拉服务端汇总与错题（跨设备同步）
+function refreshStats() {
+  practiceProgress
+    .sync()
+    .then(() => {
+      stats.value = practiceProgress.summary()
+    })
+    .catch(() => {})
+}
+
 onShow(() => {
   try {
     const win = uni.getWindowInfo()
@@ -294,6 +330,7 @@ onShow(() => {
     bottomPad.value = '24px'
   }
   stats.value = practiceProgress.summary()
+  refreshStats()
   // 画像变化后保证选中项仍然有效
   const list = subtracksOf(positionId.value)
   let valid = false

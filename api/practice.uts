@@ -1,0 +1,68 @@
+// 做题记录同步（Phase 2.1，契约：docs/contracts/2026-10-23-practice-sync.freeze.md）
+// 服务端为权威：本地队列补传 → 拉汇总 / 错题 / 到期复习。
+import { get, post } from './client.uts'
+import { useMock } from './env.uts'
+import { QuestionItem } from '../types/interview.uts'
+
+export type PracticeAnswerPayload = {
+  questionId: string
+  subtrack: string
+  difficulty: string
+  result: string
+  answeredAt: number
+}
+
+export type PracticeSubtrackStat = {
+  subtrack: string
+  total: number
+  known: number
+  fuzzy: number
+  unknown: number
+  wrong: number
+  due: number
+}
+
+export type PracticeSummaryData = {
+  total: number
+  known: number
+  fuzzy: number
+  unknown: number
+  wrongCount: number
+  dueCount: number
+  subtracks: PracticeSubtrackStat[]
+}
+
+type RecordsData = { summary: PracticeSummaryData }
+type WrongData = { questions: QuestionItem[] }
+type DueData = { dueCount: number; questions: QuestionItem[] }
+
+export async function pushPracticeRecords(
+  records: PracticeAnswerPayload[]
+): Promise<PracticeSummaryData | null> {
+  if (useMock()) return null
+  const r = await post('/practice/records', { records: records })
+  const data = r.data as RecordsData | null
+  return data != null ? data.summary : null
+}
+
+export async function fetchPracticeSummary(): Promise<PracticeSummaryData | null> {
+  if (useMock()) return null
+  const r = await get('/practice/summary')
+  const data = r.data as { summary: PracticeSummaryData } | null
+  return data != null ? data.summary : null
+}
+
+export async function fetchPracticeWrong(): Promise<QuestionItem[] | null> {
+  if (useMock()) return null
+  const r = await get('/practice/wrong')
+  const data = r.data as WrongData | null
+  return data != null ? data.questions : null
+}
+
+export async function fetchPracticeDue(subtrack: string, limit: number): Promise<DueData | null> {
+  if (useMock()) return null
+  const q: { [key: string]: any } = { limit: limit }
+  if (subtrack.length > 0) q['subtrack'] = subtrack
+  const r = await get('/practice/due', q)
+  return r.data as DueData | null
+}

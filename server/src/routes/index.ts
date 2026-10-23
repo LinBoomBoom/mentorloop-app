@@ -6,11 +6,13 @@ import miscRoutes from './misc.js'
 import membershipRoutes from './membership.js'
 import meRoutes from './me.js'
 import trainingRoutes from './training.js'
+import practiceRoutes from './practice.js'
 
 export default async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(authRoutes)
   await app.register(interviewRoutes)
   await app.register(trainingRoutes)
+  await app.register(practiceRoutes)
   await app.register(miscRoutes)
   await app.register(membershipRoutes)
   await app.register(meRoutes)

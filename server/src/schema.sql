@@ -155,3 +155,22 @@ CREATE TABLE IF NOT EXISTS questions (
 CREATE INDEX IF NOT EXISTS idx_questions_position_difficulty ON questions(position_id, difficulty);
 CREATE INDEX IF NOT EXISTS idx_questions_position_domain ON questions(position_id, ability_domain);
 CREATE INDEX IF NOT EXISTS idx_questions_position_subtrack ON questions(position_id, subtrack);
+
+-- 做题记录（2026-10-23 Phase 2.1）：按用户 × 题记录最近一次自评与 SRS 排程
+-- 契约：docs/contracts/2026-10-23-practice-sync.freeze.md
+CREATE TABLE IF NOT EXISTS practice_records (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id         INTEGER NOT NULL,
+  question_id     TEXT NOT NULL,
+  subtrack        TEXT NOT NULL,
+  difficulty      TEXT NOT NULL,
+  result          TEXT NOT NULL,
+  attempts        INTEGER NOT NULL DEFAULT 1,
+  correct_streak  INTEGER NOT NULL DEFAULT 0,
+  interval_days   INTEGER NOT NULL DEFAULT 1,
+  due_at          INTEGER NOT NULL,
+  updated_at      INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_practice_user_question
+  ON practice_records(user_id, question_id);
+CREATE INDEX IF NOT EXISTS idx_practice_user_due ON practice_records(user_id, due_at);

@@ -12,7 +12,9 @@
           <ml-icon name="arrow-left" :size="17" :color="INK"></ml-icon>
         </view>
         <view class="flex-col flex-1 items-center">
-          <text class="text-sm font-semibold text-ink">做题</text>
+          <text class="text-sm font-semibold text-ink">{{
+            wrongMode ? '错题复习' : dueMode ? '今日复习' : '做题'
+          }}</text>
           <text class="text-xs text-ink-soft mt-0.5">{{ progressText }}</text>
         </view>
         <view class="w-9 h-9"></view>
@@ -57,12 +59,14 @@
                 <ml-icon name="book-marked" :size="22" :color="SMART"></ml-icon>
               </view>
               <text class="text-base font-semibold text-ink mt-3">{{
-                wrongMode ? '错题本是空的' : '该领域暂无可用题目'
+                wrongMode ? '错题本是空的' : dueMode ? '今天没有到期题目' : '该领域暂无可用题目'
               }}</text>
               <text class="text-xs text-ink-soft mt-1 text-center leading-5">{{
                 wrongMode
                   ? '做一组题并标记「不会」后，会自动进入错题本'
-                  : '换一个细分领域或难度再试'
+                  : dueMode
+                    ? '按记忆曲线，明天再来复习这几题'
+                    : '换一个细分领域或难度再试'
               }}</text>
               <view class="mt-4 w-full">
                 <ml-button text="返回做题" type="primary" block @tap="goBack"></ml-button>
@@ -240,6 +244,7 @@ import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import { QuestionItem, Difficulty } from '../../types/interview.uts'
 import { fetchTrainingQuestions } from '../../api/training.uts'
+import { fetchPracticeDue } from '../../api/practice.uts'
 import { practiceProgress, PracticeResult } from '../../store/practice-progress.uts'
 import { subtrackName, difficultyLabel } from '../../data/subtracks.uts'
 import { themeValue } from '../../styles/theme.uts'
@@ -267,6 +272,7 @@ const revealed = ref(false)
 const done = ref(false)
 const results = ref<string[]>([])
 const wrongMode = ref(false)
+const dueMode = ref(false)
 const scrollInto = ref('')
 // 自定义导航：顶栏避让状态栏；存 px 字符串，避免小程序端数值被当作无单位值丢弃
 const topPad = ref('52px')
@@ -362,9 +368,14 @@ onLoad((options: any) => {
     topPad.value = '52px'
   }
   wrongMode.value = options != null && options.mode != null && String(options.mode) === 'wrong'
+  dueMode.value = options != null && options.mode != null && String(options.mode) === 'due'
   if (wrongMode.value) {
     questions.value = practiceProgress.wrongQuestions()
     loading.value = false
+    return
+  }
+  if (dueMode.value) {
+    loadDue()
     return
   }
   if (options != null) {
@@ -389,6 +400,25 @@ async function load() {
     if (list.length === 0) {
       errorText.value = ''
     }
+  } catch (e: any) {
+    const msg = e != null && e.message != null ? String(e.message) : '网络异常，请稍后重试'
+    errorText.value = msg
+  } finally {
+    loading.value = false
+  }
+}
+
+// 今日复习：拉服务端到期队列（SRS）
+async function loadDue() {
+  loading.value = true
+  errorText.value = ''
+  try {
+    const r = await fetchPracticeDue('', 10)
+    questions.value = r != null ? r.questions : []
+    idx.value = 0
+    revealed.value = false
+    done.value = false
+    results.value = []
   } catch (e: any) {
     const msg = e != null && e.message != null ? String(e.message) : '网络异常，请稍后重试'
     errorText.value = msg
