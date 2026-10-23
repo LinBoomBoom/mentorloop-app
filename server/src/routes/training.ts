@@ -25,6 +25,9 @@ export default async function (app: FastifyInstance): Promise<void> {
               enum: ['fresh', 'junior', 'mid', 'senior']
             },
             domain: { type: 'string' },
+            // 做题模式（契约 2026-10-23-practice-subtrack）：细分领域 + 精确难度
+            subtrack: { type: 'string' },
+            difficulty: { type: 'string', enum: ['junior', 'mid', 'senior'] },
             count: { type: 'number', minimum: 1, maximum: 10 }
           }
         }
@@ -37,7 +40,9 @@ export default async function (app: FastifyInstance): Promise<void> {
           positionId: body.positionId as PositionId,
           experienceLevel: body.experienceLevel as ExperienceLevel,
           domain: typeof body.domain === 'string' ? body.domain : '',
-          count: Number(body.count)
+          count: Number(body.count),
+          subtrack: typeof body.subtrack === 'string' ? body.subtrack : '',
+          difficulty: typeof body.difficulty === 'string' ? body.difficulty : ''
         })
         return okData({ questions })
       } catch (e: any) {

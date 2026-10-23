@@ -1,0 +1,200 @@
+// 做题模式：细分领域与难度选项（单一来源）
+// id 与内容库 questions.subtrack 逐字一致；改 id 需同步契约 2026-10-23-practice-subtrack.freeze.md。
+import { PositionId, Difficulty } from '../types/interview.uts'
+
+export type SubtrackOption = {
+  id: string
+  positionId: PositionId
+  name: string
+  desc: string
+  icon: string
+}
+
+export type PracticeDifficultyOption = {
+  id: Difficulty
+  label: string
+  desc: string
+}
+
+export const SUBTRACKS: SubtrackOption[] = [
+  // 前端
+  {
+    id: 'fe-web',
+    positionId: 'frontend',
+    name: '浏览器与 Web 基础',
+    desc: '渲染、JS / CSS、网络与安全',
+    icon: 'layout-grid'
+  },
+  {
+    id: 'fe-app',
+    positionId: 'frontend',
+    name: '前端应用与框架',
+    desc: 'React / Vue、状态管理与性能',
+    icon: 'layers'
+  },
+  {
+    id: 'fe-miniprogram',
+    positionId: 'frontend',
+    name: '小程序',
+    desc: '生命周期、网络与性能',
+    icon: 'smartphone'
+  },
+  {
+    id: 'fe-desktop',
+    positionId: 'frontend',
+    name: '桌面端',
+    desc: 'Electron / RN / Flutter',
+    icon: 'layout-grid'
+  },
+  {
+    id: 'fe-arch',
+    positionId: 'frontend',
+    name: '前端架构',
+    desc: '架构设计、工程化与测试',
+    icon: 'compass'
+  },
+  // 后端
+  {
+    id: 'be-micro',
+    positionId: 'backend',
+    name: '微服务与分布式',
+    desc: '服务拆分、一致性与消息',
+    icon: 'server'
+  },
+  {
+    id: 'be-data',
+    positionId: 'backend',
+    name: '数据与实时计算',
+    desc: '数仓、Spark / Flink、Kafka',
+    icon: 'chart-column'
+  },
+  {
+    id: 'be-db',
+    positionId: 'backend',
+    name: '数据库与缓存',
+    desc: 'MySQL、Redis、索引与事务',
+    icon: 'server'
+  },
+  {
+    id: 'be-web',
+    positionId: 'backend',
+    name: 'Web 后端',
+    desc: 'Java、网络与缓存实践',
+    icon: 'server'
+  },
+  {
+    id: 'be-game',
+    positionId: 'backend',
+    name: '游戏后端',
+    desc: '匹配、房间与状态同步',
+    icon: 'target'
+  },
+  // 运维
+  {
+    id: 'op-k8s',
+    positionId: 'devops',
+    name: 'Kubernetes',
+    desc: '调度、网络与存储',
+    icon: 'layers'
+  },
+  {
+    id: 'op-sre',
+    positionId: 'devops',
+    name: 'SRE 与稳定性',
+    desc: '监控、容量与故障处理',
+    icon: 'activity'
+  },
+  {
+    id: 'op-devops',
+    positionId: 'devops',
+    name: 'DevOps 与 CI/CD',
+    desc: '流水线、容器与 IaC',
+    icon: 'repeat'
+  },
+  {
+    id: 'op-cloud',
+    positionId: 'devops',
+    name: '云平台与治理',
+    desc: '云网络、云产品与成本',
+    icon: 'cloud-upload'
+  },
+  {
+    id: 'op-sec',
+    positionId: 'devops',
+    name: '安全',
+    desc: '安全基线、攻防与合规',
+    icon: 'shield-check'
+  },
+  {
+    id: 'op-trad',
+    positionId: 'devops',
+    name: '传统运维',
+    desc: '网络、主机与容器',
+    icon: 'server'
+  },
+  // AI 工程
+  {
+    id: 'ai-algo',
+    positionId: 'ai',
+    name: '算法与模型',
+    desc: '训练、微调与模型评估',
+    icon: 'brain'
+  },
+  {
+    id: 'ai-app',
+    positionId: 'ai',
+    name: '应用与大模型',
+    desc: 'RAG、Agent 与 Prompt',
+    icon: 'sparkles'
+  },
+  {
+    id: 'ai-infra',
+    positionId: 'ai',
+    name: '推理与基础设施',
+    desc: '推理引擎、压缩与服务化',
+    icon: 'server'
+  },
+  {
+    id: 'ai-mlops',
+    positionId: 'ai',
+    name: 'MLOps 与评估',
+    desc: '观测、评测与迭代',
+    icon: 'gauge'
+  }
+]
+
+export const PRACTICE_DIFFICULTIES: PracticeDifficultyOption[] = [
+  { id: 'junior', label: '初级', desc: '基础概念与常见题' } as PracticeDifficultyOption,
+  { id: 'mid', label: '中级', desc: '原理与项目实践' } as PracticeDifficultyOption,
+  { id: 'senior', label: '高级', desc: '架构取舍与深度问题' } as PracticeDifficultyOption
+]
+
+export function subtracksOf(positionId: PositionId): SubtrackOption[] {
+  const out: SubtrackOption[] = []
+  for (let i = 0; i < SUBTRACKS.length; i++) {
+    if (SUBTRACKS[i].positionId === positionId) out.push(SUBTRACKS[i])
+  }
+  return out
+}
+
+export function subtrackName(id: string): string {
+  for (let i = 0; i < SUBTRACKS.length; i++) {
+    if (SUBTRACKS[i].id === id) return SUBTRACKS[i].name
+  }
+  return id
+}
+
+export function difficultyLabel(id: Difficulty): string {
+  for (let i = 0; i < PRACTICE_DIFFICULTIES.length; i++) {
+    if (PRACTICE_DIFFICULTIES[i].id === id) return PRACTICE_DIFFICULTIES[i].label
+  }
+  return '中级'
+}
+
+// 经验档位 → 默认难度（做题页初始选中）
+export function defaultDifficultyFor(level: string): Difficulty {
+  if (level === 'fresh') return 'junior'
+  if (level === 'mid') return 'mid'
+  if (level === 'senior') return 'senior'
+  return 'junior'
+}

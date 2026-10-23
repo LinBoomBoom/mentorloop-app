@@ -1,311 +1,305 @@
 <template>
-  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
-    <view class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between">
-      <view class="flex-col">
-        <text class="text-[22px] font-bold text-white">专项训练</text>
-        <text class="text-xs text-mist mt-1">报告驱动的定向训练 · 即时反馈</text>
-      </view>
-      <ml-icon name="dumbbell" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
-    </view>
-    <view class="px-4 pb-6 pt-4">
-      <template v-if="recommended.length > 0">
-        <!-- 报告推荐任务 -->
-        <view class="mt-5">
-          <ml-section-header
-            title="为你推荐"
-            :caption="'基于 ' + reportDate + ' 的评估报告'"
-            action-text="查看报告"
-            @action="goReport"
-          ></ml-section-header>
-          <view class="mb-2.5" v-for="t in recommended" :key="'r_' + t.id">
-            <ml-card pressable @tap="startTaskEntry(t.id, t.title, t.durationMin)">
-              <view class="flex-row items-center">
-                <view
-                  class="w-11 h-11 rounded-control flex-col items-center justify-center mr-3"
-                  :style="{ backgroundColor: t.priority === 1 ? CHIP_WARN : CHIP_SMART }"
-                >
-                  <ml-icon
-                    name="target"
-                    :size="18"
-                    :color="t.priority === 1 ? WARN : SMART"
-                  ></ml-icon>
-                </view>
-                <view class="flex-col flex-1">
-                  <view class="flex-row items-center">
-                    <text class="text-base font-medium text-ink flex-1">{{ t.title }}</text>
-                    <ml-tag
-                      :label="t.priority === 1 ? '最高优先' : 'P' + t.priority"
-                      :bg="t.priority === 1 ? CHIP_WARN : BG_MUTED"
-                      :color="t.priority === 1 ? WARN : INK_SOFT"
-                    ></ml-tag>
-                  </view>
-                  <view class="flex-row items-center mt-1.5">
-                    <ml-icon name="clock" :size="11" :color="MIST"></ml-icon>
-                    <text class="text-xs text-ink-soft ml-1">{{ t.durationMin }} 分钟</text>
-                    <view class="w-1 h-1 rounded-full bg-line mx-2"></view>
-                    <text class="text-xs text-ink-soft">单维突破 · 即时反馈</text>
-                  </view>
-                </view>
-                <ml-icon name="chevron-right" :size="17" :color="MIST"></ml-icon>
-              </view>
-            </ml-card>
+  <view class="h-screen bg-bg-light">
+    <scroll-view class="h-screen" scroll-y="true">
+      <view class="px-5 pt-4 pb-28">
+        <text class="text-xs text-ink-soft">按细分领域与难度刷题 · 先想后看解析</text>
+
+        <!-- 本机进度 -->
+        <view class="mt-4 rounded-card p-4" :style="statsStyle">
+          <view class="flex-row items-center justify-between">
+            <view class="flex-col">
+              <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">累计做题</text>
+              <text class="text-[22px] font-bold font-mono text-white mt-1">{{ stats.total }}</text>
+            </view>
+            <view class="flex-col items-center">
+              <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">会</text>
+              <text class="text-base font-bold font-mono mt-1" :style="{ color: RELIABLE_LIGHT }">{{
+                stats.known
+              }}</text>
+            </view>
+            <view class="flex-col items-center">
+              <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">模糊</text>
+              <text class="text-base font-bold font-mono mt-1" :style="{ color: WARN_LIGHT }">{{
+                stats.fuzzy
+              }}</text>
+            </view>
+            <view class="flex-col items-end">
+              <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">错题</text>
+              <text class="text-base font-bold font-mono text-white mt-1">{{
+                stats.wrongCount
+              }}</text>
+            </view>
           </view>
         </view>
-      </template>
 
-      <!-- 分维度突破 -->
-      <view class="mt-5">
-        <ml-section-header
-          title="分维度突破"
-          caption="六大能力维度 · 对照最近报告等级"
-        ></ml-section-header>
+        <!-- 方向 -->
+        <view class="flex-row items-center justify-between mt-5 mb-2">
+          <text class="text-base font-bold text-ink">方向</text>
+          <text class="text-xs text-ink-soft">共 {{ subtracks.length }} 个细分领域</text>
+        </view>
         <view class="flex-row flex-wrap">
           <view
-            v-for="(d, i) in dimensions"
-            :key="d.key"
-            class="w-[calc(50%-5px)] mb-2.5"
-            :class="i % 2 === 0 ? 'mr-2.5' : ''"
+            v-for="p in positions"
+            :id="'pos-' + p.id"
+            :key="p.id"
+            class="h-9 px-3.5 rounded-control mr-2 mb-2 flex-row items-center border"
+            :class="positionId === p.id ? 'bg-smart border-smart' : 'bg-surface border-line'"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="selectPosition(p.id)"
           >
-            <ml-card pressable @tap="startTaskEntry('dim_' + d.key, d.label + '突破', 5)">
-              <view class="flex-row items-center justify-between">
+            <ml-icon
+              :name="p.icon"
+              :size="14"
+              :color="positionId === p.id ? SURFACE : INK_SOFT"
+            ></ml-icon>
+            <text
+              class="text-sm ml-1.5"
+              :class="positionId === p.id ? 'text-white font-semibold' : 'text-ink'"
+              >{{ p.name }}</text
+            >
+          </view>
+        </view>
+
+        <!-- 细分领域 -->
+        <view class="flex-row items-center justify-between mt-4 mb-2">
+          <text class="text-base font-bold text-ink">细分领域</text>
+          <text class="text-xs text-ink-soft">选一个方向集中练</text>
+        </view>
+        <view class="flex-col">
+          <view v-for="s in subtracks" :id="'sub-' + s.id" :key="s.id" class="mb-2">
+            <ml-card :selected="selectedSub === s.id" pressable @tap="selectedSub = s.id">
+              <view class="flex-row items-center">
                 <view
                   class="w-9 h-9 rounded-control flex-row items-center justify-center"
-                  :style="{ backgroundColor: d.tint }"
+                  :style="{ backgroundColor: selectedSub === s.id ? CHIP_SMART : BG_MUTED }"
                 >
-                  <ml-icon :name="d.icon" :size="17" :color="d.color"></ml-icon>
+                  <ml-icon
+                    :name="s.icon"
+                    :size="17"
+                    :color="selectedSub === s.id ? SMART : INK_SOFT"
+                  ></ml-icon>
                 </view>
-                <ml-tag
-                  :label="d.level.length > 0 ? d.level : '待评估'"
-                  :bg="d.levelBg.length > 0 ? d.levelBg : BG_MUTED"
-                  :color="d.levelColor.length > 0 ? d.levelColor : MIST"
-                ></ml-tag>
+                <view class="flex-col flex-1 ml-3">
+                  <view class="flex-row items-center justify-between">
+                    <text class="text-sm font-semibold text-ink">{{ s.name }}</text>
+                    <text class="text-xs text-ink-soft ml-2">{{ statText(s.id) }}</text>
+                  </view>
+                  <text class="text-xs text-ink-soft mt-0.5">{{ s.desc }}</text>
+                </view>
               </view>
-              <text class="text-sm font-medium text-ink mt-2.5">{{ d.label }}</text>
-              <text class="text-xs text-ink-soft mt-0.5">权重 {{ d.weight }}%</text>
             </ml-card>
           </view>
         </view>
-      </view>
 
-      <!-- 通用快练 -->
-      <view class="mt-4">
-        <ml-section-header title="通用快练" caption="不限维度 · 利用碎片时间"></ml-section-header>
-        <ml-card :padded="false">
+        <!-- 难度 -->
+        <text class="text-base font-bold text-ink mt-3">难度</text>
+        <view class="flex-row p-1 rounded-control bg-bg-muted mt-2">
           <view
-            v-for="(t, i) in genericTasks"
-            :key="'g_' + t.id"
-            class="flex-row items-center px-4 h-[60px]"
-            :class="i < genericTasks.length - 1 ? 'border-b border-line' : ''"
+            v-for="d in difficulties"
+            :key="d.id"
+            class="flex-1 h-9 rounded-control flex-col items-center justify-center"
+            :class="difficulty === d.id ? 'bg-surface' : ''"
             hover-class="pressed-row"
             :hover-start-time="0"
-            @click="startTaskEntry(t.id, t.title, t.durationMin)"
+            @click="difficulty = d.id"
           >
-            <view
-              class="w-9 h-9 rounded-control bg-chip-reliable flex-row items-center justify-center mr-3"
+            <text
+              class="text-sm"
+              :class="difficulty === d.id ? 'font-semibold text-ink' : 'text-ink-soft'"
+              >{{ d.label }}</text
             >
-              <ml-icon name="play" :size="15" :color="RELIABLE"></ml-icon>
-            </view>
-            <view class="flex-col flex-1">
-              <text class="text-sm text-ink">{{ t.title }}</text>
-              <text class="text-xs text-ink-soft mt-0.5">
-                {{ t.durationMin }} 分钟 · 不限维度
-              </text>
-            </view>
-            <ml-chip variant="action" tone="outline" label="开始"></ml-chip>
           </view>
-        </ml-card>
-      </view>
+        </view>
+        <text class="text-xs text-ink-soft mt-1.5">{{ difficultyDesc }}</text>
 
-      <!-- 空状态引导 -->
-      <view v-if="recommended.length === 0" class="mt-5">
-        <ml-card>
-          <ml-empty
-            icon="dumbbell"
-            :icon-color="SMART"
-            :icon-bg="CHIP_SMART"
-            title="还没有个性化推荐"
-            desc="完成一次模拟面试后，这里会根据你的薄弱维度生成训练计划"
+        <!-- 题量 -->
+        <view class="flex-row items-center justify-between mt-4">
+          <text class="text-base font-bold text-ink">题量</text>
+          <text class="text-xs text-ink-soft">一组约 5–10 分钟</text>
+        </view>
+        <view class="flex-row mt-2">
+          <view
+            v-for="n in COUNT_OPTIONS"
+            :key="'c' + n"
+            class="h-9 px-4 rounded-control mr-2 flex-row items-center border"
+            :class="count === n ? 'bg-smart border-smart' : 'bg-surface border-line'"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="count = n"
           >
-            <ml-button text="去完成一次面试" type="primary" block @tap="startInterview"></ml-button>
-          </ml-empty>
-        </ml-card>
+            <text class="text-sm" :class="count === n ? 'text-white font-semibold' : 'text-ink'"
+              >{{ n }} 题</text
+            >
+          </view>
+        </view>
+
+        <!-- 错题本 -->
+        <view v-if="stats.wrongCount > 0" class="mt-4">
+          <ml-card pressable @tap="startWrongReview">
+            <view class="flex-row items-center">
+              <view
+                class="w-9 h-9 rounded-control flex-row items-center justify-center"
+                :style="{ backgroundColor: CHIP_WARN }"
+              >
+                <ml-icon name="book-marked" :size="17" :color="WARN"></ml-icon>
+              </view>
+              <view class="flex-col flex-1 ml-3">
+                <text class="text-sm font-semibold text-ink"
+                  >错题本 · {{ stats.wrongCount }} 题</text
+                >
+                <text class="text-xs text-ink-soft mt-0.5">复习时选「会」会自动移出</text>
+              </view>
+              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
+            </view>
+          </ml-card>
+        </view>
+
+        <text class="text-xs text-ink-soft mt-4 text-center"
+          >题目来自内容库；参考解析为答案节选，非完整标准答案</text
+        >
+      </view>
+    </scroll-view>
+
+    <!-- 固定开始栏（拇指热区；滚动内容已留出底部空间） -->
+    <view
+      class="absolute left-0 right-0 bottom-0 bg-surface border-t border-line px-5 pt-3"
+      :style="{ paddingBottom: bottomPad }"
+    >
+      <view
+        id="practice-start"
+        class="h-12 rounded-control flex-row items-center justify-center"
+        :style="{ backgroundColor: SMART, opacity: selectedSub.length === 0 ? 0.4 : 1 }"
+        hover-class="pressed-card"
+        :hover-start-time="0"
+        @click="startPractice"
+      >
+        <text class="text-base font-semibold text-white">开始做题 · {{ count }} 题</text>
       </view>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
-import mlButton from '../../components/ml-button.uvue'
-import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
-import mlTag from '../../components/ml-tag.uvue'
-import mlSectionHeader from '../../components/ml-section-header.uvue'
-import mlEmpty from '../../components/ml-empty.uvue'
-import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
-import { dimIcon, levelColor, levelTint } from '../../styles/score-display.uts'
-import { reportHistory, ReportRecord } from '../../store/report-history.uts'
-import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
-import { domainOfTaskId } from '../../store/training-history.uts'
-import { trackEvent } from '../../api/tracking.uts'
-import { TrainingTask, ScoreLevel, DIMENSION_WEIGHT, DIMENSION_LABEL } from '../../types/scoring.uts'
+import { userStore } from '../../store/user-profile.uts'
+import { POSITION_OPTIONS } from '../../data/position-options.uts'
+import {
+  PRACTICE_DIFFICULTIES,
+  subtracksOf,
+  defaultDifficultyFor,
+  PracticeDifficultyOption
+} from '../../data/subtracks.uts'
+import { PositionId, Difficulty } from '../../types/interview.uts'
+import { practiceProgress, PracticeStats } from '../../store/practice-progress.uts'
+import { themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
-const RELIABLE = themeValue('reliable', '#1FB6A6')
-const WARN = themeValue('warn', '#E08A00')
-const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
-const INK_SOFT = themeValue('inkSoft', '#5B6472')
-const MIST = themeValue('mist', '#AEB9CC')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
-const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
+const WARN = themeValue('warn', '#E08A00')
+const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
+const INK_SOFT = themeValue('inkSoft', '#6E6E73')
+const MIST = themeValue('mist', '#AEAEB2')
+const BG_MUTED = themeValue('bgMuted', '#E9E9EF')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
+const CHIP_WARN = themeValue('chipWarn', '#FFF4E5')
+const NAVY = themeValue('navy', '#0F2C4C')
+const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
 
-type TrainingEntry = {
-  id: string
-  title: string
-  durationMin: number
+const COUNT_OPTIONS: number[] = [5, 10]
+const difficulties: PracticeDifficultyOption[] = PRACTICE_DIFFICULTIES
+
+type PositionChip = { id: PositionId; name: string; icon: string }
+const POSITION_ICON: Record<string, string> = {
+  frontend: 'layout-grid',
+  backend: 'server',
+  devops: 'shield',
+  ai: 'brain'
+}
+const positions: PositionChip[] = []
+for (let i = 0; i < POSITION_OPTIONS.length; i++) {
+  const p = POSITION_OPTIONS[i]
+  const icon = POSITION_ICON[p.id] != null ? POSITION_ICON[p.id] : 'target'
+  positions.push({ id: p.id, name: p.name, icon: icon } as PositionChip)
 }
 
-type DimCard = {
-  key: string
-  label: string
-  icon: string
-  color: string
-  tint: string
-  weight: number
-  level: string
-  levelBg: string
-  levelColor: string
+const positionId = ref<PositionId>(userStore.profile.positionId)
+const subtracks = computed(() => subtracksOf(positionId.value))
+const selectedSub = ref(subtracks.value.length > 0 ? subtracks.value[0].id : '')
+const difficulty = ref<Difficulty>(defaultDifficultyFor(userStore.profile.experienceLevel))
+const count = ref(5)
+// 底部固定开始栏避让 home indicator（px 字符串，避免小程序端丢单位）
+const bottomPad = ref('24px')
+const stats = ref<PracticeStats>({
+  total: 0,
+  known: 0,
+  fuzzy: 0,
+  unknown: 0,
+  wrongCount: 0
+} as PracticeStats)
+
+const statsStyle = {
+  backgroundColor: NAVY_DEEP,
+  backgroundImage: 'linear-gradient(155deg, ' + NAVY + ' 0%, ' + NAVY_DEEP + ' 100%)'
 }
 
-// 通用快练不绑定具体岗位：题目仍由服务端按用户方向过滤，
-// 标题只描述训练形态，避免 AI / 前端用户看到「并发基础」这类后端专属文案
-const genericTasks: TrainingEntry[] = [
-  { id: 'gt1', title: '高频基础快练', durationMin: 3 } as TrainingEntry,
-  { id: 'gt2', title: '场景设计快练', durationMin: 5 } as TrainingEntry,
-  { id: 'gt3', title: '项目表达快练', durationMin: 10 } as TrainingEntry
-]
-
-const recommended = ref<TrainingTask[]>([])
-const latest = ref<ReportRecord | null>(null)
-
-// 六维图标单一来源：styles/score-display.uts（dimIcon）；色板单源 styles/theme.uts（DIM_COLOR / DIM_TINT）
-const dimensions = computed((): DimCard[] => {
-  const keys = ['knowledge', 'engineering', 'analysis', 'communication', 'learning', 'motivation']
-  const out: DimCard[] = []
-  const levelMap: { [key: string]: ScoreLevel } = {}
-  if (latest.value != null) {
-    const dims = latest.value.report.dimensions
-    for (let i = 0; i < dims.length; i++) {
-      levelMap[dims[i].dimension] = dims[i].level
-    }
+const difficultyDesc = computed((): string => {
+  for (let i = 0; i < difficulties.length; i++) {
+    if (difficulties[i].id === difficulty.value) return difficulties[i].desc
   }
-  for (let i = 0; i < keys.length; i++) {
-    const k = keys[i]
-    const lv = levelMap[k]
-    const hasLevel = lv != null
-    out.push({
-      key: k,
-      label: DIMENSION_LABEL[k],
-      icon: dimIcon(k),
-      color: DIM_COLOR[k] != null ? DIM_COLOR[k] : SMART,
-      tint: DIM_TINT[k] != null ? DIM_TINT[k] : CHIP_SMART,
-      weight: Math.round((DIMENSION_WEIGHT[k] != null ? DIMENSION_WEIGHT[k] : 0) * 100),
-      level: hasLevel ? lv : '',
-      levelBg: hasLevel ? levelTint(lv) : '',
-      levelColor: hasLevel ? levelColor(lv) : ''
-    } as DimCard)
-  }
-  return out
+  return ''
 })
 
-const reportDate = computed((): string => {
-  const r = latest.value
-  if (r == null) return ''
-  const d = new Date(r.at)
-  const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
-  return pad(d.getMonth() + 1) + '-' + pad(d.getDate())
-})
+function statText(subtrack: string): string {
+  const s = practiceProgress.statsOf(subtrack)
+  if (s == null || s.total === 0) return '未做'
+  return s.total + ' 题 · 会 ' + s.known
+}
+
+function selectPosition(id: PositionId) {
+  positionId.value = id
+  const list = subtracksOf(id)
+  selectedSub.value = list.length > 0 ? list[0].id : ''
+}
+
+function startPractice() {
+  if (selectedSub.value.length === 0) return
+  uni.navigateTo({
+    url:
+      '/pages/training/room?positionId=' +
+      positionId.value +
+      '&subtrack=' +
+      selectedSub.value +
+      '&difficulty=' +
+      difficulty.value +
+      '&count=' +
+      String(count.value)
+  })
+}
+
+function startWrongReview() {
+  uni.navigateTo({ url: '/pages/training/room?mode=wrong' })
+}
 
 onShow(() => {
-  reportHistory.load()
-  const rec = reportHistory.latest()
-  latest.value = rec
-  if (rec != null) {
-    recommended.value = rec.report.trainingPlan
-  } else {
-    recommended.value = []
+  try {
+    const win = uni.getWindowInfo()
+    const insets = win.safeAreaInsets
+    const bottom = insets != null ? insets.bottom : 0
+    bottomPad.value = (bottom > 0 ? bottom + 14 : 24) + 'px'
+  } catch {
+    bottomPad.value = '24px'
   }
+  stats.value = practiceProgress.summary()
+  // 画像变化后保证选中项仍然有效
+  const list = subtracksOf(positionId.value)
+  let valid = false
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id === selectedSub.value) valid = true
+  }
+  if (!valid) selectedSub.value = list.length > 0 ? list[0].id : ''
 })
-
-// 模板入口：把任务参数转成 TrainingEntry 再进训练房间
-function startTaskEntry(id: string, title: string, durationMin: number) {
-  startTask({ id: id, title: title, durationMin: durationMin } as TrainingEntry)
-}
-
-// 进入训练房间（3/5/10 分钟碎片化训练；推荐任务标记来源=报告薄弱项）
-function startTask(task: TrainingEntry | null = null) {
-  // 权益门控：免费层每日训练额度（会员不限）；额度扣减在训练房间 onLoad 统一执行
-  quotaStore.restore()
-  if (!quotaStore.canStartTraining()) {
-    trackEvent('quota_exceeded', { scene: 'training' })
-    uni.showModal({
-      title: '今日训练次数已用完',
-      content: '免费版每日 ' + String(FREE_QUOTA.trainingsPerDay) + ' 次训练，开通会员不限次数',
-      confirmText: '去开通',
-      cancelText: '明天再练',
-      success: (r: any) => {
-        if (r.confirm) {
-          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
-        }
-      }
-    })
-    return
-  }
-  const id = task != null ? task.id : 't_custom'
-  const title = task != null ? task.title : '专项训练'
-  const dur = task != null ? task.durationMin : 5
-  const src = task != null && task.id.indexOf('gt') !== 0 ? 'report' : 'direct'
-  const domain = domainOfTaskId(id)
-  const url =
-    '/pages/training/room?taskId=' +
-    encodeURIComponent(id) +
-    '&title=' +
-    encodeURIComponent(title) +
-    '&durationMin=' +
-    dur +
-    '&source=' +
-    src +
-    '&domain=' +
-    domain
-  uni.navigateTo({ url: url })
-}
-
-function startInterview() {
-  // 训练 tab 的「去完成一次面试」直接进准备页，避免只回首页让用户再点一次
-  quotaStore.restore()
-  if (!quotaStore.canStartInterview()) {
-    trackEvent('quota_exceeded', { scene: 'interview' })
-    uni.showModal({
-      title: '免费面试额度已用完',
-      content: '开通会员可无限次模拟面试，或购买单次包继续练习',
-      confirmText: '去开通',
-      cancelText: '暂不需要',
-      success: (r: any) => {
-        if (r.confirm) {
-          uni.navigateTo({ url: '/pages/membership/paywall?from=gating' })
-        }
-      }
-    })
-    return
-  }
-  uni.navigateTo({ url: '/pages/interview/prep' })
-}
-
-function goReport() {
-  uni.switchTab({ url: '/pages/report/report' })
-}
 </script>

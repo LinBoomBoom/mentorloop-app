@@ -16,12 +16,25 @@ const SELECT_COLS =
 export async function loadCandidates(
   db: Db,
   positionId: string,
-  limit: number = CANDIDATE_LIMIT
+  limit: number = CANDIDATE_LIMIT,
+  subtrack: string = '',
+  difficulty: string = ''
 ): Promise<QuestionItem[]> {
   const order = db.driver === 'mysql' ? 'RAND()' : 'RANDOM()'
-  const rows = (await db
-    .prepare(`SELECT ${SELECT_COLS} FROM questions WHERE position_id = ? ORDER BY ${order} LIMIT ?`)
-    .all(positionId, limit)) as QuestionRow[]
+  // 做题模式：细分领域 / 精确难度过滤（契约 2026-10-23-practice-subtrack）
+  let sql = `SELECT ${SELECT_COLS} FROM questions WHERE position_id = ?`
+  const params: (string | number)[] = [positionId]
+  if (subtrack.length > 0) {
+    sql += ' AND subtrack = ?'
+    params.push(subtrack)
+  }
+  if (difficulty.length > 0) {
+    sql += ' AND difficulty = ?'
+    params.push(difficulty)
+  }
+  sql += ` ORDER BY ${order} LIMIT ?`
+  params.push(limit)
+  const rows = (await db.prepare(sql).all(...params)) as QuestionRow[]
   const out: QuestionItem[] = []
   for (let i = 0; i < rows.length; i++) out.push(toQuestionItem(rows[i]))
   return out

@@ -8,11 +8,14 @@ type TrainingQuestionsData = {
   questions: QuestionItem[]
 }
 
+// subtrack / difficulty：做题模式过滤（契约 2026-10-23-practice-subtrack）；传 '' 保持旧行为
 export async function fetchTrainingQuestions(
   positionId: string,
   experienceLevel: string,
   domain: string,
-  count: number
+  count: number,
+  subtrack: string = '',
+  difficulty: string = ''
 ): Promise<QuestionItem[]> {
   if (useMock()) {
     throw new Error('本地静态题库已下线，请将 API_ENV 切换为 dev/prod 连接线上题库')
@@ -21,7 +24,9 @@ export async function fetchTrainingQuestions(
     positionId: positionId,
     experienceLevel: experienceLevel,
     domain: domain,
-    count: count
+    count: count,
+    subtrack: subtrack,
+    difficulty: difficulty
   })
   const data = r.data as TrainingQuestionsData | null
   if (data == null || data.questions == null) return []

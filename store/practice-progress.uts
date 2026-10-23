@@ -1,0 +1,172 @@
+// 做题进度（本机）：掌握度统计 + 错题本
+// 本期不做跨设备同步；Phase 2 随账号同步（见 docs/design/2026-10-23-practice-mode-proposal.md）。
+import { QuestionItem } from '../types/interview.uts'
+
+export type PracticeResult = 'known' | 'fuzzy' | 'unknown'
+
+export type SubtrackStat = {
+  subtrack: string
+  total: number
+  known: number
+  fuzzy: number
+  unknown: number
+  lastAt: number
+}
+
+export type PracticeStats = {
+  total: number
+  known: number
+  fuzzy: number
+  unknown: number
+  wrongCount: number
+}
+
+const STORAGE_KEY = 'ml_practice_progress'
+const MAX_WRONG = 100
+
+type Snapshot = {
+  stats: SubtrackStat[]
+  wrong: QuestionItem[]
+}
+
+class PracticeProgress {
+  private stats: SubtrackStat[] = []
+  private wrong: QuestionItem[] = []
+  private loaded: boolean = false
+
+  private ensureLoaded() {
+    if (this.loaded) return
+    this.loaded = true
+    try {
+      const raw = uni.getStorageSync(STORAGE_KEY) as string
+      if (raw == null || raw.length === 0) return
+      const snap = JSON.parse(raw) as Snapshot
+      if (snap != null && snap.stats != null) this.stats = snap.stats
+      if (snap != null && snap.wrong != null) this.wrong = snap.wrong
+    } catch (e: any) {
+      console.warn('[practice-progress] load failed', e)
+    }
+  }
+
+  private persist() {
+    try {
+      uni.setStorageSync(
+        STORAGE_KEY,
+        JSON.stringify({ stats: this.stats, wrong: this.wrong } as Snapshot)
+      )
+    } catch (e: any) {
+      console.warn('[practice-progress] persist failed', e)
+    }
+  }
+
+  // 记录一题的自评结果；「不会」进入错题本，「会」移出错题本
+  mark(q: QuestionItem, result: PracticeResult) {
+    this.ensureLoaded()
+    const key = q.subAbility
+    let stat: SubtrackStat | null = null
+    for (let i = 0; i < this.stats.length; i++) {
+      if (this.stats[i].subtrack === key) {
+        stat = this.stats[i]
+        break
+      }
+    }
+    if (stat == null) {
+      stat = {
+        subtrack: key,
+        total: 0,
+        known: 0,
+        fuzzy: 0,
+        unknown: 0,
+        lastAt: 0
+      } as SubtrackStat
+      this.stats.push(stat)
+    }
+    stat.total = stat.total + 1
+    stat.lastAt = Date.now()
+    if (result === 'known') stat.known = stat.known + 1
+    else if (result === 'fuzzy') stat.fuzzy = stat.fuzzy + 1
+    else stat.unknown = stat.unknown + 1
+
+    if (result === 'known') {
+      this.removeWrong(q.id)
+    } else if (result === 'unknown') {
+      this.addWrong(q)
+    }
+    this.persist()
+  }
+
+  private addWrong(q: QuestionItem) {
+    for (let i = 0; i < this.wrong.length; i++) {
+      if (this.wrong[i].id === q.id) {
+        this.wrong.splice(i, 1)
+        break
+      }
+    }
+    this.wrong.unshift(q)
+    if (this.wrong.length > MAX_WRONG) this.wrong = this.wrong.slice(0, MAX_WRONG)
+  }
+
+  private removeWrong(id: string) {
+    for (let i = 0; i < this.wrong.length; i++) {
+      if (this.wrong[i].id === id) {
+        this.wrong.splice(i, 1)
+        return
+      }
+    }
+  }
+
+  wrongQuestions(): QuestionItem[] {
+    this.ensureLoaded()
+    // 返回副本：做题房间的自评会改错题本，避免同一数组被就地重排
+    const out: QuestionItem[] = []
+    for (let i = 0; i < this.wrong.length; i++) out.push(this.wrong[i])
+    return out
+  }
+
+  wrongCount(): number {
+    this.ensureLoaded()
+    return this.wrong.length
+  }
+
+  statsOf(subtrack: string): SubtrackStat | null {
+    this.ensureLoaded()
+    for (let i = 0; i < this.stats.length; i++) {
+      if (this.stats[i].subtrack === subtrack) return this.stats[i]
+    }
+    return null
+  }
+
+  summary(): PracticeStats {
+    this.ensureLoaded()
+    let total = 0
+    let known = 0
+    let fuzzy = 0
+    let unknown = 0
+    for (let i = 0; i < this.stats.length; i++) {
+      total += this.stats[i].total
+      known += this.stats[i].known
+      fuzzy += this.stats[i].fuzzy
+      unknown += this.stats[i].unknown
+    }
+    return {
+      total: total,
+      known: known,
+      fuzzy: fuzzy,
+      unknown: unknown,
+      wrongCount: this.wrong.length
+    } as PracticeStats
+  }
+
+  clear() {
+    this.stats = []
+    this.wrong = []
+    this.loaded = true
+    try {
+      uni.removeStorageSync(STORAGE_KEY)
+    } catch (e: any) {
+      console.warn('[practice-progress] clear failed', e)
+    }
+  }
+}
+
+export const practiceProgress = new PracticeProgress()

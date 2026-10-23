@@ -13,6 +13,9 @@ export type TrainingQuestionsInput = {
   experienceLevel: ExperienceLevel
   domain: string // '' = 不限维度
   count: number
+  // 做题模式（契约 2026-10-23-practice-subtrack）：细分领域 / 精确难度，缺省 '' 保持旧行为
+  subtrack: string
+  difficulty: string
 }
 
 export const MIN_TRAINING_QUESTIONS = 1
@@ -28,17 +31,26 @@ export async function loadTrainingQuestions(
     MIN_TRAINING_QUESTIONS,
     Math.min(MAX_TRAINING_QUESTIONS, Math.floor(input.count))
   )
+  // 精确难度：候选池已按 difficulty 过滤，选择器经验档置 senior 以放开难度白名单
+  const exactDifficulty = input.difficulty.length > 0
+  const selectorExp: ExperienceLevel = exactDifficulty ? 'senior' : input.experienceLevel
   const blueprint: PositionBlueprint = {
     positionId: input.positionId,
     position: getPositionName(input.positionId),
-    experienceLevel: input.experienceLevel,
-    experienceRange: getExperienceRange(input.experienceLevel),
+    experienceLevel: selectorExp,
+    experienceRange: getExperienceRange(selectorExp),
     companyType: '互联网',
     language: '中文',
     target: '求职'
   } as PositionBlueprint
 
-  const candidates = await loadCandidates(db, input.positionId)
+  const candidates = await loadCandidates(
+    db,
+    input.positionId,
+    undefined,
+    input.subtrack,
+    input.difficulty
+  )
   const asked: QuestionItem[] = []
   const out: QuestionItem[] = []
   for (let i = 0; i < count; i++) {
