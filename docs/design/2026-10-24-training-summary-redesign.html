@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>训练小结页重设计 · 2026-10-24</title>
+    <style>
+      :root {
+        --navy: #0f2c4c;
+        --navy-deep: #0b2138;
+        --smart: #5b6cff;
+        --reliable: #1fb6a6;
+        --warn: #e08a00;
+        --danger: #dc2626;
+        --bg: #f7f9fc;
+        --bg-muted: #f1f5f9;
+        --surface: #ffffff;
+        --ink: #1a2433;
+        --ink-soft: #5b6472;
+        --line: #e3e8f0;
+        --line-strong: #c9d2e3;
+        --mist: #aeb9cc;
+        --chip-smart: #eef1ff;
+        --chip-reliable: #e6f7f4;
+        --chip-warn: #fff3e0;
+        --chip-danger: #feecec;
+        --font: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif;
+        --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #eef1f6;
+        font-family: var(--font);
+        color: var(--ink);
+        padding: 28px 32px 40px;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--navy-deep);
+        letter-spacing: 0.2px;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--ink-soft);
+        margin-top: 6px;
+        line-height: 20px;
+        max-width: 760px;
+      }
+      .canvas {
+        display: flex;
+        gap: 26px;
+        margin-top: 24px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .frame-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .caption {
+        font-size: 12px;
+        color: var(--ink-soft);
+        text-align: center;
+        line-height: 18px;
+        max-width: 375px;
+      }
+      .caption b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .phone {
+        width: 375px;
+        height: 812px;
+        background: var(--bg);
+        border-radius: 34px;
+        border: 1px solid #d7deea;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 16px 40px rgba(15, 44, 76, 0.12);
+        display: flex;
+        flex-direction: column;
+      }
+      .phone.small {
+        width: 320px;
+        height: 568px;
+      }
+      .statusbar {
+        height: 44px;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .statusbar .right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .bar {
+        width: 3px;
+        background: var(--ink);
+        border-radius: 1px;
+      }
+      .nav {
+        height: 52px;
+        flex: none;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        position: relative;
+      }
+      .nav .back {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ink);
+        font-size: 18px;
+        line-height: 1;
+      }
+      .nav .title-wrap {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        pointer-events: none;
+      }
+      .nav .title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .nav .step {
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-top: 2px;
+      }
+      .nav .more {
+        margin-left: auto;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ink);
+        font-size: 14px;
+        letter-spacing: 1px;
+      }
+      .content {
+        flex: 1;
+        overflow: hidden;
+        padding: 2px 16px 18px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+      }
+      .hero {
+        padding: 18px 16px 16px;
+      }
+      .chips {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .chip {
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        display: inline-flex;
+        align-items: center;
+        font-weight: 600;
+      }
+      .chip.smart {
+        background: var(--chip-smart);
+        color: var(--smart);
+      }
+      .chip.muted {
+        background: var(--bg-muted);
+        color: var(--ink-soft);
+      }
+      .chip.warn {
+        background: var(--chip-warn);
+        color: var(--warn);
+      }
+      .headline {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.2px;
+        line-height: 30px;
+      }
+      .headline .accent {
+        color: var(--reliable);
+      }
+      .subline {
+        font-size: 13px;
+        color: var(--ink-soft);
+        margin-top: 6px;
+        line-height: 20px;
+      }
+      .segbar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 18px;
+        background: var(--bg-muted);
+      }
+      .segbar .seg {
+        height: 100%;
+      }
+      .segbar .known {
+        background: var(--reliable);
+      }
+      .segbar .fuzzy {
+        background: var(--warn);
+      }
+      .segbar .unknown {
+        background: var(--danger);
+      }
+      .legend {
+        display: flex;
+        margin-top: 10px;
+      }
+      .legend .item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        font-size: 11px;
+        color: var(--ink-soft);
+      }
+      .legend .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      .legend .num {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        padding-right: 8px;
+      }
+      .hero-foot {
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+      }
+      .next {
+        margin-top: 12px;
+        padding: 16px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #eef1ff 0%, #f7f9fc 100%);
+        border: 1px solid #dde3ff;
+      }
+      .kicker {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: var(--smart);
+      }
+      .kicker::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--smart);
+        margin-right: 6px;
+      }
+      .next-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 23px;
+        margin-top: 8px;
+      }
+      .next-desc {
+        font-size: 12px;
+        color: var(--ink-soft);
+        line-height: 18px;
+        margin-top: 4px;
+      }
+      .btn {
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 12px;
+      }
+      .btn.primary {
+        background: var(--smart);
+        color: #ffffff;
+      }
+      .btn.secondary {
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        margin-top: 8px;
+      }
+      .section {
+        margin-top: 16px;
+      }
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .section-link {
+        font-size: 11px;
+        color: var(--ink-soft);
+      }
+      .wrong-list {
+        padding: 0;
+        overflow: hidden;
+      }
+      .wrong-row {
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .wrong-row:last-child {
+        border-bottom: none;
+      }
+      .wrong-row .meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .wrong-row .result {
+        margin-left: auto;
+        font-size: 10px;
+        color: var(--ink-soft);
+      }
+      .wrong-row .q {
+        font-size: 13px;
+        line-height: 19px;
+        color: var(--ink);
+        margin-top: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .section-note {
+        font-size: 10px;
+        color: var(--ink-soft);
+        text-align: center;
+        margin-top: 8px;
+        line-height: 15px;
+      }
+      .empty {
+        padding: 16px;
+        border-radius: 16px;
+        background: var(--chip-reliable);
+        border: 1px solid #cdeee8;
+        text-align: center;
+      }
+      .empty .e-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .empty .e-desc {
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-top: 4px;
+        line-height: 17px;
+      }
+      .footnote {
+        font-size: 10px;
+        color: var(--ink-soft);
+        text-align: center;
+        line-height: 16px;
+        margin-top: 14px;
+      }
+      .back-link {
+        text-align: center;
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-top: 10px;
+      }
+
+      /* 小屏密度：只压缩字号与间距，不改变信息顺序 */
+      .phone.small .headline {
+        font-size: 19px;
+        line-height: 26px;
+      }
+      .phone.small .subline {
+        font-size: 12px;
+        margin-top: 4px;
+        line-height: 17px;
+      }
+      .phone.small .hero {
+        padding: 14px 14px 12px;
+      }
+      .phone.small .hero-foot {
+        display: none;
+      }
+      .phone.small .chips {
+        margin-bottom: 8px;
+      }
+      .phone.small .segbar {
+        margin-top: 12px;
+      }
+      .phone.small .legend {
+        margin-top: 8px;
+      }
+      .phone.small .card {
+        padding: 14px;
+        border-radius: 18px;
+      }
+      .phone.small .next {
+        padding: 14px;
+        border-radius: 18px;
+      }
+      .phone.small .next-title {
+        font-size: 15px;
+        line-height: 21px;
+      }
+      .phone.small .next-desc {
+        font-size: 11px;
+        line-height: 16px;
+      }
+      .phone.small .btn {
+        height: 38px;
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      .phone.small .btn.secondary {
+        margin-top: 7px;
+      }
+      .phone.small .section {
+        margin-top: 12px;
+      }
+      .phone.small .empty {
+        padding: 12px;
+      }
+
+      /* ---------- 右侧说明 ---------- */
+      .notes {
+        width: 360px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 28px rgba(15, 44, 76, 0.06);
+      }
+      .notes h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--navy-deep);
+      }
+      .notes h3 {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-top: 16px;
+      }
+      .notes p,
+      .notes li {
+        font-size: 12px;
+        color: var(--ink-soft);
+        line-height: 19px;
+      }
+      .notes ul {
+        padding-left: 16px;
+        margin-top: 6px;
+      }
+      .notes .tag {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--smart);
+        background: var(--chip-smart);
+        border-radius: 6px;
+        padding: 2px 7px;
+        margin-right: 6px;
+      }
+      .notes .rule {
+        height: 1px;
+        background: var(--line);
+        margin: 14px 0;
+      }
+      .notes .quote {
+        font-size: 12px;
+        color: var(--ink);
+        line-height: 19px;
+        background: var(--bg-muted);
+        border-left: 3px solid var(--smart);
+        border-radius: 0 8px 8px 0;
+        padding: 10px 12px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>训练小结页重设计 · 2026-10-24</h1>
+    <p class="sub">
+      页面定位不是「数据报表」，而是做题后的价值交付与下一动作引导：让用户知道自己练了什么、收获了什么、接下来该做什么。
+    </p>
+
+    <div class="canvas">
+      <!-- 375×812：有错题/模糊 -->
+      <div class="frame-col">
+        <div class="phone">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right"
+              ><span class="bar" style="height: 5px"></span
+              ><span class="bar" style="height: 8px"></span
+              ><span class="bar" style="height: 11px"></span
+            ></span>
+          </div>
+          <div class="nav">
+            <div class="back">‹</div>
+            <div class="title-wrap">
+              <div class="title">做题</div>
+              <div class="step">本组完成</div>
+            </div>
+            <div class="more">···</div>
+          </div>
+          <div class="content">
+            <div class="card hero">
+              <div class="chips">
+                <span class="chip smart">be-db</span>
+                <span class="chip muted">高级</span>
+                <span class="chip muted">5 题</span>
+              </div>
+              <div class="headline">这组答对 <span class="accent">3</span> 题</div>
+              <div class="subline">还有 1 题模糊、1 题不会；模糊和不会的题会进入复习队列。</div>
+              <div class="segbar">
+                <div class="seg known" style="width: 60%"></div>
+                <div class="seg fuzzy" style="width: 20%"></div>
+                <div class="seg unknown" style="width: 20%"></div>
+              </div>
+              <div class="legend">
+                <div class="item">
+                  <span class="dot" style="background: var(--reliable)"></span>会<span class="num"
+                    >3</span
+                  >
+                </div>
+                <div class="item">
+                  <span class="dot" style="background: var(--warn)"></span>模糊<span class="num"
+                    >1</span
+                  >
+                </div>
+                <div class="item">
+                  <span class="dot" style="background: var(--danger)"></span>不会<span class="num"
+                    >1</span
+                  >
+                </div>
+              </div>
+              <div class="hero-foot">本组掌握度已记录，只用于安排下次复习。</div>
+            </div>
+
+            <div class="next">
+              <div class="kicker">下一步建议</div>
+              <div class="next-title">先复习 2 道错题，再做一组新题</div>
+              <div class="next-desc">错题明天进入「今日复习」；现在过一遍，记忆会更稳。</div>
+              <div class="btn primary">复习本组错题</div>
+              <div class="btn secondary">再来 5 题</div>
+            </div>
+
+            <div class="section">
+              <div class="section-head">
+                <div class="section-title">本组错题 · 2</div>
+                <div class="section-link">全部复习 ›</div>
+              </div>
+              <div class="card wrong-list">
+                <div class="wrong-row">
+                  <div class="meta">
+                    <span class="chip smart">be-db</span>
+                    <span class="chip warn">明天复习</span>
+                    <span class="result">模糊</span>
+                  </div>
+                  <div class="q">
+                    聚簇索引和二级索引在回表时分别走什么路径？为什么二级索引需要回表？
+                  </div>
+                </div>
+                <div class="wrong-row">
+                  <div class="meta">
+                    <span class="chip smart">be-db</span>
+                    <span class="chip warn">明天复习</span>
+                    <span class="result">不会</span>
+                  </div>
+                  <div class="q">线上千万级表加复合索引，你会如何评估锁表风险和上线窗口？</div>
+                </div>
+              </div>
+              <div class="section-note">「不会」的题已加入错题本，明天进入今日复习。</div>
+            </div>
+          </div>
+        </div>
+        <div class="caption">
+          <b>有错题/模糊：</b>先给结论，再给下一步；错题直接露出题面与到期预期。
+        </div>
+      </div>
+
+      <!-- 320×568：全对空态 -->
+      <div class="frame-col">
+        <div class="phone small">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right"
+              ><span class="bar" style="height: 5px"></span
+              ><span class="bar" style="height: 8px"></span
+              ><span class="bar" style="height: 11px"></span
+            ></span>
+          </div>
+          <div class="nav">
+            <div class="back">‹</div>
+            <div class="title-wrap">
+              <div class="title">做题</div>
+              <div class="step">本组完成</div>
+            </div>
+            <div class="more">···</div>
+          </div>
+          <div class="content">
+            <div class="card hero">
+              <div class="chips">
+                <span class="chip smart">be-db</span>
+                <span class="chip muted">高级</span>
+                <span class="chip muted">5 题</span>
+              </div>
+              <div class="headline">这组全部答对</div>
+              <div class="subline">5 题都选了「会」，本次没有新增错题。</div>
+              <div class="segbar">
+                <div class="seg known" style="width: 100%"></div>
+              </div>
+              <div class="legend">
+                <div class="item">
+                  <span class="dot" style="background: var(--reliable)"></span>会<span class="num"
+                    >5</span
+                  >
+                </div>
+                <div class="item">
+                  <span class="dot" style="background: var(--warn)"></span>模糊<span class="num"
+                    >0</span
+                  >
+                </div>
+                <div class="item">
+                  <span class="dot" style="background: var(--danger)"></span>不会<span class="num"
+                    >0</span
+                  >
+                </div>
+              </div>
+              <div class="hero-foot">本组掌握度已记录，只用于安排下次复习。</div>
+            </div>
+
+            <div class="next">
+              <div class="kicker">下一步建议</div>
+              <div class="next-title">状态不错，再来一组保持手感</div>
+              <div class="next-desc">换一组同方向、不同细分领域的题，检验迁移能力。</div>
+              <div class="btn primary">再来 5 题</div>
+              <div class="btn secondary">换一组</div>
+            </div>
+
+            <div class="section">
+              <div class="empty">
+                <div class="e-title">本组没有错题</div>
+                <div class="e-desc">继续保持；到期复习会在「今日复习」里出现。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="caption"><b>全对空态：</b>不硬凑错题区；主行动直接切换为「再来一组」。</div>
+      </div>
+
+      <!-- 说明 -->
+      <aside class="notes">
+        <h2>这个页面的作用</h2>
+        <ul>
+          <li><b>价值交付：</b>用户刚花 5–10 分钟做题，先告诉他「练了什么、答得怎样」。</li>
+          <li><b>复习闭环：</b>模糊/不会的题立即给出「已进入错题本、明天复习」的预期。</li>
+          <li><b>成长方向：</b>用本组结果连接下一次练习，而不是停在数字上。</li>
+          <li><b>下一动作：</b>只给一个主行动，其余动作降级，避免按钮平铺。</li>
+        </ul>
+
+        <div class="rule"></div>
+
+        <h3>信息顺序</h3>
+        <p>
+          本组结果 → 下一步建议 → 错题/SRS 预览 → 二级动作 →
+          返回。第一屏先回答「我这组怎么样」，再回答「我现在做什么」。
+        </p>
+
+        <h3>关键设计决定</h3>
+        <ul>
+          <li>
+            <span class="tag">不用分数</span>用「会 / 模糊 / 不会」计数和分段条，避免评分焦虑。
+          </li>
+          <li>
+            <span class="tag">动态主行动</span>有错题时主按钮是「复习本组错题」；全对时切换为「再来
+            5 题」。
+          </li>
+          <li>
+            <span class="tag">错题露题面</span>不只给数量；给题面摘要、细分领域和「明天复习」标签。
+          </li>
+          <li>
+            <span class="tag">去掉技术文案</span
+            >把「本机已记录」改为用户能理解的「只用于安排复习」。
+          </li>
+        </ul>
+
+        <div class="rule"></div>
+
+        <h3>uvue 落地映射</h3>
+        <ul>
+          <li>结果卡：`ml-card` + 三段 `view` 进度条（flex 宽度按计数计算），不引入图表库。</li>
+          <li>建议卡：浅紫底 `view` + `ml-button` 主/次按钮。</li>
+          <li>错题卡：`ml-card` + 题面两行截断 + `ml-chip` 标签。</li>
+          <li>动作：主按钮「复习本组错题」或「再来 5 题」；次按钮「换一组」。</li>
+        </ul>
+
+        <div class="rule"></div>
+
+        <h3>需要覆盖的状态</h3>
+        <ul>
+          <li>有错题 / 有模糊：主行动为错题复习。</li>
+          <li>全对：空态 + 再来一组。</li>
+          <li>0 题（异常）：提示返回做题页，不显示假数据。</li>
+        </ul>
+
+        <div class="quote">
+          先以这份设计稿评审；通过后再改 `pages/training/room.uvue` 的小结区，并跑 G2 与 375×812 /
+          320×568 走查。
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

@@ -177,59 +177,146 @@
           </view>
         </template>
 
-        <!-- 小组小结 -->
+        <!-- 小组小结：先给结论，再给下一步，最后给待巩固题 -->
         <template v-else>
-          <view id="practice-summary" class="rounded-card p-5" :style="summaryStyle">
-            <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.62)' }">本组完成</text>
-            <text class="text-[22px] font-bold text-white mt-1"
-              >{{ questions.length }} 题 · 会 {{ knownCount }}</text
-            >
-            <view class="flex-row mt-3">
-              <view class="flex-1">
-                <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">会</text>
-                <text class="text-base font-bold font-mono text-white mt-1">{{ knownCount }}</text>
+          <view id="practice-summary">
+            <ml-card>
+              <view class="flex-row items-center">
+                <view class="meta-chip">
+                  <text class="text-xs" :style="{ color: SMART }">{{ subtrackLabel }}</text>
+                </view>
+                <view class="meta-chip ml-1.5">
+                  <text class="text-xs text-ink-soft">{{ difficultyText }}</text>
+                </view>
+                <view class="meta-chip ml-1.5">
+                  <text class="text-xs text-ink-soft">{{ questions.length }} 题</text>
+                </view>
               </view>
-              <view class="flex-1">
-                <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">模糊</text>
-                <text class="text-base font-bold font-mono mt-1" :style="{ color: WARN_LIGHT }">{{
-                  fuzzyCount
-                }}</text>
+              <text class="text-[22px] font-bold text-ink mt-3">{{ summaryHeadline }}</text>
+              <text class="text-sm text-ink-soft mt-1 leading-5">{{ summarySubline }}</text>
+              <view class="flex-row h-2 rounded-full overflow-hidden mt-3 bg-bg-muted">
+                <view
+                  v-if="knownPercent > 0"
+                  :style="{ width: knownPercent + '%', backgroundColor: RELIABLE }"
+                ></view>
+                <view
+                  v-if="fuzzyPercent > 0"
+                  :style="{ width: fuzzyPercent + '%', backgroundColor: WARN }"
+                ></view>
+                <view
+                  v-if="unknownPercent > 0"
+                  :style="{ width: unknownPercent + '%', backgroundColor: DANGER }"
+                ></view>
               </view>
-              <view class="flex-1">
-                <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.6)' }">不会</text>
-                <text class="text-base font-bold font-mono mt-1" :style="{ color: DANGER_LIGHT }">{{
-                  unknownCount
-                }}</text>
+              <view class="flex-row mt-2">
+                <view class="flex-1 flex-row items-center justify-between pr-2">
+                  <view class="flex-row items-center">
+                    <view
+                      class="w-1.5 h-1.5 rounded-full mr-1"
+                      :style="{ backgroundColor: RELIABLE }"
+                    ></view>
+                    <text class="text-xs text-ink-soft">会</text>
+                  </view>
+                  <text class="text-sm font-semibold font-mono text-ink">{{ knownCount }}</text>
+                </view>
+                <view class="flex-1 flex-row items-center justify-between pr-2">
+                  <view class="flex-row items-center">
+                    <view
+                      class="w-1.5 h-1.5 rounded-full mr-1"
+                      :style="{ backgroundColor: WARN }"
+                    ></view>
+                    <text class="text-xs text-ink-soft">模糊</text>
+                  </view>
+                  <text class="text-sm font-semibold font-mono text-ink">{{ fuzzyCount }}</text>
+                </view>
+                <view class="flex-1 flex-row items-center justify-between">
+                  <view class="flex-row items-center">
+                    <view
+                      class="w-1.5 h-1.5 rounded-full mr-1"
+                      :style="{ backgroundColor: DANGER }"
+                    ></view>
+                    <text class="text-xs text-ink-soft">不会</text>
+                  </view>
+                  <text class="text-sm font-semibold font-mono text-ink">{{ unknownCount }}</text>
+                </view>
               </view>
+              <view class="mt-3 pt-2 border-t border-line">
+                <text class="text-xs text-ink-soft">本组掌握度已记录，只用于安排下次复习。</text>
+              </view>
+            </ml-card>
+          </view>
+
+          <view class="rounded-card p-4 mt-3" :style="{ backgroundColor: CHIP_SMART }">
+            <view class="flex-row items-center">
+              <view
+                class="w-1.5 h-1.5 rounded-full mr-1.5"
+                :style="{ backgroundColor: SMART }"
+              ></view>
+              <text class="text-xs font-semibold" :style="{ color: SMART }">下一步建议</text>
+            </view>
+            <text class="text-base font-semibold text-ink mt-2 leading-6">{{ primaryTitle }}</text>
+            <text class="text-xs text-ink-soft mt-1 leading-5">{{ nextDesc }}</text>
+            <view class="mt-3">
+              <ml-button
+                :text="primaryText"
+                type="primary"
+                block
+                @tap="onPrimaryAction"
+              ></ml-button>
+            </view>
+            <view v-if="secondaryText.length > 0" class="mt-2">
+              <ml-button
+                :text="secondaryText"
+                type="secondary"
+                block
+                @tap="onSecondaryAction"
+              ></ml-button>
             </view>
           </view>
 
-          <view v-if="sessionWrong.length > 0" class="mt-4">
-            <text class="text-sm font-semibold text-ink">本组错题</text>
-            <view v-for="(w, i) in sessionWrong" :key="'w' + w.id" class="mt-2">
+          <view class="mt-4">
+            <view class="flex-row items-center justify-between">
+              <text class="text-sm font-semibold text-ink"
+                >本组待巩固 · {{ sessionWrong.length }}</text
+              >
+              <text
+                v-if="sessionWrong.length > 0"
+                class="text-xs text-ink-soft"
+                @click="reviewSessionWrong"
+                >全部复习 ›</text
+              >
+            </view>
+            <view v-if="sessionWrong.length > 0" class="mt-2">
               <ml-card :padded="false">
-                <view class="p-3.5">
-                  <text class="text-xs font-mono text-ink-soft">Q{{ i + 1 }}</text>
+                <view
+                  v-for="w in sessionWrong"
+                  :key="'w' + w.id"
+                  class="p-3.5 border-b border-line"
+                >
+                  <view class="flex-row items-center">
+                    <view class="meta-chip">
+                      <text class="text-xs" :style="{ color: SMART }">{{ subtrackLabel }}</text>
+                    </view>
+                    <view class="meta-chip ml-1.5">
+                      <text class="text-xs text-warn">明天复习</text>
+                    </view>
+                  </view>
                   <text class="text-sm text-ink mt-1 leading-5">{{ w.content }}</text>
                 </view>
               </ml-card>
             </view>
+            <view v-else class="mt-2">
+              <ml-card>
+                <text class="text-sm font-semibold text-ink">本组没有待巩固的题</text>
+                <text class="text-xs text-ink-soft mt-1 leading-5"
+                  >继续保持；到期复习会在「今日复习」里出现。</text
+                >
+              </ml-card>
+            </view>
+            <text class="text-xs text-ink-soft mt-2 text-center"
+              >「不会」的题已加入错题本；模糊和不会的题明天进入今日复习。</text
+            >
           </view>
-
-          <view class="mt-5">
-            <ml-button
-              v-if="sessionWrong.length > 0"
-              text="复习本组错题"
-              type="primary"
-              block
-              @tap="reviewSessionWrong"
-            ></ml-button>
-            <view class="h-2"></view>
-            <ml-button text="再来一组" type="secondary" block @tap="goBack"></ml-button>
-          </view>
-          <text class="text-xs text-ink-soft mt-3 text-center"
-            >本机已记录掌握度；「不会」的题已进入错题本</text
-          >
         </template>
       </view>
     </scroll-view>
@@ -253,12 +340,8 @@ const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const DANGER = themeValue('danger', '#DC2626')
-const DANGER_LIGHT = themeValue('motivationLight', '#FF9E6D')
-const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 const INK = themeValue('ink', '#1C1C1E')
 const MIST = themeValue('mist', '#AEAEB2')
-const NAVY = themeValue('navy', '#0F2C4C')
-const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
 const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
 const CHIP_WARN = themeValue('chipWarn', '#FFF4E5')
 const CHIP_DANGER = themeValue('chipDanger', '#FFEBEA')
@@ -339,17 +422,70 @@ const progressPercent = computed((): number => {
 const knownCount = computed((): number => countResult('known'))
 const fuzzyCount = computed((): number => countResult('fuzzy'))
 const unknownCount = computed((): number => countResult('unknown'))
+// 待巩固 = 模糊 + 不会；不会的题同时进入错题本，模糊题进入 SRS 到期队列
 const sessionWrong = computed((): QuestionItem[] => {
   const out: QuestionItem[] = []
   for (let i = 0; i < results.value.length; i++) {
-    if (results.value[i] === 'unknown' && i < questions.value.length) out.push(questions.value[i])
+    const r = results.value[i]
+    if ((r === 'unknown' || r === 'fuzzy') && i < questions.value.length) out.push(questions.value[i])
   }
   return out
 })
-const summaryStyle = {
-  backgroundColor: NAVY_DEEP,
-  backgroundImage: 'linear-gradient(155deg, ' + NAVY + ' 0%, ' + NAVY_DEEP + ' 100%)'
-}
+const totalCount = computed((): number => questions.value.length)
+const knownPercent = computed((): number =>
+  totalCount.value > 0 ? Math.round((knownCount.value * 100) / totalCount.value) : 0
+)
+const fuzzyPercent = computed((): number =>
+  totalCount.value > 0 ? Math.round((fuzzyCount.value * 100) / totalCount.value) : 0
+)
+const unknownPercent = computed((): number => {
+  if (totalCount.value === 0) return 0
+  const n = 100 - knownPercent.value - fuzzyPercent.value
+  return n > 0 ? n : 0
+})
+const summaryHeadline = computed((): string => {
+  if (totalCount.value > 0 && knownCount.value === totalCount.value) return '这组全部答对'
+  return '这组答对 ' + knownCount.value + ' 题'
+})
+const summarySubline = computed((): string => {
+  if (totalCount.value > 0 && knownCount.value === totalCount.value) {
+    return String(totalCount.value) + ' 题都选了「会」，本次没有新增错题。'
+  }
+  if (fuzzyCount.value === 0 && unknownCount.value === 0) return '本组结果已记录。'
+  let s = '还有 '
+  if (fuzzyCount.value > 0) s += String(fuzzyCount.value) + ' 题模糊'
+  if (unknownCount.value > 0) {
+    if (fuzzyCount.value > 0) s += '、'
+    s += String(unknownCount.value) + ' 题不会'
+  }
+  return s + '；模糊和不会的题会进入复习队列。'
+})
+const isNormalSet = computed((): boolean => !wrongMode.value && !dueMode.value)
+const primaryTitle = computed((): string => {
+  if (sessionWrong.value.length > 0) {
+    return (
+      '先复习 ' +
+      sessionWrong.value.length +
+      ' 道待巩固题' +
+      (isNormalSet.value ? '，再做一组新题' : '')
+    )
+  }
+  return isNormalSet.value ? '状态不错，再来一组保持手感' : '本组复习完成'
+})
+const primaryText = computed((): string => {
+  if (sessionWrong.value.length > 0) return '复习待巩固题'
+  return isNormalSet.value ? '再来 5 题' : '返回做题页'
+})
+const secondaryText = computed((): string => {
+  if (sessionWrong.value.length > 0) return isNormalSet.value ? '再来 5 题' : '返回做题页'
+  return isNormalSet.value ? '换一组' : ''
+})
+const nextDesc = computed((): string => {
+  if (sessionWrong.value.length > 0) {
+    return '模糊和不会的题明天进入「今日复习」；现在过一遍，记忆会更稳。'
+  }
+  return '换一组同方向、不同细分领域的题，检验迁移能力。'
+})
 
 function countResult(r: string): number {
   let n = 0
@@ -462,6 +598,41 @@ function reviewSessionWrong() {
   results.value = []
   wrongMode.value = false
   toTop()
+}
+
+// 小结主行动：有待巩固题先复习；全对则按场景续组或返回
+function onPrimaryAction() {
+  if (sessionWrong.value.length > 0) {
+    reviewSessionWrong()
+    return
+  }
+  if (isNormalSet.value) {
+    againFive()
+    return
+  }
+  goBack()
+}
+
+function onSecondaryAction() {
+  if (sessionWrong.value.length > 0) {
+    if (isNormalSet.value) againFive()
+    else goBack()
+    return
+  }
+  if (isNormalSet.value) goBack()
+}
+
+// 小结页原地续组：沿用方向/细分/难度直接开 5 题，不退回配置页
+function againFive() {
+  const url =
+    '/pages/training/room?positionId=' +
+    positionId +
+    '&subtrack=' +
+    subtrack +
+    '&difficulty=' +
+    difficulty +
+    '&count=5'
+  uni.redirectTo({ url: url })
 }
 
 function goBack() {
