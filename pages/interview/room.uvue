@@ -601,7 +601,8 @@ function initRecorder() {
   onTtsState((state: 'start' | 'end') => {
     if (state === 'start') {
       ttsSpeaking.value = true
-      ttsHint.value = 'speaking'
+      // 静默降级也会发 start（仅按文本长度占位）：不可用提示优先，不能被改回「正在播报」
+      if (ttsHint.value !== 'unavailable') ttsHint.value = 'speaking'
       avatarState.value = 'asking'
     } else {
       ttsSpeaking.value = false
@@ -923,6 +924,10 @@ function routeTranscribe(path: string) {
     }
     uploadAsrCloud(path)
       .then((r: AsrResponse) => {
+        if (r.text.trim().length === 0) {
+          // 服务端诚实降级会返回 200 + 空文本：云端 ASR_PROVIDER 未开或 WX 凭据失效
+          console.warn('[room] asr-cloud 返回空文本，检查云端 ASR_PROVIDER / WX_APPID / WX_SECRET')
+        }
         finishTranscribe(r.text)
       })
       .catch((e: any) => {

@@ -49,32 +49,47 @@ export async function uploadAsrCloud(audioPath: string): Promise<AsrResponse> {
   }
   const cloudPath =
     'asr/' + uid + '/' + Date.now().toString() + '-' + Math.floor(Math.random() * 100000) + '.mp3'
+  console.log('[asr] 开始上传云存储 ' + cloudPath)
+  // 20s 兜底：真机出现过 uploadFile 既无 success 也无 fail，页面永久停在「转写中…」
+  const UPLOAD_TIMEOUT_MS = 20000
   const fileID = await new Promise<string>((resolve, reject) => {
+    let settled = false
+    const finish = (id: string, err: string): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      if (err.length > 0) {
+        console.warn('[asr] 上传失败：' + err)
+        reject(new Error(err))
+        return
+      }
+      console.log('[asr] 上传完成 ' + id)
+      resolve(id)
+    }
+    const timer = setTimeout(() => {
+      finish('', 'ASR_CLOUD_UPLOAD_TIMEOUT')
+    }, UPLOAD_TIMEOUT_MS)
     g.wx.cloud.uploadFile({
       cloudPath: cloudPath,
       filePath: audioPath,
       config: { env: CLOUD_ENV_ID },
       success: (res: any) => {
         const id = res != null && res.fileID != null ? String(res.fileID) : ''
-        if (id.length === 0) {
-          reject(new Error('ASR_CLOUD_NO_FILEID'))
-        } else {
-          resolve(id)
-        }
+        finish(id, id.length === 0 ? 'ASR_CLOUD_NO_FILEID' : '')
       },
       fail: (e: any) => {
-        reject(
-          new Error(e != null && e.errMsg != null ? String(e.errMsg) : 'ASR_CLOUD_UPLOAD_FAILED')
-        )
+        finish('', e != null && e.errMsg != null ? String(e.errMsg) : 'ASR_CLOUD_UPLOAD_FAILED')
       }
     } as any)
   })
   try {
+    console.log('[asr] 请求云端转写')
     const r = await post('/interview/asr-cloud', { fileID: fileID })
     const d = r.data
     if (d == null) {
       throw new Error('ASR_EMPTY_RESPONSE')
     }
+    console.log('[asr] 转写返回')
     return d as AsrResponse
   } finally {
     // 隐私：无论成败都立刻删除云存储中的录音对象（best-effort，失败不阻塞）

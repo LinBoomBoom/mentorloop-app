@@ -115,12 +115,63 @@ function getWechatSI(): any {
   }
 }
 
-// 微信端 TTS：服务端腾讯云合成 → 云存储 cloud:// fileID → InnerAudioContext 直接播放
-// （cloud:// 走微信私有协议，不经域名校验，个人主体也无需备案域名）
+// 微信端 TTS：服务端腾讯云合成 → 云存储 fileID → 云 SDK 下载为本地临时文件 → InnerAudioContext 播放
+// 不直接用 cloud:// 或临时链接播放：iOS 真机上前者报 audioInstance is not set，
+// 后者拉流报 INNERERRCODE:-1001 请求超时（2026-10-23 真机）；本地文件播放已验证可用。
 // 任一步失败 → 回退 speakSilent（只字幕），面试流程不阻塞、不弹错误
 // 必须大于服务端 TTS 预算（server/src/services/tts.ts TTS_TIMEOUT_MS = 20s），
 // 否则客户端会先放弃、服务端随后才合成完 → 必然无声（2026-10-23 排查）
 const TTS_REQUEST_TIMEOUT_MS = 22000
+
+// 合成音频下载预算（云 SDK 私有链路，通常 1~2s）
+const AUDIO_DOWNLOAD_TIMEOUT_MS = 15000
+
+function downloadAudio(fileID: string): Promise<string> {
+  if (fileID.indexOf('cloud://') !== 0) return Promise.resolve(fileID)
+  return new Promise<string>((resolve) => {
+    const g = globalThis as any
+    if (g.wx == null || g.wx.cloud == null || g.wx.cloud.downloadFile == null) {
+      console.warn('[speech] cloud.downloadFile 不可用，无法取回合成音频')
+      resolve('')
+      return
+    }
+    let settled = false
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      console.warn('[speech] 下载合成音频超时')
+      resolve('')
+    }, AUDIO_DOWNLOAD_TIMEOUT_MS)
+    const settle = (path: string) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve(path)
+    }
+    try {
+      g.wx.cloud.downloadFile({
+        fileID: fileID,
+        config: { env: CLOUD_ENV_ID },
+        success: (res: any) => {
+          const p = res != null && res.tempFilePath != null ? String(res.tempFilePath) : ''
+          if (p.length > 0) {
+            console.log('[speech] 合成音频已下载到本地')
+            settle(p)
+          } else {
+            console.warn('[speech] 下载结果无临时路径')
+            settle('')
+          }
+        },
+        fail: (e: any) => {
+          console.warn('[speech] 下载合成音频失败', e)
+          settle('')
+        }
+      } as any)
+    } catch {
+      settle('')
+    }
+  })
+}
 
 function speakWeixin(text: string, onUnavailable?: () => void): TtsHandle {
   // iOS 静音键默认会让小程序音频完全无声：播放前先关掉 obeyMuteSwitch
@@ -170,36 +221,53 @@ function speakWeixin(text: string, onUnavailable?: () => void): TtsHandle {
       }
       if (r.fileID.length === 0) {
         // 服务端明确降级（缺密钥/写存储失败）：回退字幕模式，并明示不可用
+        // provider=stub 说明云端 TTS_PROVIDER 未配置；provider=tencent 则查密钥与云存储
+        console.warn('[speech] TTS 降级，provider=' + r.provider + ' chars=' + r.chars)
         notifyUnavailable()
         fallback = speakSilent(text)
         return
       }
+      // 合成已完成：后续是换链接与播放，不应再按「合成超时」降级
+      clearTimeout(timer)
       currentFileID = r.fileID
       if (fallback != null) {
         // 已因超时降级，放弃本次播放并回收
         ackCurrent()
         return
       }
-      audio = uni.createInnerAudioContext()
-      audio.src = r.fileID
-      audio.onPlay(() => {
-        if (!stopped) emitTtsState('start')
+      downloadAudio(r.fileID).then((src) => {
+        if (stopped || fallback != null) {
+          ackCurrent()
+          return
+        }
+        if (src.length === 0) {
+          // 取不回音频：明示无声并结束本次播报，不尝试不可达的远端播放
+          notifyUnavailable()
+          emitTtsState('end')
+          ackCurrent()
+          return
+        }
+        audio = uni.createInnerAudioContext()
+        audio.src = src
+        audio.onPlay(() => {
+          if (!stopped) emitTtsState('start')
+        })
+        audio.onEnded(() => {
+          if (!stopped) emitTtsState('end')
+          destroyAudio()
+          ackCurrent()
+        })
+        audio.onError((err: any) => {
+          // 播放失败不阻塞面试：字幕已展示题目，但要明确告知无声
+          const msg = err != null && err.errMsg != null ? String(err.errMsg) : 'unknown'
+          console.warn('[speech] TTS 播放失败', msg)
+          notifyUnavailable()
+          if (!stopped) emitTtsState('end')
+          destroyAudio()
+          ackCurrent()
+        })
+        audio.play()
       })
-      audio.onEnded(() => {
-        if (!stopped) emitTtsState('end')
-        destroyAudio()
-        ackCurrent()
-      })
-      audio.onError((err: any) => {
-        // 播放失败不阻塞面试：字幕已展示题目，但要明确告知无声
-        const msg = err != null && err.errMsg != null ? String(err.errMsg) : 'unknown'
-        console.warn('[speech] TTS 播放失败', msg)
-        notifyUnavailable()
-        if (!stopped) emitTtsState('end')
-        destroyAudio()
-        ackCurrent()
-      })
-      audio.play()
     })
     .catch((e: any) => {
       if (stopped || fallback != null) return
@@ -251,6 +319,7 @@ import { audioPlugin, AudioRecordConfig } from '../utssdk/interviewer-audio/inde
 // P2-10：实时音频通道（WS 传输/断线重连/缓冲），App 端流式识别依托该通道。
 import { realtimePlugin, RealtimeConfig } from '../utssdk/interviewer-realtime/index.uts'
 import { BASE_URL, useMock } from './client.uts'
+import { CLOUD_ENV_ID } from './env.uts'
 import { userStore } from '../store/user-profile.uts'
 // 注意：必须静态导入。uni-app x 的 mp-weixin 编译不支持动态 import()——
 // `import('./tts.uts')` 会被编译成字符串字面量 `"./tts.js".then(...)`，

@@ -29,3 +29,12 @@
 ## 4. 遗留风险
 
 - 房间/训练页新增确认卡后，小屏（≤667pt）存在纵向挤压风险；已用「确认态隐藏语音可视化」缓解，仍需真机截图确认。
+
+## 5. 2026-10-23 真机复测补记
+
+- **TTS 合成**：云端 `TENCENTCLOUD_SECRET_ID/KEY` 未随密钥轮换更新，日志为 `TTS_AuthFailure.SecretIdNotFound`；控制台更新并重新发布后合成恢复。
+- **TTS 播放**：iOS 上直接以 `cloud://` 作 `InnerAudioContext.src` 报 `operateAudio:fail audioInstance is not set`；换 HTTPS 临时链接后报 `INNERERRCODE:-1001 请求超时`；最终改为 `wx.cloud.downloadFile` 下载本地临时文件再播放，真机通过。
+- **ASR 上传**：`wx.cloud.uploadFile` 出现既无 success 也无 fail 回调，页面永久停在「转写中…」；`api/asr.uts` 增加 20s 超时兜底与上传/转写分步日志，真机转写恢复。
+- **降级提示**：`speakSilent` 的 start 事件曾把「语音播报暂不可用」覆盖为「正在播报」，已改为不可用提示优先。
+- **门禁复核**：`lint` / `typecheck` / `test`（113 通过）/ `build:mp-weixin` / `format:check` / uvue 守卫 / 设计 token 守卫全部通过。
+- **结论**：任务卡 §4 最后一项「真机复验」通过。
