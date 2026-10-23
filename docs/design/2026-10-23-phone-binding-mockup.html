@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>购买时绑定手机号 · 效果图</title>
+<style>
+  :root {
+    --navy: #0F2C4C;
+    --navy-deep: #0B2138;
+    --smart: #5B6CFF;
+    --reliable: #1FB6A6;
+    --warn: #E08A00;
+    --danger: #DC2626;
+    --bg: #F7F9FC;
+    --bg-muted: #F1F5F9;
+    --surface: #FFFFFF;
+    --ink: #1A2433;
+    --ink-soft: #5B6472;
+    --line: #E3E8F0;
+    --line-strong: #C9D2E3;
+    --mist: #AEB9CC;
+    --chip-smart: #EEF1FF;
+    --chip-reliable: #E6F7F4;
+    --chip-warn: #FFF3E0;
+    --chip-danger: #FEECEC;
+    --smart-light: #8FA0FF;
+    --reliable-light: #5CE8D8;
+    --warn-light: #F5C97B;
+    --font: -apple-system, "PingFang SC", "HarmonyOS Sans SC", system-ui, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #EEF1F6;
+    font-family: var(--font);
+    color: var(--ink);
+    padding: 28px 32px 40px;
+  }
+  h1 { font-size: 20px; font-weight: 700; color: var(--navy-deep); letter-spacing: .2px; }
+  .sub { font-size: 13px; color: var(--ink-soft); margin-top: 6px; line-height: 20px; }
+  .flow { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .flow .step {
+    font-size: 12px; color: var(--ink-soft); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+  }
+  .flow .step.on { color: var(--smart); background: var(--chip-smart); border-color: #D6DCFF; font-weight: 600; }
+  .flow .arrow { font-size: 12px; color: var(--mist); }
+
+  .row { display: flex; gap: 22px; margin-top: 22px; align-items: flex-start; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .caption { font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 18px; max-width: 375px; }
+  .caption b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- 手机框 ---------- */
+  .phone {
+    width: 375px; height: 812px; background: var(--bg); border-radius: 34px;
+    border: 1px solid #D7DEEA; overflow: hidden; position: relative;
+    box-shadow: 0 16px 40px rgba(15, 44, 76, .12);
+  }
+  .statusbar {
+    height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; font-size: 12px; font-weight: 600; color: var(--ink);
+  }
+  .statusbar .right { display: flex; align-items: center; gap: 6px; }
+  .bar { width: 3px; background: var(--ink); border-radius: 1px; }
+  .nav {
+    height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 600; background: var(--bg); position: relative;
+  }
+  .nav .back { position: absolute; left: 18px; font-size: 18px; color: var(--ink); }
+
+  .content { padding: 4px 16px 0; }
+  .brand {
+    background: var(--navy-deep); border-radius: 12px; padding: 18px;
+  }
+  .brand-top { display: flex; align-items: center; gap: 12px; }
+  .crown {
+    width: 44px; height: 44px; border-radius: 999px; background: rgba(245, 201, 123, .2);
+    display: flex; align-items: center; justify-content: center; flex: 0 0 44px;
+  }
+  .brand-title { font-size: 18px; font-weight: 700; color: #fff; }
+  .brand-sub { font-size: 12px; color: var(--mist); margin-top: 3px; }
+  .brand-desc { font-size: 13px; color: var(--mist); line-height: 20px; margin-top: 12px; }
+
+  .section { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+  .section small { font-size: 12px; font-weight: 400; color: var(--ink-soft); margin-left: 8px; }
+
+  .plan {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+  .plan.sel { border: 1.5px solid var(--smart); }
+  .radio {
+    width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid var(--line-strong);
+    display: flex; align-items: center; justify-content: center; flex: 0 0 20px;
+  }
+  .plan.sel .radio { background: var(--smart); border-color: var(--smart); }
+  .plan-main { flex: 1; }
+  .plan-name { font-size: 16px; font-weight: 600; }
+  .plan-desc { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .plan-price { text-align: right; }
+  .plan-price .now { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+  .plan-price .unit { font-size: 12px; color: var(--ink-soft); }
+  .plan-price .old { font-size: 12px; color: var(--ink-soft); text-decoration: line-through; font-family: var(--mono); margin-top: 2px; }
+  .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--smart); color: #fff;
+    font-weight: 600; margin-left: 6px;
+  }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .benefit { display: flex; gap: 10px; margin-top: 12px; }
+  .benefit:first-of-type { margin-top: 10px; }
+  .tick {
+    width: 20px; height: 20px; border-radius: 999px; background: var(--chip-reliable);
+    color: var(--reliable); font-size: 11px; display: flex; align-items: center; justify-content: center;
+    flex: 0 0 20px; margin-top: 1px;
+  }
+  .benefit .b-title { font-size: 14px; font-weight: 500; }
+  .benefit .b-desc { font-size: 12px; color: var(--ink-soft); margin-top: 2px; line-height: 17px; }
+
+  .bind-alert {
+    margin-top: 14px; background: var(--chip-warn); border: 1px solid #F3D9A8;
+    border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .bind-alert .i {
+    width: 22px; height: 22px; border-radius: 999px; background: #FFE7C2; color: var(--warn);
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 22px;
+  }
+  .bind-alert .t { font-size: 14px; font-weight: 600; color: #8A5300; }
+  .bind-alert .d { font-size: 12px; color: #A06A12; margin-top: 2px; line-height: 17px; }
+  .bind-alert .go {
+    font-size: 13px; font-weight: 600; color: var(--smart); background: var(--surface);
+    border: 1px solid #D6DCFF; border-radius: 8px; padding: 7px 12px; white-space: nowrap;
+  }
+
+  .bottombar {
+    position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface);
+    border-top: 1px solid var(--line); padding: 12px 16px 28px;
+  }
+  .btn {
+    height: 48px; border-radius: 8px; background: var(--smart); color: #fff;
+    font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  }
+  .btn.ghost { background: transparent; color: var(--ink-soft); font-size: 14px; font-weight: 500; height: 40px; }
+  .btn.line { background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); }
+
+  /* ---------- 半屏层 ---------- */
+  .mask { position: absolute; inset: 0; background: rgba(11, 33, 56, .6); }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface);
+    border-radius: 16px 16px 0 0; padding: 18px 20px 30px;
+  }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; }
+  .sheet-title { font-size: 18px; font-weight: 700; }
+  .close {
+    width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center;
+    justify-content: center; color: var(--mist); font-size: 18px;
+  }
+  .sheet-desc { font-size: 12px; color: var(--ink-soft); line-height: 18px; margin-top: 6px; }
+  .field-label { font-size: 12px; color: var(--ink-soft); margin: 16px 0 6px; }
+  .field {
+    height: 44px; background: var(--bg-muted); border-radius: 8px; padding: 0 12px;
+    display: flex; align-items: center; font-size: 16px; color: var(--ink);
+  }
+  .field.ph { color: var(--mist); }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .code-btn {
+    height: 44px; padding: 0 14px; border-radius: 8px; background: var(--chip-smart);
+    color: var(--smart); font-size: 14px; display: flex; align-items: center; white-space: nowrap;
+  }
+  .code-btn.muted { background: var(--bg-muted); color: var(--ink-soft); }
+  .agree { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+  .checkbox {
+    width: 18px; height: 18px; border-radius: 6px; border: 1px solid var(--line-strong);
+    background: var(--surface); flex: 0 0 18px;
+  }
+  .checkbox.on { background: var(--smart); border-color: var(--smart); }
+  .agree .txt { font-size: 12px; color: var(--ink-soft); }
+  .agree .txt em { color: var(--smart); font-style: normal; }
+  .error {
+    margin-top: 12px; background: var(--chip-danger); border-radius: 8px; padding: 10px 12px;
+    font-size: 12px; color: var(--danger); line-height: 17px;
+  }
+  .footnote { font-size: 12px; color: var(--ink-soft); line-height: 17px; margin-top: 10px; }
+  .divider { height: 1px; background: var(--line); margin: 16px 0; }
+
+  /* ---------- 账号与安全 ---------- */
+  .account { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 999px; background: var(--chip-smart);
+    color: var(--smart); font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .account .n { font-size: 16px; font-weight: 600; }
+  .account .u { font-size: 12px; color: var(--ink-soft); font-family: var(--mono); margin-top: 3px; }
+  .list { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .list-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .k { color: var(--ink); }
+  .list-row .v { color: var(--ink-soft); font-family: var(--mono); display: flex; align-items: center; gap: 8px; }
+  .list-row .v .act { color: var(--smart); font-family: var(--font); font-weight: 600; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; }
+  .tag.ok { background: var(--chip-reliable); color: var(--reliable); }
+  .tag.no { background: var(--chip-warn); color: var(--warn); }
+  .hint {
+    margin-top: 12px; font-size: 12px; color: var(--ink-soft); line-height: 18px;
+    background: var(--bg-muted); border-radius: 8px; padding: 10px 12px;
+  }
+  svg { display: block; }
+</style>
+</head>
+<body>
+  <h1>购买时绑定手机号 · 效果图（待评审）</h1>
+  <div class="sub">登录仍为 openid 静默登录；手机号只在购买会员/加量包时采集并绑定到当前账号。</div>
+  <div class="flow">
+    <span class="step">选择套餐</span><span class="arrow">→</span>
+    <span class="step">检测账号是否已绑定手机号</span><span class="arrow">→</span>
+    <span class="step on">未绑定：绑定手机号</span><span class="arrow">→</span>
+    <span class="step">支付</span><span class="arrow">／</span>
+    <span class="step">已绑定：直接支付</span>
+  </div>
+
+  <div class="row">
+    <!-- 1 会员页 · 未绑定 -->
+    <div class="cell">
+      <div class="phone">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right"><span style="font-size:11px">5G</span><div class="bar" style="height:5px"></div><div class="bar" style="height:8px"></div><div class="bar" style="height:11px"></div></div>
+        </div>
+        <div class="content">
+          <div class="brand">
+            <div class="brand-top">
+              <div class="crown">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5C97B" stroke-width="2" stroke-linejoin="round">
+                  <path d="M3 8l4 3 5-6 5 6 4-3v9H3z" />
+                </svg>
+              </div>
+              <div>
+                <div class="brand-title">智面研学 会员</div>
+                <div class="brand-sub">按月 / 年开通 · 不自动续费</div>
+              </div>
+            </div>
+            <div class="brand-desc">会员解锁模拟面试不限次、深度证据报告与专项训练不限量</div>
+          </div>
+
+          <div class="section">会员套餐<small>有效期内不限次数</small></div>
+          <div class="plan sel">
+            <div class="radio">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div class="plan-main">
+              <div class="plan-name">会员 · 月卡<span class="badge">限时 7 折</span></div>
+              <div class="plan-desc">全部会员权益，有效期 30 天</div>
+            </div>
+            <div class="plan-price">
+              <div><span class="now">¥39</span><span class="unit">/月</span></div>
+              <div class="old">¥59</div>
+            </div>
+          </div>
+          <div class="plan">
+            <div class="radio"></div>
+            <div class="plan-main">
+              <div class="plan-name">会员 · 年卡</div>
+              <div class="plan-desc">折合 19 元/月，立省 480 元</div>
+            </div>
+            <div class="plan-price">
+              <div><span class="now">¥228</span><span class="unit">/年</span></div>
+              <div class="old">¥708</div>
+            </div>
+          </div>
+
+          <div class="section">会员权益</div>
+          <div class="card">
+            <div class="benefit">
+              <div class="tick">✓</div>
+              <div><div class="b-title">模拟面试不限次</div><div class="b-desc">有效期内随时开始，不按场扣次</div></div>
+            </div>
+            <div class="benefit">
+              <div class="tick">✓</div>
+              <div><div class="b-title">深度报告 + 证据链</div><div class="b-desc">六维评分逐条引用原始转写证据</div></div>
+            </div>
+            <div class="benefit">
+              <div class="tick">✓</div>
+              <div><div class="b-title">专项训练不限量</div><div class="b-desc">3/5/10 分钟碎片化训练不限次数</div></div>
+            </div>
+          </div>
+
+          <div class="bind-alert">
+            <div class="i">!</div>
+            <div style="flex:1">
+              <div class="t">未绑定手机号</div>
+              <div class="d">购买前需绑定手机号，用于会员权益发放与售后凭证</div>
+            </div>
+            <div class="go">去绑定</div>
+          </div>
+        </div>
+        <div class="bottombar">
+          <div class="btn">立即开通 · ¥39</div>
+        </div>
+      </div>
+      <div class="caption"><b>① 会员页（未绑定）</b><br />账号区变成「待绑定」提示，点击开通先走绑定</div>
+    </div>
+
+    <!-- 2 绑定半屏层 -->
+    <div class="cell">
+      <div class="phone">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right"><span style="font-size:11px">5G</span><div class="bar" style="height:5px"></div><div class="bar" style="height:8px"></div><div class="bar" style="height:11px"></div></div>
+        </div>
+        <div class="content" style="opacity:.5">
+          <div class="brand">
+            <div class="brand-top">
+              <div class="crown">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5C97B" stroke-width="2" stroke-linejoin="round"><path d="M3 8l4 3 5-6 5 6 4-3v9H3z" /></svg>
+              </div>
+              <div>
+                <div class="brand-title">智面研学 会员</div>
+                <div class="brand-sub">按月 / 年开通 · 不自动续费</div>
+              </div>
+            </div>
+          </div>
+          <div class="section">会员套餐</div>
+          <div class="plan sel">
+            <div class="radio"></div>
+            <div class="plan-main"><div class="plan-name">会员 · 月卡</div><div class="plan-desc">全部会员权益，有效期 30 天</div></div>
+            <div class="plan-price"><div><span class="now">¥39</span><span class="unit">/月</span></div></div>
+          </div>
+        </div>
+
+        <div class="mask"></div>
+        <div class="sheet">
+          <div class="sheet-head">
+            <div class="sheet-title">绑定手机号</div>
+            <div class="close">×</div>
+          </div>
+          <div class="sheet-desc">会员权益与售后凭证需要手机号。手机号只绑定到当前微信账号，不用于登录。</div>
+
+          <div class="field-label">手机号</div>
+          <div class="field">138 0013 8000</div>
+
+          <div class="field-label">验证码</div>
+          <div class="field-row">
+            <div class="field">6 位验证码</div>
+            <div class="code-btn">获取验证码</div>
+          </div>
+
+          <div class="agree">
+            <div class="checkbox on"></div>
+            <div class="txt">我已阅读并同意<em>《会员服务协议》</em></div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="btn">绑定并继续支付 · ¥39</div>
+            <div class="btn ghost">暂不绑定，仅浏览</div>
+          </div>
+          <div class="footnote">绑定后可在「我的 → 账号与安全」更换手机号。</div>
+        </div>
+      </div>
+      <div class="caption"><b>② 绑定手机号（半屏层）</b><br />一次完成绑定与支付；关闭/暂不绑定则不下单</div>
+    </div>
+
+    <!-- 3 冲突态 -->
+    <div class="cell">
+      <div class="phone">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right"><span style="font-size:11px">5G</span><div class="bar" style="height:5px"></div><div class="bar" style="height:8px"></div><div class="bar" style="height:11px"></div></div>
+        </div>
+        <div class="content" style="opacity:.5">
+          <div class="brand">
+            <div class="brand-top">
+              <div class="crown">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5C97B" stroke-width="2" stroke-linejoin="round"><path d="M3 8l4 3 5-6 5 6 4-3v9H3z" /></svg>
+              </div>
+              <div>
+                <div class="brand-title">智面研学 会员</div>
+                <div class="brand-sub">按月 / 年开通 · 不自动续费</div>
+              </div>
+            </div>
+          </div>
+          <div class="section">会员套餐</div>
+          <div class="plan sel">
+            <div class="radio"></div>
+            <div class="plan-main"><div class="plan-name">会员 · 月卡</div><div class="plan-desc">全部会员权益，有效期 30 天</div></div>
+            <div class="plan-price"><div><span class="now">¥39</span><span class="unit">/月</span></div></div>
+          </div>
+        </div>
+
+        <div class="mask"></div>
+        <div class="sheet">
+          <div class="sheet-head">
+            <div class="sheet-title">绑定手机号</div>
+            <div class="close">×</div>
+          </div>
+          <div class="sheet-desc">会员权益与售后凭证需要手机号。手机号只绑定到当前微信账号，不用于登录。</div>
+
+          <div class="field-label">手机号</div>
+          <div class="field">138 0013 8000</div>
+
+          <div class="field-label">验证码</div>
+          <div class="field-row">
+            <div class="field">482913</div>
+            <div class="code-btn muted">53s 后重发</div>
+          </div>
+
+          <div class="error">该手机号已绑定其他微信账号。请更换手机号；若确属你本人，请联系客服处理。</div>
+
+          <div class="agree">
+            <div class="checkbox on"></div>
+            <div class="txt">我已阅读并同意<em>《会员服务协议》</em></div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="btn">绑定并继续支付 · ¥39</div>
+            <div class="btn ghost">暂不绑定，仅浏览</div>
+          </div>
+          <div class="footnote">客服入口：我的 → 帮助与客服（工作日 9:00–18:00）。</div>
+        </div>
+      </div>
+      <div class="caption"><b>③ 手机号冲突</b><br />不覆盖原账号；给出更换/客服两条明确出口</div>
+    </div>
+
+    <!-- 4 账号与安全 -->
+    <div class="cell">
+      <div class="phone">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right"><span style="font-size:11px">5G</span><div class="bar" style="height:5px"></div><div class="bar" style="height:8px"></div><div class="bar" style="height:11px"></div></div>
+        </div>
+        <div class="nav"><span class="back">‹</span>账号与安全</div>
+        <div class="content">
+          <div class="section">账号信息</div>
+          <div class="card">
+            <div class="account">
+              <div class="avatar">林</div>
+              <div>
+                <div class="n">林同学</div>
+                <div class="u">UID 10024873</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">账号绑定</div>
+          <div class="list">
+            <div class="list-row">
+              <div class="k">登录方式</div>
+              <div class="v" style="font-family:var(--font); color:var(--ink-soft)">微信 openid</div>
+            </div>
+            <div class="list-row">
+              <div class="k">手机号</div>
+              <div class="v">138****8000 <span class="act">更换</span></div>
+            </div>
+            <div class="list-row">
+              <div class="k">绑定状态</div>
+              <div class="v"><span class="tag ok">已绑定</span></div>
+            </div>
+          </div>
+
+          <div class="hint">手机号仅用于会员权益发放、支付与售后凭证，<b style="color:var(--ink)">不用于登录</b>。更换后不影响已购买的权益。</div>
+
+          <div class="section">设备与安全</div>
+          <div class="list">
+            <div class="list-row"><div class="k">当前设备</div><div class="v" style="font-family:var(--font)">iPhone 15</div></div>
+            <div class="list-row"><div class="k">注销账号</div><div class="v"><span style="color:var(--danger); font-family:var(--font)">申请注销</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><b>④ 账号与安全（已绑定）</b><br />手机号脱敏展示，可更换；明确「不用于登录」</div>
+    </div>
+  </div>
+</body>
+</html>
