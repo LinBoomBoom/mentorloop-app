@@ -121,6 +121,13 @@ export function setVirtualPayTransportForTest(fn: PostLike | null, token: string
   injectedToken = token
 }
 
+// 测试注入：可感知 force 的 token 获取器（验证 40001 强制刷新重试）
+export type VirtualTokenGetter = (force: boolean) => Promise<string>
+let injectedTokenGetter: VirtualTokenGetter | null = null
+export function setVirtualPayTokenGetterForTest(fn: VirtualTokenGetter | null): void {
+  injectedTokenGetter = fn
+}
+
 async function postJson(url: string, body: string, timeoutMs: number): Promise<WxHttpResponse> {
   if (injectedPost != null) return injectedPost(url, body, timeoutMs)
   return wxApiRequestLoose({
@@ -139,7 +146,8 @@ export async function queryVirtualOrderWithToken(
   accessToken: string,
   openid: string,
   orderId: string,
-  timeoutMs: number = 10000
+  timeoutMs: number = 10000,
+  onErrcode: ((code: number) => void) | null = null
 ): Promise<QueryOrderResult | null> {
   if (openid.length === 0 || orderId.length === 0) return null
   // 请求体必须与签名原文逐字一致
@@ -168,7 +176,10 @@ export async function queryVirtualOrderWithToken(
     return null
   }
   if (json == null || json.errcode !== 0 || json.order == null) {
-    console.warn('[virtual-pay] query_order errcode =', json != null ? json.errcode : 'null')
+    const code = json != null && typeof json.errcode === 'number' ? json.errcode : -1
+    const msg = json != null && json.errmsg != null ? String(json.errmsg) : ''
+    console.warn('[virtual-pay] query_order errcode =', code, msg)
+    if (onErrcode != null) onErrcode(code)
     return null
   }
   const o = json.order
@@ -182,24 +193,58 @@ export async function queryVirtualOrderWithToken(
 }
 
 // 生产入口：自动换取 access_token（进程内缓存，复用 ASR/TTS 通道）
+// 40001（凭据失效）→ 强制刷新 token 后重试一次：
+// 滚动发布 / 多副本会各自缓存 token，旧实例可能持有已被顶掉的凭据。
 export async function queryVirtualOrder(
   env: Env,
   openid: string,
   orderId: string
 ): Promise<QueryOrderResult | null> {
-  let token = injectedToken
-  if (token.length === 0) {
-    if (env.wxAppId.length === 0 || env.wxSecret.length === 0) return null
-    try {
-      token = await getWxAccessToken({
-        appId: env.wxAppId,
-        secret: env.wxSecret,
-        timeoutMs: 10000
-      })
-    } catch (e: any) {
-      console.warn('[virtual-pay] access_token 获取失败', e instanceof Error ? e.message : e)
-      return null
+  // token 来源优先级：测试 getter > 测试固定 token > 真实换取
+  const getToken = async (force: boolean): Promise<string> => {
+    if (injectedTokenGetter != null) return injectedTokenGetter(force)
+    if (injectedToken.length > 0) return injectedToken
+    return getWxAccessToken({
+      appId: env.wxAppId,
+      secret: env.wxSecret,
+      timeoutMs: 10000,
+      force: force
+    })
+  }
+  if (
+    injectedToken.length === 0 &&
+    injectedTokenGetter == null &&
+    (env.wxAppId.length === 0 || env.wxSecret.length === 0)
+  ) {
+    return null
+  }
+  let token = ''
+  try {
+    token = await getToken(false)
+  } catch (e: any) {
+    console.warn('[virtual-pay] access_token 获取失败', e instanceof Error ? e.message : e)
+    return null
+  }
+  let tokenInvalid = false
+  const first = await queryVirtualOrderWithToken(
+    env,
+    token,
+    openid,
+    orderId,
+    10000,
+    (code: number) => {
+      if (code === 40001) tokenInvalid = true
     }
+  )
+  if (first != null || !tokenInvalid) return first
+  // 固定 token 的测试注入无法刷新，不再重试
+  if (injectedTokenGetter == null && injectedToken.length > 0) return null
+  console.warn('[virtual-pay] query_order 40001，强制刷新 access_token 后重试一次')
+  try {
+    token = await getToken(true)
+  } catch (e: any) {
+    console.warn('[virtual-pay] access_token 强制刷新失败', e instanceof Error ? e.message : e)
+    return null
   }
   return queryVirtualOrderWithToken(env, token, openid, orderId)
 }

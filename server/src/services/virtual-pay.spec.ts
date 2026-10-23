@@ -1,5 +1,5 @@
 // 虚拟支付 payData 与双签名单测（W3）：官方算法 §5.5 的字符串拼接与密钥口径
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { createHmac } from 'node:crypto'
 import {
   buildSignData,
@@ -8,6 +8,9 @@ import {
   calcSignature,
   createVirtualPayParams,
   isVirtualPayReady,
+  queryVirtualOrder,
+  setVirtualPayTransportForTest,
+  setVirtualPayTokenGetterForTest,
   VIRTUAL_PAY_MODE,
   VIRTUAL_PAY_ENV
 } from './virtual-pay.js'
@@ -81,5 +84,75 @@ describe('虚拟支付签名（W3）', () => {
     env.mpAppKey = 'k'
     env.mpOfferId = ''
     expect(isVirtualPayReady(env)).toBe(false)
+  })
+})
+
+describe('虚拟支付查单 40001 重试', () => {
+  afterEach(() => {
+    setVirtualPayTransportForTest(null, '')
+    setVirtualPayTokenGetterForTest(null)
+  })
+
+  function envWithCreds(): Env {
+    const env = envWithVirtual()
+    env.wxAppId = 'wx_test'
+    env.wxSecret = 'wx_secret'
+    return env
+  }
+
+  it('首次 40001 → 强制刷新 token 后重试成功', async () => {
+    const env = envWithCreds()
+    const forced: boolean[] = []
+    setVirtualPayTokenGetterForTest(async (force: boolean) => {
+      forced.push(force)
+      return force ? 'TOKEN_NEW' : 'TOKEN_OLD'
+    })
+    let calls = 0
+    setVirtualPayTransportForTest(async (url: string) => {
+      calls++
+      const token = new URL(url).searchParams.get('access_token')
+      if (token === 'TOKEN_OLD') {
+        return {
+          status: 200,
+          body: JSON.stringify({ errcode: 40001, errmsg: 'invalid credential' })
+        }
+      }
+      return {
+        status: 200,
+        body: JSON.stringify({
+          errcode: 0,
+          order: { status: 2, order_fee: 2900, paid_fee: 2900, wx_order_id: 'wx_1' }
+        })
+      }
+    })
+
+    const r = await queryVirtualOrder(env, 'openid_1', 'order_1')
+    expect(r).not.toBeNull()
+    expect(r!.status).toBe(2)
+    expect(r!.wxOrderId).toBe('wx_1')
+    expect(calls).toBe(2)
+    expect(forced).toEqual([false, true])
+  })
+
+  it('非 40001 错误不刷新 token', async () => {
+    const env = envWithCreds()
+    let tokenCalls = 0
+    setVirtualPayTokenGetterForTest(async () => {
+      tokenCalls++
+      return 'TOKEN_OLD'
+    })
+    let calls = 0
+    setVirtualPayTransportForTest(async () => {
+      calls++
+      return {
+        status: 200,
+        body: JSON.stringify({ errcode: 268490004, errmsg: 'pay_sig invalid' })
+      }
+    })
+
+    const r = await queryVirtualOrder(env, 'openid_1', 'order_1')
+    expect(r).toBeNull()
+    expect(calls).toBe(1)
+    expect(tokenCalls).toBe(1)
   })
 })

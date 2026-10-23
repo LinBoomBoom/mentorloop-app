@@ -82,6 +82,13 @@
 
 门禁：`lint` / `typecheck` / `test`（113 通过）/ `build:mp-weixin` / `format:check` / uvue 守卫 / 设计 token 守卫全部通过。真机复测：播报与转写均正常。
 
+### 1.8 虚拟支付查单 40001 加固（当日追加）
+
+- 现象：查单兜底每 5 分钟打印 `[virtual-pay] query_order errcode = 40001`，均来自密钥轮换期间仍在运行的旧实例（其进程内缓存了失效的 access_token）。
+- 处置：`query_order` 遇 40001 时强制刷新 access_token 后重试一次，日志补充 `errmsg`；新增 2 例单测覆盖「40001 重试成功」与「非 40001 不刷新」。
+- 涉及文件：[virtual-pay.ts](../../server/src/services/virtual-pay.ts)、[virtual-pay.spec.ts](../../server/src/services/virtual-pay.spec.ts)。
+- 门禁：服务端 `lint` / `typecheck` / `test`（204 通过）/ `build` 全绿。
+
 ## 2. 未完成 / 待办
 
 | #   | 事项               | 卡点 / 下一步                                                                   |
