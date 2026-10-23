@@ -47,6 +47,11 @@ export default async function (app: FastifyInstance): Promise<void> {
       const uid = (request.user as any).uid as string
       const user = await getUserByUid(db, uid)
       if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
+      // 购买前必须绑定手机号（契约 2026-10-23-phone-binding §2）：
+      // 业务码 40902 与「会话过期 409」区分，客户端据此打开绑定层而非重登重试
+      if (user.phone == null || user.phone.length === 0) {
+        return reply.code(409).send(fail(40902, '请先绑定手机号后再购买'))
+      }
       const { skuId, platform } = request.body as { skuId: string; platform?: string }
       if (platform !== 'app' && platform !== 'mp-weixin') {
         return reply.code(400).send(fail(400, '平台参数不合法'))

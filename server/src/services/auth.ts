@@ -74,21 +74,28 @@ async function findOrCreateUser(
   return rowToUser(row)
 }
 
+// 校验并消费短信验证码（登录与手机号绑定共用）。
+// 必须存在已发送的记录且未过期未消费（不做"无记录也放行"的 mock 兜底，
+// 万能码漏洞已于 2026-10-11 收紧；本地联调先调 /auth/sms-code 即可）
+export async function consumeSmsCode(db: Db, phone: string, code: string): Promise<boolean> {
+  const rec = (await db.prepare('SELECT * FROM sms_codes WHERE phone = ?').get(phone)) as
+    { code: string; expires_at: number; consumed: number } | undefined
+  const validRecord =
+    rec != null && rec.code === code && rec.expires_at > now() && rec.consumed === 0
+  if (!validRecord) return false
+  await db.prepare('UPDATE sms_codes SET consumed = 1 WHERE phone = ?').run(phone)
+  return true
+}
+
 export async function loginByPhone(
   db: Db,
   env: Env,
   phone: string,
   code: string
 ): Promise<AuthResult | null> {
-  // 验证码校验：必须存在已发送的记录且未过期未消费（不做"无记录也放行"的 mock 兜底，
-  // 万能码漏洞已于 2026-10-11 收紧；本地联调先调 /auth/sms-code 即可）
-  const rec = (await db.prepare('SELECT * FROM sms_codes WHERE phone = ?').get(phone)) as
-    { code: string; expires_at: number; consumed: number } | undefined
-  const validRecord =
-    rec != null && rec.code === code && rec.expires_at > now() && rec.consumed === 0
-  if (!validRecord) return null
+  const okCode = await consumeSmsCode(db, phone, code)
+  if (!okCode) return null
 
-  await db.prepare('UPDATE sms_codes SET consumed = 1 WHERE phone = ?').run(phone)
   const user = await findOrCreateUser(db, 'phone', 'phone', phone)
   await syncDesktopLink(db, createDesktopGateway(db, env), user) // 桌面账号互通（关闭时零开销）
   return { uid: user.uid, nickname: user.nickname, token: '' }
@@ -337,4 +344,32 @@ export async function getFreshSessionKey(
 export async function getUserByUid(db: Db, uid: string): Promise<UserRow | null> {
   const row = await db.prepare('SELECT * FROM users WHERE uid = ?').get(uid)
   return row != null ? rowToUser(row) : null
+}
+
+// 手机号已被其他账号占用（路由层转成 409，不覆盖原归属）
+export const PHONE_TAKEN = 'PHONE_TAKEN'
+
+// 把手机号绑定到当前登录账号（不新建账号、不切换 uid、不签发新 token）。
+// 契约：docs/contracts/2026-10-23-phone-binding.freeze.md
+export async function bindPhoneToUser(db: Db, uid: string, phone: string): Promise<UserRow | null> {
+  const me = await getUserByUid(db, uid)
+  if (me == null) return null
+  // 幂等：已绑定同一手机号直接返回（不重复校验验证码、不改归属）
+  if (me.phone === phone) return me
+
+  let conflict = false
+  await db.transaction(async () => {
+    const owner = (await db.prepare('SELECT id FROM users WHERE phone = ?').get(phone)) as
+      { id: number } | undefined
+    if (owner != null && owner.id !== me.id) {
+      conflict = true
+      return
+    }
+    await db
+      .prepare('UPDATE users SET phone = ?, updated_at = ? WHERE id = ?')
+      .run(phone, now(), me.id)
+  })()
+
+  if (conflict) throw new Error(PHONE_TAKEN)
+  return getUserByUid(db, uid)
 }

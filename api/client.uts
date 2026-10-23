@@ -97,7 +97,9 @@ function handleResponse(
       body0 != null && body0.message != null && body0.message.length > 0 ? body0.message : ''
     const msg = serverMsg.length > 0 ? serverMsg : '网络异常（' + statusCode + '）'
     if (!silent) uni.showToast({ title: msg, icon: 'none' })
-    const err: any = { message: msg, statusCode: statusCode }
+    // 透出服务端业务码：区分「手机号已绑定 40901 / 未绑定下单 40902」与既有 409 会话过期
+    const serverCode = body0 != null && typeof body0.code === 'number' ? Number(body0.code) : 0
+    const err: any = { message: msg, statusCode: statusCode, code: serverCode }
     reject(err as any)
     return
   }

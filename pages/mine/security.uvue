@@ -61,39 +61,50 @@
         </view>
 
         <text class="text-xs text-ink-soft mt-4 text-center leading-4">
-          手机号换绑、第三方绑定与设备管理需要后端支持，将随服务端上线开放
+          第三方绑定与设备管理需要后端支持，将随服务端上线开放
         </text>
       </view>
     </scroll-view>
 
     <!-- 登录半屏层：小程序端手机号+验证码（APP 端仍走 /pages/login/login） -->
     <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
+
+    <!-- 手机号绑定 / 换绑（设计稿 2026-10-23-phone-binding-mockup ④） -->
+    <ml-phone-bind-sheet
+      v-if="showPhoneBind"
+      mode="change"
+      @success="onPhoneBound"
+      @exit="onPhoneBindExit"
+    ></ml-phone-bind-sheet>
   </view>
 </template>
 
 <script setup lang="uts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlButton from '../../components/ml-button.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlTag from '../../components/ml-tag.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
-import { userStore } from '../../store/user-profile.uts'
+import mlPhoneBindSheet from '../../components/ml-phone-bind-sheet.uvue'
+import { userStore, UserProfilePatch } from '../../store/user-profile.uts'
 import { trackEvent } from '../../api/tracking.uts'
-import { deleteAccount } from '../../api/auth.uts'
+import { deleteAccount, fetchMyPhone } from '../../api/auth.uts'
+import { useMock } from '../../api/env.uts'
 import { themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const DANGER = themeValue('danger', '#DC2626')
-const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const BG_MUTED = themeValue('bgMuted', '#E9E9EF')
 const SURFACE = themeValue('surface', '#FFFFFF')
-const MIST = themeValue('mist', '#AEB9CC')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
-const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
-const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
-const CHIP_DANGER = themeValue('chipDanger', '#FEECEC')
+const MIST = themeValue('mist', '#AEAEB2')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
+const CHIP_RELIABLE = themeValue('chipReliable', '#E8F7F4')
+const CHIP_WARN = themeValue('chipWarn', '#FFF4E5')
+const CHIP_DANGER = themeValue('chipDanger', '#FFEBEA')
 
 const nickname = ref(userStore.profile.nickname)
 const uid = ref(userStore.profile.uid)
@@ -109,15 +120,39 @@ function planText(p: string): string {
   return '免费版'
 }
 
-type SecurityRow = { icon: string; color: string; tint: string; text: string; desc: string; soon: boolean }
-const securityRows: SecurityRow[] = [
+// 手机号（购买前绑定；换绑在本页完成）
+const phone = ref(userStore.profile.phone)
+const showPhoneBind = ref(false)
+
+// 脱敏展示：138****1234（仅本人页面）
+function maskPhone(p: string): string {
+  if (p.length !== 11) return p
+  return p.substring(0, 3) + '****' + p.substring(7)
+}
+
+type SecurityAction = 'bindPhone' | 'delete' | 'soon'
+type SecurityRow = {
+  icon: string
+  color: string
+  tint: string
+  text: string
+  desc: string
+  soon: boolean
+  action: SecurityAction
+}
+
+const securityRows = computed((): SecurityRow[] => [
   {
     icon: 'smartphone',
     color: SMART,
     tint: CHIP_SMART,
-    text: '修改手机号',
-    desc: '更换登录手机号（需短信验证）',
-    soon: true
+    text: phone.value.length > 0 ? '修改手机号' : '绑定手机号',
+    desc:
+      phone.value.length > 0
+        ? maskPhone(phone.value) + ' · 会员权益与售后凭证'
+        : '会员权益与售后凭证，绑定到当前账号',
+    soon: false,
+    action: 'bindPhone'
   } as SecurityRow,
   {
     icon: 'repeat',
@@ -125,7 +160,8 @@ const securityRows: SecurityRow[] = [
     tint: CHIP_RELIABLE,
     text: '第三方绑定',
     desc: '微信 / 手机号绑定管理',
-    soon: true
+    soon: true,
+    action: 'soon'
   } as SecurityRow,
   {
     icon: 'shield',
@@ -133,7 +169,8 @@ const securityRows: SecurityRow[] = [
     tint: CHIP_WARN,
     text: '设备管理',
     desc: '查看与下线已登录设备',
-    soon: true
+    soon: true,
+    action: 'soon'
   } as SecurityRow,
   {
     icon: 'trash-2',
@@ -141,9 +178,10 @@ const securityRows: SecurityRow[] = [
     tint: CHIP_DANGER,
     text: '注销账号',
     desc: '永久删除账号与服务端数据',
-    soon: false
+    soon: false,
+    action: 'delete'
   } as SecurityRow
-]
+])
 
 function goLogin() {
   // #ifdef APP
@@ -161,6 +199,31 @@ function refreshProfile() {
   uid.value = userStore.profile.uid
   planLabel.value = planText(userStore.profile.plan)
   loggedIn.value = userStore.isLoggedIn()
+  phone.value = userStore.profile.phone
+}
+
+// 进入页面与服务端对齐手机号（本地态可能来自支付前绑定或旧缓存）
+onShow(() => {
+  refreshProfile()
+  if (!loggedIn.value || useMock()) return
+  fetchMyPhone()
+    .then((p: string | null) => {
+      if (p == null) return
+      phone.value = p
+      userStore.setProfile({ phone: p } as UserProfilePatch)
+      userStore.persist()
+    })
+    .catch(() => {})
+})
+
+function onPhoneBound(p: string) {
+  showPhoneBind.value = false
+  phone.value = p
+  uni.showToast({ title: '手机号已保存', icon: 'none' })
+}
+
+function onPhoneBindExit() {
+  showPhoneBind.value = false
 }
 
 function onLoginSuccess() {
@@ -174,11 +237,19 @@ function onLoginExit() {
 }
 
 function onSecurityRow(s: SecurityRow) {
-  if (s.soon) {
+  if (s.action === 'soon') {
     uni.showToast({ title: '即将上线', icon: 'none' })
     return
   }
-  if (s.text === '注销账号') {
+  if (s.action === 'bindPhone') {
+    if (!loggedIn.value) {
+      goLogin()
+      return
+    }
+    showPhoneBind.value = true
+    return
+  }
+  if (s.action === 'delete') {
     if (!loggedIn.value) {
       uni.showToast({ title: '请先登录', icon: 'none' })
       return

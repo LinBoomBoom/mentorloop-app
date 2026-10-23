@@ -33,6 +33,9 @@ export type OrderResult = {
   payParams: PayParams | null // Mock 环境为 null（直接发放）
 }
 
+// 未绑定手机号（服务端业务码 40902）：调用方应打开绑定半屏层，而不是走「重登重试」
+export const PHONE_REQUIRED = 'PHONE_REQUIRED'
+
 // 服务端下单（静默：错误由调用方统一提示，避免与页内 toast 重复）
 async function createRemoteOrder(skuId: SkuId, platform: string): Promise<any> {
   const res = await requestSilent(
@@ -74,8 +77,10 @@ export async function purchase(
     try {
       data = await createRemoteOrder(skuId, platform)
     } catch (e: any) {
-      // 服务端 409：session_key 缺失/过期 → 重登后重试一次
+      // 服务端 409 分两种：40902 未绑定手机号（打开绑定层）；其余为 session_key 缺失/过期（重登后重试一次）
       const sc = e != null && e.statusCode != null ? Number(e.statusCode) : 0
+      const bizCode = e != null && e.code != null ? Number(e.code) : 0
+      if (bizCode === 40902) throw new Error(PHONE_REQUIRED)
       if (sc === 409 && attempt === 0) {
         await refreshWechatSession()
         attempt++

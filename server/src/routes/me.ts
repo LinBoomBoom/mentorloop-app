@@ -2,11 +2,20 @@
 import { FastifyInstance } from 'fastify'
 import { unlinkSync } from 'node:fs'
 import { requireAuth } from './auth-guard.js'
-import { getUserByUid } from '../services/auth.js'
+import { getUserByUid, consumeSmsCode, bindPhoneToUser, PHONE_TAKEN } from '../services/auth.js'
 import { deleteCloudFiles } from '../services/wx-storage.js'
-import { okData, ok } from '../util.js'
+import { okData, ok, fail } from '../util.js'
 
 const MAX_REPORTS = 20
+
+// 手机号绑定：验证码失败限流（10 次 / 15 分钟，按手机号），防爆破
+const BIND_FAIL_LIMIT = 10
+const BIND_FAIL_WINDOW_MS = 15 * 60_000
+const bindFailLog = new Map<string, number[]>()
+
+function pruneWindow(arr: number[], nowMs: number, windowMs: number): void {
+  while (arr.length > 0 && arr[0] <= nowMs - windowMs) arr.shift()
+}
 
 export default async function (app: FastifyInstance): Promise<void> {
   const db = (app as any).db as import('../db.js').Db
@@ -31,6 +40,70 @@ export default async function (app: FastifyInstance): Promise<void> {
     }))
     return okData(list)
   })
+
+  // 当前账号绑定的手机号（购买前绑定，契约：2026-10-23-phone-binding.freeze.md）
+  // 未绑定返回 null；手机号仅本人可见，客户端展示前自行脱敏
+  app.get('/me/phone', { preHandler: requireAuth }, async (request, reply) => {
+    const user = await getUserByUid(db, (request.user as any).uid as string)
+    if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
+    const phone = user.phone != null && user.phone.length > 0 ? user.phone : null
+    return okData({ phone: phone })
+  })
+
+  // 绑定手机号到当前账号：不新建账号、不切换 uid、不签发新 token。
+  // 冲突（手机号已属他人）返回 409 + 业务码 40901，不覆盖原归属。
+  app.post(
+    '/me/phone',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['phone', 'code'],
+          properties: { phone: { type: 'string' }, code: { type: 'string' } }
+        }
+      }
+    },
+    async (request, reply) => {
+      const uid = (request.user as any).uid as string
+      const { phone, code } = request.body as { phone: string; code: string }
+
+      if (phone.length !== 11 || !/^[0-9]{11}$/.test(phone)) {
+        return reply.code(400).send(fail(400, '手机号格式不正确'))
+      }
+
+      // 幂等：当前账号已绑定同一手机号 → 直接成功（不校验验证码、不改归属）
+      const me = await getUserByUid(db, uid)
+      if (me == null) return reply.code(401).send(fail(401, '用户不存在'))
+      if (me.phone === phone) return okData({ phone: phone })
+
+      const t = Date.now()
+      const fails = bindFailLog.get(phone) ?? []
+      pruneWindow(fails, t, BIND_FAIL_WINDOW_MS)
+      if (fails.length >= BIND_FAIL_LIMIT) {
+        return reply.code(400).send(fail(400, '尝试过于频繁，请稍后再试'))
+      }
+
+      const okCode = await consumeSmsCode(db, phone, code)
+      if (!okCode) {
+        fails.push(t)
+        bindFailLog.set(phone, fails)
+        return reply.code(400).send(fail(400, '验证码不正确或已过期'))
+      }
+
+      try {
+        const user = await bindPhoneToUser(db, uid, phone)
+        if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
+        bindFailLog.delete(phone)
+        return okData({ phone: phone })
+      } catch (e: any) {
+        if (e instanceof Error && e.message === PHONE_TAKEN) {
+          return reply.code(409).send(fail(40901, '该手机号已绑定其他账号'))
+        }
+        throw e
+      }
+    }
+  )
 
   // 账号自助删除（合规红线）：级联清理该用户全部数据 + 磁盘简历文件；幂等（重复调用仍返回 ok）
   app.delete('/me/account', { preHandler: requireAuth }, async (request) => {
