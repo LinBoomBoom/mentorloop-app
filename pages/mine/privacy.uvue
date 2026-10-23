@@ -57,6 +57,10 @@
           服务端账号数据（面试记录、报告、简历等）可在「账号与安全 →
           注销账号」自助删除，删除后不可恢复
         </text>
+        <view class="flex-row items-center justify-center mt-3">
+          <text class="text-xs text-ink-soft">完整说明见</text>
+          <text class="text-xs text-smart ml-0.5" @click="openPrivacyDoc">《隐私政策》</text>
+        </view>
       </view>
     </view>
   </scroll-view>
@@ -166,6 +170,10 @@ function confirmClear() {
       if (r.confirm) clearLocal()
     }
   })
+}
+
+function openPrivacyDoc() {
+  uni.navigateTo({ url: '/pages/legal/legal?doc=privacy' })
 }
 
 function clearLocal() {

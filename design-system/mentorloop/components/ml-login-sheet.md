@@ -35,5 +35,5 @@
 ## 关键实现约束
 
 - 内嵌 ml-icon 与 ml-button，不重复实现图标/按钮样式。
-- 协议链接（`《用户协议》/《隐私政策》`）URL 为空时 toast「即将上线」，非空跳 webview 页。
+- 协议链接（`《用户协议》/《隐私政策》`）URL 为空时打开应用内全文页 `pages/legal/legal`，非空跳 webview 页。
 - 倒计时 timer 必须在 `onUnmounted` 清理，防泄漏。

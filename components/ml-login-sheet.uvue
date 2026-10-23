@@ -149,9 +149,9 @@ function toggleAgree() {
   agreed.value = !agreed.value
 }
 
-function openDoc(url: string, title: string) {
+function openDoc(url: string, title: string, doc: string) {
   if (url.length === 0) {
-    uni.showToast({ title: title + '即将上线', icon: 'none' })
+    uni.navigateTo({ url: '/pages/legal/legal?doc=' + doc })
     return
   }
   uni.navigateTo({
@@ -160,11 +160,11 @@ function openDoc(url: string, title: string) {
 }
 
 function openAgreement() {
-  openDoc(AGREEMENT_URL, '用户协议')
+  openDoc(AGREEMENT_URL, '用户协议', 'agreement')
 }
 
 function openPrivacy() {
-  openDoc(PRIVACY_URL, '隐私政策')
+  openDoc(PRIVACY_URL, '隐私政策', 'privacy')
 }
 
 function onExit() {

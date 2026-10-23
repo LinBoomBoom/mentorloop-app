@@ -1,0 +1,41 @@
+<template>
+  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
+    <view class="px-4 pt-4 pb-10">
+      <!-- 文首：标题与版本 -->
+      <ml-card>
+        <text class="text-base font-semibold text-ink">{{ doc.title }}</text>
+        <text class="text-xs text-ink-soft mt-1"
+          >更新日期：{{ doc.updatedAt }} · 生效日期：{{ doc.effectiveAt }}</text
+        >
+        <text class="text-sm text-ink-soft leading-6 mt-2">{{ doc.intro }}</text>
+      </ml-card>
+
+      <!-- 正文分节 -->
+      <view v-for="s in doc.sections" :key="s.title" class="mt-4">
+        <text class="text-sm font-semibold text-ink">{{ s.title }}</text>
+        <view v-for="(p, pi) in s.paragraphs" :key="pi" class="mt-1.5">
+          <text class="text-sm text-ink-soft leading-6">{{ p }}</text>
+        </view>
+      </view>
+
+      <text class="text-xs text-ink-soft mt-6 text-center leading-4"
+        >本文本自生效之日起施行；如条款更新，将在本页面公示。</text
+      >
+    </view>
+  </scroll-view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import mlCard from '../../components/ml-card.uvue'
+import { AGREEMENT_DOC, LegalDoc, getLegalDoc } from '../../data/legal-docs.uts'
+
+const doc = ref<LegalDoc>(AGREEMENT_DOC)
+
+onLoad((q: OnLoadOption) => {
+  const key = decodeURIComponent(q['doc'] ?? '')
+  doc.value = getLegalDoc(key)
+  uni.setNavigationBarTitle({ title: doc.value.title })
+})
+</script>

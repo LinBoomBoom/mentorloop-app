@@ -58,8 +58,9 @@
 
 ## 5. 已知缺口（随发布收口）
 
-- 登录页《用户协议》《隐私政策》**跳转结构已接**（`api/env.uts` `AGREEMENT_URL` / `PRIVACY_URL` 常量 + `pages/mine/webview` 容器页，空值降级 toast）→ 发布前须回填真实 URL（依赖 ICP 备案）。
-- 服务端账号数据自助删除 ✅ 已开放（`DELETE /me/account` + 客户端注销入口）；正式删除响应时效承诺（如 15 个工作日）待 LC 在隐私政策文本中明示。
+- 登录页《用户协议》《隐私政策》**跳转结构已接**（`api/env.uts` `AGREEMENT_URL` / `PRIVACY_URL` 常量 + `pages/mine/webview` 外链容器 + `pages/legal/legal` 应用内全文页，空值改开内置全文，不再降级 toast）→ 真实 URL 仍须在备案后回填（依赖 ICP 备案）。
+- 《会员服务协议》全文已内置应用内（`data/legal-docs.uts` → `pages/legal/legal?doc=membership`），付费页入口直达；外链非必需项。
+- 服务端账号数据自助删除 ✅ 已开放（`DELETE /me/account` + 客户端注销入口）；隐私政策内置全文已明示「15 个工作日内答复」响应口径，待 LC / 法务审定。
 - ICP / App 备案、算法评估等外部流程**未启动** → 需预留 2–3 个月缓冲。
 
 ---

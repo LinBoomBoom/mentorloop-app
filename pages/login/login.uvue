@@ -115,16 +115,17 @@ function toggleAgree() {
 }
 
 function openAgreement() {
-  openDoc(AGREEMENT_URL, '用户协议')
+  openDoc(AGREEMENT_URL, '用户协议', 'agreement')
 }
 
 function openPrivacy() {
-  openDoc(PRIVACY_URL, '隐私政策')
+  openDoc(PRIVACY_URL, '隐私政策', 'privacy')
 }
 
-function openDoc(url: string, title: string) {
+// URL 已回填走 webview；未回填时打开应用内全文页（不依赖备案域名）
+function openDoc(url: string, title: string, doc: string) {
   if (url.length === 0) {
-    uni.showToast({ title: title + '即将上线', icon: 'none' })
+    uni.navigateTo({ url: '/pages/legal/legal?doc=' + doc })
     return
   }
   uni.navigateTo({

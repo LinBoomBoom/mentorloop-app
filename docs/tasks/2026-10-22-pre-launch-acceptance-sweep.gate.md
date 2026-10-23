@@ -53,5 +53,12 @@
 ## 5. 未覆盖 / 已知非阻塞
 
 - E2E 报告类 7 条仍为 skip：`ml-segmented` 等 virtualHost 组件对 automator 不可见（历史台账已登记），且登录态 `/me/reports` 会覆盖种子；本次以模拟器截图人工核验深链与分段。
-- `AGREEMENT_URL` / `PRIVACY_URL` 与会员协议全文仍为空：待 LC 于提审前回填（任务卡 §9 #9）。
+- `AGREEMENT_URL` / `PRIVACY_URL` 外链仍为空（无备案域名）；三份协议全文已于 2026-10-23 内置应用内 `pages/legal/legal`，提审时可访问，外链待 LC 备案后回填（任务卡 §9 #9）。
 - 云端部署 W2–W5、W6 真单、短信真发、合法域名与密钥轮换不在本卡范围。
+
+## 6. 2026-10-23 补记：应用内协议全文
+
+- 新增 `data/legal-docs.uts`（用户协议 / 隐私政策 / 会员服务协议全文）与 `pages/legal/legal.uvue`（按 `doc` 参数渲染）。
+- 入口切换：登录页与登录面板（URL 空 → 应用内全文，URL 非空 → webview）、关于页（取消「即将上线」）、付费页（会员协议全文）、隐私页（新增全文入口）。
+- G2 复核：`pnpm lint` 0、`pnpm typecheck` 0、`pnpm test` 8 文件 / 113 用例全绿、`node scripts/check-uvue-css.mjs` OK（32 文件）、`node scripts/check-design-tokens.mjs` A–H 全绿、`pnpm build:mp-weixin` DONE。
+- 产物核验：`dist/build/mp-weixin/app.json` 含 `pages/legal/legal`；`data/legal-docs.js` 含「会员服务协议」「不自动续费」「注销账号」等关键文案。

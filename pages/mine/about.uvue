@@ -96,6 +96,7 @@ type AboutRow = {
   desc: string
   soon: boolean
   url: string
+  doc: string
 }
 const rows: AboutRow[] = [
   {
@@ -104,9 +105,10 @@ const rows: AboutRow[] = [
     tint: CHIP_SMART,
     text: '用户协议',
     desc: '使用条款与服务约定',
-    // URL 未回填时如实展示「即将上线」，不伪装成可查看
-    soon: AGREEMENT_URL.length === 0,
-    url: AGREEMENT_URL
+    // 外链未回填时打开应用内全文；不再显示「即将上线」
+    soon: false,
+    url: AGREEMENT_URL,
+    doc: 'agreement'
   } as AboutRow,
   {
     icon: 'shield',
@@ -114,8 +116,9 @@ const rows: AboutRow[] = [
     tint: CHIP_RELIABLE,
     text: '隐私政策',
     desc: '数据收集、使用与删除说明',
-    soon: PRIVACY_URL.length === 0,
-    url: PRIVACY_URL
+    soon: false,
+    url: PRIVACY_URL,
+    doc: 'privacy'
   } as AboutRow,
   {
     icon: 'message-square',
@@ -124,7 +127,8 @@ const rows: AboutRow[] = [
     text: '意见反馈',
     desc: '告诉我们你的想法与问题',
     soon: true,
-    url: ''
+    url: '',
+    doc: ''
   } as AboutRow,
   {
     icon: 'sparkles',
@@ -133,7 +137,8 @@ const rows: AboutRow[] = [
     text: '更多岗位方向',
     desc: '测试 / 数据等方向陆续开放',
     soon: true,
-    url: ''
+    url: '',
+    doc: ''
   } as AboutRow
 ]
 
@@ -142,16 +147,18 @@ function openRow(s: AboutRow) {
     uni.showToast({ title: '即将上线', icon: 'none' })
     return
   }
-  if (s.url.length === 0) {
-    uni.showToast({ title: s.text + '即将上线', icon: 'none' })
+  if (s.url.length > 0) {
+    uni.navigateTo({
+      url:
+        '/pages/mine/webview?url=' +
+        encodeURIComponent(s.url) +
+        '&title=' +
+        encodeURIComponent(s.text)
+    })
     return
   }
-  uni.navigateTo({
-    url:
-      '/pages/mine/webview?url=' +
-      encodeURIComponent(s.url) +
-      '&title=' +
-      encodeURIComponent(s.text)
-  })
+  if (s.doc.length > 0) {
+    uni.navigateTo({ url: '/pages/legal/legal?doc=' + s.doc })
+  }
 }
 </script>

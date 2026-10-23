@@ -67,6 +67,10 @@
     {
       "path": "pages/mine/webview",
       "style": { "navigationBarTitleText": "协议详情" }
+    },
+    {
+      "path": "pages/legal/legal",
+      "style": { "navigationBarTitleText": "协议与政策" }
     }
   ],
   "tabBar": {

@@ -165,7 +165,7 @@ import {
 import { purchase } from '../../api/membership.uts'
 import { PAY_CANCELLED } from '../../api/virtual-pay.uts'
 import { trackEvent } from '../../api/tracking.uts'
-import { AGREEMENT_URL, useMock } from '../../api/env.uts'
+import { useMock } from '../../api/env.uts'
 import { APP_NAME } from '../../data/app-meta.uts'
 import { themeValue } from '../../styles/theme.uts'
 
@@ -255,25 +255,9 @@ async function doPay() {
   }
 }
 
+// 会员协议全文内置在应用内（pages/legal/legal），不依赖备案域名与外链
 function showAgreement() {
-  if (AGREEMENT_URL.length > 0) {
-    uni.navigateTo({
-      url:
-        '/pages/mine/webview?url=' +
-        encodeURIComponent(AGREEMENT_URL) +
-        '&title=' +
-        encodeURIComponent('会员服务协议')
-    })
-    return
-  }
-  // 协议全文待 LC 回填；先给出与代码事实一致的要点，避免「即将上线」死路
-  uni.showModal({
-    title: '会员服务协议（要点）',
-    content:
-      '会员为一次性购买的数字权益：月卡有效期 30 天、年卡 365 天，不自动续费；支付成功后即时生效。完整协议将在提审前公示。',
-    showCancel: false,
-    confirmText: '我知道了'
-  })
+  uni.navigateTo({ url: '/pages/legal/legal?doc=membership' })
 }
 
 // 小额联调：走同一条真实支付链路（下单 → 拉起 → 推送发货），支付后停留本页便于复测
