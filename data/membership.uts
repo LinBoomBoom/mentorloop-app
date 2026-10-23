@@ -28,15 +28,54 @@ export type PlanBenefit = {
   desc: string
 }
 
-// 会员权益（文档 02 §2 报告深度/训练计划等能力映射）
-export const MEMBER_BENEFITS: PlanBenefit[] = [
-  { label: '无限次模拟面试', desc: '面试不限次数，随时开始' } as PlanBenefit,
-  { label: '深度报告 + 证据链', desc: '六维评分逐条引用原始转写证据' } as PlanBenefit,
-  { label: '多轮追问与证据对照', desc: '围绕同一知识点最多深挖 2 层' } as PlanBenefit,
-  { label: '专项训练不限量', desc: '3/5/10 分钟碎片化训练不限次数' } as PlanBenefit,
-  { label: '成长档案长期追踪', desc: '历史报告对比与能力趋势' } as PlanBenefit,
-  { label: '简历优化建议稿', desc: '每月深度评审额度，逐段标注建议稿' } as PlanBenefit
-]
+// 权益随选中套餐变化（2026-10-23 真机反馈：不同套餐权益文案不能完全一样）
+// 只写代码已实现的能力；单次包与会员的差异必须在选择时立刻可见。
+export function benefitsForSku(s: Sku): PlanBenefit[] {
+  if (s.id === 'member_monthly' || s.id === 'member_yearly') {
+    const days = s.id === 'member_yearly' ? '365' : '30'
+    return [
+      { label: '模拟面试不限次', desc: '有效期内随时开始，不按场扣次' } as PlanBenefit,
+      { label: '深度报告 + 证据链', desc: '六维评分逐条引用原始转写证据' } as PlanBenefit,
+      { label: '多轮追问与证据对照', desc: '围绕同一知识点最多深挖 2 层' } as PlanBenefit,
+      { label: '专项训练不限量', desc: '3/5/10 分钟碎片化训练不限次数' } as PlanBenefit,
+      { label: '成长档案长期追踪', desc: '历史报告对比与能力趋势' } as PlanBenefit,
+      { label: '简历深度评审 每月 5 次', desc: '逐段标注建议稿，额度每月重置' } as PlanBenefit,
+      {
+        label: '有效期 ' + days + ' 天',
+        desc: '一次性购买，到期不自动续费'
+      } as PlanBenefit
+    ]
+  }
+  if (s.id === 'single_pack_3' || s.id === 'single_pack_10') {
+    const isTen = s.id === 'single_pack_10'
+    return [
+      {
+        label: (isTen ? '10' : '3') + ' 场模拟面试',
+        desc: '按场次扣减，用完为止'
+      } as PlanBenefit,
+      { label: 'AI 深度报告', desc: '每场都能拿到六维评分与证据链' } as PlanBenefit,
+      { label: '多轮追问', desc: '围绕同一知识点最多深挖 2 层' } as PlanBenefit,
+      {
+        label: '有效期 ' + (isTen ? '180' : '90') + ' 天',
+        desc: '一次性购买，到期不自动续费'
+      } as PlanBenefit,
+      { label: '无需开通会员', desc: '单次包可独立购买，不与会员资格绑定' } as PlanBenefit
+    ]
+  }
+  // 简历深度评审单次包
+  return [
+    { label: '3 次简历深度评审', desc: 'AI 逐条批注与改写建议' } as PlanBenefit,
+    { label: '历史记录可回看', desc: '每次评审单独留存，可随时回放' } as PlanBenefit
+  ]
+}
+
+// 单次包的能力边界：明写不含项，避免与会员权益混淆
+export function limitsForSku(s: Sku): string[] {
+  if (s.kind === 'single') {
+    return ['不含专项训练不限次（仍按每日免费额度）', '不含简历月度评审额度（可单独购买简历包）']
+  }
+  return []
+}
 
 // SKU 展示配置（价格与后端商品中心对齐；Mock 环境本地定义）
 export const SKUS: Sku[] = [

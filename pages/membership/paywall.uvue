@@ -28,11 +28,14 @@
         </text>
       </view>
 
-      <!-- SKU 选择 -->
+      <!-- SKU 选择（会员套餐与加量包分区，避免「加量包是否需会员」的歧义） -->
       <view class="mt-4">
-        <text class="text-sm font-semibold text-ink">选择套餐</text>
         <view class="mt-2.5">
-          <view v-for="s in skus" :key="s.id" class="mb-2.5">
+          <view v-for="(s, idx) in skus" :key="s.id" class="mb-2.5">
+            <view v-if="isSectionStart(idx)" class="flex-col mb-2" :class="idx > 0 ? 'mt-3' : ''">
+              <text class="text-sm font-semibold text-ink">{{ sectionTitle(idx) }}</text>
+              <text class="text-xs text-ink-soft mt-0.5">{{ sectionCaption(idx) }}</text>
+            </view>
             <ml-card :selected="selected === s.id" pressable @tap="selected = s.id">
               <view v-if="s.badge.length > 0" class="absolute right-3 top-3">
                 <ml-tag
@@ -85,7 +88,7 @@
       <view v-if="from !== 'resume'" class="mt-4">
         <ml-card :padded="false">
           <view class="p-4">
-            <text class="text-sm font-semibold text-ink">会员权益</text>
+            <text class="text-sm font-semibold text-ink">{{ benefitsTitle }}</text>
             <view v-for="(b, i) in benefits" :key="b.label" class="flex-col mt-3">
               <view class="flex-row items-start" :class="i > 0 ? 'mt-0' : ''">
                 <view
@@ -99,6 +102,16 @@
                   <text class="text-xs text-ink-soft mt-0.5 leading-4">{{ b.desc }}</text>
                 </view>
               </view>
+            </view>
+            <!-- 单次包的能力边界：明写不含项，避免与会员权益混淆 -->
+            <view v-if="limits.length > 0" class="mt-3 rounded-control p-3 bg-bg-muted">
+              <text class="text-xs font-semibold text-ink-soft">本套餐不含</text>
+              <text
+                v-for="(l, i) in limits"
+                :key="'l' + i"
+                class="text-xs text-ink-soft mt-1 leading-4"
+                >· {{ l }}</text
+              >
             </view>
           </view>
         </ml-card>
@@ -157,9 +170,11 @@ import {
   RESUME_PACK,
   TEST_PACK,
   TEST_PACK_IOS,
-  MEMBER_BENEFITS,
+  benefitsForSku,
+  limitsForSku,
   Sku,
   SkuId,
+  PlanBenefit,
   formatPrice
 } from '../../data/membership.uts'
 import { purchase } from '../../api/membership.uts'
@@ -178,7 +193,6 @@ const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 
 // 入口来源（mine=我的页 / gating=权益拦截 / index=首页 / resume=简历页）
 const from = ref('mine')
-const benefits = MEMBER_BENEFITS
 const selected = ref<SkuId>('member_monthly')
 const paying = ref(false)
 // 联调支付独立 loading：不得驱动「立即开通」按钮的禁用/支付中态（2026-10-22 真机反馈串扰）
@@ -231,8 +245,34 @@ const selectedSku = computed((): Sku => {
 
 const payButtonText = computed((): string => {
   const s = selectedSku.value
-  return (s.kind === 'resume' ? '立即购买 · ¥' : '立即开通 · ¥') + formatPrice(s.priceCent)
+  // 会员是「开通」，单次包/加量包是「购买」（语义不同，避免被误认为必须开会员）
+  return (s.kind === 'member' ? '立即开通 · ¥' : '立即购买 · ¥') + formatPrice(s.priceCent)
 })
+
+// 权益随选中的套餐变化（切换套餐即时刷新，不再所有档位同一份文案）
+const benefits = computed((): PlanBenefit[] => benefitsForSku(selectedSku.value))
+const limits = computed((): string[] => limitsForSku(selectedSku.value))
+const benefitsTitle = computed((): string =>
+  selectedSku.value.kind === 'member' ? '会员权益' : '本套餐包含'
+)
+
+// 分区标题：会员套餐 / 加量包（简历入口仅一个 SKU，不分区）
+function isSectionStart(idx: number): boolean {
+  if (from.value === 'resume') return false
+  const list = skus.value
+  if (idx === 0) return true
+  return list[idx].kind !== list[idx - 1].kind
+}
+
+function sectionTitle(idx: number): string {
+  return skus.value[idx].kind === 'member' ? '会员套餐' : '加量包 · 单次购买'
+}
+
+function sectionCaption(idx: number): string {
+  return skus.value[idx].kind === 'member'
+    ? '按时间开通，有效期内模拟面试不限次'
+    : '无需开通会员，按场次购买，用完为止'
+}
 
 async function doPay() {
   if (paying.value) return

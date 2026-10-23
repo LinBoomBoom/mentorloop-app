@@ -138,6 +138,7 @@ import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
+import { loginByWechat, applyAuth } from '../../api/auth.uts'
 import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
 import { fetchQuota } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
@@ -301,8 +302,28 @@ function goLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
   // #endif
   // #ifndef APP
-  // 小程序端：拉起手机号+验证码登录半屏层（此前的 toast 占位已移除）
-  showLogin.value = true
+  // 小程序端：openid 静默登录即账号；只有静默登录失败才拉起手机号兜底层
+  uni.login({
+    provider: 'weixin',
+    success: (res: any) => {
+      const code = res.code as string
+      if (code == null || code.length === 0) {
+        showLogin.value = true
+        return
+      }
+      loginByWechat(code)
+        .then((r) => {
+          applyAuth(r, '')
+          onLoginSuccess()
+        })
+        .catch(() => {
+          showLogin.value = true
+        })
+    },
+    fail: () => {
+      showLogin.value = true
+    }
+  })
   // #endif
 }
 

@@ -357,7 +357,6 @@ import mlSectionHeader from '../../components/ml-section-header.uvue'
 import {
   parseResume,
   fetchResumeHistory,
-  fetchResumeDetail,
   deleteResumeRecord,
   fetchResumeQuota,
   uploadResumeFile
@@ -600,21 +599,12 @@ function goPaywall() {
   uni.navigateTo({ url: '/pages/membership/paywall?from=resume' })
 }
 
-async function openHistory(h: ResumeHistoryItem) {
-  try {
-    const r = await fetchResumeDetail(h.resumeId)
-    if (r == null) {
-      uni.showToast({ title: '记录不存在', icon: 'none' })
-      return
-    }
-    fileName.value = r.fileName
-    applyParse(r)
-    trackEvent('resume_history_open', { resumeId: h.resumeId })
-    uni.showToast({ title: '已载入历史记录', icon: 'none' })
-  } catch (e: any) {
-    console.warn('[resume] detail failed', e)
-    uni.showToast({ title: '载入失败，请重试', icon: 'none' })
-  }
+// 历史记录回放：跳独立详情页，不覆盖当前「解析 / 优化」工作区（2026-10-23 用户反馈）
+function openHistory(h: ResumeHistoryItem) {
+  trackEvent('resume_history_open', { resumeId: h.resumeId })
+  uni.navigateTo({
+    url: '/pages/resume/detail?resumeId=' + encodeURIComponent(h.resumeId)
+  })
 }
 
 async function doRemoveHistory(h: ResumeHistoryItem) {

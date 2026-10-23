@@ -78,7 +78,7 @@
           <view class="mt-2">
             <ml-button
               :text="
-                !phoneOk
+                !loggedIn
                   ? '登录后进入面试'
                   : deviceOk
                     ? '进入面试'
@@ -86,9 +86,9 @@
                       ? '检测中…'
                       : '开始检测'
               "
-              :type="deviceOk && phoneOk ? 'primary' : 'secondary'"
+              :type="deviceOk && loggedIn ? 'primary' : 'secondary'"
               block
-              :disabled="checking || !canStart || !phoneOk"
+              :disabled="checking || !canStart || !loggedIn"
               @tap="onPrimary"
             ></ml-button>
           </view>
@@ -98,7 +98,7 @@
       </view>
     </scroll-view>
 
-    <!-- 进面试强制登录层（个人主体：手机号+验证码；静默登录仅可浏览） -->
+    <!-- 登录兜底层：openid 静默登录即可面试；仅在静默登录失败时出现 -->
     <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
   </view>
 </template>
@@ -112,6 +112,7 @@ import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'
+import { loginByWechat, applyAuth } from '../../api/auth.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
 import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
@@ -143,8 +144,9 @@ const experienceLevel = ref<ExperienceLevel>(userStore.profile.experienceLevel)
 const checking = ref(false)
 const checkError = ref('')
 
-// 进面试强制登录门控（PO 裁决：静默登录仅可浏览，手机号身份才可面试）
-const phoneOk = ref(userStore.hasPhoneIdentity())
+// 登录门控（2026-10-23 PO 口径）：openid 静默登录即可面试；
+// 手机号改为购买会员时再绑定，不再作为进入面试的前置条件。
+const loggedIn = ref(userStore.isLoggedIn())
 const showLogin = ref(false)
 
 const initialChecks: CheckItem[] = [
@@ -172,9 +174,9 @@ onShow(() => {
   // 从用户 profile 恢复默认选择
   positionId.value = userStore.profile.positionId
   experienceLevel.value = userStore.profile.experienceLevel
-  // 登录门控：无手机号身份则弹出登录层
-  phoneOk.value = userStore.hasPhoneIdentity()
-  showLogin.value = !phoneOk.value
+  // 登录门控：已登录（openid）即放行；未登录先静默登录一次，失败才弹兜底层
+  loggedIn.value = userStore.isLoggedIn()
+  if (!loggedIn.value) ensureLogin()
   // P2-12：插件快速预检（只读，不弹窗）——已授权/联网时直接点亮对应项
   quickPrelight()
   // P2-12：网络断连监听（面试前断网即时提示，给出解决路径）
@@ -189,9 +191,42 @@ onShow(() => {
   })
 })
 
+// 静默登录（openid）：成功即放行；失败才落到登录层兜底
+function ensureLogin() {
+  // #ifdef MP-WEIXIN
+  uni.login({
+    provider: 'weixin',
+    success: (res: any) => {
+      const code = res.code as string
+      if (code == null || code.length === 0) {
+        showLogin.value = true
+        return
+      }
+      loginByWechat(code)
+        .then((r) => {
+          applyAuth(r, '')
+          loggedIn.value = true
+          showLogin.value = false
+        })
+        .catch(() => {
+          console.warn('[prep] silent login failed')
+          showLogin.value = true
+        })
+    },
+    fail: () => {
+      showLogin.value = true
+    }
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  // App/H5：无微信静默登录，直接走登录页/登录层
+  showLogin.value = true
+  // #endif
+}
+
 // 登录层回调：成功放行；「暂不登录」退出本页返回上一页（不放行面试）
 function onLoginSuccess() {
-  phoneOk.value = userStore.hasPhoneIdentity()
+  loggedIn.value = userStore.isLoggedIn()
   showLogin.value = false
   uni.showToast({ title: '登录成功', icon: 'none' })
 }

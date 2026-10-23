@@ -61,6 +61,17 @@
         </view>
 
         <text class="text-lg font-semibold text-white leading-6 mt-2">{{ displayQuestion }}</text>
+        <!-- 播报状态：不让「听不到」变成无解释的静默 -->
+        <view v-if="ttsHint.length > 0" class="flex-row items-center mt-2">
+          <ml-icon
+            :name="ttsHint === 'speaking' ? 'volume-2' : 'info'"
+            :size="12"
+            :color="ttsHint === 'speaking' ? SMART_LIGHT : MIST"
+          ></ml-icon>
+          <text class="text-xs text-mist ml-1.5">{{
+            ttsHint === 'speaking' ? '面试官正在播报…' : '语音播报暂不可用，请阅读题面'
+          }}</text>
+        </view>
         <text v-if="caption.length > 0" class="text-xs text-mist mt-2">{{ caption }}</text>
 
         <!-- 换一种说法：追加澄清行，原题保留在上一行 -->
@@ -103,10 +114,39 @@
           </view>
         </view>
       </view>
+
+      <!-- 识别结果确认：先看清自己说了什么，再决定提交或重录（2026-10-23 真机反馈） -->
+      <view v-if="reviewVisible" class="mt-3 rounded-card p-4" :style="panelStyle">
+        <view class="flex-row items-center justify-between">
+          <text class="text-xs font-semibold text-white">识别结果 · 请确认</text>
+          <text class="text-xs text-mist">{{ reviewText.length }} 字</text>
+        </view>
+        <textarea
+          class="w-full h-24 rounded-control p-3 text-sm text-ink bg-surface mt-2"
+          v-model="reviewText"
+          placeholder="识别文本可在此修改…"
+          placeholder-class="text-ink-soft"
+          :maxlength="1000"
+        />
+        <view class="flex-row mt-3">
+          <ml-button text="重新录制" type="secondary" @tap="retryRecord"></ml-button>
+          <view class="w-2"></view>
+          <ml-button
+            text="确认提交"
+            type="primary"
+            :disabled="reviewText.length === 0"
+            @tap="confirmReview"
+          ></ml-button>
+        </view>
+      </view>
     </view>
 
-    <!-- 语音状态可视化（辅助：状态环 + 声波，D3 语义保留） -->
-    <view class="flex-row items-end justify-center pt-2" style="height: 128px">
+    <!-- 语音状态可视化（辅助：状态环 + 声波，D3 语义保留）；确认态让位给回答文本 -->
+    <view
+      v-if="!reviewVisible"
+      class="flex-row items-end justify-center pt-2"
+      style="height: 128px"
+    >
       <ml-voice-visual
         :state="avatarState"
         :speaking="ttsSpeaking"
@@ -332,6 +372,11 @@ let asrSession: RealtimeAsrSession | null = null
 const cap = speechCapability()
 // TTS 播放状态（驱动语音状态切换）
 const ttsSpeaking = ref(false)
+// TTS 可听性提示：'' 未播报 | speaking 播放中 | unavailable 无法出声（明示，不静默）
+const ttsHint = ref('')
+// 识别结果确认态：先让用户看清自己的回答，再决定提交或重录
+const reviewVisible = ref(false)
+const reviewText = ref('')
 
 const initialState: string = 'idle'
 const avatarState = ref(initialState)
@@ -556,9 +601,12 @@ function initRecorder() {
   onTtsState((state: 'start' | 'end') => {
     if (state === 'start') {
       ttsSpeaking.value = true
+      ttsHint.value = 'speaking'
       avatarState.value = 'asking'
     } else {
       ttsSpeaking.value = false
+      // 播报自然结束：清掉播放中提示（不可用提示保留，直到下一题）
+      if (ttsHint.value === 'speaking') ttsHint.value = ''
       // 播报结束进入倾听（仅当仍处于提问/追问状态）
       if (avatarState.value === 'asking' || avatarState.value === 'followup') {
         avatarState.value = 'listening'
@@ -633,6 +681,9 @@ async function ask() {
   interviewSession.resetDepth()
   followupPrompt.value = ''
   rephrasedText.value = ''
+  reviewVisible.value = false
+  reviewText.value = ''
+  ttsHint.value = ''
   if (interviewSession.getStatus() !== 'ASKING') interviewSession.transition('ASKING')
   avatarState.value = 'asking'
   caption.value = ''
@@ -674,7 +725,12 @@ async function ask() {
   if (ttsHandle != null) {
     ttsHandle.stop()
   }
-  ttsHandle = speak(currentQuestion.value.content)
+  ttsHandle = speak(currentQuestion.value.content, onTtsUnavailable)
+}
+
+// TTS 未能真实出声：题面下方明示替代路径，不让用户以为「坏了」
+function onTtsUnavailable() {
+  ttsHint.value = 'unavailable'
 }
 
 // 发起追问（不切题，depth+1，展示追问话术）
@@ -700,7 +756,8 @@ function askFollowup(decision: FollowupDecision) {
   if (ttsHandle != null) {
     ttsHandle.stop()
   }
-  ttsHandle = speak(decision.prompt)
+  ttsHint.value = ''
+  ttsHandle = speak(decision.prompt, onTtsUnavailable)
 }
 
 // 出题失败（非收束）：重试原流程；已答过题时可选择结束并生成报告
@@ -747,6 +804,11 @@ function toggleRecord() {
     uni.showToast({ title: '已暂停，请先恢复', icon: 'none' })
     return
   }
+  // 识别结果待确认时，录音主按钮只提示，不静默丢弃用户回答
+  if (reviewVisible.value) {
+    uni.showToast({ title: '请先确认提交或重新录制', icon: 'none' })
+    return
+  }
   if (recording.value) {
     stopRecord(false)
   } else {
@@ -760,15 +822,20 @@ function startRecord() {
   avatarState.value = 'listening'
   lastAudioPath.value = ''
   liveTranscript.value = ''
+  // 重新录制：丢弃上一次的识别结果
+  reviewVisible.value = false
+  reviewText.value = ''
   // 微信端：同步开启实时语音识别（边录边转，稳定文本进入字幕）
   if (cap.platform === 'mp-weixin') {
     asrSession = startRealtimeAsr((text: string, stable: boolean) => {
       if (stable) {
-        // 稳定文本累积到 liveTranscript（仅稳定文本进入转写链）
+        // 稳定文本累积到 liveTranscript（仅稳定文本进入转写链），并同步上屏
         if (text.length > 0) {
           liveTranscript.value = liveTranscript.value + text
+          caption.value = liveTranscript.value
         }
       } else if (text.length > 0) {
+        // 中间结果实时上屏，让用户确认「系统听到的是我」
         caption.value = text
       }
     })
@@ -873,7 +940,8 @@ function routeTranscribe(path: string) {
   })
 }
 
-// 转写收口：有文本走作答链，无文本提示文字降级（不静默丢答案）
+// 转写收口：有文本进入「识别结果确认」；无文本提示文字降级（不静默丢答案）
+// 2026-10-23 真机反馈：直接提交会让人看不到自己说了什么，必须由用户确认
 function finishTranscribe(text: string) {
   const t = text.trim()
   if (t.length === 0) {
@@ -882,7 +950,31 @@ function finishTranscribe(text: string) {
     trackEvent('interview_asr_fallback', { questionId: currentQuestion.value.id })
     return
   }
+  reviewText.value = t
+  reviewVisible.value = true
+  caption.value = '识别完成，请确认你的回答'
+  avatarState.value = 'listening'
+  trackEvent('interview_asr_review_shown', { questionId: currentQuestion.value.id, length: t.length })
+}
+
+// 确认识别结果：按用户最终文本提交（可先编辑）
+function confirmReview() {
+  const t = reviewText.value.trim()
+  if (t.length === 0) {
+    uni.showToast({ title: '回答为空，请重新录制或输入', icon: 'none' })
+    return
+  }
+  reviewVisible.value = false
   handleAnswer(t, 'voice')
+}
+
+// 重新录制：丢弃本次识别，直接回到录音态
+function retryRecord() {
+  reviewVisible.value = false
+  reviewText.value = ''
+  liveTranscript.value = ''
+  caption.value = ''
+  startRecord()
 }
 
 // 答案上报：首次失败后 800ms 重试一次；返回是否最终成功。
@@ -989,7 +1081,8 @@ function replayQuestion() {
   }
   trackEvent('interview_replay_question', { questionId: currentQuestion.value.id })
   if (ttsHandle != null) ttsHandle.stop()
-  ttsHandle = speak(text)
+  ttsHint.value = ''
+  ttsHandle = speak(text, onTtsUnavailable)
 }
 
 // 换一种说法：用引擎确定性澄清句追加一行并播报，不替换原题、不改难度与知识点
@@ -1007,7 +1100,8 @@ function onRephrase() {
   avatarState.value = 'asking'
   trackEvent('interview_rephrase_question', { questionId: q.id })
   if (ttsHandle != null) ttsHandle.stop()
-  ttsHandle = speak(text)
+  ttsHint.value = ''
+  ttsHandle = speak(text, onTtsUnavailable)
 }
 
 function textMode() {

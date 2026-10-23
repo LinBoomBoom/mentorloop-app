@@ -37,6 +37,10 @@
       "style": { "navigationBarTitleText": "简历优化" }
     },
     {
+      "path": "pages/resume/detail",
+      "style": { "navigationBarTitleText": "解析记录" }
+    },
+    {
       "path": "pages/mine/mine",
       "style": { "navigationBarTitleText": "我的" }
     },
