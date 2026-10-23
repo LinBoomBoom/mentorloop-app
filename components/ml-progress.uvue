@@ -20,7 +20,7 @@ import { themeValue } from '../styles/theme.uts'
 const props = defineProps({
   label: { type: String, default: '' },
   percent: { type: Number, default: 0 }, // 0-100
-  color: { type: String, default: themeValue('smart', '#5B6CFF') },
+  color: { type: String, default: themeValue('smart', '#5856D6') },
   showValue: { type: Boolean, default: true }
 })
 

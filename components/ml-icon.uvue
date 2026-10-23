@@ -118,7 +118,7 @@ const ICON_GLYPH: StringMap = {
 const props = defineProps({
   name: { type: String, default: '' },
   size: { type: Number, default: 16 },
-  color: { type: String, default: themeValue('ink', '#1A2433') }
+  color: { type: String, default: themeValue('ink', '#1C1C1E') }
 })
 
 const glyph = computed((): string => {

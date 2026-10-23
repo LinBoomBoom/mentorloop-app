@@ -44,7 +44,7 @@ const props = defineProps({
 const emit = defineEmits(['stat-tap'])
 
 const items = computed((): StatEntry[] => {
-  const ink = themeValue('ink', '#1A2433')
+  const ink = themeValue('ink', '#1C1C1E')
   return [
     {
       value: props.value1,

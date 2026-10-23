@@ -1,90 +1,79 @@
 <template>
   <view class="h-screen bg-bg-light">
     <scroll-view class="h-screen" scroll-y="true">
-      <view class="px-4 pt-3 pb-6">
-        <!-- 资料卡（深色品牌面） -->
-        <view class="bg-navy rounded-card p-4">
-          <view class="flex-row items-center">
-            <view
-              class="w-14 h-14 rounded-full flex-row items-center justify-center mr-3"
-              :style="{
-                backgroundColor: 'rgba(255,255,255,0.14)',
-                border: '1px solid rgba(255,255,255,0.2)'
-              }"
-            >
-              <ml-icon name="user" :size="26" :color="SURFACE"></ml-icon>
-            </view>
-            <view class="flex-col flex-1 overflow-hidden">
-              <text class="text-lg font-semibold text-white truncate block">{{ nickname }}</text>
-              <view class="flex-row items-center mt-1 overflow-hidden">
-                <ml-tag
-                  :icon="planBadgeIcon"
-                  :label="planLabel"
-                  :bg="planBadgeBg"
-                  :color="planBadgeColor"
-                ></ml-tag>
-                <text class="text-xs text-mist ml-2 truncate block">
-                  {{ positionLabel }} · {{ experienceLabel }}
-                </text>
-              </view>
-            </view>
-            <view
-              class="w-11 h-11 rounded-full flex-row items-center justify-center"
-              hover-class="pressed-row"
-              :hover-start-time="0"
-              @click="security"
-            >
-              <ml-icon name="chevron-right" :size="18" :color="MIST"></ml-icon>
-            </view>
-          </view>
+      <view class="px-5 pb-8" :style="{ paddingTop: topPad }">
+        <text class="text-[28px] font-bold text-ink">我的</text>
 
-          <!-- 未登录：登录入口 -->
-          <view v-if="!loggedIn" class="mt-4">
-            <ml-button text="登录 / 注册" block @tap="goLogin"></ml-button>
+        <!-- 资料行 -->
+        <view class="flex-row items-center mt-4">
+          <view
+            class="w-14 h-14 rounded-full flex-row items-center justify-center"
+            :style="{ backgroundColor: SMART }"
+          >
+            <text class="text-lg font-bold text-white">{{ avatarLetter }}</text>
+          </view>
+          <view class="flex-col flex-1 ml-3 overflow-hidden">
+            <text class="text-lg font-bold text-ink truncate block">{{ nickname }}</text>
+            <text class="text-xs text-ink-soft mt-1 truncate block"
+              >{{ positionLabel }} · {{ experienceLabel }} · {{ phoneText }}</text
+            >
+          </view>
+          <view
+            v-if="!loggedIn"
+            class="h-8 px-3 rounded-chip flex-row items-center"
+            :style="{ backgroundColor: CHIP_SMART }"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="goLogin"
+          >
+            <text class="text-xs font-semibold" :style="{ color: SMART }">登录</text>
           </view>
         </view>
 
-        <!-- 会员卡（权益状态 + 购买入口） -->
+        <!-- 会员卡 -->
         <view
-          class="bg-navy rounded-card p-4 mt-3 flex-row items-center"
-          hover-class="pressed-row"
+          class="mt-4 rounded-card p-4 flex-row items-center"
+          :style="memberStyle"
+          hover-class="pressed-card"
           :hover-start-time="0"
           @click="goPaywall"
         >
           <view
-            class="w-10 h-10 rounded-full flex-row items-center justify-center mr-3"
+            class="w-10 h-10 rounded-control flex-row items-center justify-center mr-3"
             :style="{ backgroundColor: 'rgba(245,201,123,0.2)' }"
           >
             <ml-icon name="crown" :size="20" :color="WARN_LIGHT"></ml-icon>
           </view>
           <view class="flex-col flex-1">
             <text class="text-sm font-semibold text-white">{{ planLabel }}权益</text>
-            <text class="text-xs text-mist mt-0.5">{{ quotaText }}</text>
+            <text class="text-xs mt-0.5" :style="{ color: 'rgba(255,255,255,0.62)' }">{{
+              quotaText
+            }}</text>
           </view>
-          <!-- 深色面会员卡行动点：半透明底/琥珀底随状态切换，形态唯一（设计系统白名单） -->
           <view
             class="h-8 px-3 rounded-chip flex-row items-center"
             :style="{
-              backgroundColor: plan.value === 'member' ? 'rgba(255,255,255,0.14)' : WARN_LIGHT
+              backgroundColor: plan === 'member' ? 'rgba(255,255,255,0.14)' : WARN_LIGHT
             }"
           >
             <text
               class="text-xs font-semibold"
-              :style="{ color: plan.value === 'member' ? SURFACE : NAVY_DEEP }"
+              :style="{ color: plan === 'member' ? SURFACE : NAVY_DEEP }"
             >
-              {{ plan.value === 'member' ? '查看权益' : '立即开通' }}
+              {{ plan === 'member' ? '查看权益' : '立即开通' }}
             </text>
           </view>
         </view>
 
-        <!-- 设置分组 -->
-        <view class="mt-3">
+        <!-- 账号与偏好 -->
+        <text class="text-xs text-ink-soft mt-5 ml-1">账号与偏好</text>
+        <view class="mt-2">
           <ml-card :padded="false">
             <view
-              v-for="(s, i) in settings"
+              v-for="(s, i) in accountRows"
               :key="s.text"
-              class="flex-row items-center px-4 h-[56px]"
-              :class="i < settings.length - 1 ? 'border-b border-line' : ''"
+              class="flex-row items-center px-4 h-[58px]"
+              :class="i < accountRows.length - 1 ? 'border-b border-line' : ''"
               hover-class="pressed-row"
               :hover-start-time="0"
               @click="s.onTap"
@@ -104,6 +93,34 @@
           </ml-card>
         </view>
 
+        <!-- 支持 -->
+        <text class="text-xs text-ink-soft mt-5 ml-1">支持</text>
+        <view class="mt-2">
+          <ml-card :padded="false">
+            <view
+              class="flex-row items-center px-4 h-[58px]"
+              hover-class="pressed-row"
+              :hover-start-time="0"
+              @click="about"
+            >
+              <view
+                class="w-8 h-8 rounded-control flex-row items-center justify-center mr-3"
+                :style="{ backgroundColor: DIM_COMMUNICATION_TINT }"
+              >
+                <ml-icon name="info" :size="16" :color="DIM_COMMUNICATION"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink">关于 {{ APP_NAME }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">版本、协议、反馈</text>
+              </view>
+              <text v-if="versionText.length > 0" class="text-xs text-ink-soft mr-1">{{
+                versionText
+              }}</text>
+              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
+            </view>
+          </ml-card>
+        </view>
+
         <!-- 退出登录 -->
         <view v-if="loggedIn" class="mt-3">
           <ml-card pressable @tap="confirmLogout">
@@ -114,12 +131,8 @@
           </ml-card>
         </view>
 
-        <!-- 版本信息：名称与版本跟随 manifest / 小程序运行环境，避免硬编码漂移 -->
         <view class="flex-col items-center mt-6">
           <text class="text-xs text-ink-soft">{{ APP_NAME }} · 学面一体智能导师</text>
-          <text v-if="versionText.length > 0" class="text-xs text-ink-soft mt-1">{{
-            versionText
-          }}</text>
         </view>
       </view>
     </scroll-view>
@@ -133,8 +146,6 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
-import mlButton from '../../components/ml-button.uvue'
-import mlTag from '../../components/ml-tag.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
@@ -145,30 +156,44 @@ import { trackEvent } from '../../api/tracking.uts'
 import { APP_NAME, appVersionText } from '../../data/app-meta.uts'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const DANGER = themeValue('danger', '#DC2626')
 const SURFACE = themeValue('surface', '#FFFFFF')
-const MIST = themeValue('mist', '#AEB9CC')
+const MIST = themeValue('mist', '#AEAEB2')
+const NAVY = themeValue('navy', '#0F2C4C')
 const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
-const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
-const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
-const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
+const CHIP_WARN = themeValue('chipWarn', '#FFF4E5')
 const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 const DIM_COMMUNICATION = DIM_COLOR['communication'] != null ? DIM_COLOR['communication'] : '#7C5CFF'
 const DIM_COMMUNICATION_TINT = DIM_TINT['communication'] != null ? DIM_TINT['communication'] : '#F0EBFF'
 
 const nickname = ref(userStore.profile.nickname)
+// 自定义导航：内容避让状态栏（tab 页大标题）；存 px 字符串，避免小程序端数值被当作无单位值丢弃
+const topPad = ref('52px')
 const plan = ref(userStore.profile.plan)
 const loggedIn = ref(userStore.isLoggedIn())
 const versionText = appVersionText()
-// 登录半屏层（小程序端手机号+验证码；APP 端走登录页）
 const showLogin = ref(false)
-
-// 会员余量信息（免费额度/单次包余量/会员有效期）
 const quotaText = ref('')
+
+const avatarLetter = computed((): string =>
+  nickname.value.length > 0 ? nickname.value.substring(0, 1) : '访'
+)
+
+// 手机号仅展示脱敏结果；未绑定明确标出，与账号与安全页一致
+const phoneText = computed((): string => {
+  const p = userStore.profile.phone
+  if (p.length !== 11) return '未绑定手机号'
+  return p.substring(0, 3) + '****' + p.substring(7)
+})
+
+const memberStyle = {
+  backgroundColor: NAVY_DEEP,
+  backgroundImage: 'linear-gradient(155deg, ' + NAVY + ' 0%, ' + NAVY_DEEP + ' 100%)'
+}
 
 function refreshQuota() {
   quotaStore.restore()
@@ -180,7 +205,6 @@ function refreshQuota() {
   } else if (quotaStore.state.singleCreditsLeft > 0) {
     quotaText.value = '单次包余量 ' + String(quotaStore.state.singleCreditsLeft) + ' 场'
   } else {
-    // 面试额度与每日训练额度是两个独立计数器，文案里分别标明，避免被当成同一个额度
     quotaText.value =
       '免费面试额度 ' +
       String(quotaStore.state.freeInterviewsLeft) +
@@ -196,24 +220,6 @@ const planLabel = computed((): string => {
   return '免费版'
 })
 
-const planBadgeBg = computed((): string => {
-  if (plan.value === 'member') return 'rgba(245,201,123,0.2)'
-  if (plan.value === 'single') return 'rgba(92,232,216,0.18)'
-  return 'rgba(255,255,255,0.12)'
-})
-
-const planBadgeColor = computed((): string => {
-  if (plan.value === 'member') return WARN_LIGHT
-  if (plan.value === 'single') return RELIABLE_LIGHT
-  return MIST
-})
-
-const planBadgeIcon = computed((): string => {
-  if (plan.value === 'member') return 'crown'
-  if (plan.value === 'single') return 'gem'
-  return 'user'
-})
-
 const positionLabel = ref(positionDisplay(userStore.profile))
 const experienceLabel = ref(experienceDisplay(userStore.profile))
 
@@ -225,19 +231,20 @@ type SettingRow = {
   desc: string
   onTap: () => void
 }
-const settings: SettingRow[] = [
+
+const accountRows: SettingRow[] = [
   {
     icon: 'lock',
     color: SMART,
     tint: CHIP_SMART,
     text: '账号与安全',
-    desc: '登录方式、设备管理',
+    desc: '手机号绑定、注销账号',
     onTap: security
   },
   {
     icon: 'sliders-horizontal',
     color: RELIABLE,
-    tint: CHIP_RELIABLE,
+    tint: themeValue('chipReliable', '#E8F7F4'),
     text: '面试偏好设置',
     desc: '默认方向、经验年限、昵称',
     onTap: prefs
@@ -257,22 +264,20 @@ const settings: SettingRow[] = [
     text: '隐私与数据',
     desc: '录音、简历与账户删除',
     onTap: privacy
-  },
-  {
-    icon: 'info',
-    color: DIM_COMMUNICATION,
-    tint: DIM_COMMUNICATION_TINT,
-    text: '关于 ' + APP_NAME,
-    desc: '版本、协议、反馈',
-    onTap: about
   }
 ]
 
 onShow(() => {
+  try {
+    const win = uni.getWindowInfo()
+    const sb = win.statusBarHeight
+    topPad.value = (sb > 0 ? sb + 10 : 52) + 'px'
+  } catch {
+    topPad.value = '52px'
+  }
   refreshProfile()
 })
 
-// 登录态/画像/余量统一刷新（onShow 与登录半屏层成功回调共用）
 function refreshProfile() {
   nickname.value = userStore.profile.nickname
   plan.value = userStore.profile.plan
@@ -280,11 +285,12 @@ function refreshProfile() {
   positionLabel.value = positionDisplay(userStore.profile)
   experienceLabel.value = experienceDisplay(userStore.profile)
   refreshQuota()
-  // 真后端以服务端账本为准（Mock 下 fetchQuota 直接返回），避免本地旧账本与真实额度不一致
   if (loggedIn.value) {
-    fetchQuota().then(() => {
-      refreshQuota()
-    }).catch(() => {})
+    fetchQuota()
+      .then(() => {
+        refreshQuota()
+      })
+      .catch(() => {})
   }
 }
 
@@ -302,7 +308,6 @@ function goLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
   // #endif
   // #ifndef APP
-  // 小程序端：openid 静默登录即账号；只有静默登录失败才拉起手机号兜底层
   uni.login({
     provider: 'weixin',
     success: (res: any) => {
@@ -337,7 +342,6 @@ function onLoginExit() {
   showLogin.value = false
 }
 
-// 确认弹窗开着时忽略重复调用（小程序端 tap 事件可能重复送达，避免叠两个弹窗）
 let logoutModalOpen = false
 
 function confirmLogout() {

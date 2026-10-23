@@ -6,39 +6,40 @@ export type StringMap = { [key: string]: string }
 export const THEME: StringMap = {
   navy: '#0F2C4C',
   navyDeep: '#0B2138',
-  smart: '#5B6CFF',
+  // 2026-10-23 iOS 化：smart 收敛为 systemIndigo，浅色面去冷蓝偏色
+  smart: '#5856D6',
   reliable: '#1FB6A6',
   warn: '#E08A00',
   danger: '#DC2626',
-  bgLight: '#F7F9FC',
-  bgMuted: '#F1F5F9',
+  bgLight: '#F2F2F7',
+  bgMuted: '#E9E9EF',
   surface: '#FFFFFF',
-  ink: '#1A2433',
-  inkSoft: '#5B6472',
-  line: '#E3E8F0',
+  ink: '#1C1C1E',
+  inkSoft: '#6E6E73',
+  line: '#E5E5EA',
   // 以下为 2026-10-14 token 补齐（P0，任务卡 ds-1）：与 main.css @theme 对齐
-  mist: '#AEB9CC',
-  chipSmart: '#EEF1FF',
-  chipReliable: '#E6F7F4',
-  chipWarn: '#FFF3E0',
-  chipDanger: '#FEECEC',
+  mist: '#AEAEB2',
+  chipSmart: '#EFEEFC',
+  chipReliable: '#E8F7F4',
+  chipWarn: '#FFF4E5',
+  chipDanger: '#FFEBEA',
   // 深色面加亮档 + 中性强调描边（2026-10-14 亮色族收敛，吸收原散落 pages 的字面量）
   smartLight: '#8FA0FF',
   reliableLight: '#5CE8D8',
   warnLight: '#F5C97B',
   motivationLight: '#FF9E6D',
-  lineStrong: '#C9D2E3',
+  lineStrong: '#D1D1D6',
   fontSans: "-apple-system, 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif",
   // 等宽栈（工程化训练台 D-i4：数字 / 编号 / 计时 / 时长）
   fontMono: "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
-  shadowSm: '0 1px 2px rgba(15, 44, 76, 0.06)',
-  shadowCard: '0 4px 16px rgba(15, 44, 76, 0.08)',
-  shadowFloat: '0 16px 40px rgba(15, 44, 76, 0.14)',
+  shadowSm: '0 1px 2px rgba(20, 22, 40, 0.05)',
+  shadowCard: '0 8px 24px rgba(20, 22, 40, 0.06)',
+  shadowFloat: '0 16px 40px rgba(20, 22, 40, 0.14)',
   // 圆角 / 动效 / 尺寸（2026-10-14 F3 收敛，任务卡 ds-1；同日工程化训练台收紧 D-i4）：
   // 与 main.css @theme 非颜色 token 对齐；别名 textPrimary / textSecondary / border / amber 已移除
-  radiusChip: '6px',
-  radiusControl: '8px',
-  radiusCard: '12px',
+  radiusChip: '10px',
+  radiusControl: '12px',
+  radiusCard: '20px',
   durationPress: '120ms',
   durationAmbient: '400ms',
   easeStandard: 'ease-out',
@@ -55,7 +56,7 @@ export function themeValue(name: string, fallback: string): string {
 
 // 六维能力色板（与 main.css @theme --color-dim-* 单源对齐；growth/training/report 统一消费）
 export const DIM_COLOR: StringMap = {
-  knowledge: '#5B6CFF',
+  knowledge: '#5856D6',
   engineering: '#1FB6A6',
   analysis: '#E08A00',
   communication: '#7C5CFF',
@@ -64,7 +65,7 @@ export const DIM_COLOR: StringMap = {
 }
 
 export const DIM_TINT: StringMap = {
-  knowledge: '#EEF1FF',
+  knowledge: '#EFEEFC',
   engineering: '#E6F7F4',
   analysis: '#FFF3E0',
   communication: '#F0EBFF',

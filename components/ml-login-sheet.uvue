@@ -117,7 +117,7 @@ import { trackEvent } from '../api/tracking.uts'
 import { AGREEMENT_URL, PRIVACY_URL } from '../api/env.uts'
 import { APP_NAME } from '../data/app-meta.uts'
 
-const MIST = themeValue('mist', '#AEB9CC')
+const MIST = themeValue('mist', '#AEAEB2')
 const SURFACE = themeValue('surface', '#FFFFFF')
 
 const emit = defineEmits(['success', 'exit'])

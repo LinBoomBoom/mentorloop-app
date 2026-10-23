@@ -29,8 +29,8 @@ defineProps({
   icon: { type: String, default: '' },
   // 图标独立用色（深色面「彩图标+白字」标签用）；空则与文字同色
   iconColor: { type: String, default: '' },
-  bg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
-  color: { type: String, default: themeValue('smart', '#5B6CFF') },
+  bg: { type: String, default: themeValue('chipSmart', '#EFEEFC') },
+  color: { type: String, default: themeValue('smart', '#5856D6') },
   // 长文本（文件名等）截断：需由父级给出宽度约束（如 max-w-[85%]）
   truncate: { type: Boolean, default: false }
 })

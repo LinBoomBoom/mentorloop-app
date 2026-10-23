@@ -24,8 +24,8 @@ import { themeValue } from '../styles/theme.uts'
 // 空状态：图标 + 标题 + 说明 + 可选操作区（slot）
 defineProps({
   icon: { type: String, default: 'sparkles' },
-  iconColor: { type: String, default: themeValue('smart', '#5B6CFF') },
-  iconBg: { type: String, default: themeValue('chipSmart', '#EEF1FF') },
+  iconColor: { type: String, default: themeValue('smart', '#5856D6') },
+  iconBg: { type: String, default: themeValue('chipSmart', '#EFEEFC') },
   title: { type: String, default: '' },
   desc: { type: String, default: '' }
 })

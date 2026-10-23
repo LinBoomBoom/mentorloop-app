@@ -118,7 +118,7 @@ import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 import { themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 
 type CheckKey = 'mic' | 'net' | 'record' | 'speaker'
 

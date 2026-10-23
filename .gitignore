@@ -41,3 +41,5 @@ test-results/
 
 # 小程序自动化 E2E 失败截图产物
 e2e/mp/shots/
+# 320×568 小屏验收截图（人工走查证据，不入库）
+e2e/mp/shots-320/

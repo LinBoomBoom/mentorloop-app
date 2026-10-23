@@ -81,11 +81,11 @@ import { quotaStore } from '../../store/quota.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { DIM_COLOR, DIM_TINT, themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const DANGER = themeValue('danger', '#DC2626')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
 const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
 const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
 const DIM_COMMUNICATION = DIM_COLOR['communication'] != null ? DIM_COLOR['communication'] : '#7C5CFF'

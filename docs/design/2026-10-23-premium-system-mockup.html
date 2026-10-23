@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>智面研学 · iPhone 风格全局改版效果图</title>
+    <style>
+      :root {
+        --bg: #f2f2f7;
+        --surface: #ffffff;
+        --ink: #1c1c1e;
+        --ink-2: #6e6e73;
+        --ink-3: #aeaeb2;
+        --line: #e5e5ea;
+        --line-2: #d1d1d6;
+        --smart: #5856d6;
+        --smart-2: #7b79f5;
+        --reliable: #1fb6a6;
+        --warn: #d98300;
+        --navy: #0b2138;
+        --navy-2: #143a5c;
+        --font:
+          -apple-system, 'SF Pro Text', 'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif;
+        --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #e9e9ef;
+        font-family: var(--font);
+        color: var(--ink);
+        padding: 34px 36px 60px;
+        -webkit-font-smoothing: antialiased;
+      }
+      header.page {
+        max-width: 1660px;
+        margin: 0 auto 26px;
+      }
+      h1 {
+        font-size: 24px;
+        letter-spacing: -0.4px;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-top: 8px;
+        line-height: 21px;
+        max-width: 1120px;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .chip {
+        font-size: 12px;
+        color: var(--ink-2);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 12px;
+      }
+      .chip.on {
+        color: #fff;
+        background: var(--smart);
+        border-color: var(--smart);
+      }
+      .row {
+        max-width: 1660px;
+        margin: 0 auto;
+        display: flex;
+        gap: 26px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .cell {
+        width: 375px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .caption {
+        font-size: 12px;
+        line-height: 19px;
+        color: var(--ink-2);
+        padding: 0 4px;
+      }
+      .caption b {
+        color: var(--ink);
+        display: block;
+        font-size: 13px;
+        margin-bottom: 3px;
+      }
+
+      .phone {
+        width: 375px;
+        height: 812px;
+        background: var(--bg);
+        border-radius: 46px;
+        border: 1px solid #d6d6de;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 24px 60px rgba(20, 22, 40, 0.16),
+          0 2px 0 rgba(255, 255, 255, 0.8) inset;
+      }
+      .island {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 116px;
+        height: 32px;
+        border-radius: 20px;
+        background: #0a0a0c;
+        z-index: 30;
+      }
+      .statusbar {
+        height: 54px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 0 24px 7px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .statusbar .right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .signal {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 10px;
+      }
+      .signal i {
+        width: 3px;
+        background: var(--ink);
+        border-radius: 1px;
+        display: block;
+      }
+      .battery {
+        width: 22px;
+        height: 11px;
+        border: 1.3px solid var(--ink);
+        border-radius: 3px;
+        position: relative;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -3.5px;
+        top: 3px;
+        width: 2px;
+        height: 4px;
+        background: var(--ink);
+        border-radius: 0 1px 1px 0;
+      }
+      .battery i {
+        position: absolute;
+        inset: 1.5px;
+        right: 5px;
+        background: var(--ink);
+        border-radius: 1.5px;
+      }
+
+      .screen {
+        height: calc(812px - 54px);
+        overflow: hidden;
+        padding: 4px 20px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .screen.no-tab {
+        padding-bottom: 108px;
+      }
+      .plan-mini {
+        margin-top: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 12px;
+        color: var(--ink-2);
+      }
+      .plan-mini b {
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .kicker {
+        font-size: 12px;
+        color: var(--ink-2);
+        letter-spacing: 0.2px;
+      }
+      .large-title {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.7px;
+        line-height: 34px;
+        margin-top: 3px;
+      }
+      .head-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        background: linear-gradient(150deg, var(--smart-2), var(--smart));
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 16px rgba(88, 86, 214, 0.28);
+      }
+
+      /* ---------- 首页主卡 ---------- */
+      .hero {
+        margin-top: 18px;
+        border-radius: 24px;
+        padding: 20px;
+        color: #fff;
+        background:
+          radial-gradient(120% 80% at 100% 0%, rgba(123, 121, 245, 0.42), transparent 60%),
+          linear-gradient(155deg, var(--navy-2), var(--navy));
+        box-shadow: 0 18px 38px rgba(11, 33, 56, 0.26);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::after {
+        content: '';
+        position: absolute;
+        right: -42px;
+        bottom: -58px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      .hero .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.86);
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        padding: 5px 10px;
+      }
+      .hero .tag i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #5ce8d8;
+        box-shadow: 0 0 0 3px rgba(92, 232, 216, 0.18);
+      }
+      .hero h3 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        line-height: 30px;
+        margin-top: 13px;
+      }
+      .hero .mdesc {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.66);
+        line-height: 19px;
+        margin-top: 7px;
+      }
+      .meta-chips {
+        display: flex;
+        gap: 7px;
+        margin-top: 13px;
+      }
+      .meta-chips span {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        padding: 5px 9px;
+      }
+      .hero .cta {
+        margin-top: 16px;
+        height: 48px;
+        border-radius: 14px;
+        background: #fff;
+        color: var(--navy);
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+      }
+      .hero .last {
+        margin-top: 10px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.55);
+        text-align: center;
+      }
+
+      /* ---------- 今日闭环 ---------- */
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin: 22px 2px 10px;
+      }
+      .sec-head .t {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
+      .sec-head .a {
+        font-size: 12px;
+        color: var(--smart);
+      }
+      .loop {
+        display: flex;
+        gap: 8px;
+      }
+      .loop .step {
+        flex: 1;
+        background: var(--surface);
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        padding: 12px 10px;
+        position: relative;
+      }
+      .loop .step .n {
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f2f2f7;
+        color: var(--ink-2);
+      }
+      .loop .step.done .n {
+        background: rgba(31, 182, 166, 0.14);
+        color: var(--reliable);
+      }
+      .loop .step.now .n {
+        background: var(--smart);
+        color: #fff;
+      }
+      .loop .step .h {
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+      .loop .step .d {
+        font-size: 10px;
+        color: var(--ink-3);
+        margin-top: 2px;
+        line-height: 15px;
+      }
+      .loop .step.now {
+        border-color: rgba(88, 86, 214, 0.4);
+        box-shadow: 0 6px 18px rgba(88, 86, 214, 0.12);
+      }
+
+      /* ---------- 卡片列表 ---------- */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 15px 16px;
+        margin-top: 10px;
+      }
+      .card-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .ico {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 38px;
+      }
+      .ico.indigo {
+        background: rgba(88, 86, 214, 0.12);
+      }
+      .ico.teal {
+        background: rgba(31, 182, 166, 0.12);
+      }
+      .ico.amber {
+        background: rgba(217, 131, 0, 0.12);
+      }
+      .grow {
+        flex: 1;
+      }
+      .card .h {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .card .d {
+        font-size: 11px;
+        color: var(--ink-2);
+        margin-top: 3px;
+        line-height: 16px;
+      }
+      .grade {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(31, 182, 166, 0.1);
+        color: var(--reliable);
+        font-family: var(--mono);
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 40px;
+      }
+      .chev {
+        color: var(--ink-3);
+        font-size: 18px;
+      }
+      .pill {
+        font-size: 10px;
+        color: var(--reliable);
+        background: rgba(31, 182, 166, 0.1);
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+      .pill.amber {
+        color: var(--warn);
+        background: rgba(217, 131, 0, 0.1);
+      }
+
+      /* ---------- 浮动 Tabbar ---------- */
+      .tabbar {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        bottom: 18px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        box-shadow: 0 12px 30px rgba(20, 22, 40, 0.14);
+        z-index: 20;
+      }
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: var(--ink-3);
+        width: 74px;
+      }
+      .tab.on {
+        color: var(--smart);
+        font-weight: 600;
+      }
+      .tab svg {
+        width: 21px;
+        height: 21px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .scroll-body {
+        flex: 1;
+        overflow: hidden;
+        padding-bottom: 92px;
+      }
+
+      /* ---------- 分段控件 ---------- */
+      .segmented {
+        margin-top: 16px;
+        height: 34px;
+        background: #e9e9ef;
+        border-radius: 10px;
+        padding: 2px;
+        display: flex;
+      }
+      .segmented span {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: var(--ink-2);
+        border-radius: 8px;
+      }
+      .segmented span.on {
+        background: #fff;
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* ---------- 成长 ---------- */
+      .dim-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        margin-top: 12px;
+      }
+      .dim-card .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .dim-card .top b {
+        font-size: 14px;
+      }
+      .dim-card .top span {
+        font-size: 11px;
+        color: var(--ink-3);
+      }
+      .dim-row {
+        margin-top: 12px;
+      }
+      .dim-row .l {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--ink-2);
+        margin-bottom: 5px;
+      }
+      .dim-row .l b {
+        color: var(--ink);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .track {
+        height: 7px;
+        border-radius: 999px;
+        background: #f2f2f7;
+        overflow: hidden;
+      }
+      .track i {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--smart-2), var(--smart));
+      }
+      .track i.teal {
+        background: linear-gradient(90deg, #5ce8d8, var(--reliable));
+      }
+      .track i.amber {
+        background: linear-gradient(90deg, #f5c97b, var(--warn));
+      }
+      .list-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 13px 14px;
+        margin-top: 9px;
+      }
+      .list-item .date {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-3);
+      }
+
+      /* ---------- 我的 ---------- */
+      .profile {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        margin-top: 16px;
+      }
+      .profile .big-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        background: linear-gradient(150deg, var(--smart-2), var(--smart));
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 22px rgba(88, 86, 214, 0.28);
+      }
+      .profile .nm {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .profile .meta {
+        font-size: 11px;
+        color: var(--ink-2);
+        margin-top: 4px;
+      }
+      .member-card {
+        margin-top: 18px;
+        border-radius: 20px;
+        padding: 17px 18px;
+        background:
+          radial-gradient(110% 90% at 100% 0%, rgba(245, 201, 123, 0.28), transparent 62%),
+          linear-gradient(155deg, #23324a, #101a2a);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .member-card .crown {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(245, 201, 123, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .member-card .h {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .member-card .d {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.62);
+        margin-top: 3px;
+      }
+      .member-card .go {
+        font-size: 12px;
+        font-weight: 600;
+        color: #101a2a;
+        background: #f5c97b;
+        border-radius: 999px;
+        padding: 7px 11px;
+        flex: 0 0 auto;
+      }
+      .group-title {
+        font-size: 12px;
+        color: var(--ink-3);
+        margin: 20px 4px 8px;
+      }
+      .group {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+      .group .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 15px;
+        border-bottom: 1px solid var(--line);
+      }
+      .group .row:last-child {
+        border-bottom: none;
+      }
+      .group .row .h {
+        font-size: 14px;
+        flex: 1;
+      }
+      .group .row .v {
+        font-size: 12px;
+        color: var(--ink-3);
+      }
+      .mini-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+        font-size: 14px;
+      }
+
+      /* ---------- 会员页 ---------- */
+      .pay-hero {
+        margin-top: 10px;
+        border-radius: 24px;
+        padding: 18px 20px;
+        color: #fff;
+        background:
+          radial-gradient(120% 90% at 100% 0%, rgba(245, 201, 123, 0.3), transparent 60%),
+          linear-gradient(155deg, #25344c, #0d1726);
+        box-shadow: 0 18px 38px rgba(11, 33, 56, 0.22);
+      }
+      .pay-hero .k {
+        font-size: 11px;
+        color: rgba(245, 201, 123, 0.9);
+        letter-spacing: 0.4px;
+      }
+      .pay-hero h3 {
+        font-size: 20px;
+        line-height: 28px;
+        letter-spacing: -0.4px;
+        margin-top: 6px;
+      }
+      .pay-hero p {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 19px;
+        margin-top: 7px;
+      }
+      .plan {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        margin-top: 10px;
+      }
+      .plan.on {
+        border-color: var(--smart);
+        background: #f7f7ff;
+        box-shadow: 0 8px 20px rgba(88, 86, 214, 0.1);
+      }
+      .radio {
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        border: 1.5px solid var(--line-2);
+        flex: 0 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .plan.on .radio {
+        background: var(--smart);
+        border-color: var(--smart);
+        color: #fff;
+        font-size: 11px;
+      }
+      .plan .nm {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .plan .ds {
+        font-size: 11px;
+        color: var(--ink-2);
+        margin-top: 2px;
+      }
+      .plan .pr {
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .plan .pr small {
+        font-size: 11px;
+        font-family: var(--font);
+        color: var(--ink-3);
+        font-weight: 400;
+      }
+      .benefit {
+        display: flex;
+        gap: 10px;
+        margin-top: 11px;
+      }
+      .benefit .tk {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(31, 182, 166, 0.12);
+        color: var(--reliable);
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 18px;
+        margin-top: 1px;
+      }
+      .benefit .h {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .benefit .d {
+        font-size: 11px;
+        color: var(--ink-2);
+        margin-top: 2px;
+        line-height: 16px;
+      }
+      .pay-cta {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 24px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(160deg, var(--smart-2), var(--smart));
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 26px rgba(88, 86, 214, 0.32);
+      }
+      .pay-note {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 10px;
+        text-align: center;
+        font-size: 10px;
+        color: var(--ink-3);
+      }
+
+      /* ---------- 说明 ---------- */
+      .notes {
+        max-width: 1660px;
+        margin: 34px auto 0;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 26px 28px;
+      }
+      .notes h2 {
+        font-size: 17px;
+        letter-spacing: -0.2px;
+      }
+      .notes p {
+        font-size: 13px;
+        color: var(--ink-2);
+        line-height: 22px;
+        margin-top: 10px;
+      }
+      .ia {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .ia .box {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 13px;
+        font-size: 12px;
+        line-height: 18px;
+      }
+      .ia .box b {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 2px;
+      }
+      .ia .arrow {
+        color: var(--ink-3);
+        font-size: 14px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 18px;
+      }
+      .note-card {
+        background: var(--bg);
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .note-card b {
+        font-size: 13px;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .note-card span {
+        font-size: 12px;
+        line-height: 20px;
+        color: var(--ink-2);
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page">
+      <h1>智面研学 · iPhone 风格全局改版（设计稿 v1）</h1>
+      <p class="sub">
+        以 iOS 的系统分组背景、白色卡片、发丝分隔线、大标题与克制的靛蓝强调色重建视觉体系；导航由 4
+        个 Tab 收敛为 3 个，
+        把「报告」与「训练」合并为「成长」，让首页专注「开始一场面试」。页面之间按「面试 → 报告 →
+        训练 → 再面试」的业务闭环串联。
+      </p>
+      <div class="chips">
+        <span class="chip on">iOS 系统分组视觉</span>
+        <span class="chip">大标题 + 白色卡片</span>
+        <span class="chip">3 Tab 导航</span>
+        <span class="chip">深色沉浸只留给面试房间</span>
+        <span class="chip">业务闭环串联</span>
+      </div>
+    </header>
+
+    <main class="row">
+      <!-- 首页 -->
+      <figure class="cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"
+                ><i style="height: 4px"></i><i style="height: 6px"></i><i style="height: 8px"></i
+                ><i style="height: 10px"></i
+              ></span>
+              <span class="battery"><i></i></span>
+            </span>
+          </div>
+
+          <div class="screen">
+            <div class="head-row">
+              <div>
+                <div class="kicker">10 月 23 日 · 周四</div>
+                <div class="large-title">今天，练一场</div>
+              </div>
+              <div class="avatar">L</div>
+            </div>
+
+            <div class="scroll-body">
+              <div class="hero">
+                <div class="tag"><i></i>AI 面试官 · 就绪</div>
+                <h3>用 20 分钟，<br />练一场真实的面试</h3>
+                <div class="mdesc">按岗位与年限抽题，答完立即生成六维报告与训练计划。</div>
+                <div class="meta-chips">
+                  <span>后端开发</span>
+                  <span>1–3 年</span>
+                  <span>标准模式</span>
+                </div>
+                <div class="cta">开始模拟面试 <span>→</span></div>
+                <div class="last">上次 10-21 · 综合 B+ · 6 题 / 18 分钟</div>
+              </div>
+
+              <div class="sec-head">
+                <div class="t">今日闭环</div>
+                <div class="a">查看成长 →</div>
+              </div>
+              <div class="loop">
+                <div class="step now">
+                  <div class="n">1</div>
+                  <div class="h">面试</div>
+                  <div class="d">20 分钟</div>
+                </div>
+                <div class="step">
+                  <div class="n">2</div>
+                  <div class="h">报告</div>
+                  <div class="d">六维 + 证据</div>
+                </div>
+                <div class="step">
+                  <div class="n">3</div>
+                  <div class="h">训练</div>
+                  <div class="d">2 个待完成</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top: 12px">
+                <div class="card-row">
+                  <div class="grade">B+</div>
+                  <div class="grow">
+                    <div class="h">最近报告 · 后端开发</div>
+                    <div class="d">优先改进：把技术取舍讲成「约束 → 方案 → 代价」</div>
+                    <div style="margin-top: 6px"><span class="pill">置信度 中</span></div>
+                  </div>
+                  <div class="chev">›</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabbar">
+            <div class="tab on">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+              练习
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" /></svg>
+              成长
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="3.4" />
+                <path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" />
+              </svg>
+              我的
+            </div>
+          </div>
+        </div>
+        <figcaption class="caption">
+          <b>① 首页 · 只回答一个问题「现在开始练什么」</b>
+          深色主卡承载唯一主任务；下方用「今日闭环」把面试、报告、训练串成一条路径，最近报告与训练任务直接带着下一步动作。
+        </figcaption>
+      </figure>
+
+      <!-- 成长 -->
+      <figure class="cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"
+                ><i style="height: 4px"></i><i style="height: 6px"></i><i style="height: 8px"></i
+                ><i style="height: 10px"></i
+              ></span>
+              <span class="battery"><i></i></span>
+            </span>
+          </div>
+
+          <div class="screen">
+            <div class="head-row">
+              <div>
+                <div class="kicker">6 场面试 · 12 次训练</div>
+                <div class="large-title">成长</div>
+              </div>
+            </div>
+
+            <div class="segmented"><span class="on">报告</span><span>训练</span></div>
+
+            <div class="scroll-body">
+              <div class="dim-card">
+                <div class="top">
+                  <b>六维能力 · 最近 3 场平均</b>
+                  <span>对比上期 +0.4</span>
+                </div>
+
+                <div class="dim-row">
+                  <div class="l"><span>工程实践</span><b>B+</b></div>
+                  <div class="track"><i style="width: 78%"></i></div>
+                </div>
+                <div class="dim-row">
+                  <div class="l"><span>问题分析</span><b>B</b></div>
+                  <div class="track"><i class="teal" style="width: 70%"></i></div>
+                </div>
+                <div class="dim-row">
+                  <div class="l"><span>沟通表达</span><b>C+</b></div>
+                  <div class="track"><i class="amber" style="width: 58%"></i></div>
+                </div>
+                <div class="dim-row">
+                  <div class="l"><span>学习能力</span><b>B</b></div>
+                  <div class="track"><i style="width: 72%"></i></div>
+                </div>
+              </div>
+
+              <div class="sec-head" style="margin-top: 18px">
+                <div class="t" style="font-size: 14px">历史报告</div>
+                <div class="a">全部</div>
+              </div>
+
+              <div class="list-item">
+                <div class="grade" style="background: rgba(88, 86, 214, 0.1); color: var(--smart)">
+                  B+
+                </div>
+                <div class="grow">
+                  <div class="h" style="font-size: 13px; font-weight: 600">后端开发 · 标准模式</div>
+                  <div class="d" style="font-size: 11px; color: var(--ink-2); margin-top: 3px">
+                    优先改进：技术取舍的表达结构
+                  </div>
+                </div>
+                <div class="date">10-21</div>
+              </div>
+
+              <div class="list-item">
+                <div class="grade" style="background: rgba(217, 131, 0, 0.1); color: var(--warn)">
+                  C+
+                </div>
+                <div class="grow">
+                  <div class="h" style="font-size: 13px; font-weight: 600">后端开发 · 快速模式</div>
+                  <div class="d" style="font-size: 11px; color: var(--ink-2); margin-top: 3px">
+                    证据不足：缺少量化结果
+                  </div>
+                </div>
+                <div class="date">10-16</div>
+              </div>
+
+              <div class="list-item">
+                <div class="grade">B</div>
+                <div class="grow">
+                  <div class="h" style="font-size: 13px; font-weight: 600">后端开发 · 深度模式</div>
+                  <div class="d" style="font-size: 11px; color: var(--ink-2); margin-top: 3px">
+                    优先改进：追问下的稳定性
+                  </div>
+                </div>
+                <div class="date">10-11</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabbar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+              练习
+            </div>
+            <div class="tab on">
+              <svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" /></svg>
+              成长
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="3.4" />
+                <path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" />
+              </svg>
+              我的
+            </div>
+          </div>
+        </div>
+        <figcaption class="caption">
+          <b>② 成长 · 报告与训练合并</b>
+          原「结果」与「专项训练」两个 Tab
+          合并：报告看证据与趋势，训练直接消费报告里的优先改进项，训练完成后再回到面试验证。
+        </figcaption>
+      </figure>
+
+      <!-- 我的 -->
+      <figure class="cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"
+                ><i style="height: 4px"></i><i style="height: 6px"></i><i style="height: 8px"></i
+                ><i style="height: 10px"></i
+              ></span>
+              <span class="battery"><i></i></span>
+            </span>
+          </div>
+
+          <div class="screen">
+            <div class="large-title">我的</div>
+
+            <div class="profile">
+              <div class="big-avatar">L</div>
+              <div class="grow">
+                <div class="nm">Lsq</div>
+                <div class="meta">后端开发 · 1–3 年 · 已绑定 138****1234</div>
+              </div>
+            </div>
+
+            <div class="member-card">
+              <div class="crown">♛</div>
+              <div class="grow">
+                <div class="h">会员未开通</div>
+                <div class="d">无限次模拟面试 · 深度报告 · 完整训练计划</div>
+              </div>
+              <div class="go">去开通</div>
+            </div>
+
+            <div class="group-title">账号与偏好</div>
+            <div class="group">
+              <div class="row">
+                <div class="mini-ico" style="background: rgba(88, 86, 214, 0.1)">🛡</div>
+                <div class="h">账号与安全</div>
+                <div class="v">手机号已绑定</div>
+                <div class="chev">›</div>
+              </div>
+              <div class="row">
+                <div class="mini-ico" style="background: rgba(31, 182, 166, 0.1)">⚙</div>
+                <div class="h">面试偏好</div>
+                <div class="v">标准模式</div>
+                <div class="chev">›</div>
+              </div>
+              <div class="row">
+                <div class="mini-ico" style="background: rgba(217, 131, 0, 0.1)">🔒</div>
+                <div class="h">隐私与数据</div>
+                <div class="chev">›</div>
+              </div>
+            </div>
+
+            <div class="group-title">支持</div>
+            <div class="group">
+              <div class="row">
+                <div class="mini-ico" style="background: rgba(88, 86, 214, 0.1)">💬</div>
+                <div class="h">帮助与客服</div>
+                <div class="chev">›</div>
+              </div>
+              <div class="row">
+                <div class="mini-ico" style="background: rgba(110, 110, 115, 0.1)">ⓘ</div>
+                <div class="h">关于智面研学</div>
+                <div class="v">v1.0.0</div>
+                <div class="chev">›</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabbar">
+            <div class="tab">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+              练习
+            </div>
+            <div class="tab">
+              <svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" /></svg>
+              成长
+            </div>
+            <div class="tab on">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="3.4" />
+                <path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" />
+              </svg>
+              我的
+            </div>
+          </div>
+        </div>
+        <figcaption class="caption">
+          <b>③ 我的 · 账号与权益归位</b>
+          手机号绑定状态直接可见，一号一档；会员卡只保留一个行动点。列表改为 iOS
+          分组样式，减少「我的」页的装饰噪音。
+        </figcaption>
+      </figure>
+
+      <!-- 会员 -->
+      <figure class="cell">
+        <div class="phone">
+          <div class="island"></div>
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="right">
+              <span class="signal"
+                ><i style="height: 4px"></i><i style="height: 6px"></i><i style="height: 8px"></i
+                ><i style="height: 10px"></i
+              ></span>
+              <span class="battery"><i></i></span>
+            </span>
+          </div>
+
+          <div class="screen no-tab">
+            <div class="head-row">
+              <div>
+                <div class="kicker">会员 · 不自动续费</div>
+                <div class="large-title">解锁完整练习</div>
+              </div>
+            </div>
+
+            <div class="pay-hero">
+              <div class="k">智面研学 PRO</div>
+              <h3>把每一次练习，<br />都变成可验证的进步</h3>
+              <p>无限次模拟面试 · 深度证据报告 · 完整训练计划 · 简历逐条批注</p>
+            </div>
+
+            <div class="plan on">
+              <div class="radio">✓</div>
+              <div class="grow">
+                <div class="nm">
+                  月卡 <span class="pill amber" style="margin-left: 6px">推荐</span>
+                </div>
+                <div class="ds">30 天 · 有效期内模拟面试不限次</div>
+              </div>
+              <div class="pr">¥39<small>/月</small></div>
+            </div>
+
+            <div class="plan">
+              <div class="radio"></div>
+              <div class="grow">
+                <div class="nm">年卡</div>
+                <div class="ds">365 天 · 折合每月 ¥19</div>
+              </div>
+              <div class="pr">¥228<small>/年</small></div>
+            </div>
+
+            <div class="plan-mini">
+              <span><b>3 场练习包</b> · 无需开通会员，用完为止</span>
+              <span style="font-family: var(--mono); color: var(--ink)">¥29 ›</span>
+            </div>
+
+            <div class="card" style="margin-top: 14px">
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 2px">会员权益</div>
+              <div class="benefit">
+                <div class="tk">✓</div>
+                <div>
+                  <div class="h">无限次模拟面试</div>
+                  <div class="d">按岗位与年限抽题，随时开练</div>
+                </div>
+              </div>
+              <div class="benefit">
+                <div class="tk">✓</div>
+                <div>
+                  <div class="h">深度证据报告</div>
+                  <div class="d">每个结论可展开到原始回答与评分锚点</div>
+                </div>
+              </div>
+              <div class="benefit">
+                <div class="tk">✓</div>
+                <div>
+                  <div class="h">完整训练计划</div>
+                  <div class="d">从报告直接生成，练完回到面试验证</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pay-cta">立即开通 · ¥39</div>
+            <div class="pay-note">购买前需绑定手机号，用于权益发放与售后</div>
+          </div>
+        </div>
+        <figcaption class="caption">
+          <b>④ 会员 · 与手机号绑定衔接</b>
+          继续沿用已通过评审的「购买前绑定手机号」流程；本稿只重做视觉层级，不改支付与权益规则。
+        </figcaption>
+      </figure>
+    </main>
+
+    <section class="notes">
+      <h2>信息架构与业务串联</h2>
+      <p>
+        导航从 4 个 Tab 收敛为 3
+        个：首页负责「开始」，成长负责「看懂与改进」，我的负责「账号与权益」。
+        一次完整使用路径是：首页开始面试 → 面试房间对话式作答 → 结束生成报告 →
+        成长页查看证据与优先改进 → 进入训练 → 回到首页再练一场。
+      </p>
+      <div class="ia">
+        <div class="box"><b>练习</b>首页 / 面试准备 / 面试房间 / 简历优化</div>
+        <span class="arrow">→</span>
+        <div class="box"><b>成长</b>报告 / 六维趋势 / 训练列表 / 训练房间</div>
+        <span class="arrow">→</span>
+        <div class="box"><b>我的</b>会员 / 账号与安全 / 偏好 / 隐私 / 关于</div>
+        <span class="arrow">↺</span>
+        <div class="box"><b>回流</b>训练完成 → 首页再练一场</div>
+      </div>
+      <div class="grid3">
+        <div class="note-card">
+          <b>视觉体系</b>
+          <span
+            >系统分组背景 + 白色卡片 + 发丝分隔线；大标题 28、卡片标题 17、正文
+            14/12。深色只用于首页主卡、会员卡与面试房间，形成「沉浸练习 / 轻盈学习」两种面。</span
+          >
+        </div>
+        <div class="note-card">
+          <b>为什么是 3 个 Tab</b>
+          <span
+            >4 个 Tab
+            把「结果」和「训练」割裂，用户看完报告不会自然去练。合并为「成长」后，报告里的优先改进项可直接跳到训练，闭环更短。</span
+          >
+        </div>
+        <div class="note-card">
+          <b>落地约束</b>
+          <span
+            >uvue 不支持毛玻璃与内联 SVG：Tabbar 用半透明白底 +
+            发丝描边模拟；趋势图用条形与数值实现，不引入新图表库；所有颜色与圆角仍走三载体
+            token。</span
+          >
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

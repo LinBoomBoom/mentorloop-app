@@ -12,8 +12,8 @@ const OUT_DIR = path.join(ROOT, 'static', 'tabbar')
 const W = 81
 const H = 81
 
-const NORMAL = [148, 163, 184] // #94A3B8
-const ACTIVE = [91, 108, 255] // #5B6CFF smart
+const NORMAL = [174, 174, 178] // #AEAEB2 mist（iOS 未选中灰）
+const ACTIVE = [88, 86, 214] // #5856D6 smart（systemIndigo）
 
 // ---------- 栅格 ----------
 function newRaster() {

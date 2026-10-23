@@ -22,15 +22,15 @@
     },
     {
       "path": "pages/report/report",
-      "style": { "navigationBarTitleText": "面试报告" }
+      "style": { "navigationBarTitleText": "成长" }
     },
     {
       "path": "pages/training/training",
-      "style": { "navigationBarTitleText": "专项训练" }
+      "style": { "navigationBarTitleText": "做题" }
     },
     {
       "path": "pages/training/room",
-      "style": { "navigationStyle": "custom", "navigationBarTitleText": "训练房间" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "做题" }
     },
     {
       "path": "pages/resume/resume",
@@ -42,7 +42,7 @@
     },
     {
       "path": "pages/mine/mine",
-      "style": { "navigationBarTitleText": "我的" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的" }
     },
     {
       "path": "pages/login/login",
@@ -78,28 +78,22 @@
     }
   ],
   "tabBar": {
-    "color": "#5B6472",
-    "selectedColor": "#5B6CFF",
+    "color": "#6E6E73",
+    "selectedColor": "#5856D6",
     "backgroundColor": "#FFFFFF",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页",
+        "text": "练习",
         "iconPath": "static/tabbar/home.png",
         "selectedIconPath": "static/tabbar/home-active.png"
       },
       {
-        "pagePath": "pages/training/training",
-        "text": "专项训练",
-        "iconPath": "static/tabbar/dumbbell.png",
-        "selectedIconPath": "static/tabbar/dumbbell-active.png"
-      },
-      {
         "pagePath": "pages/report/report",
-        "text": "结果",
-        "iconPath": "static/tabbar/file.png",
-        "selectedIconPath": "static/tabbar/file-active.png"
+        "text": "成长",
+        "iconPath": "static/tabbar/trend.png",
+        "selectedIconPath": "static/tabbar/trend-active.png"
       },
       {
         "pagePath": "pages/mine/mine",

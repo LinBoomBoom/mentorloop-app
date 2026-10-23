@@ -17,17 +17,82 @@
           :icon-color="SMART"
           :icon-bg="CHIP_SMART"
           title="暂无报告"
-          desc="完成一次模拟面试后，这里会展示总体判断、六维评分与训练计划"
+          desc="完成一次模拟面试后，这里会展示总体判断、六维评分与做题计划"
         >
           <ml-button text="开始模拟面试" type="primary" block @tap="again"></ml-button>
           <view class="h-2"></view>
-          <ml-button text="先做专项训练" type="secondary" block @tap="goTraining"></ml-button>
+          <ml-button text="先去做题" type="secondary" block @tap="goTraining"></ml-button>
         </ml-empty>
       </ml-card>
     </view>
 
     <template v-else>
-      <view class="p-4">
+      <!-- 成长页一级分段：报告 / 训练（训练不再占独立 Tab） -->
+      <view class="px-4 pt-4">
+        <view class="flex-row p-1 rounded-control bg-bg-muted">
+          <view
+            class="flex-1 h-9 rounded-control flex-row items-center justify-center"
+            :class="topSeg === 'report' ? 'bg-surface' : ''"
+            hover-class="pressed-row"
+            :hover-start-time="0"
+            @click="topSeg = 'report'"
+          >
+            <text
+              class="text-sm"
+              :class="topSeg === 'report' ? 'font-semibold text-ink' : 'text-ink-soft'"
+              >报告</text
+            >
+          </view>
+          <view
+            class="flex-1 h-9 rounded-control flex-row items-center justify-center"
+            :class="topSeg === 'training' ? 'bg-surface' : ''"
+            hover-class="pressed-row"
+            :hover-start-time="0"
+            @click="topSeg = 'training'"
+          >
+            <text
+              class="text-sm"
+              :class="topSeg === 'training' ? 'font-semibold text-ink' : 'text-ink-soft'"
+              >做题</text
+            >
+          </view>
+        </view>
+      </view>
+
+      <!-- 训练段：直接消费最近报告的优先改进项 -->
+      <view v-if="topSeg === 'training'" class="p-4">
+        <ml-section-header title="做题" caption="出自最近报告 · 点击直达做题"></ml-section-header>
+        <view class="mb-2" v-for="t in report.trainingPlan" :key="'tp-' + t.id">
+          <ml-card pressable @tap="startPlanTask(t)">
+            <view class="flex-row items-center">
+              <view
+                class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
+                :class="t.priority === 1 ? 'bg-chip-warn' : 'bg-chip-smart'"
+              >
+                <ml-icon name="zap" :size="16" :color="t.priority === 1 ? WARN : SMART"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink">{{ t.title }}</text>
+                <text class="text-xs text-ink-soft mt-0.5"
+                  >{{ t.priority === 1 ? '优先改进' : '补充练习' }} · 约
+                  {{ t.durationMin }} 分钟</text
+                >
+              </view>
+              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
+            </view>
+          </ml-card>
+        </view>
+        <view v-if="report.trainingPlan.length === 0" class="mt-3">
+          <ml-card>
+            <text class="text-sm text-ink-soft">本次报告暂无做题任务，可进入做题自行选择。</text>
+          </ml-card>
+        </view>
+        <view class="mt-3">
+          <ml-button text="查看全部做题" type="secondary" block @tap="goTraining"></ml-button>
+        </view>
+      </view>
+
+      <view v-if="topSeg === 'report'" class="p-4">
         <!-- 复盘域分段（IA-1 D-IA2）：本场报告 / 成长趋势同层，不再跳二级页 -->
         <ml-segmented
           class="mb-3"
@@ -201,8 +266,8 @@
           <!-- 训练计划 -->
           <view class="mt-5">
             <ml-section-header
-              title="建议训练计划"
-              caption="出自本次评估报告 · 点击直达训练"
+              title="建议做题计划"
+              caption="出自本次评估报告 · 点击直达做题"
             ></ml-section-header>
           </view>
           <view class="mb-2" v-for="t in report.trainingPlan" :key="t.id">
@@ -284,11 +349,11 @@ import {
 } from '../../styles/score-display.uts'
 import { confidenceBand } from '../../engine/rubric.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
-const MIST = themeValue('mist', '#AEB9CC')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const MIST = themeValue('mist', '#AEAEB2')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 const WARN_LIGHT = themeValue('warnLight', '#F5C97B')
 
@@ -313,6 +378,9 @@ const hasReport = ref(false)
 const loading = ref(true)
 const records = ref<ReportRecord[]>([])
 const activeSid = ref('')
+
+// 成长页一级分段：报告 / 训练（训练不再占独立 Tab）
+const topSeg = ref('report')
 
 // 复盘域分段（IA-1 D-IA2）：默认本场报告；growthTick 供成长面板在 onShow 时重载
 const seg = ref('report')
@@ -539,6 +607,7 @@ function goHome() {
 }
 
 function goTraining() {
-  uni.switchTab({ url: '/pages/training/training' })
+  // 专项训练已从 tabBar 移出，作为成长页的二级页面
+  uni.navigateTo({ url: '/pages/training/training' })
 }
 </script>

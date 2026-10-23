@@ -18,28 +18,28 @@
   --color-navy: #0f2c4c;
   --color-navy-deep: #0b2138;
 
-  /* 品牌语义色 */
-  --color-smart: #5b6cff;
+  /* 品牌语义色（2026-10-23 iOS 化：smart 收敛为 systemIndigo，降荧光感） */
+  --color-smart: #5856d6;
   --color-reliable: #1fb6a6;
   --color-warn: #e08a00;
   --color-danger: #dc2626;
 
-  /* 浅色学习面 */
-  --color-bg-light: #f7f9fc;
-  --color-bg-muted: #f1f5f9;
+  /* 浅色学习面（2026-10-23 系统分组背景：去冷蓝偏色） */
+  --color-bg-light: #f2f2f7;
+  --color-bg-muted: #e9e9ef;
   --color-surface: #ffffff;
-  --color-line: #e3e8f0;
+  --color-line: #e5e5ea;
 
-  /* 文字 */
-  --color-ink: #1a2433;
-  --color-ink-soft: #5b6472;
-  --color-mist: #aeb9cc;
+  /* 文字（iOS label / secondaryLabel / tertiaryLabel） */
+  --color-ink: #1c1c1e;
+  --color-ink-soft: #6e6e73;
+  --color-mist: #aeaeb2;
 
   /* 浅色 chip（语义背景） */
-  --color-chip-smart: #eef1ff;
-  --color-chip-reliable: #e6f7f4;
-  --color-chip-warn: #fff3e0;
-  --color-chip-danger: #feecec;
+  --color-chip-smart: #efeefc;
+  --color-chip-reliable: #e8f7f4;
+  --color-chip-warn: #fff4e5;
+  --color-chip-danger: #ffebea;
 
   /* 深色面加亮档（navy 面上的语义色提亮，保 ≥4.5:1）+ 中性强调描边
      2026-10-14 亮色族收敛：吸收原散落 pages 的 #8FA0FF / #5CE8D8 / #F5C97B / #FF9E6D / #C9D2E3 */
@@ -47,10 +47,10 @@
   --color-reliable-light: #5ce8d8;
   --color-warn-light: #f5c97b;
   --color-motivation-light: #ff9e6d;
-  --color-line-strong: #c9d2e3;
+  --color-line-strong: #d1d1d6;
 
   /* 六维能力色板（growth/training/report 维度画像统一消费，替代散落硬编码） */
-  --color-dim-knowledge: #5b6cff;
+  --color-dim-knowledge: #5856d6;
   --color-dim-engineering: #1fb6a6;
   --color-dim-analysis: #e08a00;
   --color-dim-communication: #7c5cff;
@@ -58,7 +58,7 @@
   --color-dim-motivation: #e0654a;
 
   /* 六维 chip 底（浅色 tint） */
-  --color-dim-knowledge-tint: #eef1ff;
+  --color-dim-knowledge-tint: #efeefc;
   --color-dim-engineering-tint: #e6f7f4;
   --color-dim-analysis-tint: #fff3e0;
   --color-dim-communication-tint: #f0ebff;
@@ -71,17 +71,17 @@
   /* 等宽字体栈（工程化训练台 D-i4：数字 / 编号 / 计时 / 时长；纯系统栈，零包体增量） */
   --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
-  /* 三级阴影（navy 色调，比纯黑更贴合品牌） */
-  --shadow-sm: 0 1px 2px rgba(15, 44, 76, 0.06);
-  --shadow-card: 0 4px 16px rgba(15, 44, 76, 0.08);
-  --shadow-float: 0 16px 40px rgba(15, 44, 76, 0.14);
+  /* 三级阴影（2026-10-23 iOS 化：更柔、更中性，避免蓝雾） */
+  --shadow-sm: 0 1px 2px rgba(20, 22, 40, 0.05);
+  --shadow-card: 0 8px 24px rgba(20, 22, 40, 0.06);
+  --shadow-float: 0 16px 40px rgba(20, 22, 40, 0.14);
 
   /* 圆角语义档（MASTER.md §A1）：生成 rounded-chip/control/card 原子类；
      不覆盖 Tailwind 默认 --radius-* 档，避免全站视觉回归
-     2026-10-14 工程化训练台收紧（D-i4）：999/12/16 → 6/8/12，去胶囊化 */
-  --radius-chip: 6px;
-  --radius-control: 8px;
-  --radius-card: 12px;
+     2026-10-23 iOS 化：10/12/20（大圆角卡片） */
+  --radius-chip: 10px;
+  --radius-control: 12px;
+  --radius-card: 20px;
   --ease-standard: ease-out;
 
   /* 动效/尺寸语义档（仅作 CSS 变量声明，非 Tailwind 标准命名空间，不生成原子类）：
@@ -106,7 +106,7 @@ page {
    MASTER.md §A1：靛紫辉光渐入深海军蓝 */
 @utility ml-brand-band {
   background-color: #0f2c4c;
-  background-image: linear-gradient(135deg, #2b3f9e 0%, #16305f 48%, #0f2c4c 100%);
+  background-image: linear-gradient(135deg, #4b49c8 0%, #24305f 48%, #0f2c4c 100%);
 }
 
 /* 按压反馈统一三档（MASTER.md A3-5：opacity 收敛为 0.7/0.8/0.85） */

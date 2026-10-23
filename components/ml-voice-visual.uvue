@@ -47,9 +47,9 @@ const props = defineProps({
 })
 
 const LABELS: StringMap = AVATAR_STATE_LABEL
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
-const MIST = themeValue('mist', '#AEB9CC')
+const MIST = themeValue('mist', '#AEAEB2')
 const SURFACE = themeValue('surface', '#FFFFFF')
 const STATE_COLOR: StringMap = {
   idle: SMART,

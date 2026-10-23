@@ -25,7 +25,7 @@ import mlIcon from './ml-icon.uvue'
 import { themeValue } from '../styles/theme.uts'
 
 // 区块标题：左侧竖条 + 标题（+说明），右侧可选操作入口
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 
 defineProps({
   title: { type: String, default: '' },

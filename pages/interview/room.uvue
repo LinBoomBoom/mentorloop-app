@@ -1,247 +1,291 @@
 <template>
-  <view class="flex-col h-screen bg-navy">
-    <!-- 顶部状态条（安全区动态内边距） -->
+  <view class="flex-col h-screen bg-bg-light">
+    <!-- 顶栏：退出 / AI 身份与进度 / 结束 -->
     <view
-      class="flex-row items-center justify-between px-4"
+      class="bg-surface border-b border-line"
       :style="{ paddingTop: topPad + 'px', paddingRight: rightPad + 'px' }"
     >
-      <!-- 左：退出（放弃，不生成报告） -->
-      <view class="flex-row items-center h-11" @click="confirmExit">
-        <ml-icon name="arrow-left" :size="16" :color="MIST"></ml-icon>
-        <text class="text-sm text-mist ml-1.5">退出</text>
-      </view>
-      <!-- 右：网络状态 + 计时 + 结束并生成报告 -->
-      <view class="flex-row items-center h-11">
-        <view class="flex-row items-center mr-3">
-          <view
-            class="w-1.5 h-1.5 rounded-full mr-1.5"
-            :style="{ backgroundColor: netOk ? RELIABLE : DANGER }"
-          ></view>
-          <!-- 在线时只保留状态点，给右侧胶囊让位；断网时才显示文字 -->
-          <text v-if="!netOk" class="text-xs text-danger">{{ netText }}</text>
+      <view class="h-14 flex-row items-center px-4">
+        <view
+          class="w-9 h-9 rounded-full bg-bg-muted flex-row items-center justify-center"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="confirmExit"
+        >
+          <ml-icon name="arrow-left" :size="17" :color="INK"></ml-icon>
         </view>
-        <view class="flex-row items-center mr-3">
-          <ml-icon name="clock" :size="14" :color="SURFACE"></ml-icon>
-          <text class="text-sm font-mono text-white ml-1">{{ elapsedText }}</text>
+        <view class="flex-col flex-1 items-center">
+          <view class="flex-row items-center">
+            <view
+              class="w-1.5 h-1.5 rounded-full mr-1.5"
+              :style="{ backgroundColor: netOk ? RELIABLE : DANGER }"
+            ></view>
+            <text class="text-sm font-semibold text-ink">AI 面试官</text>
+          </view>
+          <text class="text-xs text-ink-soft mt-0.5"
+            >系统生成 · {{ askedCount }} / {{ modeMax }} 题 · {{ elapsedText }}</text
+          >
         </view>
         <view
-          class="flex-row items-center h-11 px-3.5 rounded-control border"
-          :style="{ borderColor: 'rgba(91,108,255,0.6)' }"
+          id="room-finish"
+          class="h-8 px-3 rounded-chip border border-line-strong flex-row items-center"
           hover-class="pressed-chip"
           :hover-start-time="0"
           @click="confirmFinish"
         >
-          <ml-icon name="check-circle" :size="13" :color="SMART_LIGHT"></ml-icon>
-          <text class="text-xs text-white ml-1">结束</text>
+          <text class="text-xs font-semibold text-ink">结束</text>
         </view>
+      </view>
+      <view v-if="!netOk" class="px-4 pb-2">
+        <text class="text-xs text-danger">{{ netText }}</text>
       </view>
     </view>
 
-    <!-- 主区：AI 身份标识 + 题目卡（题目为主视觉） -->
-    <view class="flex-1 flex-col justify-center px-4">
-      <!-- AI 身份标识（AI Interaction 规范：需让用户知道在与 AI 对话） -->
-      <view class="flex-row items-center">
-        <ml-tag
-          icon="bot"
-          label="AI 面试官 · 系统生成"
-          bg="rgba(91,108,255,0.18)"
-          :icon-color="SMART_LIGHT"
-          :color="SURFACE"
-        ></ml-tag>
-      </view>
-
-      <!-- 题目卡 -->
-      <view class="mt-3 rounded-card p-4" :style="panelStyle">
-        <view class="flex-row items-center justify-between">
-          <text class="text-xs font-mono text-mist">{{ 'Q' + askedCount }}</text>
-          <view class="flex-row items-center">
-            <view class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: stateColor }"></view>
-            <text class="text-xs text-mist ml-1.5">{{ stateLabel }}</text>
+    <!-- 消息流 -->
+    <scroll-view
+      class="flex-1"
+      scroll-y="true"
+      :scroll-into-view="scrollTarget"
+      :scroll-with-animation="true"
+    >
+      <view class="px-4 pt-4 pb-3">
+        <view class="flex-row items-center justify-center">
+          <view class="day-chip">
+            <text class="text-xs text-ink-soft"
+              >{{ blueprint.position }} · {{ blueprint.experienceRange }} · 本次面试</text
+            >
           </view>
         </view>
 
-        <text class="text-lg font-semibold text-white leading-6 mt-2">{{ displayQuestion }}</text>
-        <!-- 播报状态：不让「听不到」变成无解释的静默 -->
-        <view v-if="ttsHint.length > 0" class="flex-row items-center mt-2">
+        <!-- 首题加载骨架 -->
+        <view v-if="messages.length === 0" class="mt-4 flex-col items-start">
+          <text class="text-xs text-ink-soft ml-1 mb-1">AI 面试官 · 系统生成</text>
+          <view class="bubble-ai">
+            <text class="text-sm text-ink">正在准备第一题…</text>
+          </view>
+        </view>
+
+        <view v-for="(m, idx) in messages" :key="m.id" :id="m.id" class="mt-3">
+          <!-- AI 消息 -->
+          <view v-if="m.role === 'ai'" class="flex-col items-start">
+            <text class="text-xs text-ink-soft ml-1 mb-1">AI 面试官 · 系统生成</text>
+            <view class="bubble-ai">
+              <text class="text-sm leading-6 text-ink">{{ m.display }}</text>
+            </view>
+
+            <!-- 播报状态（仅最后一条 AI 消息） -->
+            <view
+              v-if="idx === lastAiIndex && ttsHint.length > 0"
+              class="flex-row items-center mt-1 ml-1"
+            >
+              <ml-icon
+                :name="ttsHint === 'speaking' ? 'volume-2' : 'info'"
+                :size="12"
+                :color="ttsHint === 'speaking' ? SMART : MIST"
+              ></ml-icon>
+              <text class="text-xs text-ink-soft ml-1">{{
+                ttsHint === 'speaking'
+                  ? '正在播报 · 文字与语音同步'
+                  : '语音播报暂不可用，请阅读题面'
+              }}</text>
+            </view>
+
+            <!-- 快捷操作（未在录音 / 确认 / 暂停时） -->
+            <view
+              v-if="idx === lastAiIndex && !m.streaming && !recording && !reviewVisible && !paused"
+              class="flex-row items-center mt-2 ml-1"
+            >
+              <view
+                class="quick-chip"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="replayQuestion"
+              >
+                <ml-icon name="rotate-ccw" :size="12" :color="INK_SOFT"></ml-icon>
+                <text class="text-xs text-ink-soft ml-1">再说一遍</text>
+              </view>
+              <view
+                class="quick-chip ml-2"
+                hover-class="pressed-chip"
+                :hover-start-time="0"
+                @click="onRephrase"
+              >
+                <ml-icon name="repeat" :size="12" :color="INK_SOFT"></ml-icon>
+                <text class="text-xs text-ink-soft ml-1">换一种说法</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 用户消息 -->
+          <view v-else class="flex-col items-end">
+            <view class="bubble-me">
+              <text class="text-sm leading-6 text-white">{{ m.display }}</text>
+            </view>
+            <text v-if="m.inputMode.length > 0" class="text-xs text-ink-soft mt-1 mr-1">{{
+              m.inputMode === 'voice'
+                ? '语音转写 · 已确认'
+                : m.inputMode === 'skip'
+                  ? '已跳过'
+                  : '文字回答'
+            }}</text>
+          </view>
+        </view>
+
+        <!-- 录音面板 -->
+        <view v-if="recording" class="mt-3 rounded-card p-4" :style="recordPanelStyle">
+          <view class="flex-row items-center justify-between">
+            <view class="flex-row items-center">
+              <view class="w-2 h-2 rounded-full bg-danger mr-2 pulse-dot"></view>
+              <text class="text-xs text-white">正在录音 · 实时字幕</text>
+            </view>
+            <text class="text-sm font-mono text-white">{{ recordSeconds }}s</text>
+          </view>
+          <text class="text-sm text-white mt-2 leading-6">{{ caption }}</text>
+          <view class="flex-row items-end mt-2 h-8">
+            <view
+              v-for="n in 14"
+              :key="'bar' + n"
+              class="rec-bar mr-1"
+              :style="{ height: 6 + (n % 5) * 4 + 'px' }"
+            ></view>
+          </view>
+          <view class="flex-row items-center justify-between mt-3">
+            <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.62)' }"
+              >松开或点击结束，转成文字后确认</text
+            >
+            <view
+              class="rec-stop"
+              hover-class="pressed-chip"
+              :hover-start-time="0"
+              @click="toggleRecord"
+            >
+              <text class="text-xs font-semibold text-white">结束录音</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 转写确认 -->
+        <view v-if="reviewVisible" class="mt-3">
+          <ml-card>
+            <view class="flex-row items-center justify-between">
+              <text class="text-sm font-semibold text-ink">识别结果 · 请确认</text>
+              <text class="text-xs text-ink-soft">{{ reviewText.length }} 字</text>
+            </view>
+            <textarea
+              class="w-full h-28 rounded-control p-3 text-sm text-ink bg-bg-muted mt-2"
+              :value="reviewText"
+              placeholder="识别文本可在此修改…"
+              placeholder-class="text-ink-soft"
+              :maxlength="1000"
+              @input="onReviewInput"
+            />
+            <view class="flex-row mt-3">
+              <ml-button text="重新录制" type="secondary" @tap="retryRecord"></ml-button>
+              <view class="w-2"></view>
+              <ml-button
+                text="确认提交"
+                type="primary"
+                :disabled="reviewText.length === 0"
+                @tap="confirmReview"
+              ></ml-button>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 状态提示（转写中 / 已记录 / 降级说明） -->
+        <view
+          v-if="caption.length > 0 && !recording && !reviewVisible"
+          class="mt-3 rounded-control bg-bg-muted p-3"
+        >
+          <text class="text-xs text-ink-soft">{{ caption }}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 输入条 -->
+    <view class="bg-surface border-t border-line px-3 pt-2.5" :style="{ paddingBottom: bottomPad }">
+      <view class="flex-row items-center">
+        <view
+          v-show="!textInputActive"
+          id="room-text-toggle"
+          class="w-10 h-10 rounded-full bg-bg-muted flex-row items-center justify-center"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="textMode"
+        >
+          <ml-icon name="keyboard" :size="18" :color="INK_SOFT"></ml-icon>
+        </view>
+
+        <view
+          v-show="!textInputActive"
+          id="room-voice-toggle"
+          class="flex-1 mx-2 h-10 rounded-full border border-line-strong flex-row items-center justify-center"
+          :style="{ backgroundColor: recording ? 'rgba(220,38,38,0.08)' : SURFACE }"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="toggleRecord"
+        >
           <ml-icon
-            :name="ttsHint === 'speaking' ? 'volume-2' : 'info'"
-            :size="12"
-            :color="ttsHint === 'speaking' ? SMART_LIGHT : MIST"
+            :name="recording ? 'square' : 'mic'"
+            :size="16"
+            :color="recording ? DANGER : SMART"
           ></ml-icon>
-          <text class="text-xs text-mist ml-1.5">{{
-            ttsHint === 'speaking' ? '面试官正在播报…' : '语音播报暂不可用，请阅读题面'
+          <text class="text-sm ml-1.5" :class="recording ? 'text-danger' : 'text-ink'">{{
+            paused ? '已暂停 · 点此继续' : recordButtonText
           }}</text>
         </view>
-        <text v-if="caption.length > 0" class="text-xs text-mist mt-2">{{ caption }}</text>
 
-        <!-- 换一种说法：追加澄清行，原题保留在上一行 -->
         <view
-          v-if="rephrasedText.length > 0"
-          class="mt-2 rounded-control p-2.5"
-          :style="{ backgroundColor: 'rgba(255,255,255,0.07)' }"
+          v-show="textInputActive"
+          class="flex-1 mx-2 h-10 rounded-full border border-line-strong bg-bg-muted px-3 flex-row items-center"
         >
-          <text class="text-xs text-white leading-5">{{ rephrasedText }}</text>
+          <input
+            id="room-text-input"
+            class="flex-1 text-sm text-ink"
+            :value="textDraft"
+            placeholder="输入你的回答…"
+            placeholder-class="text-ink-soft"
+            :maxlength="1000"
+            :focus="textInputActive"
+            :disabled="submittingText"
+            @input="onTextInput"
+            @confirm="submitText"
+          />
         </view>
 
-        <!-- 求助操作（暂停/录音时隐藏）：再说一遍 / 换一种说法 / 文字作答 -->
-        <view v-if="!paused && !recording" class="flex-row items-center mt-2" :style="dividerTop">
-          <view
-            class="flex-row items-center h-11 pr-4"
-            hover-class="pressed-row"
-            :hover-start-time="0"
-            @click="replayQuestion"
-          >
-            <ml-icon name="rotate-ccw" :size="13" :color="MIST"></ml-icon>
-            <text class="text-xs text-mist ml-1.5">再说一遍</text>
-          </view>
-          <view
-            class="flex-row items-center h-11 pr-4"
-            hover-class="pressed-row"
-            :hover-start-time="0"
-            @click="onRephrase"
-          >
-            <ml-icon name="repeat" :size="13" :color="MIST"></ml-icon>
-            <text class="text-xs text-mist ml-1.5">换一种说法</text>
-          </view>
-          <view
-            class="flex-row items-center h-11 pr-2"
-            hover-class="pressed-row"
-            :hover-start-time="0"
-            @click="textMode"
-          >
-            <ml-icon name="keyboard" :size="13" :color="MIST"></ml-icon>
-            <text class="text-xs text-mist ml-1.5">文字作答</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 识别结果确认：先看清自己说了什么，再决定提交或重录（2026-10-23 真机反馈） -->
-      <view v-if="reviewVisible" class="mt-3 rounded-card p-4" :style="panelStyle">
-        <view class="flex-row items-center justify-between">
-          <text class="text-xs font-semibold text-white">识别结果 · 请确认</text>
-          <text class="text-xs text-mist">{{ reviewText.length }} 字</text>
-        </view>
-        <textarea
-          class="w-full h-24 rounded-control p-3 text-sm text-ink bg-surface mt-2"
-          v-model="reviewText"
-          placeholder="识别文本可在此修改…"
-          placeholder-class="text-ink-soft"
-          :maxlength="1000"
-        />
-        <view class="flex-row mt-3">
-          <ml-button text="重新录制" type="secondary" @tap="retryRecord"></ml-button>
-          <view class="w-2"></view>
-          <ml-button
-            text="确认提交"
-            type="primary"
-            :disabled="reviewText.length === 0"
-            @tap="confirmReview"
-          ></ml-button>
-        </view>
-      </view>
-    </view>
-
-    <!-- 语音状态可视化（辅助：状态环 + 声波，D3 语义保留）；确认态让位给回答文本 -->
-    <view
-      v-if="!reviewVisible"
-      class="flex-row items-end justify-center pt-2"
-      style="height: 128px"
-    >
-      <ml-voice-visual
-        :state="avatarState"
-        :speaking="ttsSpeaking"
-        :show-label="false"
-        :ring="96"
-      ></ml-voice-visual>
-    </view>
-
-    <!-- 控制条：两侧辅助操作 + 中央录音主按钮（底部安全区） -->
-    <view
-      class="flex-row items-center justify-center px-6 pt-3"
-      :style="{ paddingBottom: bottomPad + 'px' }"
-    >
-      <!-- 暂停/恢复 -->
-      <view class="flex-col items-center w-16" @click="togglePause">
         <view
-          class="w-11 h-11 rounded-full flex-row items-center justify-center"
-          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+          v-show="textInputActive"
+          id="room-send"
+          class="w-10 h-10 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: DRAFT_OK ? SMART : BG_MUTED }"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="submitText"
         >
-          <ml-icon v-if="paused" name="play" :size="18" :color="SURFACE"></ml-icon>
-          <!-- 暂停态：图标子集未含 pause 字形，用两条竖条绘制，避免空白按钮 -->
-          <view v-else class="flex-row items-center justify-center">
-            <view
-              :style="{
-                width: '3px',
-                height: '16px',
-                borderRadius: '2px',
-                backgroundColor: SURFACE,
-                marginRight: '4px'
-              }"
-            ></view>
-            <view
-              :style="{
-                width: '3px',
-                height: '16px',
-                borderRadius: '2px',
-                backgroundColor: SURFACE
-              }"
-            ></view>
-          </view>
+          <ml-icon name="arrow-up-right" :size="18" :color="SURFACE"></ml-icon>
         </view>
-        <text class="text-xs text-mist mt-1.5">{{ paused ? '继续' : '暂停' }}</text>
-      </view>
-
-      <!-- 录音主按钮 -->
-      <view class="flex-col items-center mx-6" @click="toggleRecord">
         <view
-          class="w-16 h-16 rounded-full flex-row items-center justify-center"
-          :class="recording ? 'bg-danger' : 'bg-smart'"
+          v-show="!textInputActive"
+          class="w-10 h-10 rounded-full flex-row items-center justify-center"
+          :style="{ backgroundColor: recording ? DANGER : SMART }"
+          hover-class="pressed-chip"
+          :hover-start-time="0"
+          @click="toggleRecord"
         >
-          <ml-icon :name="recording ? 'square' : 'mic'" :size="24" :color="SURFACE"></ml-icon>
+          <ml-icon :name="recording ? 'square' : 'mic'" :size="18" :color="SURFACE"></ml-icon>
         </view>
-        <text class="text-xs text-white mt-2">{{ recordButtonText }}</text>
       </view>
 
-      <!-- 跳过本题（跳过保留为证据） -->
-      <view class="flex-col items-center w-16" @click="skipQuestion">
-        <view
-          class="w-11 h-11 rounded-full flex-row items-center justify-center"
-          :style="{ backgroundColor: 'rgba(255,255,255,0.08)' }"
+      <view class="flex-row items-center justify-between mt-2 px-1">
+        <text class="text-xs text-ink-soft" @click="togglePause">{{
+          paused ? '继续面试' : '暂停'
+        }}</text>
+        <text id="room-skip" class="text-xs text-ink-soft" @click="skipQuestion"
+          >跳过本题（保留为证据）</text
         >
-          <ml-icon name="flag" :size="18" :color="SURFACE"></ml-icon>
-        </view>
-        <text class="text-xs text-mist mt-1.5">跳过</text>
-      </view>
-    </view>
-
-    <!-- 文字辅助输入弹窗 -->
-    <view
-      v-if="textModalVisible"
-      class="absolute inset-0 flex-col items-center justify-center"
-      :style="{ backgroundColor: 'rgba(3,12,24,0.6)' }"
-      @click="cancelText"
-    >
-      <view class="w-11/12 rounded-card p-4 bg-navy-deep" @click.stop>
-        <text class="text-base font-semibold text-white">文字作答</text>
-        <text class="text-xs text-mist mt-1 mb-3">录音不便时可直接输入，长度建议 ≥ 20 字</text>
-        <textarea
-          class="w-full h-32 rounded-control p-3 text-sm text-ink bg-surface"
-          v-model="textDraft"
-          placeholder="在这里输入你的回答…"
-          placeholder-class="text-ink-soft"
-          :maxlength="1000"
-          :auto-focus="true"
-        />
-        <view class="flex-row justify-end mt-3">
-          <ml-button text="取消" type="secondary" @tap="cancelText"></ml-button>
-          <view class="ml-2"></view>
-          <ml-button
-            :text="submittingText ? '提交中…' : '提交回答'"
-            type="primary"
-            :disabled="submittingText || textDraft.length === 0"
-            @tap="submitText"
-          ></ml-button>
-        </view>
+        <text v-if="textInputActive" class="text-xs text-ink-soft" @click="cancelText"
+          >切回语音</text
+        >
       </view>
     </view>
   </view>
@@ -250,11 +294,10 @@
 <script setup lang="uts">
 import { ref, computed } from 'vue'
 import { onLoad, onShow, onUnload, onBackPress } from '@dcloudio/uni-app'
-import mlVoiceVisual from '../../components/ml-voice-visual.uvue'
 import mlButton from '../../components/ml-button.uvue'
-import mlTag from '../../components/ml-tag.uvue'
+import mlCard from '../../components/ml-card.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
-import { AVATAR_STATE_LABEL, StringMap, themeValue } from '../../styles/theme.uts'
+import { themeValue } from '../../styles/theme.uts'
 import { interviewSession } from '../../store/interview-session.uts'
 import { userStore } from '../../store/user-profile.uts'
 import { createSession, nextQuestion, submitAnswer } from '../../api/interview.uts'
@@ -285,21 +328,53 @@ import {
 import { uploadAsrCloud, AsrResponse } from '../../api/asr.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
 
-const SMART_LIGHT = themeValue('smartLight', '#8FA0FF')
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const SURFACE = themeValue('surface', '#FFFFFF')
-const MIST = themeValue('mist', '#AEB9CC')
+const MIST = themeValue('mist', '#AEAEB2')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const DANGER = themeValue('danger', '#DC2626')
+const INK = themeValue('ink', '#1C1C1E')
+const INK_SOFT = themeValue('inkSoft', '#6E6E73')
+const BG_MUTED = themeValue('bgMuted', '#E9E9EF')
+const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
+
+// 对话消息（仅客户端视图模型；题目与答案仍走原接口）
+type ChatMessage = {
+  id: string
+  role: string
+  text: string
+  display: string
+  streaming: boolean
+  inputMode: string
+}
+const messages = ref<ChatMessage[]>([])
+let streamTimer: number = 0
+let msgSeq: number = 0
+const scrollTarget = ref('')
+const lastAiIndex = computed((): number => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'ai') return i
+  }
+  return -1
+})
+// 文字输入态：与录音互斥；发送后回到语音条
+const textInputActive = ref(false)
+// 当前模式题量上限（仅用于顶部进度展示）
+const modeMax = computed((): number => {
+  if (mode.value === 'quick') return 3
+  if (mode.value === 'deep') return 12
+  return 7
+})
+const DRAFT_OK = computed((): boolean => textDraft.value.trim().length > 0)
 
 const recording = ref(false)
 // 单次录音上限（秒）：微信 ASR 硬限 60s / 1MB，留 5s 余量；到点自动停止并直接送转写
 const RECORD_MAX_SECONDS = 55
 const recordSeconds = ref(0)
 const recordButtonText = computed((): string => {
-  if (!recording.value) return '点击作答'
+  if (!recording.value) return '点击说话'
   const remain = RECORD_MAX_SECONDS - recordSeconds.value
-  return remain > 0 ? '停止 · ' + remain + 's' : '转写中'
+  return remain > 0 ? '点击结束 · 剩 ' + remain + 's' : '转写中'
 })
 const elapsed = ref(0)
 // 时长语义 v2：正计时展示（用户自主控制时长：题池封顶 + 随时手动退出），不再倒计时自动收束
@@ -336,15 +411,15 @@ const blueprint = ref<PositionBlueprint>({
 
 // 安全区内边距（onLoad 时从窗口信息读取）
 const topPad = ref(28)
-const bottomPad = ref(16)
+// 存 px 字符串：小程序端数值型 style 绑定可能被当成无单位值丢弃
+const bottomPad = ref('16px')
 // MP 端顶栏右侧让出微信胶囊宽度，避免「结束」按钮被胶囊遮挡（同首页 C6）
 const rightPad = ref(20)
 // #ifdef MP-WEIXIN
 rightPad.value = 100
 // #endif
 
-// 文字辅助输入弹窗状态
-const textModalVisible = ref(false)
+// 文字输入状态（底部输入条内联，不再是弹窗）
 const textDraft = ref('')
 const submittingText = ref(false)
 
@@ -381,18 +456,7 @@ const reviewText = ref('')
 const initialState: string = 'idle'
 const avatarState = ref(initialState)
 
-// 状态文案 / 状态色（单一来源 styles/theme.uts 的 AvatarState 语义）
-const STATE_LABELS: StringMap = AVATAR_STATE_LABEL
-const stateLabel = computed((): string => {
-  const v = STATE_LABELS[avatarState.value]
-  return v != null && v.length > 0 ? v : '待机'
-})
-const stateColor = computed((): string => {
-  const s = avatarState.value
-  if (s === 'listening' || s === 'summary') return RELIABLE
-  if (s === 'thinking') return MIST
-  return SMART
-})
+// 语音状态仍由 avatarState 驱动（对话流的播报 / 倾听切换依赖它），状态文案不再单独展示
 
 const emptyQuestion: QuestionItem = {
   id: '',
@@ -446,17 +510,88 @@ const displayQuestion = computed((): string => {
   return '准备开始…'
 })
 
-// 深色面卡片样式（实色 + 细描边，避免 blur 开销）
-const panelStyle = {
-  backgroundColor: 'rgba(255,255,255,0.06)',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: 'rgba(255,255,255,0.1)'
+// 录音面板深色底（实色，无 blur）
+const recordPanelStyle = {
+  backgroundColor: NAVY_DEEP
 }
-const dividerTop = {
-  borderTopWidth: '1px',
-  borderTopStyle: 'solid',
-  borderTopColor: 'rgba(255,255,255,0.07)'
+
+// 对话流：滚动 / 逐字上屏 / 追加消息
+function scrollToLatest() {
+  const n = messages.value.length
+  if (n === 0) return
+  const id = messages.value[n - 1].id
+  scrollTarget.value = id
+  setTimeout(() => {
+    scrollTarget.value = id
+  }, 60)
+}
+
+// 一次性收束所有未完成的逐字动画（新题到来 / 语音降级时）
+function finishStreams() {
+  if (streamTimer > 0) {
+    clearInterval(streamTimer)
+    streamTimer = 0
+  }
+  const list = messages.value
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].streaming) {
+      list[i].display = list[i].text
+      list[i].streaming = false
+    }
+  }
+}
+
+// 逐字上屏：与语音播报形成「流式」观感；约 45ms/字
+function startStream(m: ChatMessage) {
+  if (streamTimer > 0) {
+    clearInterval(streamTimer)
+    streamTimer = 0
+  }
+  let i = 0
+  m.display = ''
+  m.streaming = true
+  streamTimer = setInterval(() => {
+    i = i + 1
+    if (i >= m.text.length) {
+      m.display = m.text
+      m.streaming = false
+      clearInterval(streamTimer)
+      streamTimer = 0
+      return
+    }
+    m.display = m.text.substring(0, i)
+    if (i % 14 === 0) scrollToLatest()
+  }, 45)
+}
+
+function pushAiMessage(text: string) {
+  finishStreams()
+  msgSeq = msgSeq + 1
+  const m = {
+    id: 'msg-' + msgSeq,
+    role: 'ai',
+    text: text,
+    display: '',
+    streaming: true,
+    inputMode: ''
+  } as ChatMessage
+  messages.value.push(m)
+  scrollToLatest()
+  startStream(m)
+}
+
+function pushUserMessage(text: string, inputMode: string) {
+  msgSeq = msgSeq + 1
+  const m = {
+    id: 'msg-' + msgSeq,
+    role: 'user',
+    text: text,
+    display: text,
+    streaming: false,
+    inputMode: inputMode
+  } as ChatMessage
+  messages.value.push(m)
+  scrollToLatest()
 }
 
 onLoad((options: any) => {
@@ -467,10 +602,10 @@ onLoad((options: any) => {
     topPad.value = sb > 0 ? sb + 6 : 28
     const insets = win.safeAreaInsets
     const bottom = insets != null ? insets.bottom : 0
-    bottomPad.value = bottom > 0 ? bottom + 10 : 16
+    bottomPad.value = (bottom > 0 ? bottom + 10 : 16) + 'px'
   } catch {
     topPad.value = 28
-    bottomPad.value = 16
+    bottomPad.value = '16px'
   }
 
   // 接收 prep 页传入的模式、岗位方向、经验等级
@@ -522,6 +657,10 @@ onShow(() => {
 onUnload(() => {
   if (timer > 0) clearInterval(timer)
   clearRecordTimer()
+  if (streamTimer > 0) {
+    clearInterval(streamTimer)
+    streamTimer = 0
+  }
   // 页面卸载时释放感知层资源（单活跃实例，退出即释放）
   try {
     if (speech.isRecording()) speech.stop()
@@ -549,7 +688,7 @@ onUnload(() => {
 
 // 系统返回（App 手势 / 安卓返回键）必须走确认，不能绕过二次确认（文档 03 硬交互规则）
 onBackPress(() => {
-  if (textModalVisible.value) {
+  if (textInputActive.value) {
     cancelText()
     return true
   }
@@ -720,7 +859,8 @@ async function ask() {
     showAskFailed(msg)
     return
   }
-  // 面试官语音 TTS 播报题目（真实感知层），播报结束进入倾听
+  // 先上屏（逐字），再播报：文字与语音同步
+  pushAiMessage(currentQuestion.value.content)
   interviewSession.transition('LISTENING')
   avatarState.value = 'asking'
   if (ttsHandle != null) {
@@ -729,9 +869,10 @@ async function ask() {
   ttsHandle = speak(currentQuestion.value.content, onTtsUnavailable)
 }
 
-// TTS 未能真实出声：题面下方明示替代路径，不让用户以为「坏了」
+// TTS 未能真实出声：文字立即完整上屏，明示替代路径，不让用户以为「坏了」
 function onTtsUnavailable() {
   ttsHint.value = 'unavailable'
+  finishStreams()
 }
 
 // 发起追问（不切题，depth+1，展示追问话术）
@@ -753,6 +894,8 @@ function askFollowup(decision: FollowupDecision) {
     text: decision.prompt,
     timestamp: Date.now()
   })
+  // 追问同样以气泡入流后再播报
+  pushAiMessage(decision.prompt)
   // TTS 播报追问话术
   if (ttsHandle != null) {
     ttsHandle.stop()
@@ -818,6 +961,14 @@ function toggleRecord() {
 }
 
 function startRecord() {
+  // 用户开始作答即打断播报（不盖过用户），文字立即完整上屏
+  if (ttsHandle != null) {
+    ttsHandle.stop()
+    ttsHandle = null
+  }
+  ttsSpeaking.value = false
+  if (ttsHint.value === 'speaking') ttsHint.value = ''
+  finishStreams()
   recording.value = true
   startRecordTimer()
   avatarState.value = 'listening'
@@ -1013,6 +1164,7 @@ function submitAnswerReliably(
 
 // 录音结束 / 文字提交后的统一处理：写转写、决策追问/下一题
 function handleAnswer(answerText: string, inputMode: string = 'voice') {
+  pushUserMessage(answerText, inputMode)
   caption.value = '已记录你的回答'
   interviewSession.appendTranscript({
     questionId: currentQuestion.value.id,
@@ -1104,9 +1256,20 @@ function onRephrase() {
   rephrasedText.value = text
   avatarState.value = 'asking'
   trackEvent('interview_rephrase_question', { questionId: q.id })
-  if (ttsHandle != null) ttsHandle.stop()
+  pushAiMessage('换一种说法：' + text)
+  if (ttsHandle != null) {
+    ttsHandle.stop()
+  }
   ttsHint.value = ''
   ttsHandle = speak(text, onTtsUnavailable)
+}
+
+function onTextInput(e: UniInputEvent) {
+  textDraft.value = e.detail.value
+}
+
+function onReviewInput(e: UniInputEvent) {
+  reviewText.value = e.detail.value
 }
 
 function textMode() {
@@ -1114,14 +1277,18 @@ function textMode() {
     uni.showToast({ title: '请先停止录音', icon: 'none' })
     return
   }
+  if (reviewVisible.value) {
+    uni.showToast({ title: '请先确认提交或重新录制', icon: 'none' })
+    return
+  }
   textDraft.value = ''
   submittingText.value = false
-  textModalVisible.value = true
+  textInputActive.value = true
 }
 
 function cancelText() {
   if (submittingText.value) return
-  textModalVisible.value = false
+  textInputActive.value = false
   textDraft.value = ''
 }
 
@@ -1133,7 +1300,7 @@ function submitText() {
     return
   }
   submittingText.value = true
-  textModalVisible.value = false
+  textInputActive.value = false
   caption.value = '已接收文字回答，分析中…'
   avatarState.value = 'thinking'
   setTimeout(() => {
@@ -1154,6 +1321,7 @@ function skipQuestion() {
     return
   }
   trackEvent('interview_skip', { questionId: currentQuestion.value.id })
+  pushUserMessage('（跳过本题）', 'skip')
   interviewSession.appendTranscript({
     questionId: currentQuestion.value.id,
     speaker: 'user',
@@ -1232,3 +1400,69 @@ function confirmFinish() {
   })
 }
 </script>
+
+<style>
+.day-chip {
+  height: 24px;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.bubble-ai {
+  max-width: 84%;
+  padding: 12px 14px;
+  border-radius: 20px;
+  border-bottom-left-radius: 6px;
+  background-color: #ffffff;
+  border: 1px solid #e5e5ea;
+}
+.bubble-me {
+  max-width: 84%;
+  padding: 12px 14px;
+  border-radius: 20px;
+  border-bottom-right-radius: 6px;
+  background-color: #5856d6;
+}
+.quick-chip {
+  height: 26px;
+  padding-left: 9px;
+  padding-right: 9px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  border: 1px solid #e5e5ea;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.rec-bar {
+  width: 3px;
+  border-radius: 2px;
+  background-color: #8fa0ff;
+}
+.rec-stop {
+  height: 28px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.16);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.pulse-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+</style>

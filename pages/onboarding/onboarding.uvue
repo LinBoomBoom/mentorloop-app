@@ -98,7 +98,7 @@ import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 
 const positionOptions = POSITION_OPTIONS
 const experienceOptions = EXPERIENCE_OPTIONS

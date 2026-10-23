@@ -38,14 +38,17 @@
     </view>
 
     <template v-if="count > 0">
-      <view class="mt-4">
-        <ml-button
-          :text="generating ? '生成中…' : '生成面试报告'"
-          :type="generating ? 'secondary' : 'primary'"
-          block
-          :disabled="generating"
-          @tap="genReport"
-        ></ml-button>
+      <view
+        id="summary-generate"
+        class="mt-4 h-12 rounded-control flex-row items-center justify-center"
+        :style="{ backgroundColor: SMART, opacity: generating ? 0.6 : 1 }"
+        hover-class="pressed-card"
+        :hover-start-time="0"
+        @click="onGenerateTap"
+      >
+        <text class="text-base font-semibold text-white">{{
+          generating ? '生成中…' : reportReady ? '查看报告' : '生成面试报告'
+        }}</text>
       </view>
       <text class="text-xs text-ink-soft mt-3 text-center">
         报告包含：总体判断 · 六维评分 · 风险提示 · 训练计划
@@ -86,12 +89,14 @@ import { trackEvent } from '../../api/tracking.uts'
 import { themeValue } from '../../styles/theme.uts'
 
 const RELIABLE = themeValue('reliable', '#1FB6A6')
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const WARN = themeValue('warn', '#E08A00')
 const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
 
 const count = ref(0)
 const generating = ref(false)
+// 报告已写入本地/服务端：切 tab 失败时保留可重试的「查看报告」入口
+const reportReady = ref(false)
 
 // 覆盖能力域：去重拼接
 const domainsText = computed((): string => {
@@ -119,6 +124,15 @@ const followupTotal = computed((): number => {
 onLoad(() => {
   count.value = interviewSession.getQuestions().length
 })
+
+function onGenerateTap() {
+  if (generating.value) return
+  if (reportReady.value) {
+    uni.switchTab({ url: '/pages/report/report' })
+    return
+  }
+  genReport()
+}
 
 async function genReport() {
   if (generating.value) return
@@ -158,7 +172,12 @@ async function genReport() {
   interviewSession.clearSnapshot()
 
   generating.value = false
-  uni.switchTab({ url: '/pages/report/report' })
+  reportReady.value = true
+  uni.showToast({ title: '报告已生成', icon: 'none' })
+  // 等一帧再切 tab：生成过程中页面重渲染，立即 switchTab 在部分基础库会被丢弃
+  setTimeout(() => {
+    uni.switchTab({ url: '/pages/report/report' })
+  }, 400)
 }
 
 function goHome() {

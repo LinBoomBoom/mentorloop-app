@@ -378,19 +378,19 @@ import { trackEvent } from '../../api/tracking.uts'
 import { userStore, positionDisplay } from '../../store/user-profile.uts'
 import { themeValue } from '../../styles/theme.uts'
 
-const SMART = themeValue('smart', '#5B6CFF')
+const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
 const WARN = themeValue('warn', '#E08A00')
 const DANGER = themeValue('danger', '#DC2626')
-const BG_MUTED = themeValue('bgMuted', '#F1F5F9')
+const BG_MUTED = themeValue('bgMuted', '#E9E9EF')
 const SURFACE = themeValue('surface', '#FFFFFF')
-const INK_SOFT = themeValue('inkSoft', '#5B6472')
-const LINE = themeValue('line', '#E3E8F0')
-const MIST = themeValue('mist', '#AEB9CC')
-const CHIP_SMART = themeValue('chipSmart', '#EEF1FF')
+const INK_SOFT = themeValue('inkSoft', '#6E6E73')
+const LINE = themeValue('line', '#E5E5EA')
+const MIST = themeValue('mist', '#AEAEB2')
+const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
 const CHIP_RELIABLE = themeValue('chipReliable', '#E6F7F4')
 const CHIP_WARN = themeValue('chipWarn', '#FFF3E0')
-const CHIP_DANGER = themeValue('chipDanger', '#FEECEC')
+const CHIP_DANGER = themeValue('chipDanger', '#FFEBEA')
 const RELIABLE_LIGHT = themeValue('reliableLight', '#5CE8D8')
 
 const steps: string[] = ['上传简历', 'AI 解析', '优化建议']
