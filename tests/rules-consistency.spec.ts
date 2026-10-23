@@ -239,6 +239,19 @@ describe('双端选题器：模式预算与出题序列', () => {
     const input = makeInput({ remainSeconds: 9999, maxQuestions: 2 })
     expect(collectSequence(cSelectNext, input)).toEqual(collectSequence(sSelectNext, input))
   })
+
+  it('maxQuestions>0 时时间预算不提前收束（remainSeconds=0）一致', () => {
+    const input = makeInput({ remainSeconds: 0, maxQuestions: 12 })
+    expect(collectSequence(cSelectNext, input)).toEqual(collectSequence(sSelectNext, input))
+  })
+
+  it('跨场次去重 recentAsked 排除与回退一致', () => {
+    const input = makeInput({ remainSeconds: 9999 })
+    const recent = [sBank[0].id]
+    expect(cSelectNext(input, recent)).toEqual(sSelectNext(input, recent))
+    const allRecent = sBank.map((q) => q.id)
+    expect(cSelectNext(input, allRecent)).toEqual(sSelectNext(input, allRecent))
+  })
 })
 
 describe('双端答案信号与量表映射', () => {

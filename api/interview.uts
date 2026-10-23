@@ -27,10 +27,11 @@ export async function nextQuestion(
   asked: string[] = [],
   remainSeconds: number = 0,
   resumeRiskTopics: string[] = [],
-  resumeTechStacks: string[] = []
+  resumeTechStacks: string[] = [],
+  maxQuestions: number = 0
 ): Promise<QuestionItem> {
   if (useMock()) return await mockNextQuestion(sessionId, mode, blueprint)
-  const r = await get('/interview/next', {
+  const q: { [key: string]: any } = {
     sessionId: sessionId,
     mode: mode,
     positionId: blueprint.positionId,
@@ -39,7 +40,10 @@ export async function nextQuestion(
     remainSeconds: remainSeconds,
     resumeRiskTopics: resumeRiskTopics.join(','),
     resumeTechStacks: resumeTechStacks.join(',')
-  })
+  }
+  // 0 = 模式预算；仅续题时显式传 12（契约 2026-10-24）
+  if (maxQuestions > 0) q['maxQuestions'] = maxQuestions
+  const r = await get('/interview/next', q)
   return r.data as QuestionItem
 }
 

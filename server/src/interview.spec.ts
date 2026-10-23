@@ -141,6 +141,91 @@ describe('面试会话链路', () => {
     expect(a2.json().code).toBe(0)
     closeDb()
   })
+
+  it('maxQuestions 续题：时间不足仍可续到 12；非法值 400', async () => {
+    const app = makeApp()
+    const token = await login(app)
+    const s = await app.inject({
+      method: 'POST',
+      url: '/interview/session?mode=standard',
+      headers: auth(token),
+      payload: { positionId: 'backend', experienceLevel: 'junior' }
+    })
+    const sessionId = s.json().data.sessionId
+
+    for (let i = 0; i < 7; i++) {
+      const r = await app.inject({
+        method: 'GET',
+        url: `/interview/next?sessionId=${sessionId}&mode=standard&remainSeconds=600`,
+        headers: auth(token)
+      })
+      expect(r.json().code).toBe(0)
+    }
+    // 第 8–12 题：remainSeconds=0，但 maxQuestions>0 应以题量为准
+    for (let i = 0; i < 5; i++) {
+      const r = await app.inject({
+        method: 'GET',
+        url: `/interview/next?sessionId=${sessionId}&mode=standard&remainSeconds=0&maxQuestions=12`,
+        headers: auth(token)
+      })
+      const body = r.json()
+      expect(body.code).toBe(0)
+      expect(body.data.id).not.toBe('q-wrapup')
+    }
+    const wrap = await app.inject({
+      method: 'GET',
+      url: `/interview/next?sessionId=${sessionId}&mode=standard&remainSeconds=0&maxQuestions=12`,
+      headers: auth(token)
+    })
+    expect(wrap.json().data.id).toBe('q-wrapup')
+    const empty = await app.inject({
+      method: 'GET',
+      url: `/interview/next?sessionId=${sessionId}&mode=standard&remainSeconds=0&maxQuestions=12`,
+      headers: auth(token)
+    })
+    expect(empty.json().code).toBe(2001)
+
+    const bad = await app.inject({
+      method: 'GET',
+      url: `/interview/next?sessionId=${sessionId}&mode=standard&maxQuestions=13`,
+      headers: auth(token)
+    })
+    expect(bad.statusCode).toBe(200)
+    expect(bad.json().code).toBe(400)
+    closeDb()
+  })
+
+  it('跨场次去重：同一用户连续两场题目交集为 0', async () => {
+    const app = makeApp()
+    const token = await login(app)
+
+    const askSeven = async (): Promise<string[]> => {
+      const s = await app.inject({
+        method: 'POST',
+        url: '/interview/session?mode=standard',
+        headers: auth(token),
+        payload: { positionId: 'backend', experienceLevel: 'junior' }
+      })
+      const sessionId = s.json().data.sessionId
+      const ids: string[] = []
+      for (let i = 0; i < 7; i++) {
+        const r = await app.inject({
+          method: 'GET',
+          url: `/interview/next?sessionId=${sessionId}&mode=standard&remainSeconds=600`,
+          headers: auth(token)
+        })
+        ids.push(r.json().data.id)
+      }
+      return ids
+    }
+
+    const first = await askSeven()
+    const second = await askSeven()
+    expect(first.length).toBe(7)
+    expect(second.length).toBe(7)
+    expect(first.filter((id) => second.includes(id)).length).toBe(0)
+    closeDb()
+  })
 })
 
 describe('cloud fileID 属主校验', () => {

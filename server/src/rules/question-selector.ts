@@ -273,15 +273,29 @@ function pickForFocusDomain(
   return pickByDifficultyPriority(forDomain, blueprint, stacks)
 }
 
-export function selectNext(input: SelectorInput): SelectorOutput | null {
+export function selectNext(
+  input: SelectorInput,
+  recentAsked: string[] = []
+): SelectorOutput | null {
   const budget = getModeBudget(input.mode)
   const stacks = input.resumeTechStacks
-  const bank = input.candidates
+  let bank = input.candidates
+  // 跨场次去重：优先排除最近已出过的题；池不足时放宽，只保留同场去重
+  if (recentAsked.length > 0) {
+    const fresh: QuestionItem[] = []
+    for (let i = 0; i < bank.length; i++) {
+      const q = bank[i]
+      if (isAsked(input.asked, q.id)) continue
+      if (recentAsked.indexOf(q.id) >= 0) continue
+      fresh.push(q)
+    }
+    if (fresh.length > 0) bank = fresh
+  }
   // 专项训练可通过 maxQuestions 覆盖模式预算（训练房间按任务题量控制收尾）
   const budgetMax = input.maxQuestions > 0 ? input.maxQuestions : budget.maxQuestions
 
-  // 规则5：时间预算收束 —— 剩余时间不足以再完整进行一题时，返回收束题
-  const timeShort = input.remainSeconds < AVG_QUESTION_SECONDS
+  // 规则5：时间预算收束 —— 仅 maxQuestions=0 时生效；续题/定题量以题量为准
+  const timeShort = input.maxQuestions === 0 && input.remainSeconds < AVG_QUESTION_SECONDS
   // 规则4/5：题目数达上限或时间不足 → 收束（收束题为岗位专属）
   if (input.asked.length >= budgetMax || timeShort) {
     const wrap = getWrapupForPosition(input.blueprint.positionId)

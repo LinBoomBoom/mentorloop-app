@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS session_asked (
   PRIMARY KEY (session_id, question_id)
 );
 
+-- 跨场次出题历史（2026-10-24 契约冻结：面试最大 90 天 / 300 题不重复）
+CREATE TABLE IF NOT EXISTS user_asked_history (
+  user_id     INTEGER NOT NULL REFERENCES users(id),
+  question_id TEXT    NOT NULL,
+  position_id TEXT    NOT NULL,
+  asked_at    INTEGER NOT NULL,
+  PRIMARY KEY (user_id, question_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_asked_recent ON user_asked_history(user_id, asked_at);
+
 CREATE TABLE IF NOT EXISTS reports (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id   TEXT    NOT NULL UNIQUE REFERENCES sessions(id),

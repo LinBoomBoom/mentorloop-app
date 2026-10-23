@@ -58,6 +58,15 @@ const MYSQL_MIGRATIONS: string[] = [
     PRIMARY KEY (id),
     UNIQUE KEY uk_practice_user_question (user_id, question_id),
     KEY idx_practice_user_due (user_id, due_at)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`,
+  // 2026-10-24 跨场次出题历史
+  `CREATE TABLE IF NOT EXISTS user_asked_history (
+    user_id BIGINT NOT NULL,
+    question_id VARCHAR(64) NOT NULL,
+    position_id VARCHAR(32) NOT NULL,
+    asked_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, question_id),
+    KEY idx_user_asked_recent (user_id, asked_at)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`
 ]
 

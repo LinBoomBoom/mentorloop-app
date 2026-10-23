@@ -23,7 +23,8 @@
             <text class="text-sm font-semibold text-ink">AI 面试官</text>
           </view>
           <text class="text-xs text-ink-soft mt-0.5"
-            >系统生成 · {{ askedCount }} / {{ modeMax }} 题 · {{ elapsedText }}</text
+            >已覆盖 {{ coveredCount }}/6 维度 · {{ askedCount }}/{{ modeMax }} 题 ·
+            {{ elapsedText }}</text
           >
         </view>
         <view
@@ -204,7 +205,40 @@
 
     <!-- 输入条 -->
     <view class="bg-surface border-t border-line px-3 pt-2.5" :style="{ paddingBottom: bottomPad }">
-      <view class="flex-row items-center">
+      <!-- 第 7 题后：用户选择生成报告或续一题（不设固定时长，随时可结束） -->
+      <view
+        v-if="offerActive"
+        id="room-continue-bar"
+        class="mb-2 rounded-control border border-line bg-bg-muted p-3"
+      >
+        <text class="text-xs text-ink-soft"
+          >已覆盖 {{ coveredCount }}/6 维度，可生成报告或再来一题</text
+        >
+        <view class="flex-row mt-2">
+          <view
+            id="room-continue-one"
+            class="flex-1 h-9 rounded-control flex-row items-center justify-center"
+            :style="{ backgroundColor: SMART }"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="continueOne"
+          >
+            <text class="text-sm font-semibold text-white">再来一题</text>
+          </view>
+          <view class="w-2"></view>
+          <view
+            id="room-report-now"
+            class="flex-1 h-9 rounded-control border border-line-strong bg-surface flex-row items-center justify-center"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="confirmFinish"
+          >
+            <text class="text-sm font-semibold text-ink">生成报告</text>
+          </view>
+        </view>
+      </view>
+      <!-- 结束/续题选择期间隐藏作答入口，避免对已收尾的题重复作答 -->
+      <view v-if="!offerActive" class="flex-row items-center">
         <view
           v-show="!textInputActive"
           id="room-text-toggle"
@@ -276,7 +310,7 @@
         </view>
       </view>
 
-      <view class="flex-row items-center justify-between mt-2 px-1">
+      <view v-if="!offerActive" class="flex-row items-center justify-between mt-2 px-1">
         <text class="text-xs text-ink-soft" @click="togglePause">{{
           paused ? '继续面试' : '暂停'
         }}</text>
@@ -359,8 +393,11 @@ const lastAiIndex = computed((): number => {
 })
 // 文字输入态：与录音互斥；发送后回到语音条
 const textInputActive = ref(false)
+// 续题上限：0 = 模式预算；用户点「再来一题」后置 12（契约 2026-10-24）
+const extendedMax = ref(0)
 // 当前模式题量上限（仅用于顶部进度展示）
 const modeMax = computed((): number => {
+  if (extendedMax.value > 0) return extendedMax.value
   if (mode.value === 'quick') return 3
   if (mode.value === 'deep') return 12
   return 7
@@ -388,6 +425,20 @@ const caption = ref('')
 const sessionId = ref('')
 // 当前已推进到第几题（工程化题号展示）
 const askedCount = ref(0)
+// 本场已触达的能力域（去重；用于覆盖度展示）
+const coveredDomains = ref<string[]>([])
+const coveredCount = computed((): number => {
+  const n = coveredDomains.value.length
+  return n > 6 ? 6 : n
+})
+// 已完成的主问题数（不含追问）；第 7 题后触发结束/续题选择
+const mainDone = ref(0)
+const continueOfferVisible = ref(false)
+const offerActive = computed((): boolean => {
+  return (
+    continueOfferVisible.value && !recording.value && !reviewVisible.value && !paused.value
+  )
+})
 // 当前追问话术（非空时显示追问而非原题）
 const followupPrompt = ref('')
 // 换一种说法生成的澄清句（非空时在题面下方追加展示，原题保留）
@@ -432,6 +483,8 @@ let wantResume = false
 let answerInFlight: Promise<boolean> | null = null
 // 防止重复进入总结页
 let summarizing = false
+// 防止重复点击「跳过」叠加多个推进定时器
+let skipping = false
 // 会话失效提示只弹一次
 let expiredShown = false
 
@@ -769,6 +822,8 @@ async function init() {
   if (wantResume && interviewSession.prepareResume()) {
     sessionId.value = interviewSession.sessionId
     askedCount.value = interviewSession.getQuestions().length
+    mainDone.value = askedCount.value
+    syncCoveredDomains()
     const posId = userStore.profile.positionId
     const expLv = userStore.profile.experienceLevel
     blueprint.value = {
@@ -825,6 +880,27 @@ function showInitFailed(msg: string) {
   })
 }
 
+// 本场已触达能力域去重（覆盖度展示；不参与评分）
+function syncCoveredDomains() {
+  const qs = interviewSession.getQuestions()
+  const list: string[] = []
+  for (let i = 0; i < qs.length; i++) {
+    const d = qs[i].abilityDomain
+    if (d.length > 0 && list.indexOf(d) < 0) list.push(d)
+  }
+  coveredDomains.value = list
+}
+
+// 用户选择续一题：同一 session 继续，上限 12（契约 2026-10-24）
+function continueOne() {
+  if (extendedMax.value > 0) return
+  extendedMax.value = 12
+  continueOfferVisible.value = false
+  const ev = interviewSession.transition('NEXT_QUESTION')
+  if (ev != null) ask()
+  else continueOfferVisible.value = true
+}
+
 // 问新题（重置追问深度、清空追问话术、切到 ASKING）
 async function ask() {
   interviewSession.resetDepth()
@@ -837,10 +913,20 @@ async function ask() {
   avatarState.value = 'asking'
   caption.value = ''
   try {
-    const q = await nextQuestion(sessionId.value, mode.value, blueprint.value)
+    const q = await nextQuestion(
+      sessionId.value,
+      mode.value,
+      blueprint.value,
+      [],
+      0,
+      [],
+      [],
+      extendedMax.value
+    )
     currentQuestion.value = q
     interviewSession.pushQuestion(q)
     askedCount.value = interviewSession.getQuestions().length
+    syncCoveredDomains()
     trackEvent('interview_question_asked', {
       questionId: q.id,
       abilityDomain: q.abilityDomain,
@@ -1211,6 +1297,12 @@ function handleAnswer(answerText: string, inputMode: string = 'voice') {
       askFollowup(decision)
     }, 600)
   } else {
+    mainDone.value = mainDone.value + 1
+    // 第 7 道主问题答完：不自动出题，给用户「生成报告 / 再来一题」的选择
+    if (mainDone.value >= 7 && extendedMax.value === 0) {
+      continueOfferVisible.value = true
+      return
+    }
     setTimeout(() => {
       const ev = interviewSession.transition('NEXT_QUESTION')
       if (ev != null) ask()
@@ -1329,6 +1421,7 @@ function submitText() {
 
 // 跳过本题：跳过保留为证据（文档 02 §2.2），写 transcript 标记后进下一题
 function skipQuestion() {
+  if (skipping) return
   if (recording.value) {
     uni.showToast({ title: '请先停止录音', icon: 'none' })
     return
@@ -1337,6 +1430,7 @@ function skipQuestion() {
     uni.showToast({ title: '已暂停，请先恢复', icon: 'none' })
     return
   }
+  skipping = true
   trackEvent('interview_skip', { questionId: currentQuestion.value.id })
   pushUserMessage('（跳过本题）', 'skip')
   interviewSession.appendTranscript({
@@ -1348,7 +1442,22 @@ function skipQuestion() {
   caption.value = '已跳过，进入下一题'
   avatarState.value = 'thinking'
   setTimeout(() => {
+    // 跳过等价于「无追问的作答收口」：按状态机允许路径到 FOLLOW_UP_DECISION
+    const t1 = interviewSession.transition('TRANSCRIBING')
+    if (t1 == null) {
+      skipping = false
+      return
+    }
+    interviewSession.transition('FOLLOW_UP_DECISION')
+    mainDone.value = mainDone.value + 1
+    if (mainDone.value >= 7 && extendedMax.value === 0) {
+      caption.value = '已跳过本题，可生成报告或再来一题'
+      continueOfferVisible.value = true
+      skipping = false
+      return
+    }
     const ev = interviewSession.transition('NEXT_QUESTION')
+    skipping = false
     if (ev != null) ask()
   }, 500)
 }

@@ -95,6 +95,53 @@ async function askedQuestions(db: Db, sessionId: string): Promise<QuestionItem[]
   return out
 }
 
+// 跨场次去重窗口（契约 2026-10-24）：最近 90 天 / 300 题不重复
+const ASKED_HISTORY_DAYS = 90
+const ASKED_HISTORY_LIMIT = 300
+
+// 读取当前用户最近出过的题 id；表未就绪时降级为不去重，不阻断出题
+async function loadRecentAskedIds(db: Db, userId: number): Promise<string[]> {
+  try {
+    const cutoff = now() - ASKED_HISTORY_DAYS * 24 * 60 * 60 * 1000
+    const rows = (await db
+      .prepare(
+        'SELECT question_id FROM user_asked_history WHERE user_id = ? AND asked_at >= ? ORDER BY asked_at DESC LIMIT ?'
+      )
+      .all(userId, cutoff, ASKED_HISTORY_LIMIT)) as { question_id: string }[]
+    const ids: string[] = []
+    for (let i = 0; i < rows.length; i++) ids.push(rows[i].question_id)
+    return ids
+  } catch (e: any) {
+    console.warn(
+      '[interview] 读取出题历史失败，本次跳过跨场去重',
+      e != null && e.message != null ? e.message : e
+    )
+    return []
+  }
+}
+
+// 出题即写入历史（幂等；失败不影响本次出题）
+async function recordAskedHistory(
+  db: Db,
+  userId: number,
+  questionId: string,
+  positionId: string
+): Promise<void> {
+  try {
+    await db
+      .prepare(
+        `INSERT INTO user_asked_history (user_id, question_id, position_id, asked_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, question_id) DO UPDATE SET
+           asked_at = excluded.asked_at,
+           position_id = excluded.position_id`
+      )
+      .run(userId, questionId, positionId, now())
+  } catch (e: any) {
+    console.warn('[interview] 写取出题历史失败', e != null && e.message != null ? e.message : e)
+  }
+}
+
 export type NextQuestionParams = {
   sessionId: string
   mode: string
@@ -102,6 +149,7 @@ export type NextQuestionParams = {
   remainSeconds: number
   resumeRiskTopicsComma: string
   resumeTechStacksComma: string
+  maxQuestions: number // 0 = 模式预算；1–12 = 覆盖（续题）
 }
 
 export async function nextQuestion(
@@ -115,6 +163,7 @@ export async function nextQuestion(
   if (session == null) throw new Error('SESSION_NOT_FOUND')
 
   const asked = await askedQuestions(db, p.sessionId)
+  const recentAsked = await loadRecentAskedIds(db, session.user_id)
   // 出题权威以服务端 answers 为准；客户端传入的 asked 仅作参考，忽略不合并（避免状态分叉）
 
   const blueprint: PositionBlueprint = {
@@ -149,11 +198,14 @@ export async function nextQuestion(
     resumeRiskTopics: topics,
     resumeTechStacks: stacks,
     focusDomain: '',
-    maxQuestions: 0,
+    maxQuestions: p.maxQuestions > 0 ? Math.min(p.maxQuestions, 12) : 0,
     candidates
   }
-  const out = selectNext(input)
+  const out = selectNext(input, recentAsked)
   if (out == null) throw new Error('NO_MORE_QUESTIONS')
+  if (!out.isWrapup && recentAsked.indexOf(out.question.id) >= 0) {
+    console.warn('[interview] 候选池不足，回退最近已出题：' + out.question.id)
+  }
 
   await db
     .prepare(
@@ -172,6 +224,10 @@ export async function nextQuestion(
       .run(p.sessionId, out.question.id, seq.question_seq)
   } catch {
     // 并发重复出题：忽略
+  }
+  // 仅内容库题目写入跨场历史；收束题为岗位固定桩，不参与去重
+  if (!out.isWrapup) {
+    await recordAskedHistory(db, session.user_id, out.question.id, session.position_id)
   }
   return out.question
 }

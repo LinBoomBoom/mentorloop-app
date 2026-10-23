@@ -149,6 +149,8 @@ export default async function (app: FastifyInstance): Promise<void> {
     await db.prepare('DELETE FROM resumes WHERE user_id = ?').run(userId)
     await db.prepare('DELETE FROM resume_usages WHERE user_id = ?').run(userId)
     await db.prepare('DELETE FROM orders WHERE user_id = ?').run(userId)
+    await db.prepare('DELETE FROM practice_records WHERE user_id = ?').run(userId)
+    await db.prepare('DELETE FROM user_asked_history WHERE user_id = ?').run(userId)
     await db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId)
     await db.prepare('DELETE FROM sms_codes WHERE phone = ?').run(user.phone ?? '')
     await db.prepare('DELETE FROM users WHERE id = ?').run(userId)

@@ -182,6 +182,32 @@ describe('题目选择器（文档 02 §3.2）', () => {
     expect(out3).not.toBeNull()
     expect(out3!.isWrapup).toBe(true)
   })
+
+  it('maxQuestions>0 时时间预算不提前收束：remainSeconds=0 可续到 12', () => {
+    const asked: QuestionItem[] = []
+    for (let i = 0; i < 12; i++) {
+      const out = selectNext(makeInput(asked, 0, ['订单系统'], '', 12))
+      expect(out).not.toBeNull()
+      expect(out!.isWrapup).toBe(false)
+      asked.push(out!.question)
+    }
+    const wrap = selectNext(makeInput(asked, 0, ['订单系统'], '', 12))
+    expect(wrap).not.toBeNull()
+    expect(wrap!.isWrapup).toBe(true)
+  })
+
+  it('跨场次去重：最近已出题排除；池不足时回退', () => {
+    const first = selectNext(makeInput([], 9999))
+    expect(first).not.toBeNull()
+    const recent = [first!.question.id]
+    const second = selectNext(makeInput([], 9999), recent)
+    expect(second).not.toBeNull()
+    expect(second!.question.id).not.toBe(recent[0])
+    // 整个题库都最近出过 → 回退，不返回空
+    const allRecent = QUESTION_BANK.map((q) => q.id)
+    const fallback = selectNext(makeInput([], 9999), allRecent)
+    expect(fallback).not.toBeNull()
+  })
 })
 
 describe('追问引擎（文档 02 §3.3）', () => {
