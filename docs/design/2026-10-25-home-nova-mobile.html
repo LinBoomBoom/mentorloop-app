@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智面研学 · 移动端首页 · Apple 风 + 轻科技</title>
+    <style>
+      :root {
+        --page: #ecebe7;
+        --ink: #16181d;
+        --ink-2: #6d727d;
+        --ink-3: #9aa0aa;
+        --line: rgba(22, 24, 29, 0.1);
+        --font:
+          'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', system-ui,
+          sans-serif;
+        --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+        --blue: #4e6bff;
+        --violet: #6c5ce7;
+        --teal: #1fb6a6;
+        --amber: #e08a00;
+        --bg: #f5f7fb;
+        --surface: #ffffff;
+        --text: #1c1c1e;
+        --text-2: #7a7f89;
+        --text-3: #a6abb4;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font);
+        padding: 34px 36px 56px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1320px;
+        margin: 0 auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 1.4px;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: -1px;
+        margin-top: 8px;
+        font-weight: 700;
+      }
+      h1 span {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ink-2);
+        margin-left: 10px;
+        font-weight: 500;
+      }
+      .lede {
+        max-width: 700px;
+        margin-top: 8px;
+        font-size: 11.5px;
+        line-height: 1.8;
+        color: var(--ink-2);
+      }
+      .lede b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+        max-width: 360px;
+      }
+      .pill {
+        font-size: 9.5px;
+        padding: 7px 9px;
+        border-radius: 99px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: rgba(255, 255, 255, 0.6);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .pill.on {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+      }
+      .ref-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .ref {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(0, 0, 0, 0.09);
+        border-radius: 14px;
+        padding: 12px 13px;
+      }
+      .ref span {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 0.8px;
+        color: var(--ink-3);
+        text-transform: uppercase;
+      }
+      .ref b {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .ref p {
+        margin-top: 3px;
+        font-size: 9.5px;
+        line-height: 1.55;
+        color: var(--ink-2);
+      }
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 26px;
+        justify-content: center;
+        margin-top: 26px;
+      }
+      .frame {
+        width: 375px;
+      }
+      .frame.compact {
+        width: 360px;
+      }
+      .frame-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 9px;
+      }
+      .frame-head b {
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .frame-head span {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        color: var(--ink-3);
+      }
+      .phone {
+        width: 375px;
+        height: 812px;
+        border-radius: 46px;
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+        box-shadow:
+          0 26px 50px rgba(20, 26, 40, 0.18),
+          0 2px 0 rgba(255, 255, 255, 0.8) inset,
+          0 0 0 1px rgba(0, 0, 0, 0.75);
+      }
+      .phone.compact {
+        width: 360px;
+        height: 640px;
+        border-radius: 40px;
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(50% 32% at 18% 0%, rgba(78, 107, 255, 0.1), transparent 62%),
+          radial-gradient(40% 26% at 92% 6%, rgba(108, 92, 231, 0.08), transparent 60%),
+          radial-gradient(40% 26% at 50% 100%, rgba(31, 182, 166, 0.05), transparent 70%);
+        pointer-events: none;
+      }
+      .screen::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+        background-size: 160px 160px;
+        opacity: 0.025;
+        pointer-events: none;
+      }
+      .statusbar {
+        height: 44px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 3;
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--text);
+        flex: 0 0 auto;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .sig {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 8px;
+      }
+      .sig i {
+        width: 2.2px;
+        background: currentColor;
+        border-radius: 2px;
+        display: block;
+      }
+      .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .sig i:nth-child(2) {
+        height: 4.5px;
+      }
+      .sig i:nth-child(3) {
+        height: 6px;
+      }
+      .sig i:nth-child(4) {
+        height: 8px;
+      }
+      .wifi {
+        width: 12px;
+        height: 8px;
+        border: 1.3px solid currentColor;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+      }
+      .battery {
+        width: 18px;
+        height: 8px;
+        border: 1.2px solid currentColor;
+        border-radius: 3px;
+        position: relative;
+      }
+      .battery::before {
+        content: '';
+        position: absolute;
+        inset: 1.4px;
+        width: 10px;
+        background: currentColor;
+        border-radius: 1.4px;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -3.5px;
+        top: 1.8px;
+        width: 2px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 0 2px 2px 0;
+      }
+      .body {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        padding: 0 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex: 0 0 auto;
+        height: 44px;
+        margin-top: 6px;
+        padding: 0 14px;
+        border-radius: 16px;
+      }
+      .app .topbar {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: 0 6px 18px rgba(24, 32, 52, 0.05);
+        backdrop-filter: blur(20px) saturate(170%);
+        -webkit-backdrop-filter: blur(20px) saturate(170%);
+      }
+      .mp .topbar {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(22, 24, 29, 0.06);
+        box-shadow: 0 4px 12px rgba(24, 32, 52, 0.04);
+      }
+      .wordmark {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .top-date {
+        font-size: 10.5px;
+        color: var(--text-2);
+      }
+      .greeting {
+        margin-top: 16px;
+        flex: 0 0 auto;
+      }
+      .greeting h2 {
+        font-size: 22px;
+        line-height: 1.3;
+        letter-spacing: -0.5px;
+        font-weight: 700;
+      }
+      .greeting p {
+        margin-top: 4px;
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--text-2);
+      }
+      .dashboard {
+        display: flex;
+        gap: 9px;
+        margin-top: 18px;
+        flex: 0 0 auto;
+      }
+      .today-card {
+        flex: 1;
+        min-width: 0;
+        height: 150px;
+        border-radius: 22px;
+        padding: 15px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #4e6bff 0%, #5d63f2 46%, #7b5ce6 100%);
+        color: #fff;
+        box-shadow:
+          0 14px 30px rgba(78, 107, 255, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      }
+      .hero-glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          120% 100% at 14% 0%,
+          rgba(255, 255, 255, 0.12),
+          transparent 58%
+        );
+      }
+      .wave {
+        position: absolute;
+        right: -18px;
+        bottom: -6px;
+        width: 232px;
+        height: 124px;
+      }
+      .wave path {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.16);
+        stroke-width: 1;
+      }
+      .wave path:nth-child(2) {
+        stroke: rgba(255, 255, 255, 0.26);
+      }
+      .wave path.bright {
+        stroke: rgba(255, 255, 255, 0.62);
+        stroke-width: 1.4;
+      }
+      .today-cta {
+        margin-top: auto;
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: #fff;
+        color: #3d4ed0;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .today-cta i {
+        font-style: normal;
+        font-size: 12px;
+      }
+      .today-copy {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .today-label {
+        font-size: 11px;
+        letter-spacing: 0.4px;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .today-num {
+        margin-top: 8px;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .today-num b {
+        font-size: 38px;
+        line-height: 1;
+        letter-spacing: -1.4px;
+        font-weight: 700;
+      }
+      .today-num span {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.74);
+      }
+      .today-meta {
+        margin-top: 5px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .side-cards {
+        width: 128px;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .mini-card {
+        flex: 1;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(22, 24, 29, 0.055);
+        box-shadow: 0 6px 18px rgba(24, 32, 52, 0.05);
+        padding: 11px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .mini-card .label {
+        font-size: 10.5px;
+        color: var(--text-2);
+      }
+      .mini-card .value {
+        display: flex;
+        align-items: baseline;
+        gap: 3px;
+      }
+      .mini-card .value b {
+        font-size: 22px;
+        line-height: 1;
+        letter-spacing: -0.5px;
+        font-weight: 700;
+      }
+      .mini-card .value span {
+        font-size: 10px;
+        color: var(--text-3);
+      }
+      .mini-card .dots {
+        display: flex;
+        gap: 3px;
+        margin-top: 3px;
+      }
+      .mini-card .dots i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #e3e7ef;
+        display: block;
+      }
+      .mini-card .dots i.on {
+        background: #4e6bff;
+      }
+      .badge-b {
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        background: #eef1ff;
+        color: #4257d8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .section {
+        margin-top: 20px;
+        flex: 0 0 auto;
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .section-head h3 {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
+      .section-head span {
+        font-size: 10.5px;
+        color: var(--text-2);
+      }
+      .section-head a {
+        font-size: 10.5px;
+        color: #4e6bff;
+        text-decoration: none;
+      }
+      .task-card {
+        margin-top: 8px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(22, 24, 29, 0.055);
+        box-shadow: 0 6px 18px rgba(24, 32, 52, 0.05);
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .task-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        background: #fff4e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+      .task-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: #e08a00;
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .task-copy {
+        flex: 1;
+        min-width: 0;
+      }
+      .task-copy b {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+      }
+      .task-copy small {
+        display: block;
+        margin-top: 3px;
+        font-size: 11px;
+        color: var(--text-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .task-go {
+        height: 28px;
+        padding: 0 10px;
+        border-radius: 99px;
+        background: #e8f7f4;
+        color: #168f83;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      .quick {
+        margin-top: 14px;
+        flex: 0 0 auto;
+      }
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .quick-tile {
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(22, 24, 29, 0.05);
+        box-shadow: 0 5px 14px rgba(24, 32, 52, 0.04);
+        padding: 12px 10px;
+        min-height: 108px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .quick-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .quick-icon svg {
+        width: 15px;
+        height: 15px;
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .q-train {
+        background: #fff4e5;
+      }
+      .q-train svg {
+        stroke: #e08a00;
+      }
+      .q-resume {
+        background: #e8f7f4;
+      }
+      .q-resume svg {
+        stroke: #1fb6a6;
+      }
+      .quick-copy b {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 7px;
+      }
+      .quick-copy small {
+        display: block;
+        margin-top: 2px;
+        font-size: 10px;
+        color: var(--text-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tabbar {
+        margin-top: auto;
+        flex: 0 0 auto;
+        height: 64px;
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-around;
+        padding: 7px 12px 0;
+      }
+      .app .tabbar,
+      .mp .tabbar {
+        background: rgba(255, 255, 255, 0.97);
+        border-top: 1px solid rgba(22, 24, 29, 0.07);
+      }
+      .tab {
+        width: 54px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: #a6abb4;
+      }
+      .tab.on {
+        color: #4e6bff;
+      }
+      .tab svg {
+        width: 19px;
+        height: 19px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ambient {
+        position: absolute;
+        top: -36px;
+        right: -56px;
+        width: 260px;
+        height: 240px;
+        pointer-events: none;
+        z-index: -1;
+        background:
+          radial-gradient(60% 60% at 52% 40%, rgba(88, 86, 214, 0.1), transparent 70%),
+          radial-gradient(46% 46% at 38% 66%, rgba(31, 182, 166, 0.07), transparent 72%);
+      }
+      .capsule {
+        position: absolute;
+        top: 50px;
+        right: 12px;
+        width: 87px;
+        height: 32px;
+        border-radius: 16px;
+        border: 1px dashed rgba(22, 24, 29, 0.28);
+        background: rgba(255, 255, 255, 0.72);
+        color: #8a8f98;
+        font-size: 9px;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 6;
+      }
+      .mp .topbar {
+        padding-right: 100px;
+      }
+      .app .home-bar {
+        background: rgba(22, 24, 29, 0.78);
+      }
+      .mp .home-bar {
+        background: rgba(22, 24, 29, 0.82);
+      }
+      .home-bar {
+        width: 120px;
+        height: 4px;
+        border-radius: 99px;
+        margin: 4px auto 5px;
+        flex: 0 0 auto;
+      }
+      .caption {
+        margin-top: 10px;
+        font-size: 10px;
+        line-height: 1.7;
+        color: var(--ink-2);
+      }
+      .caption b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .annotations {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 24px;
+      }
+      .note {
+        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(0, 0, 0, 0.09);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .note h4 {
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .note h4 i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #4e6bff;
+        display: block;
+      }
+      .note p,
+      .note li {
+        margin-top: 4px;
+        font-size: 9.7px;
+        line-height: 1.65;
+        color: var(--ink-2);
+      }
+      .note ul {
+        margin-top: 5px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .note li {
+        padding-left: 10px;
+        position: relative;
+      }
+      .note li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 6px;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: #9aa0aa;
+      }
+      .footer {
+        margin-top: 26px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 0.5px;
+        color: var(--ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .compact .greeting h2 {
+        font-size: 20px;
+      }
+      .compact .today-card {
+        height: 140px;
+      }
+      .compact .today-num b {
+        font-size: 32px;
+      }
+      .compact .side-cards {
+        width: 118px;
+      }
+      .compact .mini-card .value b {
+        font-size: 19px;
+      }
+      .compact .section {
+        margin-top: 12px;
+      }
+      .compact .quick-grid {
+        margin-top: 6px;
+      }
+      .compact .quick-tile {
+        min-height: 82px;
+      }
+      .compact .tabbar {
+        height: 58px;
+        padding-top: 5px;
+      }
+      @media (max-width: 1200px) {
+        .ref-strip,
+        .annotations {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <div class="eyebrow">MentorLoop · Mobile-first Home · 2026-10-25</div>
+          <h1>Apple 风 + 轻科技 <span>375 / 360 · App + MP</span></h1>
+          <p class="lede">
+            按反馈重做：<b>原生 tabBar 三等分、主行动回到主卡、电波替代球体、无柱状图、无铃铛</b>。
+            留白就是留白，不再用模块填空；玻璃只在平台真支持的地方用，并给出 MP 模拟降级。
+          </p>
+        </div>
+        <div class="meta">
+          <span class="pill on">仅 HTML 交付</span>
+          <span class="pill">App / MP 双版</span>
+          <span class="pill">MP 胶囊避让</span>
+          <span class="pill">原生 tabBar 不改</span>
+        </div>
+      </header>
+
+      <div class="ref-strip">
+        <div class="ref">
+          <span>REF 01</span><b>三卡仪表盘</b>
+          <p>一大两小：渐变主卡 + 两个白色数据卡，主次立分。</p>
+        </div>
+        <div class="ref">
+          <span>REF 02</span><b>软白卡 + 大圆角</b>
+          <p>白卡 + 极轻阴影 + 细边；边界清楚但不生硬。</p>
+        </div>
+        <div class="ref">
+          <span>REF 03</span><b>图标入口</b>
+          <p>底部用图标格，不用三行单行列表；更移动端。</p>
+        </div>
+        <div class="ref">
+          <span>REF 04</span><b>电波主卡</b>
+          <p>主卡用声波线做轻科技隐喻；不用球体、不用亮斑、不做柱状图。</p>
+        </div>
+      </div>
+
+      <section class="frames">
+        <article class="frame">
+          <div class="frame-head">
+            <b>App · 375×812</b><span>原生 tabBar 三等分 · 顶栏真玻璃</span>
+          </div>
+          <div class="phone app">
+            <div class="screen">
+              <div class="statusbar">
+                <span>9:41</span
+                ><span class="status-icons"
+                  ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                  ><span class="battery"></span
+                ></span>
+              </div>
+              <div class="body">
+                <div class="ambient"></div>
+                <div class="topbar">
+                  <span class="wordmark">MentorLoop</span>
+                  <span class="top-date">10 月 25 日 · 周日</span>
+                </div>
+                <div class="greeting">
+                  <h2>早上好，林</h2>
+                  <p>今天专注一件事：把下一场面试练稳。</p>
+                </div>
+                <div class="dashboard">
+                  <div class="today-card">
+                    <div class="hero-glow"></div>
+                    <svg class="wave" viewBox="0 0 240 120" preserveAspectRatio="none">
+                      <path
+                        d="M0 92 Q 20 62 40 92 T 80 92 T 120 92 T 160 92 T 200 92 T 240 92"
+                      ></path>
+                      <path
+                        d="M0 72 Q 20 42 40 72 T 80 72 T 120 72 T 160 72 T 200 72 T 240 72"
+                      ></path>
+                      <path
+                        class="bright"
+                        d="M0 52 Q 20 18 40 52 T 80 52 T 120 52 T 160 52 T 200 52 T 240 52"
+                      ></path>
+                    </svg>
+                    <div class="today-copy">
+                      <div class="today-label">今日模拟面试</div>
+                      <div class="today-num"><b>20</b><span>分钟</span></div>
+                      <div class="today-meta">后端 · 1–3 年 · 六维报告</div>
+                      <div class="today-cta"><span>开始模拟面试</span><i>→</i></div>
+                    </div>
+                  </div>
+                  <div class="side-cards">
+                    <div class="mini-card">
+                      <div class="label">上次评级</div>
+                      <div class="value"><b>B</b><span>10-23</span></div>
+                      <div class="badge-b" style="display: none">B</div>
+                    </div>
+                    <div class="mini-card">
+                      <div class="label">本周节奏</div>
+                      <div class="value"><b>2</b><span>/ 5</span></div>
+                      <div class="dots">
+                        <i class="on"></i><i class="on"></i><i></i><i></i><i></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-head">
+                    <h3>今日任务</h3>
+                    <span>6 个待完成</span>
+                  </div>
+                  <div class="task-card">
+                    <div class="task-icon">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="6.5"></circle>
+                        <circle cx="12" cy="12" r="2.3"></circle>
+                        <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy">
+                      <b>补充量化指标</b><small>约 5 分钟 · 来自最近报告</small>
+                    </div>
+                    <div class="task-go">去做题</div>
+                  </div>
+                </div>
+                <div class="quick">
+                  <div class="section-head">
+                    <h3>快捷入口</h3>
+                  </div>
+                  <div class="quick-grid">
+                    <div class="quick-tile">
+                      <div class="quick-icon q-train">
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="6.5"></circle>
+                          <circle cx="12" cy="12" r="2.3"></circle>
+                          <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>专项训练</b><small>6 个待完成</small></div>
+                    </div>
+                    <div class="quick-tile">
+                      <div class="quick-icon q-resume">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M7 3h7l4 4v14H7z"></path>
+                          <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>简历优化</b><small>3 条批注</small></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                </div>
+                <div class="home-bar"></div>
+              </div>
+            </div>
+          </div>
+          <div class="caption">
+            <b>App：</b>顶栏可用真 backdrop-filter 玻璃；原生 tabBar 三等分，不加悬浮按钮、不遮任何
+            tab。
+          </div>
+        </article>
+
+        <article class="frame">
+          <div class="frame-head"><b>MP · 375×812</b><span>原生 tabBar · 胶囊避让 100px</span></div>
+          <div class="phone mp">
+            <div class="screen">
+              <div class="statusbar">
+                <span>9:41</span
+                ><span class="status-icons"
+                  ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                  ><span class="battery"></span
+                ></span>
+              </div>
+              <div class="capsule">微信胶囊</div>
+              <div class="body">
+                <div class="ambient"></div>
+                <div class="topbar">
+                  <span class="wordmark">MentorLoop</span>
+                  <span class="top-date">10 月 25 日 · 周日</span>
+                </div>
+                <div class="greeting">
+                  <h2>早上好，林</h2>
+                  <p>今天专注一件事：把下一场面试练稳。</p>
+                </div>
+                <div class="dashboard">
+                  <div class="today-card">
+                    <div class="hero-glow"></div>
+                    <svg class="wave" viewBox="0 0 240 120" preserveAspectRatio="none">
+                      <path
+                        d="M0 92 Q 20 62 40 92 T 80 92 T 120 92 T 160 92 T 200 92 T 240 92"
+                      ></path>
+                      <path
+                        d="M0 72 Q 20 42 40 72 T 80 72 T 120 72 T 160 72 T 200 72 T 240 72"
+                      ></path>
+                      <path
+                        class="bright"
+                        d="M0 52 Q 20 18 40 52 T 80 52 T 120 52 T 160 52 T 200 52 T 240 52"
+                      ></path>
+                    </svg>
+                    <div class="today-copy">
+                      <div class="today-label">今日模拟面试</div>
+                      <div class="today-num"><b>20</b><span>分钟</span></div>
+                      <div class="today-meta">后端 · 1–3 年 · 六维报告</div>
+                      <div class="today-cta"><span>开始模拟面试</span><i>→</i></div>
+                    </div>
+                  </div>
+                  <div class="side-cards">
+                    <div class="mini-card">
+                      <div class="label">上次评级</div>
+                      <div class="value"><b>B</b><span>10-23</span></div>
+                    </div>
+                    <div class="mini-card">
+                      <div class="label">本周节奏</div>
+                      <div class="value"><b>2</b><span>/ 5</span></div>
+                      <div class="dots">
+                        <i class="on"></i><i class="on"></i><i></i><i></i><i></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-head">
+                    <h3>今日任务</h3>
+                    <span>6 个待完成</span>
+                  </div>
+                  <div class="task-card">
+                    <div class="task-icon">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="6.5"></circle>
+                        <circle cx="12" cy="12" r="2.3"></circle>
+                        <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy">
+                      <b>补充量化指标</b><small>约 5 分钟 · 来自最近报告</small>
+                    </div>
+                    <div class="task-go">去做题</div>
+                  </div>
+                </div>
+                <div class="quick">
+                  <div class="section-head">
+                    <h3>快捷入口</h3>
+                  </div>
+                  <div class="quick-grid">
+                    <div class="quick-tile">
+                      <div class="quick-icon q-train">
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="6.5"></circle>
+                          <circle cx="12" cy="12" r="2.3"></circle>
+                          <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>专项训练</b><small>6 个待完成</small></div>
+                    </div>
+                    <div class="quick-tile">
+                      <div class="quick-icon q-resume">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M7 3h7l4 4v14H7z"></path>
+                          <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>简历优化</b><small>3 条批注</small></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                </div>
+                <div class="home-bar"></div>
+              </div>
+            </div>
+          </div>
+          <div class="caption">
+            <b>MP：</b>无 backdrop-filter，顶栏用 94% 白 + 细边 + 轻阴影模拟玻璃；右上 100px
+            让给微信胶囊。
+          </div>
+        </article>
+
+        <article class="frame compact">
+          <div class="frame-head"><b>360×640 · 小屏</b><span>compact</span></div>
+          <div class="phone mp compact">
+            <div class="screen">
+              <div class="statusbar">
+                <span>9:41</span
+                ><span class="status-icons"
+                  ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                  ><span class="battery"></span
+                ></span>
+              </div>
+              <div class="capsule">微信胶囊</div>
+              <div class="body">
+                <div class="ambient"></div>
+                <div class="topbar">
+                  <span class="wordmark">MentorLoop</span>
+                  <span class="top-date">10 月 25 日 · 周日</span>
+                </div>
+                <div class="greeting">
+                  <h2>早上好，林</h2>
+                  <p>今天专注一件事：把下一场面试练稳。</p>
+                </div>
+                <div class="dashboard">
+                  <div class="today-card">
+                    <div class="hero-glow"></div>
+                    <svg class="wave" viewBox="0 0 240 120" preserveAspectRatio="none">
+                      <path
+                        d="M0 92 Q 20 62 40 92 T 80 92 T 120 92 T 160 92 T 200 92 T 240 92"
+                      ></path>
+                      <path
+                        d="M0 72 Q 20 42 40 72 T 80 72 T 120 72 T 160 72 T 200 72 T 240 72"
+                      ></path>
+                      <path
+                        class="bright"
+                        d="M0 52 Q 20 18 40 52 T 80 52 T 120 52 T 160 52 T 200 52 T 240 52"
+                      ></path>
+                    </svg>
+                    <div class="today-copy">
+                      <div class="today-label">今日模拟面试</div>
+                      <div class="today-num"><b>20</b><span>分钟</span></div>
+                      <div class="today-meta">后端 · 1–3 年 · 六维报告</div>
+                      <div class="today-cta"><span>开始模拟面试</span><i>→</i></div>
+                    </div>
+                  </div>
+                  <div class="side-cards">
+                    <div class="mini-card">
+                      <div class="label">上次评级</div>
+                      <div class="value"><b>B</b><span>10-23</span></div>
+                    </div>
+                    <div class="mini-card">
+                      <div class="label">本周节奏</div>
+                      <div class="value"><b>2</b><span>/ 5</span></div>
+                      <div class="dots">
+                        <i class="on"></i><i class="on"></i><i></i><i></i><i></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-head">
+                    <h3>今日任务</h3>
+                    <span>6 个待完成</span>
+                  </div>
+                  <div class="task-card">
+                    <div class="task-icon">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="6.5"></circle>
+                        <circle cx="12" cy="12" r="2.3"></circle>
+                        <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy"><b>补充量化指标</b><small>约 5 分钟</small></div>
+                    <div class="task-go">去做题</div>
+                  </div>
+                </div>
+                <div class="quick">
+                  <div class="section-head">
+                    <h3>快捷入口</h3>
+                  </div>
+                  <div class="quick-grid">
+                    <div class="quick-tile">
+                      <div class="quick-icon q-train">
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="6.5"></circle>
+                          <circle cx="12" cy="12" r="2.3"></circle>
+                          <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>专项训练</b><small>6 个待完成</small></div>
+                    </div>
+                    <div class="quick-tile">
+                      <div class="quick-icon q-resume">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M7 3h7l4 4v14H7z"></path>
+                          <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                        </svg>
+                      </div>
+                      <div class="quick-copy"><b>简历优化</b><small>3 条批注</small></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                </div>
+                <div class="home-bar"></div>
+              </div>
+            </div>
+          </div>
+          <div class="caption">
+            <b>360×640：</b>只压缩卡片高度与间距；不新增模块、不隐藏今日任务与两个快捷入口。
+          </div>
+        </article>
+      </section>
+
+      <div class="annotations">
+        <div class="note">
+          <h4><i></i>主次层级</h4>
+          <ul>
+            <li>一级：渐变「今日模拟面试」卡，卡内白色胶囊就是唯一主行动。</li>
+            <li>二级：今日任务卡（白卡 + 单一 CTA）。</li>
+            <li>三级：两个快捷入口；tabBar 只做导航，不承载主行动。</li>
+          </ul>
+        </div>
+        <div class="note">
+          <h4><i></i>tabBar 裁决</h4>
+          <ul>
+            <li>原生 tabBar 三等分：练习 / 成长 / 我的；不加悬浮按钮、不挤占 tab。</li>
+            <li>原生 tabBar 不支持毛玻璃：App / MP 都保持纯白 + hairline，不假装玻璃。</li>
+            <li>若未来要中央主行动，需改 uni-ui x `uni-tab-bar`（tab 内容组件化），另立卡。</li>
+          </ul>
+        </div>
+        <div class="note">
+          <h4><i></i>玻璃与留白</h4>
+          <ul>
+            <li>玻璃用在顶栏：App 真 `backdrop-filter`；MP 94% 白 + 细边 + 阴影模拟。</li>
+            <li>页面下部留空是设计，不放趋势图、不放占位模块。</li>
+            <li>顶栏右上 MP 预留 100px 给微信胶囊，日期在胶囊左侧。</li>
+          </ul>
+        </div>
+        <div class="note">
+          <h4><i></i>本轮删除项</h4>
+          <ul>
+            <li>柱状图 / 近 7 天趋势卡：移动端不做装饰性图表。</li>
+            <li>通知铃铛：系统暂无通知功能，不放假入口。</li>
+            <li>右下 FAB：与主卡重复，且和原生 tabBar 冲突。</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <span>MENTORLOOP · MOBILE HOME · APP / MP · 375 / 360</span>
+        <span>参考：NOVA One 三卡仪表盘 / 软白卡 / 图标入口 / 电波主卡</span>
+      </footer>
+    </div>
+  </body>
+</html>

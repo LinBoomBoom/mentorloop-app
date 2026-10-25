@@ -1,4 +1,4 @@
-# 今日工作报告：语音闭环修复与商务/登录口径收口
+﻿# 今日工作报告：语音闭环修复与商务/登录口径收口
 
 - 日期：2026-10-23
 - 来源：用户体验版真机走查反馈（4 项）
@@ -55,7 +55,7 @@
 
 - 购买时绑定手机号四屏效果图（未绑定提示 → 绑定半屏层 → 手机号冲突 → 账号与安全）。
 - 源文件：[2026-10-23-phone-binding-mockup.html](file:///e:/LsqCoding/Mentorloop-app/docs/design/2026-10-23-phone-binding-mockup.html)
-- 效果图：[2026-10-23-phone-binding-mockup.png](file:///e:/LsqCoding/Mentorloop-app/docs/design/2026-10-23-phone-binding-mockup.png)
+- 效果图（HTML 设计稿）：`docs/design/2026-10-23-phone-binding-mockup.html`
 
 ### 1.6 提交推送
 

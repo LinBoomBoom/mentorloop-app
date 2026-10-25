@@ -1,0 +1,1973 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智面研学 · 首页重设计 · Training Deck</title>
+    <style>
+      :root {
+        --page: #ebe9e4;
+        --paper: #f7f9fc;
+        --surface: #ffffff;
+        --ink: #1c1c1e;
+        --ink-2: #6e6e73;
+        --ink-3: #aeaeb2;
+        --line: #e5e7ec;
+        --line-2: #d1d1d6;
+        --smart: #5856d6;
+        --smart-soft: #efeefc;
+        --reliable: #1fb6a6;
+        --warn: #e08a00;
+        --warn-light: #f5c97b;
+        --navy: #0b2138;
+        --navy-2: #0f2c4c;
+        --font:
+          'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', system-ui,
+          sans-serif;
+        --serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+        --mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font);
+        padding: 40px 44px 72px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1580px;
+        margin: 0 auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 40px;
+        padding-bottom: 26px;
+        border-bottom: 1px solid rgba(28, 28, 30, 0.12);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 1.6px;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-family: var(--serif);
+        font-size: 38px;
+        line-height: 1.18;
+        letter-spacing: -1.2px;
+        margin-top: 10px;
+        font-weight: 700;
+      }
+      h1 span {
+        font-family: var(--font);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0;
+        color: var(--ink-2);
+        margin-left: 12px;
+        vertical-align: middle;
+      }
+      .lede {
+        max-width: 620px;
+        font-size: 13px;
+        line-height: 1.9;
+        color: var(--ink-2);
+        margin-top: 12px;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        max-width: 430px;
+      }
+      .pill {
+        font-size: 11px;
+        line-height: 1;
+        padding: 8px 11px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(28, 28, 30, 0.1);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .pill.on {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+      }
+      .showcase {
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin-top: 34px;
+      }
+      .frames {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .frame-wrap {
+        width: 390px;
+      }
+      .frame-wrap.compact {
+        width: 360px;
+      }
+      .caption {
+        padding: 14px 4px 0;
+        font-size: 12px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .caption b {
+        display: block;
+        font-size: 13px;
+        letter-spacing: -0.1px;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+      .caption em {
+        font-style: normal;
+        color: var(--smart);
+      }
+
+      /* ---------------- phone shell ---------------- */
+      .phone {
+        width: 390px;
+        height: 844px;
+        border-radius: 54px;
+        background: var(--navy);
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 34px 70px rgba(16, 22, 38, 0.22),
+          0 2px 0 rgba(255, 255, 255, 0.65) inset,
+          0 0 0 1px rgba(12, 18, 30, 0.8);
+      }
+      .phone.compact {
+        width: 360px;
+        height: 640px;
+        border-radius: 46px;
+      }
+      .phone.journal {
+        background: #f7f2e9;
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .statusbar {
+        height: 50px;
+        padding: 0 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #fff;
+        position: relative;
+        z-index: 5;
+        flex: 0 0 auto;
+      }
+      .journal .statusbar {
+        color: #1f1b16;
+      }
+      .status-time {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sig {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 9px;
+      }
+      .sig i {
+        width: 2.5px;
+        background: currentColor;
+        border-radius: 2px;
+        display: block;
+      }
+      .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .sig i:nth-child(2) {
+        height: 5px;
+      }
+      .sig i:nth-child(3) {
+        height: 7px;
+      }
+      .sig i:nth-child(4) {
+        height: 9px;
+      }
+      .wifi {
+        width: 13px;
+        height: 9px;
+        border: 1.5px solid currentColor;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+        opacity: 0.9;
+      }
+      .battery {
+        width: 19px;
+        height: 9px;
+        border: 1.3px solid currentColor;
+        border-radius: 3px;
+        position: relative;
+        opacity: 0.9;
+      }
+      .battery::before {
+        content: '';
+        position: absolute;
+        inset: 1.5px;
+        width: 11px;
+        background: currentColor;
+        border-radius: 1.5px;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 2px;
+        width: 2px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 0 2px 2px 0;
+      }
+
+      /* ---------------- dark deck ---------------- */
+      .deck {
+        flex: 0 0 auto;
+        padding: 8px 24px 34px;
+        background:
+          radial-gradient(120% 92% at 88% -12%, rgba(88, 86, 214, 0.38), transparent 56%),
+          radial-gradient(90% 80% at 8% 8%, rgba(31, 182, 166, 0.18), transparent 52%),
+          linear-gradient(158deg, #123a5c 0%, #0b2138 58%, #081a2c 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .deck::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+        background-size: 4px 4px;
+        opacity: 0.38;
+        pointer-events: none;
+      }
+      .deck > * {
+        position: relative;
+        z-index: 2;
+      }
+      .deck-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding-top: 4px;
+      }
+      .date {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.52);
+        letter-spacing: 0.3px;
+      }
+      .greeting {
+        font-size: 19px;
+        line-height: 1.3;
+        font-weight: 600;
+        color: #fff;
+        margin-top: 5px;
+        letter-spacing: -0.3px;
+      }
+      .deck-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .streak {
+        height: 26px;
+        padding: 0 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(245, 201, 123, 0.28);
+        background: rgba(245, 201, 123, 0.1);
+        color: var(--warn-light);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9.5px;
+        font-family: var(--mono);
+        letter-spacing: 0.2px;
+      }
+      .streak i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--warn-light);
+        display: block;
+      }
+      .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+      }
+      .hero {
+        margin-top: 22px;
+      }
+      .hero-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--warn-light);
+      }
+      .hero-eyebrow i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--warn-light);
+        box-shadow: 0 0 0 4px rgba(245, 201, 123, 0.14);
+        display: block;
+      }
+      .headline {
+        margin-top: 11px;
+        font-size: 28px;
+        line-height: 1.28;
+        letter-spacing: -0.8px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .deck-sub {
+        margin-top: 10px;
+        font-size: 11.5px;
+        line-height: 1.75;
+        color: rgba(255, 255, 255, 0.58);
+        max-width: 300px;
+      }
+      .loop {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+      .loop::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        right: 0;
+        top: 5px;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          rgba(245, 201, 123, 0.72) 0%,
+          rgba(255, 255, 255, 0.18) 42%,
+          rgba(255, 255, 255, 0.06) 100%
+        );
+      }
+      .loop-step {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-right: 22px;
+        position: relative;
+        z-index: 1;
+      }
+      .loop-step:last-child {
+        margin-right: 0;
+      }
+      .loop-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        background: var(--navy);
+        display: block;
+      }
+      .loop-step.on .loop-dot {
+        border-color: var(--warn-light);
+        background: var(--warn-light);
+        box-shadow: 0 0 0 4px rgba(245, 201, 123, 0.12);
+      }
+      .loop-label {
+        font-size: 9.5px;
+        letter-spacing: 0.4px;
+        color: rgba(255, 255, 255, 0.42);
+      }
+      .loop-step.on .loop-label {
+        color: #fff;
+      }
+      .cta {
+        margin-top: 20px;
+        height: 52px;
+        border-radius: 16px;
+        background: #fff;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 17px 0 19px;
+        box-shadow:
+          0 10px 24px rgba(4, 14, 26, 0.22),
+          0 1px 0 rgba(255, 255, 255, 0.85) inset;
+      }
+      .cta span {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
+      .cta .arrow {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--navy);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+      }
+      .deck-foot {
+        margin-top: 11px;
+        font-size: 9.5px;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.2px;
+      }
+      .deck-foot b {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+      }
+
+      /* ---------------- light sheet ---------------- */
+      .sheet {
+        flex: 1;
+        margin-top: -30px;
+        border-radius: 28px 28px 0 0;
+        background: var(--paper);
+        padding: 12px 20px 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 3;
+        box-shadow: 0 -16px 34px rgba(8, 26, 44, 0.2);
+      }
+      .handle {
+        width: 36px;
+        height: 4px;
+        border-radius: 99px;
+        background: var(--line-2);
+        opacity: 0.65;
+        margin: 0 auto 12px;
+      }
+      .sheet-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .sheet-head h3 {
+        font-size: 15px;
+        letter-spacing: -0.2px;
+        font-weight: 700;
+      }
+      .sheet-head a {
+        font-size: 10.5px;
+        color: var(--smart);
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .task {
+        margin-top: 10px;
+        border-radius: 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 13px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 2px rgba(28, 28, 30, 0.03);
+      }
+      .task-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: #fff4e5;
+        color: var(--warn);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+      .task-copy {
+        flex: 1;
+        min-width: 0;
+      }
+      .task-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.1px;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .task-sub {
+        margin-top: 4px;
+        font-size: 10.5px;
+        color: var(--ink-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .go {
+        height: 28px;
+        padding: 0 11px;
+        border-radius: 999px;
+        background: #e8f7f4;
+        color: var(--reliable);
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      .modules {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 10px;
+      }
+      .module {
+        min-height: 96px;
+        border-radius: 18px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+      }
+      .module.train {
+        background: linear-gradient(150deg, #efeefc 0%, #f8f7ff 100%);
+        border: 1px solid #e2dffb;
+      }
+      .module.resume {
+        background: linear-gradient(150deg, #e8f7f4 0%, #f5fbfa 100%);
+        border: 1px solid #d9eee8;
+      }
+      .module-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .module-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .module.train .module-icon {
+        color: var(--smart);
+      }
+      .module.resume .module-icon {
+        color: var(--reliable);
+      }
+      .module-arrow {
+        font-size: 16px;
+        line-height: 1;
+        color: var(--ink-3);
+      }
+      .module-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.1px;
+        color: var(--ink);
+        margin-top: 10px;
+      }
+      .module-sub {
+        margin-top: 3px;
+        font-size: 10.5px;
+        color: var(--ink-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sheet-gap {
+        flex: 1;
+        min-height: 12px;
+      }
+      .rail {
+        border-top: 1px solid var(--line);
+        padding: 12px 2px 10px;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        font-size: 10px;
+        color: var(--ink-2);
+      }
+      .rail b {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--ink);
+        font-size: 11px;
+        margin: 0 3px;
+      }
+      .rail .sep {
+        width: 1px;
+        height: 10px;
+        background: var(--line-2);
+        margin: 0 9px;
+        opacity: 0.7;
+      }
+      .rail .right {
+        margin-left: auto;
+        color: var(--smart);
+        font-weight: 500;
+      }
+      .tabbar {
+        flex: 0 0 auto;
+        background: rgba(255, 255, 255, 0.97);
+        border-top: 1px solid var(--line);
+        padding: 7px 18px 0;
+      }
+      .tabs {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-around;
+      }
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        color: var(--ink-3);
+        font-size: 9px;
+        letter-spacing: 0.2px;
+        min-width: 52px;
+      }
+      .tab.on {
+        color: var(--smart);
+      }
+      .tab svg {
+        width: 21px;
+        height: 21px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .home-indicator {
+        width: 134px;
+        height: 5px;
+        border-radius: 99px;
+        background: #1c1c1e;
+        opacity: 0.82;
+        margin: 7px auto 8px;
+      }
+      .journal .tabbar {
+        background: rgba(255, 253, 248, 0.96);
+        border-top-color: #e7ddcd;
+      }
+      .journal .home-indicator {
+        background: #1f1b16;
+      }
+
+      /* ---------------- compact state ---------------- */
+      .phone.compact .statusbar {
+        height: 44px;
+        padding: 0 20px;
+      }
+      .phone.compact .deck {
+        padding: 4px 20px 30px;
+      }
+      .phone.compact .greeting {
+        font-size: 18px;
+      }
+      .phone.compact .hero {
+        margin-top: 16px;
+      }
+      .phone.compact .headline {
+        font-size: 24px;
+        margin-top: 9px;
+      }
+      .phone.compact .deck-sub,
+      .phone.compact .deck-foot {
+        display: none;
+      }
+      .phone.compact .loop {
+        margin-top: 14px;
+      }
+      .phone.compact .cta {
+        margin-top: 16px;
+        height: 48px;
+      }
+      .phone.compact .sheet {
+        margin-top: -26px;
+        padding: 10px 16px 0;
+        border-radius: 24px 24px 0 0;
+      }
+      .phone.compact .task {
+        margin-top: 8px;
+        padding: 11px 12px;
+      }
+      .phone.compact .task-icon {
+        width: 34px;
+        height: 34px;
+      }
+      .phone.compact .modules {
+        margin-top: 10px;
+        gap: 9px;
+      }
+      .phone.compact .module {
+        min-height: 84px;
+        padding: 11px;
+      }
+      .phone.compact .module-sub {
+        display: none;
+      }
+      .phone.compact .module-title {
+        margin-top: 8px;
+      }
+      .phone.compact .rail {
+        padding: 10px 2px 8px;
+      }
+      .phone.compact .tabbar {
+        padding-top: 5px;
+      }
+      .phone.compact .home-indicator {
+        margin: 6px auto 6px;
+      }
+
+      /* ---------------- notes column ---------------- */
+      .notes {
+        flex: 1;
+        min-width: 320px;
+        max-width: 430px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .note-card {
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(28, 28, 30, 0.09);
+        border-radius: 20px;
+        padding: 20px 20px 18px;
+        box-shadow: 0 2px 0 rgba(255, 255, 255, 0.6) inset;
+      }
+      .note-card h3 {
+        font-size: 13px;
+        letter-spacing: -0.1px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .note-card h3 i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--smart);
+        display: block;
+      }
+      .note-card p {
+        font-size: 11.5px;
+        line-height: 1.85;
+        color: var(--ink-2);
+        margin-top: 9px;
+      }
+      .note-card ul {
+        margin-top: 10px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .note-card li {
+        font-size: 11.5px;
+        line-height: 1.75;
+        color: var(--ink-2);
+        padding-left: 14px;
+        position: relative;
+      }
+      .note-card li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--warn);
+      }
+      .note-card li b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 10.5px;
+      }
+      .ref-table th,
+      .ref-table td {
+        text-align: left;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(28, 28, 30, 0.08);
+        vertical-align: top;
+        line-height: 1.55;
+      }
+      .ref-table th {
+        font-size: 9.5px;
+        font-family: var(--mono);
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 500;
+      }
+      .ref-table td:first-child {
+        color: var(--ink);
+        font-weight: 600;
+        width: 88px;
+        padding-right: 10px;
+      }
+      .ref-table td:last-child {
+        color: var(--ink-2);
+      }
+      .ref-table a {
+        color: var(--smart);
+        text-decoration: none;
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.2px;
+      }
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .swatch {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(28, 28, 30, 0.08);
+      }
+      .swatch i {
+        display: block;
+        height: 34px;
+      }
+      .swatch span {
+        display: block;
+        padding: 5px 6px;
+        font-family: var(--mono);
+        font-size: 8.5px;
+        color: var(--ink-2);
+        background: #fff;
+      }
+      .spec-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(28, 28, 30, 0.08);
+        font-size: 11px;
+        line-height: 1.55;
+        color: var(--ink-2);
+      }
+      .spec-line b {
+        color: var(--ink);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .spec-line:last-child {
+        border-bottom: 0;
+      }
+
+      /* ---------------- alternative direction B ---------------- */
+      .alt {
+        margin-top: 44px;
+        padding-top: 30px;
+        border-top: 1px solid rgba(28, 28, 30, 0.12);
+      }
+      .alt-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .alt-head h2 {
+        font-family: var(--serif);
+        font-size: 24px;
+        letter-spacing: -0.6px;
+      }
+      .alt-head p {
+        font-size: 12px;
+        line-height: 1.8;
+        color: var(--ink-2);
+        max-width: 620px;
+        margin-top: 7px;
+      }
+      .journal-body {
+        padding: 20px 22px 0;
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 50px);
+      }
+      .journal-date {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+      .journal-date .big {
+        font-family: var(--mono);
+        font-size: 30px;
+        letter-spacing: -1.2px;
+        color: #1f1b16;
+      }
+      .journal-date .small {
+        font-size: 10px;
+        letter-spacing: 0.8px;
+        color: #8a8073;
+        text-transform: uppercase;
+      }
+      .journal-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid #d9cbb8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #6c5f50;
+      }
+      .journal h2 {
+        font-family: var(--serif);
+        font-size: 28px;
+        line-height: 1.35;
+        letter-spacing: -0.6px;
+        margin-top: 22px;
+        color: #1f1b16;
+      }
+      .journal-sub {
+        font-size: 11.5px;
+        line-height: 1.8;
+        color: #7c7266;
+        margin-top: 9px;
+      }
+      .timeline {
+        margin-top: 22px;
+        position: relative;
+        padding-left: 22px;
+      }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 7px;
+        bottom: 18px;
+        width: 1px;
+        background: #ded2c0;
+      }
+      .tl-item {
+        position: relative;
+        padding-bottom: 18px;
+      }
+      .tl-item::before {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 4px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #f7f2e9;
+        border: 1.5px solid #c9b9a2;
+      }
+      .tl-item.on::before {
+        border-color: var(--smart);
+        background: var(--smart);
+        box-shadow: 0 0 0 4px rgba(88, 86, 214, 0.1);
+      }
+      .tl-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1f1b16;
+      }
+      .tl-sub {
+        font-size: 10.5px;
+        color: #8a8073;
+        margin-top: 3px;
+        line-height: 1.6;
+      }
+      .journal-cta {
+        height: 46px;
+        border-radius: 14px;
+        background: #1f1b16;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .journal-sheet {
+        margin-top: 20px;
+        background: #fffdf8;
+        border: 1px solid #eadfce;
+        border-radius: 16px;
+        padding: 4px 14px;
+        flex: 1;
+        min-height: 0;
+      }
+      .jrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 0;
+        border-bottom: 1px solid #efe6d8;
+      }
+      .jrow:last-child {
+        border-bottom: 0;
+      }
+      .jrow-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        background: #f3ecdf;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7c6a52;
+        flex: 0 0 auto;
+      }
+      .jrow-copy {
+        flex: 1;
+      }
+      .jrow-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2a241d;
+      }
+      .jrow-sub {
+        font-size: 10px;
+        color: #94897a;
+        margin-top: 2px;
+      }
+      .jrow .chev {
+        color: #b8ab99;
+        font-size: 12px;
+      }
+
+      /* ---------------- bottom spec ---------------- */
+      .bottom {
+        margin-top: 46px;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+      }
+      .bottom .note-card {
+        background: rgba(255, 255, 255, 0.7);
+      }
+      .footer {
+        margin-top: 34px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(28, 28, 30, 0.12);
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.5px;
+        color: var(--ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      @media (max-width: 1280px) {
+        body {
+          padding: 28px 22px 48px;
+        }
+        .masthead {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 18px;
+        }
+        .meta {
+          justify-content: flex-start;
+        }
+        .notes {
+          max-width: none;
+        }
+        .bottom {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <div class="eyebrow">MentorLoop · Home Redesign · 2026-10-24</div>
+          <h1>训练驾驶舱 <span>Training Deck</span></h1>
+          <p class="lede">
+            面向 20–35
+            岁学生、实习生、跳槽与跨专业学习人群。首页只回答一个问题：<b>今天下一步做什么</b>。
+            上半屏是任务舱，下半屏是训练纸；一个主行动、两个成长入口、一条进度轨。
+          </p>
+        </div>
+        <div class="meta">
+          <span class="pill on">主行动优先</span>
+          <span class="pill">首屏不滚动</span>
+          <span class="pill">深色任务舱 + 浅色训练纸</span>
+          <span class="pill">设计稿待评审</span>
+        </div>
+      </header>
+
+      <section class="showcase">
+        <div class="frames">
+          <!-- 01 default -->
+          <article class="frame-wrap">
+            <div class="phone">
+              <div class="screen">
+                <div class="statusbar">
+                  <span class="status-time">9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="deck">
+                  <div class="deck-head">
+                    <div>
+                      <div class="date">10月24日 · 周五</div>
+                      <div class="greeting">下午好，林同学</div>
+                    </div>
+                    <div class="deck-right">
+                      <div class="streak"><i></i>本周 2 次</div>
+                      <div class="avatar">林</div>
+                    </div>
+                  </div>
+                  <div class="hero">
+                    <div class="hero-eyebrow"><i></i>TODAY · 模拟面试</div>
+                    <div class="headline">把下一场面试，<br />练成你的主场。</div>
+                    <div class="deck-sub">
+                      按岗位与年限抽题，20 分钟一场；答完即出六维报告与训练计划。
+                    </div>
+                    <div class="loop">
+                      <div class="loop-step on">
+                        <span class="loop-dot"></span><span class="loop-label">面试</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">报告</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">训练</span>
+                      </div>
+                    </div>
+                    <div class="cta"><span>开始模拟面试</span><span class="arrow">→</span></div>
+                    <div class="deck-foot">
+                      上次 <b>10-23</b> · 综合 <b>B</b> · 已完成 <b>2</b> 场
+                    </div>
+                  </div>
+                </div>
+                <div class="sheet">
+                  <div class="handle"></div>
+                  <div class="sheet-head">
+                    <h3>今日任务</h3>
+                    <a href="#">查看成长 ›</a>
+                  </div>
+                  <div class="task">
+                    <div class="task-icon">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="7"></circle>
+                        <circle cx="12" cy="12" r="2.6"></circle>
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy">
+                      <div class="task-title">今日做题 · 6 个待完成</div>
+                      <div class="task-sub">补充量化指标 · 约 5 分钟</div>
+                    </div>
+                    <div class="go">去做题</div>
+                  </div>
+                  <div class="modules">
+                    <div class="module train">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="6.5"></circle>
+                            <circle cx="12" cy="12" r="2.3"></circle>
+                            <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">专项训练</div>
+                        <div class="module-sub">自选方向 · 5 题一组</div>
+                      </div>
+                    </div>
+                    <div class="module resume">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M7 3h7l4 4v14H7z"></path>
+                            <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">简历优化</div>
+                        <div class="module-sub">AI 逐条批注</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="sheet-gap"></div>
+                  <div class="rail">
+                    <span>面试 <b>12</b> 场</span>
+                    <span class="sep"></span>
+                    <span>最近 <b>B</b></span>
+                    <span class="right">最近报告 ›</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tabs">
+                    <div class="tab on">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                        <path d="M5.5 9.5V20h13V9.5"></path>
+                      </svg>
+                      <span>练习</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                        <path d="M15.5 8H20v4.5"></path>
+                      </svg>
+                      <span>成长</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.3"></circle>
+                        <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                      </svg>
+                      <span>我的</span>
+                    </div>
+                  </div>
+                  <div class="home-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="caption">
+              <b>01 / 默认态 · 已有报告</b>
+              主行动唯一：模拟面试。训练与简历是次级入口，固定出现在首屏；成长信息收成一条轨，而不是三张统计卡。
+            </div>
+          </article>
+
+          <!-- 02 new user -->
+          <article class="frame-wrap">
+            <div class="phone">
+              <div class="screen">
+                <div class="statusbar">
+                  <span class="status-time">9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="deck">
+                  <div class="deck-head">
+                    <div>
+                      <div class="date">10月24日 · 周五</div>
+                      <div class="greeting">下午好，新同学</div>
+                    </div>
+                    <div class="deck-right">
+                      <div class="streak"><i></i>今天开始</div>
+                      <div class="avatar">新</div>
+                    </div>
+                  </div>
+                  <div class="hero">
+                    <div class="hero-eyebrow"><i></i>TODAY · 摸底训练</div>
+                    <div class="headline">先做 5 题，<br />找到你的起点。</div>
+                    <div class="deck-sub">
+                      不用先选方向：系统按你的画像抽 5 题，约 6 分钟，结束后生成六维能力画像。
+                    </div>
+                    <div class="loop">
+                      <div class="loop-step on">
+                        <span class="loop-dot"></span><span class="loop-label">摸底</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">报告</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">训练</span>
+                      </div>
+                    </div>
+                    <div class="cta"><span>开始摸底</span><span class="arrow">→</span></div>
+                    <div class="deck-foot">完成后生成 <b>六维报告</b> 与 <b>训练计划</b></div>
+                  </div>
+                </div>
+                <div class="sheet">
+                  <div class="handle"></div>
+                  <div class="sheet-head">
+                    <h3>今日任务</h3>
+                    <a href="#">查看成长 ›</a>
+                  </div>
+                  <div class="task">
+                    <div class="task-icon">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M4 12.5 9 17.5 20 6.5"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy">
+                      <div class="task-title">先做 5 题摸底</div>
+                      <div class="task-sub">生成能力画像与训练计划</div>
+                    </div>
+                    <div class="go">开始</div>
+                  </div>
+                  <div class="modules">
+                    <div class="module train">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="6.5"></circle>
+                            <circle cx="12" cy="12" r="2.3"></circle>
+                            <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">专项训练</div>
+                        <div class="module-sub">自选方向 · 5 题一组</div>
+                      </div>
+                    </div>
+                    <div class="module resume">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M7 3h7l4 4v14H7z"></path>
+                            <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">简历优化</div>
+                        <div class="module-sub">AI 逐条批注</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="sheet-gap"></div>
+                  <div class="rail">
+                    <span>已完成 <b>0</b> 场</span>
+                    <span class="sep"></span>
+                    <span>报告待生成</span>
+                    <span class="right">成长报告 ›</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tabs">
+                    <div class="tab on">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                        <path d="M5.5 9.5V20h13V9.5"></path>
+                      </svg>
+                      <span>练习</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                        <path d="M15.5 8H20v4.5"></path>
+                      </svg>
+                      <span>成长</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.3"></circle>
+                        <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                      </svg>
+                      <span>我的</span>
+                    </div>
+                  </div>
+                  <div class="home-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="caption">
+              <b>02 / 新用户 · 无报告</b>
+              把「没有数据」变成「一次摸底」：主卡换成摸底任务，今日任务同步换文案，成长轨明确告诉用户报告何时出现。
+            </div>
+          </article>
+
+          <!-- 03 compact -->
+          <article class="frame-wrap compact">
+            <div class="phone compact">
+              <div class="screen">
+                <div class="statusbar">
+                  <span class="status-time">9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="deck">
+                  <div class="deck-head">
+                    <div>
+                      <div class="date">10月24日 · 周五</div>
+                      <div class="greeting">下午好，林同学</div>
+                    </div>
+                    <div class="deck-right">
+                      <div class="avatar">林</div>
+                    </div>
+                  </div>
+                  <div class="hero">
+                    <div class="hero-eyebrow"><i></i>TODAY · 模拟面试</div>
+                    <div class="headline">把下一场面试，<br />练成你的主场。</div>
+                    <div class="loop">
+                      <div class="loop-step on">
+                        <span class="loop-dot"></span><span class="loop-label">面试</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">报告</span>
+                      </div>
+                      <div class="loop-step">
+                        <span class="loop-dot"></span><span class="loop-label">训练</span>
+                      </div>
+                    </div>
+                    <div class="cta"><span>开始模拟面试</span><span class="arrow">→</span></div>
+                  </div>
+                </div>
+                <div class="sheet">
+                  <div class="handle"></div>
+                  <div class="sheet-head">
+                    <h3>今日任务</h3>
+                    <a href="#">查看成长 ›</a>
+                  </div>
+                  <div class="task">
+                    <div class="task-icon">
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="7"></circle>
+                        <circle cx="12" cy="12" r="2.6"></circle>
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+                      </svg>
+                    </div>
+                    <div class="task-copy">
+                      <div class="task-title">今日做题 · 6 个待完成</div>
+                      <div class="task-sub">补充量化指标 · 约 5 分钟</div>
+                    </div>
+                    <div class="go">去做题</div>
+                  </div>
+                  <div class="modules">
+                    <div class="module train">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="6.5"></circle>
+                            <circle cx="12" cy="12" r="2.3"></circle>
+                            <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">专项训练</div>
+                      </div>
+                    </div>
+                    <div class="module resume">
+                      <div class="module-top">
+                        <div class="module-icon">
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M7 3h7l4 4v14H7z"></path>
+                            <path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"></path>
+                          </svg>
+                        </div>
+                        <div class="module-arrow">›</div>
+                      </div>
+                      <div>
+                        <div class="module-title">简历优化</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="sheet-gap"></div>
+                  <div class="rail">
+                    <span>面试 <b>12</b> 场</span>
+                    <span class="sep"></span>
+                    <span>最近 <b>B</b></span>
+                    <span class="right">最近报告 ›</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tabs">
+                    <div class="tab on">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                        <path d="M5.5 9.5V20h13V9.5"></path>
+                      </svg>
+                      <span>练习</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                        <path d="M15.5 8H20v4.5"></path>
+                      </svg>
+                      <span>成长</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.3"></circle>
+                        <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                      </svg>
+                      <span>我的</span>
+                    </div>
+                  </div>
+                  <div class="home-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="caption">
+              <b>03 / 小屏 · 360×640</b>
+              隐藏主卡描述、脚注与模块副标题，保留五层结构与全部入口；默认字号下首屏不滚动，大字号允许滚动兜底。
+            </div>
+          </article>
+        </div>
+
+        <aside class="notes">
+          <div class="note-card">
+            <h3><i></i>为什么这样改</h3>
+            <ul>
+              <li>
+                <b>一个主行动。</b
+                >面试是最高频任务，只保留一个白色主按钮；训练、简历降为两列次级入口，但首屏必须同时可见。
+              </li>
+              <li>
+                <b>深 / 浅分区。</b
+                >上半屏是「任务舱」：深色、沉浸、只讲今天；下半屏是「训练纸」：浅色、清晰、可执行。重叠
+                30px 形成层次，不再是一摞白卡。
+              </li>
+              <li>
+                <b>闭环可视化。</b>面试 → 报告 →
+                训练用一条轨迹线串起来；用户始终知道自己处在哪一步，而不是面对一堆互不相关的卡片。
+              </li>
+              <li>
+                <b>成长收成一条轨。</b
+                >累计场次、最近等级、最近报告压成一条细轨，替代三张统计卡，降低噪音，也为小屏腾出空间。
+              </li>
+            </ul>
+          </div>
+
+          <div class="note-card">
+            <h3><i></i>参考与取舍</h3>
+            <table class="ref-table">
+              <tr>
+                <th>参考</th>
+                <th>借什么 / 不借什么</th>
+              </tr>
+              <tr>
+                <td>Duolingo</td>
+                <td>单一主行动 + streak；不借卡通化与强游戏化。</td>
+              </tr>
+              <tr>
+                <td>Keep</td>
+                <td>「今日计划」+ 模块入口的结构；不借大面积课程货架。</td>
+              </tr>
+              <tr>
+                <td>牛客 / 面试鸭</td>
+                <td>刷题/训练是一级入口；不借信息密集的题库流。</td>
+              </tr>
+              <tr>
+                <td>Linear</td>
+                <td>安静层级、hairline 分割、克制的颜色；不借桌面密度。</td>
+              </tr>
+              <tr>
+                <td>shadcn/ui</td>
+                <td>
+                  <a href="https://github.com/shadcn-ui/ui" target="_blank" rel="noreferrer"
+                    >GitHub</a
+                  >
+                  · 一致圆角、间距与对比度；不借默认中性灰审美。
+                </td>
+              </tr>
+              <tr>
+                <td>cal.com</td>
+                <td>
+                  <a href="https://github.com/calcom/cal.com" target="_blank" rel="noreferrer"
+                    >GitHub</a
+                  >
+                  · 开源产品里的信息密度与「下一步」清晰度；不借后台式布局。
+                </td>
+              </tr>
+              <tr>
+                <td>dub.co</td>
+                <td>
+                  <a href="https://github.com/dubinc/dub" target="_blank" rel="noreferrer"
+                    >GitHub</a
+                  >
+                  · 指标条与轻量数据展示；不借仪表盘密度。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="note-card">
+            <h3><i></i>Token 与规格</h3>
+            <div class="swatches">
+              <div class="swatch"><i style="background: #0b2138"></i><span>#0B2138</span></div>
+              <div class="swatch"><i style="background: #5856d6"></i><span>#5856D6</span></div>
+              <div class="swatch"><i style="background: #1fb6a6"></i><span>#1FB6A6</span></div>
+              <div class="swatch"><i style="background: #f5c97b"></i><span>#F5C97B</span></div>
+              <div class="swatch"><i style="background: #f7f9fc"></i><span>#F7F9FC</span></div>
+              <div class="swatch"><i style="background: #ffffff"></i><span>#FFFFFF</span></div>
+              <div class="swatch"><i style="background: #1c1c1e"></i><span>#1C1C1E</span></div>
+              <div class="swatch"><i style="background: #e5e7ec"></i><span>#E5E7EC</span></div>
+            </div>
+            <div class="spec-line"><b>字号</b><span>28 / 22 / 16 / 14 / 12 / 10</span></div>
+            <div class="spec-line"><b>间距</b><span>4 / 8 / 12 / 16 / 20 / 24 / 32</span></div>
+            <div class="spec-line"><b>圆角</b><span>28 / 18 / 12 / 10 / pill</span></div>
+            <div class="spec-line">
+              <b>首屏预算</b><span>390×844 ≈ 590px；360×640 compact ≈ 500px</span>
+            </div>
+            <div class="spec-line"><b>触控</b><span>≥ 44px；主按钮 52px，次入口整卡可点</span></div>
+            <div class="spec-line">
+              <b>落地</b><span>模块卡纯色 tint；图标走 ml-icon；无 gap / space-*</span>
+            </div>
+            <div class="spec-line"><b>最小字号</b><span>12px（设计稿微文案为视觉示意）</span></div>
+          </div>
+
+          <div class="note-card">
+            <h3><i></i>五态与红线</h3>
+            <ul>
+              <li>
+                <b>空态：</b>无报告 → 摸底任务；无训练任务 → 自选练习；文案不出现「暂无数据」。
+              </li>
+              <li><b>加载：</b>成长轨用骨架行；主卡不整页 loading，避免首页闪白。</li>
+              <li><b>失败：</b>主卡保留，底部 toast + 重试；不阻断浏览训练/简历。</li>
+              <li><b>降级：</b>网络弱时隐藏最近报告，成长轨显示「报告待同步」。</li>
+              <li><b>权限：</b>匿名态登录提示收成一行，不弹全屏登录层。</li>
+              <li>
+                <b>红线：</b>首页不显示「实时评分」；评级必须标注来自最近报告；AI
+                批注始终标注为建议。
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <section class="alt">
+        <div class="alt-head">
+          <div>
+            <div class="eyebrow">Alternative Direction B</div>
+            <h2>备选方向 · 学习手账</h2>
+            <p>
+              更安静、更像一本学习手账：暖纸色、衬线标题、纵向时间线。适合后续 A/B
+              测试，但主行动不如 A 明确， 信息密度也更低。若选择
+              B，需要重新定义深色面试房间与浅色学习页的过渡。
+            </p>
+          </div>
+        </div>
+        <div class="frames" style="margin-top: 22px">
+          <article class="frame-wrap">
+            <div class="phone journal">
+              <div class="screen">
+                <div class="statusbar">
+                  <span class="status-time">9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="journal-body">
+                  <div class="journal-date">
+                    <div>
+                      <div class="big">10.24</div>
+                      <div class="small">Friday · 2026</div>
+                    </div>
+                    <div class="journal-avatar">林</div>
+                  </div>
+                  <h2>今天只做<br />三件事。</h2>
+                  <div class="journal-sub">把训练拆小，完成比完美更重要。</div>
+                  <div class="timeline">
+                    <div class="tl-item on">
+                      <div class="tl-title">模拟面试 · 20 分钟</div>
+                      <div class="tl-sub">按岗位与年限抽题，答完即出六维报告。</div>
+                    </div>
+                    <div class="tl-item">
+                      <div class="tl-title">报告解读 · 2 分钟</div>
+                      <div class="tl-sub">看优先改进项，不追分数。</div>
+                    </div>
+                    <div class="tl-item">
+                      <div class="tl-title">专项训练 · 5 题</div>
+                      <div class="tl-sub">只练今天最薄弱的一个维度。</div>
+                    </div>
+                  </div>
+                  <div class="journal-cta">开始第一件事 · 模拟面试</div>
+                  <div class="journal-sheet">
+                    <div class="jrow">
+                      <div class="jrow-icon">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.7"
+                          stroke-linecap="round"
+                        >
+                          <circle cx="12" cy="12" r="6.5"></circle>
+                          <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22"></path>
+                        </svg>
+                      </div>
+                      <div class="jrow-copy">
+                        <div class="jrow-title">专项训练</div>
+                        <div class="jrow-sub">自选方向 · 5 题一组</div>
+                      </div>
+                      <div class="chev">›</div>
+                    </div>
+                    <div class="jrow">
+                      <div class="jrow-icon">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.7"
+                          stroke-linecap="round"
+                        >
+                          <path d="M7 3h7l4 4v14H7z"></path>
+                          <path d="M14 3v4h4"></path>
+                        </svg>
+                      </div>
+                      <div class="jrow-copy">
+                        <div class="jrow-title">简历优化</div>
+                        <div class="jrow-sub">AI 逐条批注 · 1 次深度评审</div>
+                      </div>
+                      <div class="chev">›</div>
+                    </div>
+                    <div class="jrow">
+                      <div class="jrow-icon">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.7"
+                          stroke-linecap="round"
+                        >
+                          <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                          <path d="M15.5 8H20v4.5"></path>
+                        </svg>
+                      </div>
+                      <div class="jrow-copy">
+                        <div class="jrow-title">成长报告</div>
+                        <div class="jrow-sub">面试 12 场 · 最近 B</div>
+                      </div>
+                      <div class="chev">›</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tabs">
+                    <div class="tab on">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                        <path d="M5.5 9.5V20h13V9.5"></path>
+                      </svg>
+                      <span>练习</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                        <path d="M15.5 8H20v4.5"></path>
+                      </svg>
+                      <span>成长</span>
+                    </div>
+                    <div class="tab">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.3"></circle>
+                        <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                      </svg>
+                      <span>我的</span>
+                    </div>
+                  </div>
+                  <div class="home-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="caption">
+              <b>B / 学习手账</b>
+              暖纸色 + 衬线标题 +
+              纵向时间线；更像「学习计划」而不是「驾驶舱」，情绪更松弛，但主行动权重较低。
+            </div>
+          </article>
+
+          <div class="note-card" style="flex: 1; min-width: 320px; max-width: 620px">
+            <h3><i></i>建议</h3>
+            <p>
+              推荐
+              <b>A · 训练驾驶舱</b
+              >：它把「今天练什么」做成唯一主行动，同时保留训练与简历两个成长入口，
+              更适合焦虑、目标明确的 20–35 岁求职人群。B 的情绪更松弛，适合作为后续 A/B
+              或「学习计划」子页面。
+            </p>
+            <ul>
+              <li>
+                <b>下一步：</b>评审 A 的层级、文案与色彩；确认后按 390×844 与 360×640 两档实现。
+              </li>
+              <li><b>交付：</b>uvue 页面 + 五态（空/加载/失败/降级/权限）+ E2E 锚点保持。</li>
+              <li><b>不做：</b>不引入新 token、不做装饰性动画、不把训练做成第二个货架。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom">
+        <div class="note-card">
+          <h3><i></i>布局与高度</h3>
+          <div class="spec-line">
+            <b>390×844</b><span>状态栏 50 · 任务舱 ≈ 318 · 训练纸 ≈ 406 · tabBar 64</span>
+          </div>
+          <div class="spec-line">
+            <b>360×640</b><span>状态栏 44 · 任务舱 ≈ 246 · 训练纸 ≈ 292 · tabBar 58</span>
+          </div>
+          <div class="spec-line">
+            <b>首屏</b><span>主卡 + 今日任务 + 两列入口 + 成长轨全部可见</span>
+          </div>
+          <div class="spec-line"><b>大字号</b><span>允许滚动兜底；卡片不裁切、不重叠</span></div>
+        </div>
+        <div class="note-card">
+          <h3><i></i>评审问题</h3>
+          <ul>
+            <li>主标题「把下一场面试，练成你的主场」是否符合产品语气？</li>
+            <li>训练舱的深色比例是否过重？是否需要更轻的版本？</li>
+            <li>「今日任务」与主卡是否存在重复？是否应合并成一张任务卡？</li>
+            <li>成长轨放在底部是否足够可发现？是否需要更明显的「成长报告」入口？</li>
+          </ul>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>MENTORLOOP · HOME REDESIGN · DESIGN DRAFT</span>
+        <span>参考：Duolingo / Keep / 牛客 / 面试鸭 / Linear / shadcn-ui / cal.com / dub.co</span>
+      </footer>
+    </div>
+  </body>
+</html>

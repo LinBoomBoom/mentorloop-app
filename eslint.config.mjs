@@ -175,7 +175,9 @@ export default [
       'utssdk/*/app-android/**',
       'utssdk/*/app-ios/**',
       // 多端 UI 学习手册：自包含 HTML 交付物 + 第三方/压缩 JS，非仓库源码
-      'multi-platform-ui-handbook/**'
+      'multi-platform-ui-handbook/**',
+      // 设计原型第三方资产（Three.js vendor，压缩产物），非仓库源码
+      'docs/design/vendor/**'
     ]
   },
   js.configs.recommended,

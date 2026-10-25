@@ -1,0 +1,2229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智面研学 · 首页 A/B 细化 · Neural / Grid / Hologram</title>
+    <style>
+      :root {
+        --page: #e7e5df;
+        --ink: #151515;
+        --ink-2: #6b6b6b;
+        --ink-3: #9a9a9a;
+        --line: rgba(0, 0, 0, 0.13);
+        --font:
+          'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', system-ui,
+          sans-serif;
+        --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font);
+        padding: 38px 40px 64px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 36px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 1.6px;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        letter-spacing: -1.2px;
+        margin-top: 10px;
+        font-weight: 700;
+      }
+      h1 span {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        color: var(--ink-2);
+        margin-left: 12px;
+      }
+      .lede {
+        max-width: 760px;
+        font-size: 12.5px;
+        line-height: 1.85;
+        color: var(--ink-2);
+        margin-top: 10px;
+      }
+      .lede b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        justify-content: flex-end;
+        max-width: 400px;
+      }
+      .pill {
+        font-size: 10.5px;
+        line-height: 1;
+        padding: 8px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .pill.on {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+      }
+      .gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 38px 30px;
+        margin-top: 34px;
+      }
+      .concept {
+        width: 390px;
+      }
+      .concept-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 11px;
+      }
+      .concept-num {
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-2);
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+      .concept-head h2 {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.9px;
+        line-height: 1.3;
+      }
+      .concept-head p {
+        font-size: 10px;
+        color: var(--ink-2);
+        margin-top: 3px;
+      }
+      .grade {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 8px;
+        padding: 5px 7px;
+        border-radius: 99px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .grade.a {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .grade.b {
+        background: #fff;
+      }
+      .grade.c {
+        background: #f0f0f0;
+        color: #888;
+      }
+      .phone {
+        width: 390px;
+        height: 844px;
+        border-radius: 52px;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 32px 64px rgba(18, 20, 28, 0.2),
+          0 2px 0 rgba(255, 255, 255, 0.6) inset,
+          0 0 0 1px rgba(0, 0, 0, 0.65);
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .sb {
+        height: 48px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        position: relative;
+        z-index: 20;
+        flex: 0 0 auto;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sig {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 9px;
+      }
+      .sig i {
+        width: 2.5px;
+        background: currentColor;
+        border-radius: 2px;
+        display: block;
+      }
+      .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .sig i:nth-child(2) {
+        height: 5px;
+      }
+      .sig i:nth-child(3) {
+        height: 7px;
+      }
+      .sig i:nth-child(4) {
+        height: 9px;
+      }
+      .wifi {
+        width: 13px;
+        height: 9px;
+        border: 1.4px solid currentColor;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+        opacity: 0.9;
+      }
+      .battery {
+        width: 19px;
+        height: 9px;
+        border: 1.2px solid currentColor;
+        border-radius: 3px;
+        position: relative;
+        opacity: 0.9;
+      }
+      .battery::before {
+        content: '';
+        position: absolute;
+        inset: 1.5px;
+        width: 11px;
+        background: currentColor;
+        border-radius: 1.5px;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 2px;
+        width: 2px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 0 2px 2px 0;
+      }
+      .concept-note {
+        margin-top: 12px;
+        font-size: 11px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .concept-note p {
+        margin-top: 4px;
+      }
+      .concept-note b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* =========================================================
+         shared · NEURAL (01A / 01B)
+         ========================================================= */
+      .n1 .screen {
+        background: #02040a;
+        color: #eafbff;
+      }
+      .n1 .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(rgba(0, 240, 255, 0.22) 1px, transparent 1px),
+          linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px);
+        background-size:
+          38px 38px,
+          38px 38px,
+          38px 38px;
+        opacity: 0.5;
+      }
+      .n1 .screen::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.035) 0px,
+          rgba(255, 255, 255, 0.035) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+        opacity: 0.32;
+        pointer-events: none;
+      }
+      .n1 .sb {
+        color: #eafbff;
+      }
+      .n1-top {
+        position: relative;
+        z-index: 4;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 2px 24px 0;
+      }
+      .n1-kicker {
+        display: block;
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        color: #00f0ff;
+      }
+      .n1-hello {
+        display: block;
+        font-size: 19px;
+        font-weight: 600;
+        margin-top: 6px;
+        letter-spacing: -0.3px;
+      }
+      .n1-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 240, 255, 0.55);
+        color: #00f0ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 11px;
+        box-shadow: 0 0 22px rgba(0, 240, 255, 0.22);
+      }
+      .n1-cta {
+        height: 60px;
+        border: 1px solid rgba(0, 240, 255, 0.62);
+        border-radius: 12px;
+        background: linear-gradient(90deg, rgba(0, 240, 255, 0.16), rgba(139, 92, 255, 0.09));
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        box-shadow:
+          0 0 30px rgba(0, 240, 255, 0.14),
+          inset 0 0 18px rgba(0, 240, 255, 0.05);
+      }
+      .n1-cta-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .n1-cta-meta {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1px;
+        color: #00f0ff;
+      }
+      .n1-cta-arrow {
+        margin-left: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 240, 255, 0.6);
+        color: #00f0ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+      }
+      .n1-tile {
+        position: relative;
+        border: 1px solid rgba(234, 251, 255, 0.14);
+        border-radius: 10px;
+        padding: 11px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .n1-tile::before,
+      .n1-tile::after {
+        content: '';
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border-color: rgba(0, 240, 255, 0.55);
+        border-style: solid;
+      }
+      .n1-tile::before {
+        left: -1px;
+        top: -1px;
+        border-width: 1px 0 0 1px;
+        border-top-left-radius: 10px;
+      }
+      .n1-tile::after {
+        right: -1px;
+        bottom: -1px;
+        border-width: 0 1px 1px 0;
+        border-bottom-right-radius: 10px;
+      }
+      .n1-tile span {
+        display: block;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1.2px;
+        color: #00f0ff;
+      }
+      .n1-tile b {
+        display: block;
+        font-size: 13px;
+        margin-top: 7px;
+      }
+      .n1-tile small {
+        display: block;
+        font-size: 9px;
+        color: rgba(234, 251, 255, 0.46);
+        margin-top: 3px;
+      }
+      .n1-status {
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px solid rgba(0, 240, 255, 0.12);
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1.1px;
+        color: rgba(234, 251, 255, 0.38);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .n1-status::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #00f0ff;
+        box-shadow: 0 0 9px #00f0ff;
+      }
+      @keyframes n1spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes n1pulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 36px rgba(0, 240, 255, 0.2),
+            inset 0 0 24px rgba(139, 92, 255, 0.16);
+        }
+        50% {
+          box-shadow:
+            0 0 62px rgba(0, 240, 255, 0.36),
+            inset 0 0 34px rgba(139, 92, 255, 0.28);
+        }
+      }
+
+      /* ---------------------------------------------------------
+         01A · NEURAL CORE
+         --------------------------------------------------------- */
+      .n1a-body {
+        position: relative;
+        z-index: 4;
+        flex: 1;
+        padding: 2px 24px 18px;
+        display: flex;
+        flex-direction: column;
+      }
+      .n1-orb-wrap {
+        width: 308px;
+        height: 308px;
+        position: relative;
+        margin: 4px auto 0;
+      }
+      .n1-orbit {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+        border: 1px dashed rgba(0, 240, 255, 0.18);
+        transform: translate(-50%, -50%);
+      }
+      .n1-o1 {
+        width: 244px;
+        height: 244px;
+        animation: n1spin 28s linear infinite;
+      }
+      .n1-o2 {
+        width: 300px;
+        height: 300px;
+        border-color: rgba(139, 92, 255, 0.22);
+        animation: n1spin 44s linear infinite reverse;
+      }
+      .n1-node-dot {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #00f0ff;
+        box-shadow: 0 0 10px #00f0ff;
+      }
+      .n1-o1 .n1-node-dot:nth-child(1) {
+        top: 8px;
+        left: 50%;
+      }
+      .n1-o1 .n1-node-dot:nth-child(2) {
+        bottom: 30px;
+        right: 30px;
+      }
+      .n1-o1 .n1-node-dot:nth-child(3) {
+        bottom: 30px;
+        left: 30px;
+      }
+      .n1-o2 .n1-node-dot:nth-child(1) {
+        top: 50%;
+        right: 4px;
+        background: #8b5cff;
+        box-shadow: 0 0 10px #8b5cff;
+      }
+      .n1-o2 .n1-node-dot:nth-child(2) {
+        top: 50%;
+        left: 4px;
+        background: #ff4fd8;
+        box-shadow: 0 0 10px #ff4fd8;
+      }
+      .n1-core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 124px;
+        height: 124px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 240, 255, 0.6);
+        background: radial-gradient(circle, rgba(0, 240, 255, 0.16), rgba(2, 4, 10, 0.94) 68%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        animation: n1pulse 3.4s ease-in-out infinite;
+        z-index: 2;
+      }
+      .n1-core span {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.8px;
+        color: #00f0ff;
+      }
+      .n1-core b {
+        font-family: var(--mono);
+        font-size: 40px;
+        line-height: 1;
+        color: #fff;
+        margin-top: 3px;
+        text-shadow: 0 0 18px rgba(0, 240, 255, 0.55);
+      }
+      .n1-core small {
+        font-family: var(--mono);
+        font-size: 7px;
+        color: rgba(234, 251, 255, 0.5);
+        margin-top: 5px;
+      }
+      .n1-node {
+        position: absolute;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        color: rgba(234, 251, 255, 0.5);
+        letter-spacing: 0.4px;
+        z-index: 1;
+      }
+      .n1-node b {
+        display: block;
+        font-size: 9px;
+        color: #00f0ff;
+        margin-top: 2px;
+      }
+      .n1-na {
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      .n1-nb {
+        top: 78px;
+        right: 0;
+      }
+      .n1-nc {
+        bottom: 70px;
+        right: 0;
+      }
+      .n1-nd {
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      .n1-ne {
+        bottom: 70px;
+        left: 0;
+      }
+      .n1-nf {
+        top: 78px;
+        left: 0;
+      }
+      .n1-beam {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 308px;
+        height: 1px;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.42), transparent);
+        z-index: 0;
+      }
+      .n1a-cta {
+        margin-top: 2px;
+      }
+      .n1a-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .n1a-telemetry {
+        display: flex;
+        align-items: flex-end;
+        gap: 16px;
+        padding: 10px 0;
+        margin-top: 10px;
+        border-top: 1px solid rgba(0, 240, 255, 0.12);
+        border-bottom: 1px solid rgba(0, 240, 255, 0.12);
+      }
+      .n1a-metric small {
+        display: block;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1px;
+        color: rgba(234, 251, 255, 0.38);
+      }
+      .n1a-metric b {
+        display: block;
+        font-family: var(--mono);
+        font-size: 16px;
+        color: #fff;
+        margin-top: 2px;
+      }
+      .n1a-wave {
+        margin-left: auto;
+        height: 24px;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+      }
+      .n1a-wave i {
+        width: 3px;
+        display: block;
+        background: #00f0ff;
+        opacity: 0.65;
+      }
+      .n1a-foot {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 0.6px;
+        color: rgba(234, 251, 255, 0.42);
+      }
+      .n1a-foot span + span {
+        margin-left: 13px;
+      }
+      .n1a-foot span:last-child {
+        margin-left: auto;
+        color: #00f0ff;
+      }
+      .n1a-log {
+        margin-top: 12px;
+        border-top: 1px solid rgba(0, 240, 255, 0.1);
+        padding-top: 8px;
+      }
+      .n1a-log-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 7px;
+        line-height: 1.85;
+        color: rgba(234, 251, 255, 0.42);
+      }
+      .n1a-log-row span {
+        color: #00f0ff;
+        flex: 0 0 auto;
+      }
+      .n1a-log-row b {
+        color: rgba(234, 251, 255, 0.7);
+        font-weight: 500;
+        flex: 1;
+      }
+
+      /* ---------------------------------------------------------
+         01B · TACTICAL RADAR
+         --------------------------------------------------------- */
+      .n1b-body {
+        position: relative;
+        z-index: 4;
+        flex: 1;
+        padding: 2px 20px 16px;
+        display: flex;
+        flex-direction: column;
+      }
+      .n1b-top {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 4px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.2px;
+        color: rgba(234, 251, 255, 0.45);
+      }
+      .n1b-top span:last-child {
+        color: #00f0ff;
+      }
+      .n1b-main {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex: 1;
+      }
+      .n1b-rail {
+        width: 38px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 4px;
+      }
+      .n1b-rail-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        color: rgba(234, 251, 255, 0.35);
+      }
+      .n1b-rail-item b {
+        width: 22px;
+        height: 22px;
+        border: 1px solid rgba(234, 251, 255, 0.18);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 7px;
+      }
+      .n1b-rail-item.on {
+        color: #00f0ff;
+      }
+      .n1b-rail-item.on b {
+        border-color: rgba(0, 240, 255, 0.6);
+        background: rgba(0, 240, 255, 0.08);
+        box-shadow: 0 0 14px rgba(0, 240, 255, 0.16);
+      }
+      .n1b-rail-line {
+        width: 1px;
+        flex: 1;
+        background: rgba(0, 240, 255, 0.12);
+        margin: 6px 0;
+      }
+      .n1b-panel {
+        flex: 1;
+        border: 1px solid rgba(0, 240, 255, 0.28);
+        border-radius: 12px;
+        padding: 15px;
+        background: linear-gradient(160deg, rgba(0, 240, 255, 0.045), rgba(2, 4, 10, 0.6));
+      }
+      .n1b-panel-k {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1.4px;
+        color: #8b5cff;
+      }
+      .n1b-panel-title {
+        font-size: 23px;
+        line-height: 1.32;
+        font-weight: 700;
+        margin-top: 7px;
+        letter-spacing: -0.4px;
+      }
+      .n1b-radar {
+        width: 188px;
+        height: 188px;
+        position: relative;
+        margin: 2px auto 0;
+      }
+      .n1b-radar svg {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        inset: 0;
+      }
+      .n1b-core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 240, 255, 0.6);
+        background: radial-gradient(circle, rgba(0, 240, 255, 0.16), rgba(2, 4, 10, 0.9) 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 22px;
+        color: #fff;
+        box-shadow: 0 0 26px rgba(0, 240, 255, 0.2);
+        z-index: 2;
+      }
+      .n1b-go {
+        margin-top: 4px;
+        height: 42px;
+        border: 1px solid rgba(0, 240, 255, 0.5);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: #00f0ff;
+        background: rgba(0, 240, 255, 0.06);
+      }
+      .n1b-bars {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px 14px;
+      }
+      .n1b-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 7px;
+        color: rgba(234, 251, 255, 0.45);
+      }
+      .n1b-bar span {
+        width: 24px;
+        flex: 0 0 auto;
+      }
+      .n1b-bar em {
+        flex: 1;
+        height: 3px;
+        background: rgba(234, 251, 255, 0.1);
+        border-radius: 2px;
+        position: relative;
+        display: block;
+      }
+      .n1b-bar em i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 3px;
+        background: #00f0ff;
+        border-radius: 2px;
+        display: block;
+        box-shadow: 0 0 6px rgba(0, 240, 255, 0.35);
+      }
+      .n1b-bar b {
+        width: 16px;
+        text-align: right;
+        color: #00f0ff;
+        font-size: 7.5px;
+      }
+      .n1b-foot {
+        display: flex;
+        align-items: center;
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px solid rgba(0, 240, 255, 0.12);
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 0.6px;
+        color: rgba(234, 251, 255, 0.4);
+      }
+      .n1b-foot span + span {
+        margin-left: 13px;
+      }
+      .n1b-foot span:last-child {
+        margin-left: auto;
+        color: #00f0ff;
+      }
+      .n1b-note {
+        margin-top: 16px;
+        border-top: 1px solid rgba(0, 240, 255, 0.14);
+        padding-top: 10px;
+      }
+      .n1b-note span {
+        display: block;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1.2px;
+        color: #8b5cff;
+      }
+      .n1b-note b {
+        display: block;
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      .n1b-note small {
+        display: block;
+        font-size: 8px;
+        color: rgba(234, 251, 255, 0.42);
+        margin-top: 3px;
+      }
+      .n1b-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.08);
+        font-family: var(--mono);
+        font-size: 7.5px;
+        color: rgba(234, 251, 255, 0.48);
+      }
+      .n1b-check span {
+        color: #00f0ff;
+        flex: 0 0 auto;
+      }
+      .n1b-signal {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.8px;
+        color: rgba(234, 251, 255, 0.4);
+      }
+      .n1b-signal em {
+        flex: 1;
+        height: 3px;
+        background: rgba(234, 251, 255, 0.1);
+        position: relative;
+        display: block;
+      }
+      .n1b-signal em i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 3px;
+        width: 68%;
+        background: #8b5cff;
+        display: block;
+      }
+      .n1b-signal b {
+        color: #8b5cff;
+        font-size: 7px;
+      }
+
+      /* =========================================================
+         shared · GRID (04A)
+         ========================================================= */
+      .g1 .screen {
+        background: #000;
+        color: #f2f2f2;
+      }
+      .g1 .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(200, 255, 0, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(200, 255, 0, 0.08) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+      .g1 .screen::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.035) 0px,
+          rgba(255, 255, 255, 0.035) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+        opacity: 0.35;
+        pointer-events: none;
+      }
+      .g1 .sb {
+        color: #c8ff00;
+      }
+      .g1-body {
+        position: relative;
+        z-index: 3;
+        flex: 1;
+        padding: 0 24px 12px;
+        display: flex;
+        flex-direction: column;
+      }
+      .g1-top {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.2px;
+        color: #8a8a8a;
+      }
+      .g1-top span:last-child {
+        color: #c8ff00;
+      }
+      .g1-boot {
+        margin-top: 10px;
+        padding: 9px 0;
+        border-top: 1px solid #2a2a2a;
+        border-bottom: 1px solid #2a2a2a;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        line-height: 1.85;
+        color: #777;
+      }
+      .g1-boot span {
+        color: #c8ff00;
+      }
+      .g1-hero {
+        margin-top: 20px;
+      }
+      .g1-num {
+        font-family: var(--mono);
+        font-size: 76px;
+        line-height: 0.9;
+        letter-spacing: -5px;
+        color: #c8ff00;
+        text-shadow: 0 0 26px rgba(200, 255, 0, 0.28);
+      }
+      .g1-kicker {
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 2px;
+        color: #8a8a8a;
+        margin-top: 10px;
+      }
+      .g1-title {
+        font-family: var(--mono);
+        font-size: 31px;
+        line-height: 1.06;
+        font-weight: 700;
+        letter-spacing: -1px;
+        margin-top: 9px;
+      }
+      .g1-cn {
+        font-size: 10.5px;
+        color: #9a9a9a;
+        margin-top: 10px;
+      }
+      .g1-cta {
+        margin-top: 18px;
+        height: 54px;
+        border: 1px solid #c8ff00;
+        color: #c8ff00;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 2px;
+      }
+      .g1-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .g1-cell {
+        border: 1px solid #2a2a2a;
+        padding: 10px;
+        min-height: 74px;
+      }
+      .g1-cell span {
+        display: block;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1px;
+        color: #c8ff00;
+      }
+      .g1-cell b {
+        display: block;
+        font-size: 12px;
+        margin-top: 7px;
+      }
+      .g1-cell small {
+        display: block;
+        font-size: 8px;
+        color: #777;
+        margin-top: 2px;
+      }
+      .g1-progress {
+        height: 2px;
+        background: #2a2a2a;
+        margin-top: 14px;
+      }
+      .g1-progress i {
+        display: block;
+        height: 2px;
+        width: 68%;
+        background: #c8ff00;
+        box-shadow: 0 0 8px rgba(200, 255, 0, 0.4);
+      }
+      .g1-ready {
+        margin-top: auto;
+        padding-top: 14px;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 40px;
+        letter-spacing: 7px;
+        color: rgba(200, 255, 0, 0.09);
+      }
+      .g1-ready span {
+        display: block;
+        font-size: 6.5px;
+        letter-spacing: 1.6px;
+        color: rgba(255, 255, 255, 0.24);
+        margin-top: 4px;
+      }
+      .g1-status {
+        margin-top: 12px;
+        border-top: 1px solid #2a2a2a;
+        padding-top: 10px;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 0.8px;
+        color: #8a8a8a;
+      }
+      .g1-cursor {
+        color: #c8ff00;
+        animation: g1blink 1.1s step-end infinite;
+      }
+      @keyframes g1blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* =========================================================
+         shared · HOLO (06A / 06B)
+         ========================================================= */
+      .h1 .screen {
+        background: #050c16;
+        color: #eafcff;
+      }
+      .h1 .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(50% 38% at 50% 38%, rgba(61, 225, 255, 0.18), transparent 66%),
+          radial-gradient(40% 30% at 80% 80%, rgba(138, 124, 255, 0.12), transparent 60%);
+      }
+      .h1 .screen::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          180deg,
+          rgba(61, 225, 255, 0.04) 0px,
+          rgba(61, 225, 255, 0.04) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+        opacity: 0.35;
+        pointer-events: none;
+      }
+      .h1 .sb {
+        color: #3de1ff;
+      }
+      .h1-body {
+        position: relative;
+        z-index: 4;
+        flex: 1;
+        padding: 2px 24px 12px;
+        display: flex;
+        flex-direction: column;
+      }
+      .h1-top {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.2px;
+        color: rgba(234, 252, 255, 0.46);
+      }
+      .h1-top span:last-child {
+        color: #3de1ff;
+      }
+      .h1-stage {
+        position: relative;
+        height: 322px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .h1-title {
+        text-align: center;
+        font-size: 23px;
+        line-height: 1.32;
+        font-weight: 600;
+        letter-spacing: -0.4px;
+      }
+      .h1-cta {
+        margin: 14px 0 0;
+        height: 46px;
+        border: 1px solid rgba(61, 225, 255, 0.52);
+        background: rgba(61, 225, 255, 0.06);
+        color: #3de1ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 1.2px;
+      }
+      .h1-plates {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .h1-plate {
+        flex: 1;
+        border: 1px dashed rgba(61, 225, 255, 0.26);
+        padding: 10px;
+        position: relative;
+      }
+      .h1-plate span {
+        display: block;
+        font-size: 12px;
+      }
+      .h1-plate small {
+        display: block;
+        font-size: 8.5px;
+        color: rgba(234, 252, 255, 0.48);
+        margin-top: 2px;
+      }
+      .h1-plate i {
+        position: absolute;
+        right: 9px;
+        top: 9px;
+        font-style: normal;
+        font-family: var(--mono);
+        color: #3de1ff;
+        font-size: 11px;
+      }
+      .h1-log {
+        margin-top: 14px;
+        border-top: 1px dashed rgba(61, 225, 255, 0.2);
+        padding-top: 8px;
+      }
+      .h1-log-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 7px;
+        line-height: 1.8;
+        color: rgba(234, 252, 255, 0.42);
+      }
+      .h1-log-row span {
+        color: #3de1ff;
+        flex: 0 0 auto;
+      }
+      .h1-last {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 9px 0;
+        border-top: 1px dashed rgba(61, 225, 255, 0.18);
+        border-bottom: 1px dashed rgba(61, 225, 255, 0.18);
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.6px;
+        color: rgba(234, 252, 255, 0.4);
+      }
+      .h1-last b {
+        font-size: 16px;
+        color: #fff;
+      }
+      .h1-last small {
+        font-size: 7px;
+        color: rgba(234, 252, 255, 0.4);
+      }
+      .h1-foot {
+        margin-top: auto;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1.1px;
+        color: rgba(234, 252, 255, 0.3);
+        padding-top: 10px;
+      }
+
+      /* ---------------------------------------------------------
+         06A · HOLO PRISM
+         --------------------------------------------------------- */
+      .h1a-stage {
+        perspective: 760px;
+      }
+      .h1a-prism {
+        position: relative;
+        width: 132px;
+        height: 132px;
+        transform-style: preserve-3d;
+        transform: rotateX(-22deg) rotateY(38deg);
+        animation: h1rotate 20s linear infinite;
+      }
+      .h1a-face {
+        position: absolute;
+        width: 132px;
+        height: 132px;
+        border: 1px solid rgba(61, 225, 255, 0.48);
+        background: rgba(61, 225, 255, 0.035);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 1px;
+        color: rgba(234, 252, 255, 0.62);
+        box-shadow: inset 0 0 28px rgba(61, 225, 255, 0.07);
+      }
+      .h1a-front {
+        transform: translateZ(66px);
+      }
+      .h1a-back {
+        transform: rotateY(180deg) translateZ(66px);
+      }
+      .h1a-right {
+        transform: rotateY(90deg) translateZ(66px);
+      }
+      .h1a-left {
+        transform: rotateY(-90deg) translateZ(66px);
+      }
+      .h1a-top {
+        transform: rotateX(90deg) translateZ(66px);
+      }
+      .h1a-bottom {
+        transform: rotateX(-90deg) translateZ(66px);
+      }
+      .h1a-beams {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 220px;
+        height: 220px;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .h1a-beams i {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 1px;
+        height: 100px;
+        background: linear-gradient(180deg, transparent, rgba(61, 225, 255, 0.4), transparent);
+        transform-origin: 50% 0;
+      }
+      .h1a-beams i:nth-child(1) {
+        transform: translateX(-50%) rotate(0deg);
+      }
+      .h1a-beams i:nth-child(2) {
+        transform: translateX(-50%) rotate(60deg);
+      }
+      .h1a-beams i:nth-child(3) {
+        transform: translateX(-50%) rotate(120deg);
+      }
+      .h1a-beams i:nth-child(4) {
+        transform: translateX(-50%) rotate(180deg);
+      }
+      .h1a-beams i:nth-child(5) {
+        transform: translateX(-50%) rotate(240deg);
+      }
+      .h1a-beams i:nth-child(6) {
+        transform: translateX(-50%) rotate(300deg);
+      }
+      .h1a-core {
+        position: absolute;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      .h1a-core b {
+        display: block;
+        font-family: var(--mono);
+        font-size: 26px;
+        color: #fff;
+        text-shadow: 0 0 20px rgba(61, 225, 255, 0.62);
+      }
+      .h1a-core small {
+        display: block;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 1.5px;
+        color: #3de1ff;
+        margin-top: 2px;
+      }
+      .h1a-scan {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 230px;
+        height: 1px;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(90deg, transparent, rgba(61, 225, 255, 0.6), transparent);
+        animation: h1scan 4.2s ease-in-out infinite;
+      }
+      @keyframes h1rotate {
+        0% {
+          transform: rotateX(-22deg) rotateY(38deg);
+        }
+        100% {
+          transform: rotateX(-22deg) rotateY(398deg);
+        }
+      }
+      @keyframes h1scan {
+        0%,
+        100% {
+          top: 34%;
+          opacity: 0.2;
+        }
+        50% {
+          top: 68%;
+          opacity: 0.8;
+        }
+      }
+
+      /* ---------------------------------------------------------
+         06B · WIRE SPHERE
+         --------------------------------------------------------- */
+      .h1b-stage {
+        perspective: 760px;
+      }
+      .h1b-sphere {
+        position: relative;
+        width: 224px;
+        height: 224px;
+        transform-style: preserve-3d;
+        animation: h1float 7s ease-in-out infinite alternate;
+      }
+      .h1b-ring {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border: 1px solid rgba(61, 225, 255, 0.32);
+        border-radius: 50%;
+        transform-style: preserve-3d;
+      }
+      .h1b-r1 {
+        width: 224px;
+        height: 224px;
+        transform: translate(-50%, -50%) rotateX(68deg);
+      }
+      .h1b-r2 {
+        width: 224px;
+        height: 224px;
+        transform: translate(-50%, -50%) rotateX(68deg) rotateY(60deg);
+        border-color: rgba(138, 124, 255, 0.3);
+      }
+      .h1b-r3 {
+        width: 224px;
+        height: 224px;
+        transform: translate(-50%, -50%) rotateX(68deg) rotateY(120deg);
+        border-color: rgba(255, 79, 216, 0.22);
+      }
+      .h1b-axis {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 224px;
+        height: 224px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 1px dotted rgba(61, 225, 255, 0.12);
+      }
+      .h1b-core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        border: 1px solid rgba(61, 225, 255, 0.6);
+        background: radial-gradient(circle, rgba(61, 225, 255, 0.16), rgba(5, 12, 22, 0.94) 68%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          0 0 40px rgba(61, 225, 255, 0.22),
+          inset 0 0 26px rgba(138, 124, 255, 0.12);
+      }
+      .h1b-core b {
+        font-family: var(--mono);
+        font-size: 28px;
+        color: #fff;
+        line-height: 1;
+      }
+      .h1b-core small {
+        font-family: var(--mono);
+        font-size: 6px;
+        letter-spacing: 1.2px;
+        color: #3de1ff;
+        margin-top: 4px;
+      }
+      .h1b-node {
+        position: absolute;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 0.4px;
+        color: rgba(234, 252, 255, 0.48);
+      }
+      .h1b-node::before {
+        content: '';
+        position: absolute;
+        left: -10px;
+        top: 3px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #3de1ff;
+        box-shadow: 0 0 8px #3de1ff;
+      }
+      .h1b-1 {
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .h1b-2 {
+        top: 30px;
+        right: -44px;
+      }
+      .h1b-3 {
+        bottom: 28px;
+        right: -42px;
+      }
+      .h1b-4 {
+        bottom: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .h1b-5 {
+        bottom: 28px;
+        left: -42px;
+      }
+      .h1b-6 {
+        top: 30px;
+        left: -44px;
+      }
+      @keyframes h1float {
+        0% {
+          transform: translateY(-4px);
+        }
+        100% {
+          transform: translateY(6px);
+        }
+      }
+
+      /* =========================================================
+         comparison & footer
+         ========================================================= */
+      .compare {
+        margin-top: 42px;
+        padding-top: 26px;
+        border-top: 1px solid var(--line);
+      }
+      .compare-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .compare-head h2 {
+        font-size: 20px;
+        letter-spacing: -0.4px;
+      }
+      .compare-head p {
+        font-size: 11.5px;
+        color: var(--ink-2);
+        line-height: 1.8;
+        max-width: 780px;
+        margin-top: 6px;
+      }
+      .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        font-size: 10.5px;
+      }
+      .compare-table th,
+      .compare-table td {
+        text-align: left;
+        padding: 9px 10px 9px 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        line-height: 1.6;
+      }
+      .compare-table th {
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 500;
+      }
+      .compare-table td:first-child {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-2);
+        width: 60px;
+      }
+      .compare-table td:nth-child(2) {
+        font-weight: 600;
+        width: 170px;
+      }
+      .compare-table td:last-child {
+        color: var(--ink-2);
+      }
+      .recommend {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        margin-top: 26px;
+      }
+      .note-card {
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 18px;
+        padding: 20px;
+      }
+      .note-card h3 {
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .note-card h3 i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #111;
+        display: block;
+      }
+      .note-card p,
+      .note-card li {
+        font-size: 11.5px;
+        line-height: 1.8;
+        color: var(--ink-2);
+      }
+      .note-card p {
+        margin-top: 9px;
+      }
+      .note-card ul {
+        margin-top: 9px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .note-card li {
+        padding-left: 13px;
+        position: relative;
+      }
+      .note-card li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #111;
+      }
+      .note-card b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 8.5px;
+        letter-spacing: 0.6px;
+        color: var(--ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 1280px) {
+        body {
+          padding: 26px 20px 48px;
+        }
+        .masthead {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        .meta {
+          justify-content: flex-start;
+        }
+        .recommend {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <div class="eyebrow">MentorLoop · Home A/B Refinement · 2026-10-24</div>
+          <h1>Neural Deck · A/B 细化 <span>stronger · cooler · still clear</span></h1>
+          <p class="lede">
+            按你选的 <b>01 Neural Deck</b> 与「更强 / 更炫」继续推进：同一方向做 A/B 两种视觉隐喻，
+            并保留 <b>04 Grid Zero</b> 与 <b>06 Hologram</b> 各一版
+            challenger。每版仍先回答「今天下一步做什么」。
+          </p>
+        </div>
+        <div class="meta">
+          <span class="pill on">设计先行</span>
+          <span class="pill">3 个方向 · 5 版</span>
+          <span class="pill">更强 / 更炫</span>
+          <span class="pill">A/B 对比</span>
+        </div>
+      </header>
+
+      <section class="gallery">
+        <!-- 01A -->
+        <article class="concept">
+          <div class="concept-head">
+            <div class="concept-num">01A</div>
+            <div>
+              <h2>NEURAL CORE</h2>
+              <p>神经核心 · 有机 / 轨道 / 能量</p>
+            </div>
+            <span class="grade a">A 可落地</span>
+          </div>
+          <div class="phone n1 n1a">
+            <div class="screen">
+              <div class="sb">
+                <span>9:41</span>
+                <span class="status-icons">
+                  <span class="sig"><i></i><i></i><i></i><i></i></span>
+                  <span class="wifi"></span>
+                  <span class="battery"></span>
+                </span>
+              </div>
+              <div class="n1a-body">
+                <div class="n1-top">
+                  <div>
+                    <span class="n1-kicker">NEURAL CORE / SYNC 98%</span>
+                    <span class="n1-hello">晚上好，林</span>
+                  </div>
+                  <div class="n1-avatar">林</div>
+                </div>
+                <div class="n1-orb-wrap">
+                  <div class="n1-beam"></div>
+                  <div class="n1-orbit n1-o1">
+                    <span class="n1-node-dot"></span><span class="n1-node-dot"></span
+                    ><span class="n1-node-dot"></span>
+                  </div>
+                  <div class="n1-orbit n1-o2">
+                    <span class="n1-node-dot"></span><span class="n1-node-dot"></span>
+                  </div>
+                  <div class="n1-core"><span>NEURAL</span><b>B</b><small>最近评级</small></div>
+                  <span class="n1-node n1-na">知识<b>82</b></span>
+                  <span class="n1-node n1-nb">表达<b>76</b></span>
+                  <span class="n1-node n1-nc">结构<b>71</b></span>
+                  <span class="n1-node n1-nd">深度<b>68</b></span>
+                  <span class="n1-node n1-ne">应变<b>74</b></span>
+                  <span class="n1-node n1-nf">岗位<b>80</b></span>
+                </div>
+                <div class="n1-cta n1a-cta">
+                  <span class="n1-cta-label">启动模拟面试</span>
+                  <span class="n1-cta-meta">20 MIN · 6 DIM</span>
+                  <span class="n1-cta-arrow">→</span>
+                </div>
+                <div class="n1a-grid">
+                  <div class="n1-tile">
+                    <span>01 / TRAIN</span><b>专项训练</b><small>6 个待完成</small>
+                  </div>
+                  <div class="n1-tile">
+                    <span>02 / RESUME</span><b>简历扫描</b><small>3 条待看</small>
+                  </div>
+                </div>
+                <div class="n1a-telemetry">
+                  <div class="n1a-metric"><small>SESSIONS</small><b>12</b></div>
+                  <div class="n1a-metric"><small>WEEK</small><b>2</b></div>
+                  <div class="n1a-metric"><small>RANK</small><b>B</b></div>
+                  <div class="n1a-wave">
+                    <i style="height: 26%"></i><i style="height: 48%"></i
+                    ><i style="height: 38%"></i> <i style="height: 70%"></i
+                    ><i style="height: 54%"></i><i style="height: 88%"></i>
+                    <i style="height: 62%"></i>
+                  </div>
+                </div>
+                <div class="n1a-foot">
+                  <span>12 SESSIONS</span><span>LAST B</span><span>REPORT →</span>
+                </div>
+                <div class="n1a-log">
+                  <div class="n1a-log-row"><span>10-23</span><b>后端模拟面试</b>B</div>
+                  <div class="n1a-log-row"><span>10-21</span><b>专项训练 · 5 题</b>+2</div>
+                  <div class="n1a-log-row"><span>10-19</span><b>简历扫描</b>3 条</div>
+                </div>
+                <div class="n1-status">NEURAL LINK STABLE · 6 DIMENSIONS</div>
+              </div>
+            </div>
+          </div>
+          <div class="concept-note">
+            <p><b>今天下一步：</b>神经核心中心 B，六个节点围绕；下方唯一发光命令条先面试。</p>
+            <p>
+              <b>更强 / 更炫：</b>双层轨道、粒子点阵、扫描线、六维实时读数；参考 sci-fi 神经接口。
+            </p>
+            <p>
+              <b>落地：</b>A 级；轨道与节点用 CSS 定位，核心光晕用 box-shadow；不要跑实时粒子引擎。
+            </p>
+          </div>
+        </article>
+
+        <!-- 01B -->
+        <article class="concept">
+          <div class="concept-head">
+            <div class="concept-num">01B</div>
+            <div>
+              <h2>TACTICAL RADAR</h2>
+              <p>战术雷达 · 数据 / 侧轨 / 六维条</p>
+            </div>
+            <span class="grade a">A 可落地</span>
+          </div>
+          <div class="phone n1 n1b">
+            <div class="screen">
+              <div class="sb">
+                <span>9:41</span>
+                <span class="status-icons">
+                  <span class="sig"><i></i><i></i><i></i><i></i></span>
+                  <span class="wifi"></span>
+                  <span class="battery"></span>
+                </span>
+              </div>
+              <div class="n1b-body">
+                <div class="n1-top">
+                  <div>
+                    <span class="n1-kicker">NEURAL / TACTICAL</span>
+                    <span class="n1-hello">晚上好，林</span>
+                  </div>
+                  <div class="n1-avatar">林</div>
+                </div>
+                <div class="n1b-main">
+                  <div class="n1b-rail">
+                    <div class="n1b-rail-item on"><b>01</b><span>面试</span></div>
+                    <div class="n1b-rail-line"></div>
+                    <div class="n1b-rail-item"><b>02</b><span>报告</span></div>
+                    <div class="n1b-rail-line"></div>
+                    <div class="n1b-rail-item"><b>03</b><span>训练</span></div>
+                  </div>
+                  <div class="n1b-panel">
+                    <div class="n1b-panel-k">TARGET / SESSION</div>
+                    <div class="n1b-panel-title">模拟面试<br />20 MIN</div>
+                    <div class="n1b-radar">
+                      <svg viewBox="0 0 188 188" aria-hidden="true">
+                        <g fill="none" stroke="rgba(0,240,255,.18)">
+                          <polygon points="94,12 165,53 165,135 94,176 23,135 23,53"></polygon>
+                          <polygon
+                            points="94,40 141,67 141,121 94,148 47,121 47,67"
+                            stroke="rgba(139,92,255,.28)"
+                          ></polygon>
+                        </g>
+                        <g stroke="rgba(0,240,255,.08)">
+                          <line x1="94" y1="12" x2="94" y2="176"></line>
+                          <line x1="23" y1="53" x2="165" y2="135"></line>
+                          <line x1="165" y1="53" x2="23" y2="135"></line>
+                        </g>
+                      </svg>
+                      <div class="n1b-core">B</div>
+                    </div>
+                    <div class="n1b-go">开始任务 →</div>
+                    <div class="n1b-note">
+                      <span>MISSION NOTE</span>
+                      <b>本场目标 · 补量化证据</b>
+                      <small>上次 10-23 · B · 优先改进：量化成果</small>
+                    </div>
+                    <div class="n1b-check"><span>01</span>设备与麦克风 READY</div>
+                    <div class="n1b-check"><span>02</span>岗位画像 SET</div>
+                    <div class="n1b-check"><span>03</span>目标岗位 · 后端 / 1–3 年</div>
+                    <div class="n1b-check"><span>04</span>预计用时 · 20 MIN</div>
+                    <div class="n1b-signal">
+                      <span>SIGNAL</span><em><i></i></em><b>68%</b>
+                    </div>
+                  </div>
+                </div>
+                <div class="n1b-bars">
+                  <div class="n1b-bar">
+                    <span>知识</span><em><i style="width: 82%"></i></em><b>82</b>
+                  </div>
+                  <div class="n1b-bar">
+                    <span>表达</span><em><i style="width: 76%"></i></em><b>76</b>
+                  </div>
+                  <div class="n1b-bar">
+                    <span>结构</span><em><i style="width: 71%"></i></em><b>71</b>
+                  </div>
+                  <div class="n1b-bar">
+                    <span>深度</span><em><i style="width: 68%"></i></em><b>68</b>
+                  </div>
+                  <div class="n1b-bar">
+                    <span>应变</span><em><i style="width: 74%"></i></em><b>74</b>
+                  </div>
+                  <div class="n1b-bar">
+                    <span>岗位</span><em><i style="width: 80%"></i></em><b>80</b>
+                  </div>
+                </div>
+                <div class="n1b-foot">
+                  <span>12 SESSIONS</span><span>LAST B</span><span>WEEK 2</span
+                  ><span>REPORT →</span>
+                </div>
+                <div class="n1-status">TACTICAL LINK STABLE · 6 AXES</div>
+              </div>
+            </div>
+          </div>
+          <div class="concept-note">
+            <p>
+              <b>今天下一步：</b>侧轨 01 面试高亮，战术面板只有一个主按钮；六维条在下方做数据支撑。
+            </p>
+            <p><b>更强 / 更炫：</b>比 A 更克制、更像作战面板；网格、细线、数值读数提供科技感。</p>
+            <p><b>落地：</b>A 级；侧轨 + 雷达 + 六条进度全部 flex/CSS，uvue 最稳。</p>
+          </div>
+        </article>
+
+        <!-- 04A -->
+        <article class="concept">
+          <div class="concept-head">
+            <div class="concept-num">04A</div>
+            <div>
+              <h2>BOOT SEQUENCE</h2>
+              <p>启动序列 · 终端 / 酸性绿 / 命令</p>
+            </div>
+            <span class="grade a">A 可落地</span>
+          </div>
+          <div class="phone g1">
+            <div class="screen">
+              <div class="sb">
+                <span>9:41</span>
+                <span class="status-icons">
+                  <span class="sig"><i></i><i></i><i></i><i></i></span>
+                  <span class="wifi"></span>
+                  <span class="battery"></span>
+                </span>
+              </div>
+              <div class="g1-body">
+                <div class="g1-top"><span>[00] MENTORLOOP</span><span>SYS.ONLINE</span></div>
+                <div class="g1-boot">
+                  <span>&gt;</span> BOOT MENTORLOOP<br />
+                  <span>&gt;</span> 6 MODULES LOADED · 0.42s<br />
+                  <span>&gt;</span> AI ENGINE ONLINE
+                </div>
+                <div class="g1-hero">
+                  <div class="g1-num">RUN<br />01</div>
+                  <div class="g1-kicker">TODAY'S SESSION</div>
+                  <div class="g1-title">20-MIN<br />INTERVIEW</div>
+                  <div class="g1-cn">今天只跑一件事：一场真实面试。</div>
+                </div>
+                <div class="g1-cta">EXECUTE ▸</div>
+                <div class="g1-grid">
+                  <div class="g1-cell">
+                    <span>TRAIN</span><b>专项训练</b><small>6 个待完成</small>
+                  </div>
+                  <div class="g1-cell">
+                    <span>RESUME</span><b>简历优化</b><small>3 条待看</small>
+                  </div>
+                  <div class="g1-cell"><span>REPORT</span><b>成长报告</b><small>最近 B</small></div>
+                  <div class="g1-cell"><span>WEEK</span><b>2 / 5</b><small>本周节奏</small></div>
+                </div>
+                <div class="g1-progress"><i></i></div>
+                <div class="g1-ready">READY<span>PRESS EXECUTE TO START</span></div>
+                <div class="g1-status">
+                  &gt; SYS.READY · 12 RUNS · B RANK <span class="g1-cursor">_</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="concept-note">
+            <p>
+              <b>今天下一步：</b>RUN 01 + EXECUTE 是唯一入口；四个格子承接训练、简历、报告、节奏。
+            </p>
+            <p>
+              <b>更强 / 更炫：</b>启动日志、扫描线、酸性绿光晕；参考终端启动与 Valorant 战术板。
+            </p>
+            <p><b>落地：</b>A 级；网格用重复线性渐变，命令/格子全是文本与边框。</p>
+          </div>
+        </article>
+
+        <!-- 06A -->
+        <article class="concept">
+          <div class="concept-head">
+            <div class="concept-num">06A</div>
+            <div>
+              <h2>HOLO PRISM</h2>
+              <p>全息棱镜 · 三维 / 光束 / 扫描</p>
+            </div>
+            <span class="grade c">C 概念资产</span>
+          </div>
+          <div class="phone h1">
+            <div class="screen">
+              <div class="sb">
+                <span>9:41</span>
+                <span class="status-icons">
+                  <span class="sig"><i></i><i></i><i></i><i></i></span>
+                  <span class="wifi"></span>
+                  <span class="battery"></span>
+                </span>
+              </div>
+              <div class="h1-body">
+                <div class="h1-top"><span>HOLO.PRISM / 06A</span><span>● LIVE</span></div>
+                <div class="h1-stage h1a-stage">
+                  <div class="h1a-beams"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                  <div class="h1a-prism">
+                    <div class="h1a-face h1a-front">知识</div>
+                    <div class="h1a-face h1a-back">表达</div>
+                    <div class="h1a-face h1a-right">结构</div>
+                    <div class="h1a-face h1a-left">深度</div>
+                    <div class="h1a-face h1a-top">应变</div>
+                    <div class="h1a-face h1a-bottom">岗位</div>
+                  </div>
+                  <div class="h1a-core"><b>B</b><small>PRISM READY</small></div>
+                  <div class="h1a-scan"></div>
+                </div>
+                <div class="h1-title">投射一场<br />模拟面试</div>
+                <div class="h1-cta">开始投射 →</div>
+                <div class="h1-plates">
+                  <div class="h1-plate"><span>训练模块</span><small>5 题一组</small><i>→</i></div>
+                  <div class="h1-plate"><span>简历扫描</span><small>逐条批注</small><i>→</i></div>
+                </div>
+                <div class="h1-log">
+                  <div class="h1-log-row"><span>SCAN 01</span>知识 · 稳定</div>
+                  <div class="h1-log-row"><span>SCAN 02</span>量化 · 待补</div>
+                  <div class="h1-log-row"><span>SCAN 03</span>表达 · 稳定</div>
+                </div>
+                <div class="h1-last">
+                  <span>LAST PROJECTION · 10-23</span><b>B</b><small>优先改进：量化成果</small>
+                </div>
+                <div class="h1-foot">HOLO PRISM STABLE · 12 SESSIONS</div>
+              </div>
+            </div>
+          </div>
+          <div class="concept-note">
+            <p><b>今天下一步：</b>闭合棱镜 + PRISM READY 是视觉中心，投射按钮是唯一动作。</p>
+            <p><b>更强 / 更炫：</b>六面全息、六束光、扫描线与虚线全息板；参考科幻全息投影。</p>
+            <p><b>落地：</b>C 级；3D 棱镜与光束需预渲染 PNG/序列帧，uvue 不跑实时 3D。</p>
+          </div>
+        </article>
+
+        <!-- 06B -->
+        <article class="concept">
+          <div class="concept-head">
+            <div class="concept-num">06B</div>
+            <div>
+              <h2>WIRE ATOM</h2>
+              <p>线框原子 · 轨道 / 节点 / 核心</p>
+            </div>
+            <span class="grade c">C 概念资产</span>
+          </div>
+          <div class="phone h1">
+            <div class="screen">
+              <div class="sb">
+                <span>9:41</span>
+                <span class="status-icons">
+                  <span class="sig"><i></i><i></i><i></i><i></i></span>
+                  <span class="wifi"></span>
+                  <span class="battery"></span>
+                </span>
+              </div>
+              <div class="h1-body">
+                <div class="h1-top"><span>HOLO.ATOM / 06B</span><span>● SYNC</span></div>
+                <div class="h1-stage h1b-stage">
+                  <div class="h1b-sphere">
+                    <div class="h1b-ring h1b-r1"></div>
+                    <div class="h1b-ring h1b-r2"></div>
+                    <div class="h1b-ring h1b-r3"></div>
+                    <div class="h1b-axis"></div>
+                    <div class="h1b-core"><b>B</b><small>ATOM READY</small></div>
+                    <span class="h1b-node h1b-1">知识</span>
+                    <span class="h1b-node h1b-2">表达</span>
+                    <span class="h1b-node h1b-3">结构</span>
+                    <span class="h1b-node h1b-4">深度</span>
+                    <span class="h1b-node h1b-5">应变</span>
+                    <span class="h1b-node h1b-6">岗位</span>
+                  </div>
+                </div>
+                <div class="h1-title">投射一场<br />模拟面试</div>
+                <div class="h1-cta">开始投射 →</div>
+                <div class="h1-plates">
+                  <div class="h1-plate"><span>训练模块</span><small>5 题一组</small><i>→</i></div>
+                  <div class="h1-plate"><span>简历扫描</span><small>逐条批注</small><i>→</i></div>
+                </div>
+                <div class="h1-log">
+                  <div class="h1-log-row"><span>ORBIT 01</span>知识 · 稳定</div>
+                  <div class="h1-log-row"><span>ORBIT 02</span>量化 · 待补</div>
+                  <div class="h1-log-row"><span>ORBIT 03</span>表达 · 稳定</div>
+                </div>
+                <div class="h1-last">
+                  <span>LAST ORBIT · 10-23</span><b>B</b><small>优先改进：量化成果</small>
+                </div>
+                <div class="h1-foot">HOLO ATOM STABLE · 12 SESSIONS</div>
+              </div>
+            </div>
+          </div>
+          <div class="concept-note">
+            <p>
+              <b>今天下一步：</b>线框原子球 + 六个轨道节点，中心 B / READY，投射按钮是唯一动作。
+            </p>
+            <p><b>更强 / 更炫：</b>比棱镜更轻、更像 AI 核心；三条椭圆轨道与节点提供持续运动感。</p>
+            <p><b>落地：</b>C 级；球体线框与轨道建议预渲染，或用静态 SVG/PNG 替代实时 3D。</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="compare">
+        <div class="compare-head">
+          <div>
+            <div class="eyebrow">Comparison · A/B 怎么选</div>
+            <h2>同一方向的两种性格</h2>
+            <p>
+              01A 更有机、更像「AI 神经核心」；01B 更数据化、更像「作战面板」，信息层级最清楚。 04A
+              用启动序列给足个性；06A/06B
+              最炫，但需要预渲染资产。推荐顺序：<b>01B</b>（最稳的科技感） → <b>01A</b>（最强的 AI
+              记忆点）→ <b>04A</b>（最有性格）。
+            </p>
+          </div>
+        </div>
+        <table class="compare-table">
+          <tr>
+            <th>版本</th>
+            <th>方向</th>
+            <th>核心差异</th>
+            <th>落地</th>
+            <th>适合</th>
+          </tr>
+          <tr>
+            <td>01A</td>
+            <td>Neural Core</td>
+            <td>有机神经核心 + 轨道节点 + 实时读数</td>
+            <td><span class="grade a">A</span></td>
+            <td>最像 AI 面试产品，主推候选</td>
+          </tr>
+          <tr>
+            <td>01B</td>
+            <td>Tactical Radar</td>
+            <td>侧轨 + 战术雷达 + 六维条</td>
+            <td><span class="grade a">A</span></td>
+            <td>科技感与信息清晰度最平衡</td>
+          </tr>
+          <tr>
+            <td>04A</td>
+            <td>Boot Sequence</td>
+            <td>启动日志 + RUN 01 + 四格命令</td>
+            <td><span class="grade a">A</span></td>
+            <td>最有个性，偏年轻技术人群</td>
+          </tr>
+          <tr>
+            <td>06A</td>
+            <td>Holo Prism</td>
+            <td>3D 棱镜 + 六束光 + 全息板</td>
+            <td><span class="grade c">C</span></td>
+            <td>最炫，需资产与性能预算</td>
+          </tr>
+          <tr>
+            <td>06B</td>
+            <td>Wire Atom</td>
+            <td>线框原子球 + 三条轨道 + 节点</td>
+            <td><span class="grade c">C</span></td>
+            <td>更轻、更像 AI 核心，需资产</td>
+          </tr>
+        </table>
+        <div class="recommend">
+          <div class="note-card">
+            <h3><i></i>我的建议</h3>
+            <p>
+              主推 <b>01B Tactical Radar</b>：它保留了你选中的 Neural Deck
+              语言，但把「今天下一步」做得最清楚， 六维数据也最有说服力；落地成本最低。
+            </p>
+            <p>
+              如果你要更强的「一眼 AI」记忆点，选 <b>01A Neural Core</b>；它更适合做品牌主视觉，
+              但要注意不要让六维节点盖过主按钮。
+            </p>
+            <p>
+              <b>04A</b> 适合做年轻化实验；<b>06A/06B</b> 适合做发布会/品牌页，不建议首发直接上实时
+              3D。
+            </p>
+          </div>
+          <div class="note-card">
+            <h3><i></i>下一步</h3>
+            <ul>
+              <li>选 01A 或 01B 定为主方向；也可 01B 主 + 01A 品牌视觉。</li>
+              <li>选定后我出该方向的高保真细稿（含空/加载/失败/降级/权限五态）。</li>
+              <li>再按稿实现，不改 `pages/` 直到你确认细稿。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>MENTORLOOP · NEURAL DECK A/B REFINEMENT · 5 FRAMES</span>
+        <span
+          >参考：sci-fi neural HUD / tactical radar / terminal boot / holographic prism / wireframe
+          atom</span
+        >
+      </footer>
+    </div>
+  </body>
+</html>

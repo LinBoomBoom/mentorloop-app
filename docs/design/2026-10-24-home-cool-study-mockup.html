@@ -1,0 +1,1419 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智面研学 · 酷而不刻意 · 学习笔记与两个新方向</title>
+    <style>
+      :root {
+        --page: #e9e7e1;
+        --ink: #151515;
+        --ink-2: #6b6b6b;
+        --ink-3: #9a9a9a;
+        --line: rgba(0, 0, 0, 0.13);
+        --font:
+          'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', system-ui,
+          sans-serif;
+        --serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+        --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font);
+        padding: 38px 40px 64px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1520px;
+        margin: 0 auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 36px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 1.6px;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        letter-spacing: -1.2px;
+        margin-top: 10px;
+        font-weight: 700;
+      }
+      h1 span {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        color: var(--ink-2);
+        margin-left: 12px;
+      }
+      .lede {
+        max-width: 780px;
+        font-size: 12.5px;
+        line-height: 1.85;
+        color: var(--ink-2);
+        margin-top: 10px;
+      }
+      .lede b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        justify-content: flex-end;
+        max-width: 380px;
+      }
+      .pill {
+        font-size: 10.5px;
+        line-height: 1;
+        padding: 8px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .pill.on {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+      }
+      .section {
+        margin-top: 34px;
+      }
+      .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .section-head h2 {
+        font-size: 20px;
+        letter-spacing: -0.4px;
+      }
+      .section-head p {
+        font-size: 11.5px;
+        color: var(--ink-2);
+        line-height: 1.8;
+        max-width: 720px;
+      }
+      .ref-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .ref-card {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 18px;
+        padding: 18px;
+      }
+      .ref-card .tag {
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1px;
+        color: var(--ink-3);
+        text-transform: uppercase;
+      }
+      .ref-card h3 {
+        margin-top: 7px;
+        font-size: 14px;
+        letter-spacing: -0.2px;
+      }
+      .ref-card p {
+        margin-top: 7px;
+        font-size: 10.8px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .ref-card p b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .ref-card a {
+        display: inline-block;
+        margin-top: 10px;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-2);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+      }
+      .principles {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .principle {
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+      .principle span {
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-3);
+        letter-spacing: 0.8px;
+      }
+      .principle h4 {
+        margin-top: 7px;
+        font-size: 12px;
+        letter-spacing: -0.1px;
+      }
+      .principle p {
+        margin-top: 5px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: var(--ink-2);
+      }
+      .removed {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .removed-label {
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 1px;
+        color: var(--ink-3);
+        margin-right: 4px;
+      }
+      .removed .tag {
+        font-family: var(--mono);
+        font-size: 8.5px;
+        color: var(--ink-3);
+        text-decoration: line-through;
+        padding: 4px 7px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 99px;
+      }
+      .removed p {
+        width: 100%;
+        font-size: 10.8px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 34px;
+        justify-content: center;
+        margin-top: 24px;
+      }
+      .concept {
+        width: 390px;
+      }
+      .concept-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 11px;
+      }
+      .concept-num {
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-2);
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+      .concept-head h2 {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.9px;
+        line-height: 1.3;
+      }
+      .concept-head p {
+        font-size: 10px;
+        color: var(--ink-2);
+        margin-top: 3px;
+      }
+      .concept-tag {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 8px;
+        padding: 5px 7px;
+        border-radius: 99px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .concept-tag.dark {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .phone {
+        width: 390px;
+        height: 844px;
+        border-radius: 52px;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 32px 64px rgba(18, 20, 28, 0.2),
+          0 2px 0 rgba(255, 255, 255, 0.6) inset,
+          0 0 0 1px rgba(0, 0, 0, 0.65);
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .sb {
+        height: 48px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        position: relative;
+        z-index: 10;
+        flex: 0 0 auto;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sig {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 9px;
+      }
+      .sig i {
+        width: 2.5px;
+        background: currentColor;
+        border-radius: 2px;
+        display: block;
+      }
+      .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .sig i:nth-child(2) {
+        height: 5px;
+      }
+      .sig i:nth-child(3) {
+        height: 7px;
+      }
+      .sig i:nth-child(4) {
+        height: 9px;
+      }
+      .wifi {
+        width: 13px;
+        height: 9px;
+        border: 1.4px solid currentColor;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+        opacity: 0.9;
+      }
+      .battery {
+        width: 19px;
+        height: 9px;
+        border: 1.2px solid currentColor;
+        border-radius: 3px;
+        position: relative;
+        opacity: 0.9;
+      }
+      .battery::before {
+        content: '';
+        position: absolute;
+        inset: 1.5px;
+        width: 11px;
+        background: currentColor;
+        border-radius: 1.5px;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 2px;
+        width: 2px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 0 2px 2px 0;
+      }
+      .tabbar {
+        flex: 0 0 auto;
+        height: 60px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-around;
+        padding: 7px 24px 0;
+        position: relative;
+        z-index: 8;
+      }
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 8.5px;
+        letter-spacing: 0.2px;
+      }
+      .tab svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .tab-bar-indicator {
+        position: absolute;
+        bottom: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 134px;
+        height: 4px;
+        border-radius: 99px;
+      }
+      .concept-note {
+        margin-top: 12px;
+        font-size: 11px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .concept-note p {
+        margin-top: 4px;
+      }
+      .concept-note b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* =========================================================
+         A · QUIET STAGE
+         ========================================================= */
+      .qs .screen {
+        background: #08090a;
+        color: #f5f5f7;
+      }
+      .qs .screen::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 14%;
+        width: 560px;
+        height: 560px;
+        transform: translateX(-50%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.075), transparent 62%);
+        filter: blur(18px);
+        pointer-events: none;
+      }
+      .qs .sb {
+        color: #f5f5f7;
+      }
+      .qs-body {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        padding: 2px 24px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .qs-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .qs-brand {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 2.2px;
+        color: rgba(245, 245, 247, 0.55);
+      }
+      .qs-date {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1px;
+        color: rgba(245, 245, 247, 0.35);
+      }
+      .qs-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid rgba(245, 245, 247, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        color: rgba(245, 245, 247, 0.82);
+      }
+      .qs-hero {
+        margin-top: 44px;
+      }
+      .qs-kicker {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.6px;
+        color: rgba(245, 245, 247, 0.45);
+      }
+      .qs-kicker::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #6e6bf2;
+        display: block;
+        box-shadow: 0 0 10px rgba(110, 107, 242, 0.7);
+      }
+      .qs-title {
+        margin-top: 13px;
+        font-size: 31px;
+        line-height: 1.24;
+        letter-spacing: -0.9px;
+        font-weight: 600;
+        color: #f7f7f8;
+      }
+      .qs-sub {
+        margin-top: 12px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: rgba(245, 245, 247, 0.44);
+      }
+      .qs-cta {
+        margin-top: 22px;
+        height: 54px;
+        border-radius: 999px;
+        background: #f7f7f8;
+        color: #08090a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px 0 20px;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.8) inset,
+          0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      .qs-cta span:first-child {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .qs-cta span:last-child {
+        font-size: 13px;
+        color: #08090a;
+      }
+      .qs-last {
+        margin-top: 11px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 0.5px;
+        color: rgba(245, 245, 247, 0.32);
+      }
+      .qs-loop {
+        margin-top: 28px;
+        display: flex;
+        align-items: center;
+      }
+      .qs-step {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 8.5px;
+        color: rgba(245, 245, 247, 0.3);
+      }
+      .qs-step i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        border: 1px solid rgba(245, 245, 247, 0.24);
+        display: block;
+      }
+      .qs-step.on {
+        color: rgba(245, 245, 247, 0.85);
+      }
+      .qs-step.on i {
+        background: #6e6bf2;
+        border-color: #6e6bf2;
+        box-shadow: 0 0 8px rgba(110, 107, 242, 0.55);
+      }
+      .qs-line {
+        flex: 1;
+        height: 1px;
+        background: rgba(245, 245, 247, 0.1);
+        margin: 0 12px;
+      }
+      .qs-modules {
+        margin-top: auto;
+      }
+      .qs-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+      }
+      .qs-row-num {
+        font-family: var(--mono);
+        font-size: 7px;
+        color: rgba(245, 245, 247, 0.26);
+        width: 16px;
+        flex: 0 0 auto;
+      }
+      .qs-row-copy {
+        flex: 1;
+      }
+      .qs-row-copy b {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 500;
+        letter-spacing: -0.1px;
+      }
+      .qs-row-copy small {
+        display: block;
+        margin-top: 3px;
+        font-size: 9px;
+        color: rgba(245, 245, 247, 0.36);
+      }
+      .qs-row-arrow {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(245, 245, 247, 0.32);
+      }
+      .qs-foot {
+        display: flex;
+        align-items: center;
+        padding: 13px 0 12px;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.7px;
+        color: rgba(245, 245, 247, 0.24);
+      }
+      .qs-foot span:last-child {
+        margin-left: auto;
+      }
+      .qs .tabbar {
+        background: #08090a;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+        color: rgba(245, 245, 247, 0.28);
+      }
+      .qs .tab.on {
+        color: #f5f5f7;
+      }
+      .qs .tab-bar-indicator {
+        background: rgba(245, 245, 247, 0.72);
+      }
+
+      /* =========================================================
+         B · PAPER SIGNAL
+         ========================================================= */
+      .ps .screen {
+        background: #f3f0ea;
+        color: #171717;
+      }
+      .ps .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(60% 40% at 85% 0%, rgba(88, 86, 214, 0.06), transparent 60%);
+        pointer-events: none;
+      }
+      .ps .sb {
+        color: #171717;
+      }
+      .ps-body {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        padding: 2px 24px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .ps-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .ps-brand {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 2.2px;
+        color: #8d887d;
+      }
+      .ps-date {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1px;
+        color: #8d887d;
+      }
+      .ps-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #d5cfc2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        color: #4a463f;
+      }
+      .ps-marker {
+        margin-top: 38px;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1.6px;
+        color: #9a9488;
+      }
+      .ps-title {
+        margin-top: 12px;
+        font-family: var(--serif);
+        font-size: 39px;
+        line-height: 1.28;
+        letter-spacing: -1.4px;
+        color: #171717;
+      }
+      .ps-spectrum {
+        margin-top: 18px;
+        width: 72px;
+        height: 2px;
+        background: linear-gradient(90deg, #5856d6 0%, #1fb6a6 55%, #f5c97b 100%);
+      }
+      .ps-sub {
+        margin-top: 14px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: #7b756a;
+      }
+      .ps-cta {
+        margin-top: 22px;
+        height: 52px;
+        border-radius: 999px;
+        background: #171717;
+        color: #f7f7f8;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px 0 20px;
+        box-shadow: 0 10px 24px rgba(23, 23, 23, 0.12);
+      }
+      .ps-cta span:first-child {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .ps-cta span:last-child {
+        font-size: 13px;
+      }
+      .ps-last {
+        margin-top: 11px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 0.5px;
+        color: #9a9488;
+      }
+      .ps-index {
+        margin-top: auto;
+      }
+      .ps-row {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid #ded8cc;
+      }
+      .ps-row-num {
+        width: 18px;
+        flex: 0 0 auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        color: #9a9488;
+      }
+      .ps-row-copy {
+        flex: 1;
+      }
+      .ps-row-copy b {
+        display: inline-block;
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+        color: #171717;
+      }
+      .ps-row-copy small {
+        display: block;
+        margin-top: 3px;
+        font-size: 9px;
+        color: #8d887d;
+      }
+      .ps-row-arrow {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #9a9488;
+      }
+      .ps-foot {
+        display: flex;
+        align-items: center;
+        padding: 13px 0 12px;
+        border-top: 1px solid #ded8cc;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.7px;
+        color: #9a9488;
+      }
+      .ps-foot span:last-child {
+        margin-left: auto;
+      }
+      .ps .tabbar {
+        background: #f3f0ea;
+        border-top: 1px solid #ded8cc;
+        color: #a39c8e;
+      }
+      .ps .tab.on {
+        color: #171717;
+      }
+      .ps .tab-bar-indicator {
+        background: rgba(23, 23, 23, 0.7);
+      }
+
+      /* =========================================================
+         comparison & footer
+         ========================================================= */
+      .compare {
+        margin-top: 34px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      .compare-head h2 {
+        font-size: 20px;
+        letter-spacing: -0.4px;
+      }
+      .compare-head p {
+        font-size: 11.5px;
+        color: var(--ink-2);
+        line-height: 1.8;
+        max-width: 780px;
+        margin-top: 6px;
+      }
+      .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        font-size: 10.5px;
+      }
+      .compare-table th,
+      .compare-table td {
+        text-align: left;
+        padding: 9px 10px 9px 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        line-height: 1.6;
+      }
+      .compare-table th {
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 500;
+      }
+      .compare-table td:first-child {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--ink-2);
+        width: 34px;
+      }
+      .compare-table td:nth-child(2) {
+        font-weight: 600;
+        width: 160px;
+      }
+      .compare-table td:last-child {
+        color: var(--ink-2);
+      }
+      .recommend {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        margin-top: 22px;
+      }
+      .note-card {
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 18px;
+        padding: 20px;
+      }
+      .note-card h3 {
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .note-card h3 i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #111;
+        display: block;
+      }
+      .note-card p,
+      .note-card li {
+        font-size: 11.5px;
+        line-height: 1.8;
+        color: var(--ink-2);
+      }
+      .note-card p {
+        margin-top: 9px;
+      }
+      .note-card ul {
+        margin-top: 9px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .note-card li {
+        padding-left: 13px;
+        position: relative;
+      }
+      .note-card li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #111;
+      }
+      .note-card b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 8.5px;
+        letter-spacing: 0.6px;
+        color: var(--ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 1180px) {
+        body {
+          padding: 26px 20px 48px;
+        }
+        .masthead {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        .meta {
+          justify-content: flex-start;
+        }
+        .ref-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .principles {
+          grid-template-columns: 1fr 1fr;
+        }
+        .recommend {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <div class="eyebrow">MentorLoop · Cool, Not Contrived · 2026-10-24</div>
+          <h1>酷，而不刻意 <span>learning notes + 2 new directions</span></h1>
+          <p class="lede">
+            先去看真实产品，而不是继续画 HUD。调研 Linear、Raycast、Vercel、Nothing、Things 3 与
+            Google Interview Warmup， 提炼它们「为什么酷」的具体做法；然后只出
+            <b>2 个新方向</b>，把雷达、扫描线、霓虹网格、全息框全部删掉。
+          </p>
+        </div>
+        <div class="meta">
+          <span class="pill on">先学习再设计</span>
+          <span class="pill">2 个新方向</span>
+          <span class="pill">删除 sci-fi 道具</span>
+          <span class="pill">设计先行</span>
+        </div>
+      </header>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Study · 6 references</div>
+            <h2>它们为什么看起来酷</h2>
+          </div>
+          <p>
+            共同点不是扫描线和霓虹，而是：克制的配色、精准的层级、材质光影、字体、留白，以及有目的的动效。
+          </p>
+        </div>
+        <div class="ref-grid">
+          <article class="ref-card">
+            <div class="tag">01 · Dark canvas</div>
+            <h3>Linear</h3>
+            <p>
+              <b>学：</b>近黑画布是身份，不是滤镜；indigo 只在交互点出现；字体与间距精确到毫秒。<br /><b
+                >不学：</b
+              >不做通用 SaaS 的侧栏与表格。
+            </p>
+            <a
+              href="https://linear.app/blog/how-we-redesigned-the-linear-ui"
+              target="_blank"
+              rel="noreferrer"
+              >linear.app/blog · redesigned UI ↗</a
+            >
+          </article>
+          <article class="ref-card">
+            <div class="tag">02 · Material</div>
+            <h3>Raycast</h3>
+            <p>
+              <b>学：</b>近黑蓝底 + 多段渐变做出体积；外环 + 内侧高光 + 底部暗影模拟真实材质。<br /><b
+                >不学：</b
+              >红色品牌渐变只用于发布横幅，不做满屏霓虹。
+            </p>
+            <a href="https://designbycurio.com/learn/raycast-2024" target="_blank" rel="noreferrer"
+              >designbycurio · Raycast 2024 ↗</a
+            >
+          </article>
+          <article class="ref-card">
+            <div class="tag">03 · Clarity</div>
+            <h3>Vercel / Geist</h3>
+            <p>
+              <b>学：</b>黑与白、Geist 字体、画廊式留白；每个像素都在服务清晰度。<br /><b>不学：</b
+              >极简到没有产品性格；我们需要一个专属视觉锚点。
+            </p>
+            <a href="https://vercel.com/geist/colors" target="_blank" rel="noreferrer"
+              >vercel.com/geist · colors ↗</a
+            >
+          </article>
+          <article class="ref-card">
+            <div class="tag">04 · Identity</div>
+            <h3>Nothing OS</h3>
+            <p>
+              <b>学：</b>点阵字体、单色图形、widget 即控制；less but better，但保留强识别。<br /><b
+                >不学：</b
+              >不做全站点阵化，阅读成本会变高。
+            </p>
+            <a
+              href="https://nothing.community/d/61774-nothing-os-evolution/3"
+              target="_blank"
+              rel="noreferrer"
+              >nothing.community · OS evolution ↗</a
+            >
+          </article>
+          <article class="ref-card">
+            <div class="tag">05 · Restraint</div>
+            <h3>Things 3</h3>
+            <p>
+              <b>学：</b>95% 中性色，颜色只表达语义；大留白；动效有目的且让人满足。<br /><b
+                >不学：</b
+              >纯个人任务管理，不需要面试训练的紧迫感。
+            </p>
+            <a href="https://blakecrosley.com/guides/design/things" target="_blank" rel="noreferrer"
+              >blakecrosley · Things 3 ↗</a
+            >
+          </article>
+          <article class="ref-card">
+            <div class="tag">06 · Calm</div>
+            <h3>Google Interview Warmup</h3>
+            <p>
+              <b>学：</b>一次只问一个问题，界面安静，反馈可读；降低焦虑而不是制造压迫。<br /><b
+                >不学：</b
+              >过于工具化，缺少品牌记忆点。
+            </p>
+            <a
+              href="https://www.finalroundai.com/blog/best-ai-mock-interview"
+              target="_blank"
+              rel="noreferrer"
+              >finalroundai · interview tools ↗</a
+            >
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Principles · 8 rules</div>
+            <h2>从案例里提炼的 8 条</h2>
+          </div>
+          <p>
+            下一版设计只允许使用这些原则；任何不能服务「今天下一步做什么」的视觉效果，都不进稿。
+          </p>
+        </div>
+        <div class="principles">
+          <div class="principle">
+            <span>01</span>
+            <h4>暗色是身份</h4>
+            <p>近黑画布 + 亮度层级，而不是纯黑加霓虹。</p>
+          </div>
+          <div class="principle">
+            <span>02</span>
+            <h4>95% 中性</h4>
+            <p>颜色只在语义与交互点出现；一个 accent 足够。</p>
+          </div>
+          <div class="principle">
+            <span>03</span>
+            <h4>材质靠光影</h4>
+            <p>hairline ring、内侧高光、底部暗影，替代发光。</p>
+          </div>
+          <div class="principle">
+            <span>04</span>
+            <h4>字体是主角</h4>
+            <p>少字号、紧字距、明确层级；mono 只给数据。</p>
+          </div>
+          <div class="principle">
+            <span>05</span>
+            <h4>留白是秩序</h4>
+            <p>不要把每个区域都做成卡片；分割线更安静。</p>
+          </div>
+          <div class="principle">
+            <span>06</span>
+            <h4>动效是反馈</h4>
+            <p>交互 &lt; 200ms；品牌呼吸一次就够，不做扫描线。</p>
+          </div>
+          <div class="principle">
+            <span>07</span>
+            <h4>专属隐喻</h4>
+            <p>不是雷达/全息，而是「下一题、证据、成长」。</p>
+          </div>
+          <div class="principle">
+            <span>08</span>
+            <h4>先可读再酷</h4>
+            <p>所有科技感让位于清晰的下一步。</p>
+          </div>
+        </div>
+        <div class="removed">
+          <span class="removed-label">REMOVED</span>
+          <span class="tag">radar</span>
+          <span class="tag">scanline</span>
+          <span class="tag">neon grid</span>
+          <span class="tag">hologram</span>
+          <span class="tag">glow orb</span>
+          <span class="tag">HUD labels</span>
+          <p>
+            这些是表面化的 sci-fi 道具。它们让页面像
+            cosplay，也在和唯一重要的事——「今天下一步做什么」——抢注意力。
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">New directions · 2 only</div>
+            <h2>把「科技感」换成「精度 + 材质 + 叙事」</h2>
+          </div>
+          <p>只出两版：一版继承深色面试身份；一版彻底转向编辑式浅色。都不使用被删除的视觉语言。</p>
+        </div>
+
+        <div class="frames">
+          <!-- A · Quiet Stage -->
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">A</div>
+              <div>
+                <h2>QUIET STAGE</h2>
+                <p>静谧舞台 · 深色 / 光 / 留白</p>
+              </div>
+              <span class="concept-tag dark">推荐主界面</span>
+            </div>
+            <div class="phone qs">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="qs-body">
+                  <div class="qs-top">
+                    <span class="qs-brand">MENTORLOOP</span>
+                    <span class="qs-date">10.24 / 周五</span>
+                    <div class="qs-avatar">林</div>
+                  </div>
+                  <div class="qs-hero">
+                    <div class="qs-kicker">NEXT SESSION · 20 MIN</div>
+                    <div class="qs-title">今天，把下一场<br />面试练稳。</div>
+                    <div class="qs-sub">按岗位与年限抽题 · 答完即出六维报告</div>
+                    <div class="qs-cta"><span>开始模拟面试</span><span>→</span></div>
+                    <div class="qs-last">上次 10-23 · 综合 B · 已完成 2 场</div>
+                  </div>
+                  <div class="qs-loop">
+                    <div class="qs-step on"><i></i><span>面试</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>报告</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>训练</span></div>
+                  </div>
+                  <div class="qs-modules">
+                    <div class="qs-row">
+                      <span class="qs-row-num">01</span>
+                      <div class="qs-row-copy">
+                        <b>专项训练</b><small>6 个待完成 · 约 5 分钟</small>
+                      </div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">02</span>
+                      <div class="qs-row-copy"><b>简历优化</b><small>3 条批注待看</small></div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">03</span>
+                      <div class="qs-row-copy"><b>成长报告</b><small>最近 B · 12 场</small></div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="qs-foot">
+                    <span>WEEK 2 · 12 SESSIONS</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path>
+                    </svg>
+                    <span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path>
+                    </svg>
+                    <span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                    </svg>
+                    <span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-note">
+              <p>
+                <b>酷在哪：</b>近黑画布 + 一处极淡的舞台光；白色胶囊是唯一高亮；分割线代替卡片。参考
+                Linear / Raycast / Things。
+              </p>
+              <p>
+                <b>今天下一步：</b
+                >标题直接说「练稳」，白色主按钮只有一件事；三个入口收在底部细线列表里。
+              </p>
+              <p>
+                <b>落地：</b>A 级；纯色 + 一处 radial-gradient + 细线；动效只做 8s 呼吸与按压反馈。
+              </p>
+            </div>
+          </article>
+
+          <!-- B · Paper Signal -->
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">B</div>
+              <div>
+                <h2>PAPER SIGNAL</h2>
+                <p>纸面信号 · 暖白 / 衬线 / 编辑感</p>
+              </div>
+              <span class="concept-tag">品牌备选</span>
+            </div>
+            <div class="phone ps">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span>
+                  <span class="status-icons">
+                    <span class="sig"><i></i><i></i><i></i><i></i></span>
+                    <span class="wifi"></span>
+                    <span class="battery"></span>
+                  </span>
+                </div>
+                <div class="ps-body">
+                  <div class="ps-top">
+                    <span class="ps-brand">MENTORLOOP</span>
+                    <span class="ps-date">10.24 / 周五</span>
+                    <div class="ps-avatar">林</div>
+                  </div>
+                  <div class="ps-marker">01 / SESSION</div>
+                  <div class="ps-title">今天，<br />只练一件事。</div>
+                  <div class="ps-spectrum"></div>
+                  <div class="ps-sub">按岗位与年限抽题 · 20 分钟一场</div>
+                  <div class="ps-cta"><span>开始模拟面试</span><span>→</span></div>
+                  <div class="ps-last">上次 10-23 · 综合 B · 已完成 2 场</div>
+                  <div class="ps-index">
+                    <div class="ps-row">
+                      <span class="ps-row-num">01</span>
+                      <div class="ps-row-copy"><b>专项训练</b><small>6 个待完成</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">02</span>
+                      <div class="ps-row-copy"><b>简历优化</b><small>3 条批注待看</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">03</span>
+                      <div class="ps-row-copy"><b>成长报告</b><small>最近 B · 12 场</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="ps-foot">
+                    <span>WEEK 2 · 12 SESSIONS</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path>
+                    </svg>
+                    <span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path>
+                    </svg>
+                    <span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path>
+                    </svg>
+                    <span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-note">
+              <p>
+                <b>酷在哪：</b>暖白纸面 + 39px 衬线标题 + 一条 72px 光谱线；像一本设计杂志，而不是
+                AI 控制台。参考 Vercel / Things / 编辑设计。
+              </p>
+              <p>
+                <b>今天下一步：</b
+                >「只练一件事」直接降低焦虑；黑色胶囊只有一个动作；入口变成杂志索引。
+              </p>
+              <p><b>落地：</b>A 级；纯色 + 衬线字体 + 2px 渐变线；无模糊、无 3D、无实时动效。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="compare">
+        <div class="compare-head">
+          <h2>怎么选</h2>
+          <p>
+            A 保留面试产品的深色身份，更像 Linear/Raycast 的「精密工具」；B
+            彻底转向编辑式浅色，更像一个有审美的学习品牌。 两者都不再用 sci-fi
+            道具，酷感来自字体、留白、材质与一处克制的光。
+          </p>
+        </div>
+        <table class="compare-table">
+          <tr>
+            <th></th>
+            <th>方向</th>
+            <th>气质</th>
+            <th>适合</th>
+            <th>风险</th>
+          </tr>
+          <tr>
+            <td>A</td>
+            <td>Quiet Stage</td>
+            <td>深色、电影感、精密工具</td>
+            <td>首页主界面；与面试房间的深色身份连续</td>
+            <td>可能偏安静，需要一处品牌动效</td>
+          </tr>
+          <tr>
+            <td>B</td>
+            <td>Paper Signal</td>
+            <td>暖白、编辑感、松弛</td>
+            <td>品牌页 / 学习页；与竞品拉开审美差距</td>
+            <td>科技感较弱，面试场景需要另一套深色</td>
+          </tr>
+        </table>
+        <div class="recommend">
+          <div class="note-card">
+            <h3><i></i>我的建议</h3>
+            <p>
+              先做
+              <b>A · Quiet Stage</b>
+              作为首页主界面：它保留了你之前认可的深色任务舱，但删掉了所有「演出来的科技感」，
+              只留下精度、材质和一处光。它更像一个真实的高端产品，而不是 sci-fi demo。
+            </p>
+            <p>
+              <b>B · Paper Signal</b>
+              作为品牌/学习页备选：如果你希望产品更像一本有审美的学习杂志，而不是工具， 可以把 B
+              的字体与光谱线语言延伸到报告、成长页。
+            </p>
+          </div>
+          <div class="note-card">
+            <h3><i></i>下一步</h3>
+            <ul>
+              <li>选 A 或 B；也可以 A 主界面 + B 品牌页。</li>
+              <li>选定后我出该方向的高保真细稿（五态 + 真实数据 + 动效说明）。</li>
+              <li>细稿确认后再改 `pages/`；本轮不改代码。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>MENTORLOOP · COOL, NOT CONTRIVED · STUDY + 2 DIRECTIONS</span>
+        <span
+          >Sources: Linear / Raycast / Vercel Geist / Nothing OS / Things 3 / Google Interview
+          Warmup</span
+        >
+      </footer>
+    </div>
+  </body>
+</html>

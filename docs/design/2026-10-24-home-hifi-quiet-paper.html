@@ -1,0 +1,1459 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智面研学 · 高保真细稿 · Quiet Stage / Paper Signal</title>
+    <style>
+      :root {
+        --page: #e9e7e1;
+        --ink: #151515;
+        --ink-2: #6b6b6b;
+        --ink-3: #9a9a9a;
+        --line: rgba(0, 0, 0, 0.13);
+        --font:
+          'Noto Sans SC', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', system-ui,
+          sans-serif;
+        --serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+        --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font);
+        padding: 38px 40px 64px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 36px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 1.6px;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        letter-spacing: -1.2px;
+        margin-top: 10px;
+        font-weight: 700;
+      }
+      h1 span {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        color: var(--ink-2);
+        margin-left: 12px;
+      }
+      .lede {
+        max-width: 780px;
+        font-size: 12.5px;
+        line-height: 1.85;
+        color: var(--ink-2);
+        margin-top: 10px;
+      }
+      .lede b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        justify-content: flex-end;
+        max-width: 380px;
+      }
+      .pill {
+        font-size: 10.5px;
+        line-height: 1;
+        padding: 8px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .pill.on {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+      }
+      .section {
+        margin-top: 34px;
+      }
+      .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .section-head h2 {
+        font-size: 20px;
+        letter-spacing: -0.4px;
+      }
+      .section-head p {
+        font-size: 11.5px;
+        color: var(--ink-2);
+        line-height: 1.8;
+        max-width: 760px;
+      }
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+        margin-top: 22px;
+      }
+      .concept {
+        width: 390px;
+      }
+      .concept-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .concept-num {
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-2);
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+      .concept-head h2 {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.8px;
+        line-height: 1.3;
+      }
+      .concept-head p {
+        font-size: 9.5px;
+        color: var(--ink-2);
+        margin-top: 3px;
+      }
+      .concept-tag {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        padding: 4px 6px;
+        border-radius: 99px;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .phone {
+        width: 390px;
+        height: 844px;
+        border-radius: 52px;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 32px 64px rgba(18, 20, 28, 0.2),
+          0 2px 0 rgba(255, 255, 255, 0.6) inset,
+          0 0 0 1px rgba(0, 0, 0, 0.65);
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .sb {
+        height: 48px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        position: relative;
+        z-index: 10;
+        flex: 0 0 auto;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .sig {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 9px;
+      }
+      .sig i {
+        width: 2.5px;
+        background: currentColor;
+        border-radius: 2px;
+        display: block;
+      }
+      .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .sig i:nth-child(2) {
+        height: 5px;
+      }
+      .sig i:nth-child(3) {
+        height: 7px;
+      }
+      .sig i:nth-child(4) {
+        height: 9px;
+      }
+      .wifi {
+        width: 13px;
+        height: 9px;
+        border: 1.4px solid currentColor;
+        border-bottom: 0;
+        border-radius: 10px 10px 0 0;
+        opacity: 0.9;
+      }
+      .battery {
+        width: 19px;
+        height: 9px;
+        border: 1.2px solid currentColor;
+        border-radius: 3px;
+        position: relative;
+        opacity: 0.9;
+      }
+      .battery::before {
+        content: '';
+        position: absolute;
+        inset: 1.5px;
+        width: 11px;
+        background: currentColor;
+        border-radius: 1.5px;
+      }
+      .battery::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 2px;
+        width: 2px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 0 2px 2px 0;
+      }
+      .tabbar {
+        flex: 0 0 auto;
+        height: 60px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-around;
+        padding: 7px 24px 0;
+        position: relative;
+        z-index: 8;
+      }
+      .tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 8.5px;
+        letter-spacing: 0.2px;
+      }
+      .tab svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .tab-bar-indicator {
+        position: absolute;
+        bottom: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 134px;
+        height: 4px;
+        border-radius: 99px;
+      }
+      .concept-note {
+        margin-top: 10px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: var(--ink-2);
+      }
+      .concept-note p {
+        margin-top: 3px;
+      }
+      .concept-note b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* ---------------- A · QUIET STAGE ---------------- */
+      .qs .screen {
+        background: #08090a;
+        color: #f5f5f7;
+      }
+      .qs .screen::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 14%;
+        width: 560px;
+        height: 560px;
+        transform: translateX(-50%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.075), transparent 62%);
+        filter: blur(18px);
+        pointer-events: none;
+      }
+      .qs .sb {
+        color: #f5f5f7;
+      }
+      .qs-body {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        padding: 2px 24px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .qs-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .qs-brand {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 2.2px;
+        color: rgba(245, 245, 247, 0.55);
+      }
+      .qs-date {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1px;
+        color: rgba(245, 245, 247, 0.35);
+      }
+      .qs-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid rgba(245, 245, 247, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        color: rgba(245, 245, 247, 0.82);
+      }
+      .qs-hero {
+        margin-top: 44px;
+      }
+      .qs-kicker {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 1.6px;
+        color: rgba(245, 245, 247, 0.45);
+      }
+      .qs-kicker::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #6e6bf2;
+        display: block;
+        box-shadow: 0 0 10px rgba(110, 107, 242, 0.7);
+      }
+      .qs-title {
+        margin-top: 13px;
+        font-size: 31px;
+        line-height: 1.24;
+        letter-spacing: -0.9px;
+        font-weight: 600;
+        color: #f7f7f8;
+      }
+      .qs-sub {
+        margin-top: 12px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: rgba(245, 245, 247, 0.44);
+      }
+      .qs-cta {
+        margin-top: 22px;
+        height: 54px;
+        border-radius: 999px;
+        background: #f7f7f8;
+        color: #08090a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px 0 20px;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.8) inset,
+          0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      .qs-cta span:first-child {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .qs-cta span:last-child {
+        font-size: 13px;
+      }
+      .qs-last {
+        margin-top: 11px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 0.5px;
+        color: rgba(245, 245, 247, 0.32);
+      }
+      .qs-loop {
+        margin-top: 28px;
+        display: flex;
+        align-items: center;
+      }
+      .qs-step {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 8.5px;
+        color: rgba(245, 245, 247, 0.3);
+      }
+      .qs-step i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        border: 1px solid rgba(245, 245, 247, 0.24);
+        display: block;
+      }
+      .qs-step.on {
+        color: rgba(245, 245, 247, 0.85);
+      }
+      .qs-step.on i {
+        background: #6e6bf2;
+        border-color: #6e6bf2;
+        box-shadow: 0 0 8px rgba(110, 107, 242, 0.55);
+      }
+      .qs-line {
+        flex: 1;
+        height: 1px;
+        background: rgba(245, 245, 247, 0.1);
+        margin: 0 12px;
+      }
+      .qs-modules {
+        margin-top: auto;
+      }
+      .qs-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+      }
+      .qs-row-num {
+        font-family: var(--mono);
+        font-size: 7px;
+        color: rgba(245, 245, 247, 0.26);
+        width: 16px;
+        flex: 0 0 auto;
+      }
+      .qs-row-copy {
+        flex: 1;
+      }
+      .qs-row-copy b {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 500;
+        letter-spacing: -0.1px;
+      }
+      .qs-row-copy small {
+        display: block;
+        margin-top: 3px;
+        font-size: 9px;
+        color: rgba(245, 245, 247, 0.36);
+      }
+      .qs-row-arrow {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(245, 245, 247, 0.32);
+      }
+      .qs-foot {
+        display: flex;
+        align-items: center;
+        padding: 13px 0 12px;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.7px;
+        color: rgba(245, 245, 247, 0.24);
+      }
+      .qs-foot span:last-child {
+        margin-left: auto;
+      }
+      .qs .tabbar {
+        background: #08090a;
+        border-top: 1px solid rgba(245, 245, 247, 0.08);
+        color: rgba(245, 245, 247, 0.28);
+      }
+      .qs .tab.on {
+        color: #f5f5f7;
+      }
+      .qs .tab-bar-indicator {
+        background: rgba(245, 245, 247, 0.72);
+      }
+
+      /* ---------------- B · PAPER SIGNAL ---------------- */
+      .ps .screen {
+        background: #f3f0ea;
+        color: #171717;
+      }
+      .ps .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(60% 40% at 85% 0%, rgba(88, 86, 214, 0.06), transparent 60%);
+        pointer-events: none;
+      }
+      .ps .sb {
+        color: #171717;
+      }
+      .ps-body {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        padding: 2px 24px 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .ps-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .ps-brand {
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 2.2px;
+        color: #8d887d;
+      }
+      .ps-date {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1px;
+        color: #8d887d;
+      }
+      .ps-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #d5cfc2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        color: #4a463f;
+      }
+      .ps-marker {
+        margin-top: 38px;
+        font-family: var(--mono);
+        font-size: 7px;
+        letter-spacing: 1.6px;
+        color: #9a9488;
+      }
+      .ps-title {
+        margin-top: 12px;
+        font-family: var(--serif);
+        font-size: 39px;
+        line-height: 1.28;
+        letter-spacing: -1.4px;
+        color: #171717;
+      }
+      .ps-spectrum {
+        margin-top: 18px;
+        width: 72px;
+        height: 2px;
+        background: linear-gradient(90deg, #5856d6 0%, #1fb6a6 55%, #f5c97b 100%);
+      }
+      .ps-sub {
+        margin-top: 14px;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: #7b756a;
+      }
+      .ps-cta {
+        margin-top: 22px;
+        height: 52px;
+        border-radius: 999px;
+        background: #171717;
+        color: #f7f7f8;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px 0 20px;
+        box-shadow: 0 10px 24px rgba(23, 23, 23, 0.12);
+      }
+      .ps-cta span:first-child {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .ps-cta span:last-child {
+        font-size: 13px;
+      }
+      .ps-last {
+        margin-top: 11px;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        letter-spacing: 0.5px;
+        color: #9a9488;
+      }
+      .ps-index {
+        margin-top: auto;
+      }
+      .ps-row {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid #ded8cc;
+      }
+      .ps-row-num {
+        width: 18px;
+        flex: 0 0 auto;
+        font-family: var(--mono);
+        font-size: 7px;
+        color: #9a9488;
+      }
+      .ps-row-copy {
+        flex: 1;
+      }
+      .ps-row-copy b {
+        display: inline-block;
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+        color: #171717;
+      }
+      .ps-row-copy small {
+        display: block;
+        margin-top: 3px;
+        font-size: 9px;
+        color: #8d887d;
+      }
+      .ps-row-arrow {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #9a9488;
+      }
+      .ps-foot {
+        display: flex;
+        align-items: center;
+        padding: 13px 0 12px;
+        border-top: 1px solid #ded8cc;
+        font-family: var(--mono);
+        font-size: 6.5px;
+        letter-spacing: 0.7px;
+        color: #9a9488;
+      }
+      .ps-foot span:last-child {
+        margin-left: auto;
+      }
+      .ps .tabbar {
+        background: #f3f0ea;
+        border-top: 1px solid #ded8cc;
+        color: #a39c8e;
+      }
+      .ps .tab.on {
+        color: #171717;
+      }
+      .ps .tab-bar-indicator {
+        background: rgba(23, 23, 23, 0.7);
+      }
+
+      /* ---------------- spec tables ---------------- */
+      .spec-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        font-size: 10.5px;
+      }
+      .spec-table th,
+      .spec-table td {
+        text-align: left;
+        padding: 9px 12px 9px 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        line-height: 1.65;
+      }
+      .spec-table th {
+        font-family: var(--mono);
+        font-size: 8px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 500;
+      }
+      .spec-table td:first-child {
+        font-family: var(--mono);
+        font-size: 8.5px;
+        color: var(--ink-2);
+        width: 78px;
+      }
+      .spec-table td:nth-child(2) {
+        font-weight: 600;
+        width: 110px;
+      }
+      .spec-table td {
+        color: var(--ink-2);
+      }
+      .state-chip {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 7.5px;
+        padding: 3px 6px;
+        border-radius: 99px;
+        border: 1px solid var(--line);
+        color: var(--ink-2);
+        margin-right: 4px;
+        white-space: nowrap;
+      }
+      .state-chip.dark {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .motion {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-top: 16px;
+      }
+      .motion-row {
+        display: grid;
+        grid-template-columns: 130px 1fr 210px;
+        gap: 14px;
+        align-items: center;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 10.5px;
+        color: var(--ink-2);
+      }
+      .motion-row b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .motion-row .track {
+        height: 6px;
+        background: rgba(0, 0, 0, 0.07);
+        border-radius: 99px;
+        position: relative;
+        overflow: hidden;
+      }
+      .motion-row .track i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 6px;
+        border-radius: 99px;
+        background: #111;
+      }
+      .motion-row .track i.soft {
+        background: #6e6bf2;
+      }
+      .motion-row .track i.warm {
+        background: #b29a6c;
+      }
+      .motion-row span {
+        font-family: var(--mono);
+        font-size: 8px;
+        color: var(--ink-3);
+      }
+      .impl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .impl-card {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .impl-card h3 {
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .impl-card h3 i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #111;
+        display: block;
+      }
+      .impl-card p,
+      .impl-card li {
+        font-size: 10.5px;
+        line-height: 1.75;
+        color: var(--ink-2);
+      }
+      .impl-card ul {
+        margin-top: 8px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .impl-card li {
+        padding-left: 12px;
+        position: relative;
+      }
+      .impl-card li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 6px;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: #111;
+      }
+      .impl-card b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 8.5px;
+        letter-spacing: 0.6px;
+        color: var(--ink-3);
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 1180px) {
+        body {
+          padding: 26px 20px 48px;
+        }
+        .masthead {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        .meta {
+          justify-content: flex-start;
+        }
+        .impl {
+          grid-template-columns: 1fr;
+        }
+        .motion-row {
+          grid-template-columns: 110px 1fr;
+        }
+        .motion-row span {
+          grid-column: 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="masthead">
+        <div>
+          <div class="eyebrow">MentorLoop · High-fidelity Spec · 2026-10-24</div>
+          <h1>
+            Quiet Stage / Paper Signal <span>default · empty · five states · motion · data</span>
+          </h1>
+          <p class="lede">
+            两个方向都保留，先看真实效果：每个方向出「有报告 /
+            无报告」两帧，并补齐五态、动效与真实数据映射。
+            <b>酷感只来自精度、材质、字体、留白与一处克制的光</b>，不再使用 radar / scanline / neon
+            / hologram。
+          </p>
+        </div>
+        <div class="meta">
+          <span class="pill on">高保真细稿</span>
+          <span class="pill">2 方向 × 2 状态</span>
+          <span class="pill">五态 + 动效 + 数据</span>
+          <span class="pill">待选型</span>
+        </div>
+      </header>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">A · QUIET STAGE</div>
+            <h2>深色主界面：有报告 / 无报告</h2>
+          </div>
+          <p>
+            近黑舞台光、31px 标题、白色胶囊、细线索引。无报告时只换主行动与文案，结构与节奏不变。
+          </p>
+        </div>
+        <div class="frames">
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">A1</div>
+              <div>
+                <h2>DEFAULT</h2>
+                <p>有报告 · 上次 B · 12 场</p>
+              </div>
+              <span class="concept-tag">主界面</span>
+            </div>
+            <div class="phone qs">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span
+                  ><span class="status-icons"
+                    ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                    ><span class="battery"></span
+                  ></span>
+                </div>
+                <div class="qs-body">
+                  <div class="qs-top">
+                    <span class="qs-brand">MENTORLOOP</span
+                    ><span class="qs-date">10.24 / 周五</span>
+                    <div class="qs-avatar">林</div>
+                  </div>
+                  <div class="qs-hero">
+                    <div class="qs-kicker">NEXT SESSION · 20 MIN</div>
+                    <div class="qs-title">今天，把下一场<br />面试练稳。</div>
+                    <div class="qs-sub">按岗位与年限抽题 · 答完即出六维报告</div>
+                    <div class="qs-cta"><span>开始模拟面试</span><span>→</span></div>
+                    <div class="qs-last">上次 10-23 · 综合 B · 已完成 2 场</div>
+                  </div>
+                  <div class="qs-loop">
+                    <div class="qs-step on"><i></i><span>面试</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>报告</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>训练</span></div>
+                  </div>
+                  <div class="qs-modules">
+                    <div class="qs-row">
+                      <span class="qs-row-num">01</span>
+                      <div class="qs-row-copy">
+                        <b>专项训练</b><small>6 个待完成 · 约 5 分钟</small>
+                      </div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">02</span>
+                      <div class="qs-row-copy"><b>简历优化</b><small>3 条批注待看</small></div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">03</span>
+                      <div class="qs-row-copy"><b>成长报告</b><small>最近 B · 12 场</small></div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="qs-foot">
+                    <span>WEEK 2 · 12 SESSIONS</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">A2</div>
+              <div>
+                <h2>EMPTY</h2>
+                <p>无报告 · 首次摸底 · 0 场</p>
+              </div>
+              <span class="concept-tag">新用户</span>
+            </div>
+            <div class="phone qs">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span
+                  ><span class="status-icons"
+                    ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                    ><span class="battery"></span
+                  ></span>
+                </div>
+                <div class="qs-body">
+                  <div class="qs-top">
+                    <span class="qs-brand">MENTORLOOP</span
+                    ><span class="qs-date">10.24 / 周五</span>
+                    <div class="qs-avatar">新</div>
+                  </div>
+                  <div class="qs-hero">
+                    <div class="qs-kicker">FIRST SESSION · 5 QUESTIONS</div>
+                    <div class="qs-title">今天，先做 5 题<br />找到起点。</div>
+                    <div class="qs-sub">不用先选方向 · 系统按画像抽 5 题，约 6 分钟</div>
+                    <div class="qs-cta"><span>开始摸底</span><span>→</span></div>
+                    <div class="qs-last">完成后生成六维报告与训练计划</div>
+                  </div>
+                  <div class="qs-loop">
+                    <div class="qs-step on"><i></i><span>摸底</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>报告</span></div>
+                    <div class="qs-line"></div>
+                    <div class="qs-step"><i></i><span>训练</span></div>
+                  </div>
+                  <div class="qs-modules">
+                    <div class="qs-row">
+                      <span class="qs-row-num">01</span>
+                      <div class="qs-row-copy">
+                        <b>专项训练</b><small>先做 5 题 · 生成初始画像</small>
+                      </div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">02</span>
+                      <div class="qs-row-copy">
+                        <b>简历优化</b><small>上传简历 · 免费诊断</small>
+                      </div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                    <div class="qs-row">
+                      <span class="qs-row-num">03</span>
+                      <div class="qs-row-copy"><b>成长报告</b><small>报告待生成</small></div>
+                      <span class="qs-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="qs-foot">
+                    <span>0 SESSIONS · 今天开始</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">B · PAPER SIGNAL</div>
+            <h2>浅色品牌方向：有报告 / 无报告</h2>
+          </div>
+          <p>
+            暖白纸面、衬线标题、光谱线、黑色胶囊、杂志索引。无报告时换成「首次摸底」，保留编辑式节奏。
+          </p>
+        </div>
+        <div class="frames">
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">B1</div>
+              <div>
+                <h2>DEFAULT</h2>
+                <p>有报告 · 上次 B · 12 场</p>
+              </div>
+              <span class="concept-tag">品牌备选</span>
+            </div>
+            <div class="phone ps">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span
+                  ><span class="status-icons"
+                    ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                    ><span class="battery"></span
+                  ></span>
+                </div>
+                <div class="ps-body">
+                  <div class="ps-top">
+                    <span class="ps-brand">MENTORLOOP</span
+                    ><span class="ps-date">10.24 / 周五</span>
+                    <div class="ps-avatar">林</div>
+                  </div>
+                  <div class="ps-marker">01 / SESSION</div>
+                  <div class="ps-title">今天，<br />只练一件事。</div>
+                  <div class="ps-spectrum"></div>
+                  <div class="ps-sub">按岗位与年限抽题 · 20 分钟一场</div>
+                  <div class="ps-cta"><span>开始模拟面试</span><span>→</span></div>
+                  <div class="ps-last">上次 10-23 · 综合 B · 已完成 2 场</div>
+                  <div class="ps-index">
+                    <div class="ps-row">
+                      <span class="ps-row-num">01</span>
+                      <div class="ps-row-copy"><b>专项训练</b><small>6 个待完成</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">02</span>
+                      <div class="ps-row-copy"><b>简历优化</b><small>3 条批注待看</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">03</span>
+                      <div class="ps-row-copy"><b>成长报告</b><small>最近 B · 12 场</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="ps-foot">
+                    <span>WEEK 2 · 12 SESSIONS</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept">
+            <div class="concept-head">
+              <div class="concept-num">B2</div>
+              <div>
+                <h2>EMPTY</h2>
+                <p>无报告 · 首次摸底 · 0 场</p>
+              </div>
+              <span class="concept-tag">新用户</span>
+            </div>
+            <div class="phone ps">
+              <div class="screen">
+                <div class="sb">
+                  <span>9:41</span
+                  ><span class="status-icons"
+                    ><span class="sig"><i></i><i></i><i></i><i></i></span><span class="wifi"></span
+                    ><span class="battery"></span
+                  ></span>
+                </div>
+                <div class="ps-body">
+                  <div class="ps-top">
+                    <span class="ps-brand">MENTORLOOP</span
+                    ><span class="ps-date">10.24 / 周五</span>
+                    <div class="ps-avatar">新</div>
+                  </div>
+                  <div class="ps-marker">00 / FIRST SESSION</div>
+                  <div class="ps-title">先做 5 题，<br />找到你的起点。</div>
+                  <div class="ps-spectrum"></div>
+                  <div class="ps-sub">不用先选方向 · 约 6 分钟</div>
+                  <div class="ps-cta"><span>开始摸底</span><span>→</span></div>
+                  <div class="ps-last">完成后生成六维报告与训练计划</div>
+                  <div class="ps-index">
+                    <div class="ps-row">
+                      <span class="ps-row-num">01</span>
+                      <div class="ps-row-copy">
+                        <b>专项训练</b><small>先做 5 题 · 生成初始画像</small>
+                      </div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">02</span>
+                      <div class="ps-row-copy">
+                        <b>简历优化</b><small>上传简历 · 免费诊断</small>
+                      </div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                    <div class="ps-row">
+                      <span class="ps-row-num">03</span>
+                      <div class="ps-row-copy"><b>成长报告</b><small>报告待生成</small></div>
+                      <span class="ps-row-arrow">→</span>
+                    </div>
+                  </div>
+                  <div class="ps-foot">
+                    <span>0 SESSIONS · 今天开始</span><span>训练记录仅自己可见</span>
+                  </div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab on">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+                      <path d="M5.5 9.5V20h13V9.5"></path></svg
+                    ><span>练习</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M4 17.5 9 12l3.5 3.5L20 8"></path>
+                      <path d="M15.5 8H20v4.5"></path></svg
+                    ><span>成长</span>
+                  </div>
+                  <div class="tab">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3.3"></circle>
+                      <path d="M5 20c.8-3.4 3.4-5 7-5s6.2 1.6 7 5"></path></svg
+                    ><span>我的</span>
+                  </div>
+                  <div class="tab-bar-indicator"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Five states · both directions</div>
+            <h2>空 / 加载 / 失败 / 降级 / 权限</h2>
+          </div>
+          <p>五态不新增整页，只在主界面内做局部变化；任何状态都必须保留可执行的下一步。</p>
+        </div>
+        <table class="spec-table">
+          <tr>
+            <th>状态</th>
+            <th>A · Quiet Stage</th>
+            <th>B · Paper Signal</th>
+            <th>共同规则</th>
+          </tr>
+          <tr>
+            <td>EMPTY</td>
+            <td>标题「今天，先做 5 题找到起点」；主按钮「开始摸底」；03 行「报告待生成」。</td>
+            <td>标题「先做 5 题，找到你的起点」；主按钮「开始摸底」；03 行「报告待生成」。</td>
+            <td>不出现「暂无数据」；空态即任务。</td>
+          </tr>
+          <tr>
+            <td>LOADING</td>
+            <td>上次报告一行换成 1 条 skeleton；03 行小字换成 skeleton；主按钮保持可用。</td>
+            <td>同位置 skeleton；索引数字降透明度；主按钮保持可用。</td>
+            <td>不整页 loading；300ms 内出现 skeleton。</td>
+          </tr>
+          <tr>
+            <td>ERROR</td>
+            <td>上次报告下出现「报告同步失败 · 重试」；隐藏最近等级；主按钮仍可用。</td>
+            <td>同位置出现细下划线重试；索引仍可用。</td>
+            <td>不阻断面试/训练/简历；错误可重试。</td>
+          </tr>
+          <tr>
+            <td>DEGRADED</td>
+            <td>顶部细条「离线 · 仅本地记录」；隐藏周次数；主按钮禁用为「网络恢复后可开始」。</td>
+            <td>顶部细条「离线 · 仅本地记录」；主按钮禁用；光谱线降到 30% 透明度。</td>
+            <td>明确原因；提供恢复网络后的重试。</td>
+          </tr>
+          <tr>
+            <td>PERMISSION</td>
+            <td>主按钮上方细提示「麦克风未授权 · 去设置」；主按钮仍进入准备页。</td>
+            <td>同位置细下划线提示；不弹全屏授权框。</td>
+            <td>权限失败给设置路径，不制造死路。</td>
+          </tr>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Motion · purposeful only</div>
+            <h2>动效只做反馈，不做表演</h2>
+          </div>
+          <p>无扫描线、无粒子、无循环视差；唯一低频动效是 A 的舞台光呼吸。</p>
+        </div>
+        <div class="motion">
+          <div class="motion-row">
+            <b>页面进入</b>
+            <div class="track"><i style="width: 18%"></i></div>
+            <span>240ms · fade + translateY 6px · stagger 0/40/80ms</span>
+          </div>
+          <div class="motion-row">
+            <b>舞台光呼吸</b>
+            <div class="track"><i class="soft" style="width: 65%"></i></div>
+            <span>A only · 8s ease-in-out · opacity 0.06–0.09</span>
+          </div>
+          <div class="motion-row">
+            <b>主按钮按压</b>
+            <div class="track"><i style="width: 12%"></i></div>
+            <span>120ms · scale 0.985 + 亮度 -8%</span>
+          </div>
+          <div class="motion-row">
+            <b>列表按压</b>
+            <div class="track"><i class="warm" style="width: 12%"></i></div>
+            <span>120ms · 背景 3% 变化 · 无位移</span>
+          </div>
+          <div class="motion-row">
+            <b>状态切换</b>
+            <div class="track"><i style="width: 15%"></i></div>
+            <span>160ms · 透明度过渡 · 不做布局跳动</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Data mapping · real fields</div>
+            <h2>每个位置用什么真实数据</h2>
+          </div>
+          <p>禁止硬编码「12 场 / B / 6 个待完成」；全部来自现有 store 与接口。</p>
+        </div>
+        <table class="spec-table">
+          <tr>
+            <th>UI</th>
+            <th>字段</th>
+            <th>来源</th>
+          </tr>
+          <tr>
+            <td>问候 / 日期</td>
+            <td>nickname / date</td>
+            <td>`userStore.profile.nickname` · 本地日期</td>
+          </tr>
+          <tr>
+            <td>上周次数 / 底部周次</td>
+            <td>weekCount / totalCount</td>
+            <td>`reportHistory.all()` 按 `at` 近 7 天统计</td>
+          </tr>
+          <tr>
+            <td>上次报告</td>
+            <td>latestAt / latestLevel</td>
+            <td>`reportHistory.latest()` 的 `at` 与六维 `averageLevel`</td>
+          </tr>
+          <tr>
+            <td>专项训练</td>
+            <td>todoCount / topTask</td>
+            <td>`latest.report.trainingPlan.length` 与首条任务</td>
+          </tr>
+          <tr>
+            <td>简历优化</td>
+            <td>批注数 / 额度</td>
+            <td>`/resume/quota` 与最近简历记录的 `issuesTotal`</td>
+          </tr>
+          <tr>
+            <td>成长报告</td>
+            <td>最近等级 / 场次</td>
+            <td>`reportHistory` 最近记录与总数</td>
+          </tr>
+          <tr>
+            <td>主按钮</td>
+            <td>canStart / hasReport</td>
+            <td>`quotaStore.canStartInterview()`；无报告走摸底</td>
+          </tr>
+          <tr>
+            <td>五态</td>
+            <td>loading / error / offline / mic</td>
+            <td>
+              `reportHistory.fetchFromServer()` · `uni.onNetworkStatusChange` · `checkPermission`
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Implementation · uvue constraints</div>
+            <h2>落地注意</h2>
+          </div>
+          <p>
+            设计稿里的微文案与光效是为评审服务；实现时必须按 uvue 约束降级，不引入运行时 3D / blur /
+            WebGL。
+          </p>
+        </div>
+        <div class="impl">
+          <div class="impl-card">
+            <h3><i></i>A · Quiet Stage</h3>
+            <ul>
+              <li>底色 `#08090A`；舞台光优先用预渲染 PNG，若不可用则退化为顶部线性渐变。</li>
+              <li>白色胶囊 54px，`borderRadius: 999px`；按钮文字 14px、行高固定。</li>
+              <li>三行索引只用 1px 分割线，不做卡片；点击热区 ≥ 44px。</li>
+              <li>微文案 7–9px 仅设计稿；实现统一提到 12px，必要时用图标替代。</li>
+              <li>动效只用 opacity / transform；不跑 blur 动画。</li>
+            </ul>
+          </div>
+          <div class="impl-card">
+            <h3><i></i>B · Paper Signal</h3>
+            <ul>
+              <li>纸面 `#F3F0EA`；黑色胶囊 52px；索引行 1px 暖灰分割线。</li>
+              <li>
+                39px 衬线标题需要新增 display 字号 token（36/40）；若冻结不允许，退到 28px
+                会损失编辑感，需明确取舍。
+              </li>
+              <li>衬线字体需确认系统可用性；不可用时用高对比无衬线替代，不用细宋体。</li>
+              <li>光谱线 2px linear-gradient 可落地；不要做动态流光。</li>
+              <li>同样保留 `#stat-todo` 等 E2E 锚点语义。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>MENTORLOOP · HIFI SPEC · QUIET STAGE / PAPER SIGNAL</span>
+        <span>五态 · 动效 · 真实数据 · uvue 落地注意</span>
+      </footer>
+    </div>
+  </body>
+</html>
