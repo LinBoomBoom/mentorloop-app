@@ -1,226 +1,291 @@
 <template>
   <view class="flex-col w-full h-full bg-bg-light overflow-hidden">
-    <scroll-view class="flex-1" scroll-y="true">
-      <view class="px-5 pb-8" :style="{ paddingTop: topPad + 'px' }">
-        <!-- 顶部：日期 + 大标题 + 头像 -->
-        <view
-          class="flex-row items-start justify-between"
-          :style="{ paddingRight: rightPad + 'px' }"
-        >
-          <view class="flex-col flex-1 mr-3">
-            <text class="text-xs text-ink-soft">{{ dateText }}</text>
-            <text class="text-[28px] font-bold text-ink mt-1 leading-8">{{ greeting }}</text>
+    <!-- 深色任务舱：唯一主行动 -->
+    <view class="shrink-0 px-5 pb-8" :style="deckStyle">
+      <!-- 顶部：日期 + 问候 + 周次数 / 登录 + 头像 -->
+      <view class="flex-row items-start justify-between" :style="{ paddingRight: rightPad + 'px' }">
+        <view class="flex-col flex-1 mr-3">
+          <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.52)' }">{{ dateText }}</text>
+          <text class="text-[18px] font-bold text-white mt-1 truncate block">{{
+            greetingLine
+          }}</text>
+        </view>
+        <view class="flex-row items-center">
+          <view
+            v-if="!loggedIn"
+            class="login-pill"
+            hover-class="pressed-chip"
+            :hover-start-time="0"
+            @click="goLogin"
+          >
+            <text class="text-xs" :style="{ color: SURFACE }">登录</text>
+          </view>
+          <view v-else-if="rightPad === 0" class="week-pill">
+            <view
+              class="w-1.5 h-1.5 rounded-full mr-1.5"
+              :style="{ backgroundColor: WARN_LIGHT }"
+            ></view>
+            <text class="text-xs font-mono" :style="{ color: WARN_LIGHT }">{{ weekLabel }}</text>
           </view>
           <view
-            class="w-9 h-9 rounded-full flex-row items-center justify-center"
-            :style="{ backgroundColor: SMART }"
+            class="w-9 h-9 rounded-full flex-row items-center justify-center ml-2"
+            :style="{ backgroundColor: SURFACE }"
             hover-class="pressed-chip"
             :hover-start-time="0"
             @click="openMine"
           >
-            <text class="text-sm font-bold text-white">{{ avatarLetter }}</text>
+            <text class="text-sm font-bold" :style="{ color: NAVY }">{{ avatarLetter }}</text>
           </view>
-        </view>
-
-        <!-- 主任务卡：唯一主 CTA -->
-        <view id="home-profile-card" class="mt-4 rounded-card p-5" :style="heroStyle">
-          <view class="flex-row items-center">
-            <view
-              class="w-1.5 h-1.5 rounded-full mr-1.5"
-              :style="{ backgroundColor: RELIABLE }"
-            ></view>
-            <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.82)' }"
-              >AI 面试官 · 就绪</text
-            >
-          </view>
-          <text class="text-[22px] font-bold text-white mt-3 leading-7"
-            >用 20 分钟，练一场真实的面试</text
-          >
-          <text class="text-xs mt-2 leading-5" :style="{ color: 'rgba(255,255,255,0.62)' }"
-            >按岗位与年限抽题，答完立即生成六维报告与训练计划。</text
-          >
-
-          <!-- 面试参数（点击进入修改） -->
-          <view
-            id="home-profile-edit"
-            class="flex-row items-center mt-3"
-            hover-class="pressed-row"
-            :hover-start-time="0"
-            @click="goOnboarding"
-          >
-            <view class="param-chip">
-              <text class="text-xs text-white">{{ positionLabel }}</text>
-            </view>
-            <view class="param-chip ml-1.5">
-              <text class="text-xs text-white">{{ experienceLabel }}</text>
-            </view>
-            <view class="param-chip ml-1.5">
-              <text class="text-xs text-white">6 维能力</text>
-            </view>
-            <text v-if="!profileReady" class="text-xs ml-2" :style="{ color: WARN_LIGHT }"
-              >待完善画像</text
-            >
-          </view>
-
-          <view
-            class="mt-4 h-12 rounded-control flex-row items-center justify-center bg-surface"
-            hover-class="pressed-card"
-            :hover-start-time="0"
-            @click="startInterview"
-          >
-            <text class="text-base font-bold" :style="{ color: NAVY_DEEP }">开始模拟面试</text>
-            <ml-icon class="ml-1.5" name="chevron-right" :size="15" :color="NAVY_DEEP"></ml-icon>
-          </view>
-
-          <text
-            v-if="hasReport"
-            class="text-xs mt-2 text-center"
-            :style="{ color: 'rgba(255,255,255,0.5)' }"
-            >上次 {{ latestAt }} · 综合 {{ latestLevel }} · 已完成 {{ totalCount }} 场</text
-          >
-          <text v-else class="text-xs mt-2 text-center" :style="{ color: 'rgba(255,255,255,0.5)' }"
-            >首场结束后生成六维报告与训练计划</text
-          >
-        </view>
-
-        <!-- 登录提示（匿名态才出现） -->
-        <view v-if="!loggedIn" class="mt-3">
-          <ml-card pressable @tap="goLogin">
-            <view class="flex-row items-center">
-              <ml-icon name="sparkles" :size="15" :color="WARN"></ml-icon>
-              <view class="flex-col flex-1 ml-2">
-                <text class="text-sm font-semibold text-ink">登录后同步报告与训练记录</text>
-                <text class="text-xs text-ink-soft mt-0.5">换设备也能接着练</text>
-              </view>
-              <ml-icon name="chevron-right" :size="15" :color="MIST"></ml-icon>
-            </view>
-          </ml-card>
-        </view>
-
-        <!-- 今日闭环 -->
-        <view class="flex-row items-center justify-between mt-5 mb-2">
-          <text class="text-base font-bold text-ink">今日闭环</text>
-          <text class="text-xs text-smart" @click="goGrowth">查看成长</text>
-        </view>
-        <view class="flex-row">
-          <view id="stat-total" class="flex-1 mr-2" @click="goReport">
-            <ml-card :padded="false">
-              <view class="p-3">
-                <view class="step-dot" :style="{ backgroundColor: SMART }">
-                  <text class="text-xs font-bold text-white">1</text>
-                </view>
-                <text class="text-sm font-semibold text-ink mt-2">面试</text>
-                <text class="text-xs text-ink-soft mt-0.5">{{ totalCount }} 场已完成</text>
-              </view>
-            </ml-card>
-          </view>
-          <view id="stat-avg" class="flex-1 mr-2" @click="goGrowth">
-            <ml-card :padded="false">
-              <view class="p-3">
-                <view class="step-dot" :style="{ backgroundColor: CHIP_TEAL }">
-                  <text class="text-xs font-bold" :style="{ color: RELIABLE }">2</text>
-                </view>
-                <text class="text-sm font-semibold text-ink mt-2">报告</text>
-                <text class="text-xs text-ink-soft mt-0.5">{{ reportHint }}</text>
-              </view>
-            </ml-card>
-          </view>
-          <view id="stat-todo" class="flex-1" @click="goTraining">
-            <ml-card :padded="false">
-              <view class="p-3">
-                <view class="step-dot" :style="{ backgroundColor: CHIP_WARN }">
-                  <text class="text-xs font-bold" :style="{ color: WARN }">3</text>
-                </view>
-                <text class="text-sm font-semibold text-ink mt-2">训练</text>
-                <text class="text-xs text-ink-soft mt-0.5">{{ todoCount }} 个待完成</text>
-              </view>
-            </ml-card>
-          </view>
-        </view>
-
-        <!-- 最近报告 -->
-        <view v-if="hasReport" id="home-recent-report" class="mt-3">
-          <ml-card pressable @tap="goReport">
-            <view class="flex-row items-center">
-              <view class="grade-badge">
-                <text class="text-lg font-bold font-mono" :style="{ color: RELIABLE }">{{
-                  latestLevel
-                }}</text>
-              </view>
-              <view class="flex-col flex-1 ml-3">
-                <text class="text-sm font-semibold text-ink">最近报告 · {{ positionLabel }}</text>
-                <text class="text-xs text-ink-soft mt-1 leading-4"
-                  >优先改进：{{ topPriority }}</text
-                >
-                <view class="flex-row items-center mt-1.5">
-                  <view class="tiny-pill">
-                    <text class="text-xs" :style="{ color: RELIABLE }"
-                      >置信度 {{ confidenceText }}</text
-                    >
-                  </view>
-                </view>
-              </view>
-              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
-            </view>
-          </ml-card>
-        </view>
-
-        <!-- 空态：还没有报告 -->
-        <view v-else class="mt-3">
-          <ml-card>
-            <view class="flex-row items-center">
-              <view class="grade-badge">
-                <ml-icon name="file-check" :size="18" :color="MIST"></ml-icon>
-              </view>
-              <view class="flex-col flex-1 ml-3">
-                <text class="text-sm font-semibold text-ink">还没有面试报告</text>
-                <text class="text-xs text-ink-soft mt-1 leading-4"
-                  >完成一场模拟面试，这里会生成六维能力与优先改进项。</text
-                >
-              </view>
-            </view>
-          </ml-card>
-        </view>
-
-        <!-- 今日做题 -->
-        <view v-if="hasReport" class="mt-3">
-          <ml-card pressable @tap="goTraining">
-            <view class="flex-row items-center">
-              <view class="icon-box" :style="{ backgroundColor: CHIP_WARN }">
-                <ml-icon name="zap" :size="16" :color="WARN"></ml-icon>
-              </view>
-              <view class="flex-col flex-1 ml-3">
-                <text class="text-sm font-semibold text-ink"
-                  >今日做题 · {{ todoCount }} 个待完成</text
-                >
-                <text class="text-xs text-ink-soft mt-1"
-                  >{{ topTask.title }} · 约 {{ topTask.durationMin }} 分钟</text
-                >
-              </view>
-              <view class="go-pill" :style="{ backgroundColor: CHIP_TEAL }">
-                <text class="text-xs font-semibold" :style="{ color: RELIABLE }">去做题</text>
-              </view>
-            </view>
-          </ml-card>
-        </view>
-
-        <!-- 简历优化 -->
-        <view id="home-resume" class="mt-3">
-          <ml-card pressable @tap="goResume">
-            <view class="flex-row items-center">
-              <view class="icon-box" :style="{ backgroundColor: CHIP_SMART }">
-                <ml-icon name="file-text" :size="16" :color="SMART"></ml-icon>
-              </view>
-              <view class="flex-col flex-1 ml-3">
-                <text class="text-sm font-semibold text-ink">简历优化</text>
-                <text class="text-xs text-ink-soft mt-1">AI 解析 · 逐条批注 · 投递版本</text>
-              </view>
-              <ml-icon name="chevron-right" :size="16" :color="MIST"></ml-icon>
-            </view>
-          </ml-card>
         </view>
       </view>
-    </scroll-view>
+
+      <!-- 主任务：唯一主 CTA -->
+      <view id="home-profile-card" class="mt-6">
+        <view class="flex-row items-center">
+          <view
+            class="w-1.5 h-1.5 rounded-full mr-1.5"
+            :style="{ backgroundColor: WARN_LIGHT }"
+          ></view>
+          <text class="text-xs font-mono" :style="{ color: WARN_LIGHT, letterSpacing: '1px' }">{{
+            deckEyebrow
+          }}</text>
+        </view>
+        <text
+          class="block font-bold text-white mt-2.5"
+          :class="compact ? 'text-[22px] leading-8' : 'text-[28px] leading-9'"
+          >{{ headlineLine1 }}</text
+        >
+        <text
+          class="block font-bold text-white"
+          :class="compact ? 'text-[22px] leading-8' : 'text-[28px] leading-9'"
+          >{{ headlineLine2 }}</text
+        >
+        <text
+          v-if="!compact"
+          class="text-xs mt-2 leading-5"
+          :style="{ color: 'rgba(255,255,255,0.58)' }"
+          >{{ deckSub }}</text
+        >
+
+        <!-- 画像入口：点击修改岗位 / 年限 -->
+        <view
+          id="home-profile-edit"
+          class="flex-row items-center mt-3"
+          hover-class="pressed-row"
+          :hover-start-time="0"
+          @click="goOnboarding"
+        >
+          <text class="text-xs" :style="{ color: 'rgba(255,255,255,0.62)' }">{{
+            profileLine
+          }}</text>
+          <text v-if="!profileReady" class="text-xs ml-1.5" :style="{ color: WARN_LIGHT }"
+            >待完善画像</text
+          >
+          <ml-icon class="ml-1" name="chevron-right" :size="11" :color="MIST"></ml-icon>
+        </view>
+
+        <!-- 面试 → 报告 → 训练闭环 -->
+        <view class="flex-row items-center mt-4">
+          <view class="flex-row items-center">
+            <view class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: WARN_LIGHT }"></view>
+            <text class="text-xs text-white ml-1.5">面试</text>
+          </view>
+          <view
+            class="flex-1 ml-2 mr-2"
+            :style="{ height: '1px', backgroundColor: 'rgba(245,201,123,0.55)' }"
+          ></view>
+          <view class="flex-row items-center">
+            <view
+              class="w-2.5 h-2.5 rounded-full border"
+              :style="{
+                borderColor: 'rgba(255,255,255,0.22)',
+                backgroundColor: 'transparent'
+              }"
+            ></view>
+            <text class="text-xs ml-1.5" :style="{ color: 'rgba(255,255,255,0.42)' }">报告</text>
+          </view>
+          <view
+            class="flex-1 ml-2 mr-2"
+            :style="{ height: '1px', backgroundColor: 'rgba(255,255,255,0.14)' }"
+          ></view>
+          <view class="flex-row items-center">
+            <view
+              class="w-2.5 h-2.5 rounded-full border"
+              :style="{
+                borderColor: 'rgba(255,255,255,0.22)',
+                backgroundColor: 'transparent'
+              }"
+            ></view>
+            <text class="text-xs ml-1.5" :style="{ color: 'rgba(255,255,255,0.42)' }">训练</text>
+          </view>
+        </view>
+
+        <view
+          class="mt-4 h-12 flex-row items-center justify-between bg-surface px-4"
+          :style="{ borderRadius: '16px' }"
+          hover-class="pressed-card"
+          :hover-start-time="0"
+          @click="onPrimaryTap"
+        >
+          <text class="text-base font-bold" :style="{ color: NAVY_DEEP }">{{ primaryText }}</text>
+          <view
+            class="flex-row items-center justify-center"
+            :style="{
+              width: '26px',
+              height: '26px',
+              borderRadius: '999px',
+              backgroundColor: NAVY_DEEP
+            }"
+          >
+            <ml-icon name="arrow-right" :size="13" :color="SURFACE"></ml-icon>
+          </view>
+        </view>
+
+        <text v-if="!compact" class="text-xs mt-2.5" :style="{ color: 'rgba(255,255,255,0.55)' }">{{
+          deckFoot
+        }}</text>
+      </view>
+    </view>
+
+    <!-- 浅色训练纸：今日任务 + 两个成长入口 + 成长轨 -->
+    <view class="flex-1 overflow-hidden bg-bg-light rounded-t-2xl" :style="sheetStyle">
+      <view class="flex-row justify-center pt-2.5 pb-2">
+        <view
+          class="bg-line"
+          :style="{ width: '36px', height: '4px', borderRadius: '99px' }"
+        ></view>
+      </view>
+      <scroll-view class="flex-1" scroll-y="true">
+        <view class="px-5 pb-2">
+          <view class="flex-row items-center justify-between">
+            <text class="text-base font-bold text-ink">今日任务</text>
+            <view
+              class="flex-row items-center"
+              hover-class="pressed-row"
+              :hover-start-time="0"
+              @click="goGrowth"
+            >
+              <text class="text-xs text-smart">查看成长</text>
+              <ml-icon class="ml-0.5" name="chevron-right" :size="11" :color="SMART"></ml-icon>
+            </view>
+          </view>
+
+          <!-- 今日任务：无报告=摸底；有报告=今日做题（#stat-todo 直达训练页） -->
+          <view id="stat-todo" class="mt-2.5" @click="goTraining">
+            <ml-card :padded="false">
+              <view class="p-3 flex-row items-center">
+                <view class="icon-box-sm" :style="{ backgroundColor: CHIP_WARN }">
+                  <ml-icon name="target" :size="15" :color="WARN"></ml-icon>
+                </view>
+                <view class="flex-col flex-1 ml-2.5">
+                  <text class="text-sm font-bold text-ink truncate block">{{ todayTitle }}</text>
+                  <text class="text-xs text-ink-soft mt-1 truncate block">{{ todaySubtitle }}</text>
+                </view>
+                <view class="go-pill" :style="{ backgroundColor: CHIP_TEAL }">
+                  <text class="text-xs font-bold" :style="{ color: RELIABLE }">{{ todayCta }}</text>
+                </view>
+              </view>
+            </ml-card>
+          </view>
+
+          <!-- 专项训练 / 简历优化：常驻两列入口 -->
+          <view class="flex-row mt-3">
+            <view id="home-training" class="flex-1 mr-2.5" @click="goTraining">
+              <view
+                class="module-card"
+                :style="{
+                  minHeight: compact ? '88px' : '104px',
+                  backgroundColor: CHIP_SMART,
+                  borderColor: 'rgba(88,86,214,0.12)'
+                }"
+                hover-class="pressed-card"
+                :hover-start-time="0"
+              >
+                <view class="flex-row items-center justify-between">
+                  <view
+                    class="flex-row items-center justify-center"
+                    :style="{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(255,255,255,0.72)'
+                    }"
+                  >
+                    <ml-icon name="target" :size="15" :color="SMART"></ml-icon>
+                  </view>
+                  <text class="text-base" :style="{ color: MIST }">›</text>
+                </view>
+                <view class="flex-col">
+                  <text class="text-sm font-bold text-ink">专项训练</text>
+                  <text v-if="!compact" class="text-xs text-ink-soft mt-1 truncate block"
+                    >自选方向 · 5 题一组</text
+                  >
+                </view>
+              </view>
+            </view>
+            <view id="home-resume" class="flex-1" @click="goResume">
+              <view
+                class="module-card"
+                :style="{
+                  minHeight: compact ? '88px' : '104px',
+                  backgroundColor: CHIP_TEAL,
+                  borderColor: 'rgba(31,182,166,0.14)'
+                }"
+                hover-class="pressed-card"
+                :hover-start-time="0"
+              >
+                <view class="flex-row items-center justify-between">
+                  <view
+                    class="flex-row items-center justify-center"
+                    :style="{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(255,255,255,0.72)'
+                    }"
+                  >
+                    <ml-icon name="file-text" :size="15" :color="RELIABLE"></ml-icon>
+                  </view>
+                  <text class="text-base" :style="{ color: MIST }">›</text>
+                </view>
+                <view class="flex-col">
+                  <text class="text-sm font-bold text-ink">简历优化</text>
+                  <text v-if="!compact" class="text-xs text-ink-soft mt-1 truncate block"
+                    >AI 逐条批注</text
+                  >
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 成长轨：保留 E2E 锚点语义 -->
+      <view class="px-5 py-2.5 border-t border-line flex-row items-center">
+        <view id="stat-total" class="flex-row items-baseline" @click="goReport">
+          <text class="text-xs text-ink-soft">面试</text>
+          <text class="text-sm font-bold font-mono text-ink ml-1">{{ totalCount }}</text>
+          <text class="text-xs text-ink-soft ml-1">场</text>
+        </view>
+        <view
+          class="ml-3 mr-3"
+          :style="{ width: '1px', height: '10px', backgroundColor: LINE_STRONG }"
+        ></view>
+        <view id="stat-avg" class="flex-row items-center" @click="goGrowth">
+          <template v-if="hasReport">
+            <text class="text-xs text-ink-soft">最近</text>
+            <text class="text-sm font-bold font-mono text-ink ml-1">{{ latestLevel }}</text>
+          </template>
+          <text v-else class="text-xs text-ink-soft">报告待生成</text>
+          <ml-icon class="ml-0.5" name="chevron-right" :size="11" :color="MIST"></ml-icon>
+        </view>
+        <view class="flex-1"></view>
+        <view id="home-recent-report" class="flex-row items-center" @click="goReport">
+          <text class="text-xs text-smart">{{ hasReport ? '最近报告' : '成长报告' }}</text>
+          <ml-icon class="ml-0.5" name="chevron-right" :size="11" :color="SMART"></ml-icon>
+        </view>
+      </view>
+    </view>
 
     <!-- 登录半屏层：小程序端手机号+验证码（APP 端仍走 /pages/login/login） -->
     <ml-login-sheet v-if="showLogin" @success="onLoginSuccess" @exit="onLoginExit"></ml-login-sheet>
@@ -229,7 +294,7 @@
 
 <script setup lang="uts">
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onReady } from '@dcloudio/uni-app'
 import mlCard from '../../components/ml-card.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
@@ -243,7 +308,6 @@ import { useMock } from '../../api/env.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { themeValue } from '../../styles/theme.uts'
 import { averageLevel } from '../../styles/score-display.uts'
-import { confidenceBand } from '../../engine/rubric.uts'
 
 const SMART = themeValue('smart', '#5856D6')
 const RELIABLE = themeValue('reliable', '#1FB6A6')
@@ -255,9 +319,13 @@ const NAVY_DEEP = themeValue('navyDeep', '#0B2138')
 const CHIP_SMART = themeValue('chipSmart', '#EFEEFC')
 const CHIP_TEAL = themeValue('chipReliable', '#E8F7F4')
 const CHIP_WARN = themeValue('chipWarn', '#FFF4E5')
+const SURFACE = themeValue('surface', '#FFFFFF')
+const LINE_STRONG = themeValue('lineStrong', '#D1D1D6')
 
 // 安全区内边距（onShow 从窗口信息读取）
 const topPad = ref(36)
+// 小屏紧凑模式：隐藏次要说明行，保证核心入口首屏可见（2026-10-24 首页重排）
+const compact = ref(false)
 // MP 端右上角让出微信胶囊（避免头像被遮挡）；其余端保持内容边距
 const rightPad = ref(0)
 // #ifdef MP-WEIXIN
@@ -300,27 +368,14 @@ const latestLevel = computed((): string => {
   return averageLevel(levels)
 })
 
-const topPriority = computed((): string => {
-  const r = latest.value
-  return r != null && r.report.topPriority.length > 0 ? r.report.topPriority : '暂无'
-})
-
-const confidenceText = computed((): string => {
-  const r = latest.value
-  if (r == null) return '--'
-  const dims = r.report.dimensions
-  if (dims.length === 0) return '--'
-  let total = 0
-  for (let i = 0; i < dims.length; i++) total += dims[i].confidence
-  const band = confidenceBand(total / dims.length)
-  if (band === 'high') return '高'
-  if (band === 'medium') return '中'
-  return '低'
-})
-
-const reportHint = computed((): string => {
-  if (totalCount.value === 0) return '待生成'
-  return latestLevel.value + ' · 6 维'
+// 本周面试次数（用报告时间近似；无报告时显示「今天开始」）
+const weekCount = computed((): number => {
+  const cutoff = Date.now() - 7 * 24 * 3600 * 1000
+  let n = 0
+  for (let i = 0; i < records.value.length; i++) {
+    if (records.value[i].at >= cutoff) n += 1
+  }
+  return n
 })
 
 const topTask = computed((): { title: string; durationMin: number } => {
@@ -336,6 +391,21 @@ const todoCount = computed((): number => {
   const r = latest.value
   return r != null ? r.report.trainingPlan.length : 0
 })
+
+// 今日任务三态：无报告=摸底；有报告无任务=自选练习；有报告有任务=今日做题
+const todayTitle = computed((): string => {
+  if (!hasReport.value) return '先做 5 题摸底'
+  if (todoCount.value === 0) return '今日做题 · 自选练习'
+  return '今日做题 · ' + String(todoCount.value) + ' 个待完成'
+})
+
+const todaySubtitle = computed((): string => {
+  if (!hasReport.value) return '生成能力画像与训练计划'
+  if (todoCount.value === 0) return '按方向 / 难度自选 5 题一组'
+  return topTask.value.title + ' · 约 ' + String(topTask.value.durationMin) + ' 分钟'
+})
+
+const todayCta = computed((): string => (hasReport.value ? '去做题' : '开始摸底'))
 
 const greeting = computed((): string => {
   const h = new Date().getHours()
@@ -353,20 +423,73 @@ const dateText = computed((): string => {
   return pad(d.getMonth() + 1) + '月' + pad(d.getDate()) + '日 周' + week
 })
 
-// 深色主卡：只用 navy token 生成渐变，避免引入新色值
-const heroStyle = {
+// 深色任务舱：只用 navy token 生成渐变，避免引入新色值
+const deckGradient = 'linear-gradient(155deg, ' + NAVY + ' 0%, ' + NAVY_DEEP + ' 100%)'
+const deckStyle = computed((): { [key: string]: string } => ({
   backgroundColor: NAVY_DEEP,
-  backgroundImage: 'linear-gradient(155deg, ' + NAVY + ' 0%, ' + NAVY_DEEP + ' 100%)'
-}
+  backgroundImage: deckGradient,
+  paddingTop: topPad.value + 'px'
+}))
+// 浅色训练纸与任务舱重叠 28px，形成层次
+const sheetStyle = { marginTop: '-28px' }
 
-onShow(() => {
+const greetingLine = computed((): string => {
+  const n = nickname.value
+  if (n.length === 0 || n === '访客') return greeting.value
+  return greeting.value + '，' + n
+})
+
+const weekLabel = computed((): string =>
+  weekCount.value > 0 ? '本周 ' + String(weekCount.value) + ' 次' : '今天开始'
+)
+
+const deckEyebrow = computed((): string =>
+  hasReport.value ? 'TODAY · 模拟面试' : 'TODAY · 摸底训练'
+)
+const headlineLine1 = computed((): string => (hasReport.value ? '把下一场面试，' : '先做 5 题，'))
+const headlineLine2 = computed((): string => (hasReport.value ? '练成你的主场。' : '找到你的起点。'))
+const deckSub = computed((): string =>
+  hasReport.value
+    ? '按岗位与年限抽题，20 分钟一场；答完即出六维报告与训练计划。'
+    : '不用先选方向：系统按你的画像抽 5 题，约 6 分钟，结束后生成六维能力画像。'
+)
+const deckFoot = computed((): string => {
+  if (!hasReport.value) return '完成后生成六维报告与训练计划'
+  return (
+    '上次 ' +
+    latestAt.value +
+    ' · 综合 ' +
+    latestLevel.value +
+    ' · 已完成 ' +
+    String(totalCount.value) +
+    ' 场'
+  )
+})
+const primaryText = computed((): string => (hasReport.value ? '开始模拟面试' : '开始摸底'))
+const profileLine = computed((): string =>
+  positionLabel.value + ' · ' + experienceLabel.value + ' · 6 维能力'
+)
+
+// 窗口尺寸在 onShow 时可能尚未就绪（DevTools/冷启动），onReady 再校准一次
+function applyWindowLayout() {
   try {
     const win = uni.getWindowInfo()
     const sb = win.statusBarHeight
     topPad.value = sb > 0 ? sb + 8 : 36
+    // <620 进入紧凑模式：合并后的核心入口在 640 高度安卓机也能首屏放下
+    compact.value = win.windowHeight > 0 && win.windowHeight < 620
   } catch {
     topPad.value = 36
+    compact.value = false
   }
+}
+
+onReady(() => {
+  applyWindowLayout()
+})
+
+onShow(() => {
+  applyWindowLayout()
 
   loggedIn.value = userStore.isLoggedIn()
   nickname.value = userStore.profile.nickname
@@ -421,6 +544,15 @@ function startInterview() {
 function goTraining() {
   // 专项训练已从 tabBar 移出，作为成长页的二级页面
   uni.navigateTo({ url: '/pages/training/training' })
+}
+
+// 唯一主 CTA：有报告先面试；新用户先做 5 题摸底
+function onPrimaryTap() {
+  if (!hasReport.value) {
+    goTraining()
+    return
+  }
+  startInterview()
 }
 
 function goGrowth() {
@@ -485,41 +617,42 @@ function onLoginExit() {
 </script>
 
 <style>
-.step-dot {
-  width: 20px;
-  height: 20px;
+.icon-box-sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.module-card {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 20px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.week-pill {
+  height: 28px;
+  padding-left: 10px;
+  padding-right: 10px;
   border-radius: 999px;
+  background-color: rgba(245, 201, 123, 0.12);
+  border: 1px solid rgba(245, 201, 123, 0.28);
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
 }
-.grade-badge {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background-color: #e8f7f4;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.param-chip {
-  height: 26px;
-  padding-left: 9px;
-  padding-right: 9px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+.login-pill {
+  height: 28px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -529,16 +662,6 @@ function onLoginExit() {
   padding-left: 11px;
   padding-right: 11px;
   border-radius: 999px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-.tiny-pill {
-  height: 20px;
-  padding-left: 7px;
-  padding-right: 7px;
-  border-radius: 999px;
-  background-color: #e8f7f4;
   display: flex;
   flex-direction: row;
   align-items: center;
