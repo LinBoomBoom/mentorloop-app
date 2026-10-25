@@ -40,6 +40,12 @@
 - 客户端 pending 队列（≤200）按 `answeredAt` 补传；服务端忽略早于 `updated_at` 的旧补传。
 - 训练页 `onShow` 先展示本地缓存再拉服务端；「今日复习」入口按 `dueCount` 显隐；房间支持 `mode=due`。
 
+### 4.1 今日复习入口走查（2026-10-23）
+
+- 云账号造一条 3 天前「不会」记录后，做题页入口显示「今日复习 · 1 题」；点击进入 `mode=due` 房间，完成 1 题（查看解析 → 自评「会」）后出现小结「1 题 · 会 1」。
+- 服务端复核 `dueCount=0 / wrongCount=0`；返回做题页滚到入口区域，今日复习与错题本入口均消失。
+- 证据截图：`e2e/mp/shots/due-00-entry-visible.png`、`due-00b-entry-visible.png`、`due-02-room.png`、`due-03-answer.png`、`due-04-summary.png`、`due-05-entry-hidden.png`、`due-06-scrolled.png`。
+
 ## 5. 遗留
 
 - 完整答案全文入库（Phase 2.2）与选择题形态（Phase 2.3）未开始。
