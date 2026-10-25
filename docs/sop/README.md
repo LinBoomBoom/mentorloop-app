@@ -136,25 +136,25 @@
 
 ### 8.2 Skill 表
 
-| Skill                                                                                                  | 版本  | 职责                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ----- | -------------------------------------------------------------------- |
-| [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.1.0 | 任务卡八要素 + 开工前质询 + G1 入口校验                              |
-| [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.1.0 | 契约变更检测与双签记录                                               |
-| [mentorloop-system-spec](../../.trae/skills/mentorloop-system-spec/SKILL.md)                           | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                  |
-| [mentorloop-server-conventions](../../.trae/skills/mentorloop-server-conventions/SKILL.md)             | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                    |
-| [mentorloop-content-review](../../.trae/skills/mentorloop-content-review/SKILL.md)                     | 1.1.0 | 题库/图谱/量表人工审核准备                                           |
-| [mentorloop-quality-gate](../../.trae/skills/mentorloop-quality-gate/SKILL.md)                         | 1.3.0 | G2 质量门命令执行                                                    |
-| [mentorloop-release-check](../../.trae/skills/mentorloop-release-check/SKILL.md)                       | 1.1.0 | G4 发布准入与合规清单                                                |
-| [mentorloop-pipeline](../../.trae/skills/mentorloop-pipeline/SKILL.md)                                 | 1.1.0 | 链式流水线推进与上下文节流                                           |
-| [mentorloop-role-ai-engineer](../../.trae/skills/mentorloop-role-ai-engineer/SKILL.md)                 | 1.1.0 | AI 引擎：选题/追问/评分/评测集                                       |
-| [mentorloop-role-feasibility-analyst](../../.trae/skills/mentorloop-role-feasibility-analyst/SKILL.md) | 1.0.0 | 框架能力/版本兼容/POC 可行性                                         |
-| [mentorloop-role-miniprogram-pm](../../.trae/skills/mentorloop-role-miniprogram-pm/SKILL.md)           | 1.0.1 | 小程序端需求/包体积/审核/登录                                        |
-| [mentorloop-role-product-owner](../../.trae/skills/mentorloop-role-product-owner/SKILL.md)             | 1.1.0 | 优先级/范围裁剪/冻结决策                                             |
-| [mentorloop-role-uiux-designer](../../.trae/skills/mentorloop-role-uiux-designer/SKILL.md)             | 1.1.0 | UI/UX 信息架构/交互/视觉/无障碍                                      |
-| [mentorloop-interview-room-ux](../../.trae/skills/mentorloop-interview-room-ux/SKILL.md)               | 1.0.1 | 面试房间布局/状态色/字幕/动效                                        |
-| [uni-app-x](../../.trae/skills/uni-app-x/SKILL.md)                                                     | 1.1.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能） |
-| [mentorloop-mobile-design-adapter](../../.trae/skills/mentorloop-mobile-design-adapter/SKILL.md)       | 1.2.0 | Web/多端概念稿 → uvue 移动端设计规格（rpx/安全区/触控/五态）         |
-| [mentorloop-design-intelligence](../../.trae/skills/mentorloop-design-intelligence/SKILL.md)           | 1.0.0 | 设计灵感与选型：风格/配色/字体/布局候选 → 设计选型单                 |
+| Skill                                                                                                  | 版本  | 职责                                                                      |
+| ------------------------------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------- |
+| [mentorloop-task-card](../../.trae/skills/mentorloop-task-card/SKILL.md)                               | 1.1.0 | 任务卡八要素 + 开工前质询 + G1 入口校验                                   |
+| [mentorloop-contract-freeze](../../.trae/skills/mentorloop-contract-freeze/SKILL.md)                   | 1.1.0 | 契约变更检测与双签记录                                                    |
+| [mentorloop-system-spec](../../.trae/skills/mentorloop-system-spec/SKILL.md)                           | 1.0.0 | 客户端 uvue/UTS/Tailwind/隐私硬约束                                       |
+| [mentorloop-server-conventions](../../.trae/skills/mentorloop-server-conventions/SKILL.md)             | 1.0.0 | 服务端 Fastify 统一响应/幂等/配置                                         |
+| [mentorloop-content-review](../../.trae/skills/mentorloop-content-review/SKILL.md)                     | 1.1.0 | 题库/图谱/量表人工审核准备                                                |
+| [mentorloop-quality-gate](../../.trae/skills/mentorloop-quality-gate/SKILL.md)                         | 1.3.0 | G2 质量门命令执行                                                         |
+| [mentorloop-release-check](../../.trae/skills/mentorloop-release-check/SKILL.md)                       | 1.1.0 | G4 发布准入与合规清单                                                     |
+| [mentorloop-pipeline](../../.trae/skills/mentorloop-pipeline/SKILL.md)                                 | 1.1.0 | 链式流水线推进与上下文节流                                                |
+| [mentorloop-role-ai-engineer](../../.trae/skills/mentorloop-role-ai-engineer/SKILL.md)                 | 1.1.0 | AI 引擎：选题/追问/评分/评测集                                            |
+| [mentorloop-role-feasibility-analyst](../../.trae/skills/mentorloop-role-feasibility-analyst/SKILL.md) | 1.0.0 | 框架能力/版本兼容/POC 可行性                                              |
+| [mentorloop-role-miniprogram-pm](../../.trae/skills/mentorloop-role-miniprogram-pm/SKILL.md)           | 1.0.1 | 小程序端需求/包体积/审核/登录                                             |
+| [mentorloop-role-product-owner](../../.trae/skills/mentorloop-role-product-owner/SKILL.md)             | 1.1.0 | 优先级/范围裁剪/冻结决策                                                  |
+| [mentorloop-role-uiux-designer](../../.trae/skills/mentorloop-role-uiux-designer/SKILL.md)             | 1.2.0 | UI/UX 信息架构/交互/视觉/无障碍 + 移动端现实校验（胶囊/tabBar/留白/玻璃） |
+| [mentorloop-interview-room-ux](../../.trae/skills/mentorloop-interview-room-ux/SKILL.md)               | 1.0.1 | 面试房间布局/状态色/字幕/动效                                             |
+| [uni-app-x](../../.trae/skills/uni-app-x/SKILL.md)                                                     | 1.1.0 | uni-app x 平台通用知识（结构/uvue/UTS/组件/API/ucss/原生/调试/性能）      |
+| [mentorloop-mobile-design-adapter](../../.trae/skills/mentorloop-mobile-design-adapter/SKILL.md)       | 1.3.0 | Web/多端概念稿 → uvue 移动端设计规格（rpx/胶囊/原生 tabBar/留白/玻璃）    |
+| [mentorloop-design-intelligence](../../.trae/skills/mentorloop-design-intelligence/SKILL.md)           | 1.0.0 | 设计灵感与选型：风格/配色/字体/布局候选 → 设计选型单                      |
 
 ### 8.3 产物模板
 

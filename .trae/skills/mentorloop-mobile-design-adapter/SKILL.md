@@ -2,9 +2,9 @@
 name: mentorloop-mobile-design-adapter
 description: Convert Web or multi-platform concept drafts into uvue-native mobile design specs. Use when translating Figma, HTML or React prototypes into uni-app x screens. 中文触发 移动端转换 概念稿落地 原型转设计 rpx 安全区. Do not use for server-only or engine-only work.
 metadata:
-  version: '1.2.0'
+  version: '1.3.0'
   domain: mentorloop-app
-  last_updated: '2026-10-14'
+  last_updated: '2026-10-25'
 ---
 
 # MentorLoop Mobile Design Adapter
@@ -16,16 +16,19 @@ The handbook at `multi-platform-ui-handbook/multi-platform-ui-handbook.html` is 
 ## Conversion steps
 
 1. **Keep the information architecture, change the interaction channel.** Re-run the mobile sanity checks first (one task per module, first screen = highest-frequency task, module order follows the user's task order). Never scale a desktop layout down.
-2. **Thumb-first weight.** Core actions in the easy zone (bottom); destructive or low-frequency actions in the hard zone (top). Prefer bottom tabBar, bottom sheet, FAB equivalents.
-3. **Viewport to rpx.** Design at 375 (iOS pt) or 360 (Android dp) width; `rem2rpx` is on, so 750rpx equals device width. Do not port desktop pixel values.
-4. **Safe area.** Top clears the status bar / notch; bottom CTA clears the home indicator. Content may bleed past the safe area for immersion, but clickable elements stay inside it.
-5. **Touch targets.** At least 44x44 (iOS) / 48x48dp (Android); when the visual is smaller, enlarge the hit area with a wrapper.
-6. **Hover becomes press.** Use the three global classes `pressed-row` / `pressed-card` / `pressed-chip` (opacity 0.7 / 0.85 / 0.8, 80-150ms). No hover-only affordance, no layout-shifting transform.
-7. **Navigation.** Bottom tabBar holds 3-5 first-level entries; drill-down is at most 3 levels. A Web modal or dropdown becomes a bottom sheet; a desktop side nav becomes a tab or a drill-down.
-8. **Primitive translation.** Apply the table below before writing any style.
-9. **Five states.** Every screen and module designs empty, loading, error, degraded and permission-denied. Degraded and permission-denied must offer a next step, never a dead end.
-10. **Tokens only from the authoritative carriers** — token governance lives in `docs/sop/domain-design-sop.md`. Never hardcode a brand hex in a page.
-11. **State without colour alone.** Pair colour with shape, label or icon.
+2. **Thumb-first weight.** Core actions in the easy zone (bottom); destructive or low-frequency actions in the hard zone (top). Prefer bottom tabBar and bottom sheets. **The tabBar is native and three evenly spaced items — never float a FAB above it**; a centre action needs the uni-ui x `uni-tab-bar` architecture change and a separate task.
+3. **Platform chrome before pixels.** WeChat MP reserves the top-right capsule (~97×32 px): give the top bar `paddingRight: 200rpx` and keep interactive elements out of it. App has no capsule. Native tabBar cannot be glass on either platform.
+4. **Viewport to rpx.** Design at 375 (iOS pt) or 360 (Android dp) width; `rem2rpx` is on, so 750rpx equals device width. Do not port desktop pixel values.
+5. **Safe area.** Top clears the status bar / notch; bottom CTA clears the home indicator. Content may bleed past the safe area for immersion, but clickable elements stay inside it.
+6. **Touch targets.** At least 44x44 (iOS) / 48x48dp (Android); when the visual is smaller, enlarge the hit area with a wrapper.
+7. **Hover becomes press.** Use the three global classes `pressed-row` / `pressed-card` / `pressed-chip` (opacity 0.7 / 0.85 / 0.8, 80-150ms). No hover-only affordance, no layout-shifting transform.
+8. **Navigation.** Bottom tabBar holds 3-5 first-level entries; drill-down is at most 3 levels. A Web modal or dropdown becomes a bottom sheet; a desktop side nav becomes a tab or a drill-down. Do not repeat a tabBar entry as an in-page shortcut.
+9. **Primitive translation.** Apply the table below before writing any style.
+10. **Five states.** Every screen and module designs empty, loading, error, degraded and permission-denied. Degraded and permission-denied must offer a next step, never a dead end.
+11. **Tokens only from the authoritative carriers** — token governance lives in `docs/sop/domain-design-sop.md`. Never hardcode a brand hex in a page.
+12. **State without colour alone.** Pair colour with shape, label or icon.
+13. **Empty is allowed.** Do not fill a gap with a decorative chart, trend card or fake entry. Only design features the system currently supports; mark anything超前 as「超前 · 未实现」.
+14. **Glass scope.** App may use `backdrop-filter`; MP simulates with 94–97% white + hairline + soft shadow. Never promise glass on the native tabBar.
 
 ## Web to uvue primitive map
 
@@ -44,6 +47,7 @@ The handbook at `multi-platform-ui-handbook/multi-platform-ui-handbook.html` is 
 
 - uvue/Tailwind hard constraints, privacy red lines, and token governance come from `mentorloop-system-spec` and `docs/sop/domain-design-sop.md`; do not restate or bend them here.
 - A screen or module that does not resolve its five states is not finished.
+- Design deliverables are HTML files. Do not export PNG / JPG design images unless the user explicitly asks.
 
 ## Output
 
