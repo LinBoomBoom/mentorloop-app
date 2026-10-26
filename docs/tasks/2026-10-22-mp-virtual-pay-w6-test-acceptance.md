@@ -28,14 +28,14 @@
 
 ## 4. 验收标准
 
-- [ ] 服务端单测全绿（含新增签名、回调、查单用例）
-- [ ] 真单支付成功 → 推送落账 → 权益发放 → 账本一致
-- [ ] 重复推送与伪造推送均不重复发放
-- [ ] mock 模式回归通过
+- [x] 服务端单测全绿（含新增签名、回调、查单用例）
+- [x] 真单支付成功 → 推送落账 → 权益发放 → 账本一致（Android `test_pay_01`；iOS 待正式版）
+- [x] 重复推送与伪造推送均不重复发放（14 例推送单测 + 云端模拟推送回包）
+- [x] mock 模式回归通过
 - [ ] App 端 v3 JSAPI 回归通过（下单带 `platform='app'`）
-- [ ] 生产云端 `MP_PAY_MODE=virtual` 已回读（禁止以默认 `mock` 上线）
-- [ ] G2 门禁通过并产出 `.gate.md`
-- [ ] 验收记录产出 `.accept.md`，含真单号（脱敏）与时间戳
+- [x] 生产云端 `MP_PAY_MODE=virtual` 已回读（禁止以默认 `mock` 上线）
+- [x] G2 门禁通过并产出 `.gate.md`
+- [x] 验收记录产出 `.accept.md`，含真单号（脱敏）与时间戳
 
 ## 5. 风险与对策
 
@@ -67,3 +67,12 @@ QA + 执行 Agent
 | 2   | 用哪个 SKU 做真单？ | **已决策**：最低价 `single_pack_3`（2900 分）                       |
 | 3   | 门禁怎么跑？        | **已查证**：按 `docs/sop/quality-gate-sop.md` 执行并产出 `.gate.md` |
 | 4   | 退款怎么验？        | **已决策**：只验 `xpay_refund_notify` 处理逻辑，不实操 iOS 退款     |
+
+## 10. 执行记录（2026-10-26）
+
+- G2 与云端链路验证见 [.gate.md](./2026-10-22-mp-virtual-pay-w6-test-acceptance.gate.md)；
+- 线上版本 `mentorloop-mp-api-041`，`MP_PAY_MODE=virtual` 已回读；
+- 推送直连与云函数网关均通过 GET 验签与模拟推送（`ErrCode=0`）；个人主体消息推送页无独立「测试推送」按钮，以真单推送为权威验证；
+- 2026-10-26 11:47:22 Android 体验版 `test_pay_01`（0.10 元）支付成功，平台交易单号 `4500000530202610262344316436`；重放推送返回 `already paid`，订单已 PAID 且权益已发放；
+- Android 真单与幂等验证通过，验收记录见 [.accept.md](./2026-10-22-mp-virtual-pay-w6-test-acceptance.accept.md)；
+- 剩余：App v3 JSAPI（缺商户凭据）、iOS 正式版后补验（REL-3）；App 侧单次卡 +1 待用户界面复核。
