@@ -25,3 +25,6 @@ docs/design/vendor
 
 # 内容库 fixture（scripts/export-content-fixture.mjs 生成的采样快照，单行 JSON，不作源码维护）
 server/src/data/content-fixture.json
+
+# Docker 构建上下文排除清单（非 Prettier 支持的语法）
+.dockerignore

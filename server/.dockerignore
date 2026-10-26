@@ -1,0 +1,9 @@
+# 云托管构建上下文排除（Dockerfile 只 COPY package*.json / tsconfig.json / src）
+# 本地运行数据不入镜像：单测会在此生成大量 test-*.db 与 test-uploads-*，曾导致上下文达 GB 级
+data/
+node_modules/
+dist/
+e2e/
+coverage/
+.env
+*.log
