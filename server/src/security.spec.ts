@@ -5,7 +5,7 @@
 // 4) 云端启动安全守卫（assertCloudSafety）
 import { describe, it, expect } from 'vitest'
 import { buildApp } from './app.js'
-import { loadEnv } from './config.js'
+import { loadEnv, isPhoneLoginEnabled } from './config.js'
 import { closeDb } from './db.js'
 
 function makeApp(patch: { wxMockLogin?: boolean; trustWxHeaders?: boolean } = {}) {
@@ -203,35 +203,96 @@ describe('云端启动安全守卫（assertCloudSafety）', () => {
     const env = loadEnv()
     env.mysqlHost = '10.0.0.1'
     env.dbPath = ':memory:'
+    env.jwtSecret = 'a-strong-secret-for-cloud'
+    // 个人主体无法办理短信签名：云端默认不启用腾讯云 SMS（手机号登录自动关闭）
+    env.smsProvider = 'mock'
+    env.mockSmsCode = '123456'
+    env.allowWeakSmsCode = true
     return env
   }
 
-  it('默认 JWT_SECRET + 万能验证码：拒绝启动', () => {
-    expect(() => buildApp({ env: cloudEnv() })).toThrow(/JWT_SECRET[\s\S]*MOCK_SMS_CODE|123456/)
+  it('默认 JWT_SECRET：拒绝启动', () => {
+    const env = cloudEnv()
+    env.jwtSecret = 'dev-only-change-me'
+    expect(() => buildApp({ env })).toThrow(/JWT_SECRET/)
     closeDb()
   })
 
   it('WX_MOCK_LOGIN 在云模式被拒绝', () => {
     const env = cloudEnv()
-    env.jwtSecret = 'a-strong-secret-for-cloud'
-    env.mockSmsCode = '830211'
     env.wxMockLogin = true
     expect(() => buildApp({ env })).toThrow(/WX_MOCK_LOGIN/)
     closeDb()
   })
 
-  it('配置齐全的云模式可正常构建', () => {
+  it('云端未接短信通道：不阻断启动，但手机号登录被关闭', () => {
     const env = cloudEnv()
-    env.jwtSecret = 'a-strong-secret-for-cloud'
-    env.mockSmsCode = '830211'
+    expect(isPhoneLoginEnabled(env)).toBe(false)
     const app = buildApp({ env })
     expect(app != null).toBe(true)
     closeDb()
   })
 
-  it('本地 SQLite（无 MYSQL_HOST）不受守卫影响', () => {
-    const app = makeApp()
+  it('云端启用 tencent 但缺模板/签名/AppID：拒绝启动', () => {
+    const env = cloudEnv()
+    env.smsProvider = 'tencent'
+    env.tencentSecretId = 'AKIDtest'
+    env.tencentSecretKey = 'secretkey'
+    env.smsSdkAppId = '1400000000'
+    env.smsSignName = '测试签名'
+    env.smsTemplateId = ''
+    expect(() => buildApp({ env })).toThrow(
+      /SMS_SDK_APP_ID[\s\S]*SMS_SIGN_NAME[\s\S]*SMS_TEMPLATE_ID/
+    )
+    closeDb()
+  })
+
+  it('云端启用 tencent 且配置齐全：手机号登录可用', () => {
+    const env = cloudEnv()
+    env.smsProvider = 'tencent'
+    env.tencentSecretId = 'AKIDtest'
+    env.tencentSecretKey = 'secretkey'
+    env.smsSdkAppId = '1400000000'
+    env.smsSignName = '测试签名'
+    env.smsTemplateId = '1234567'
+    expect(isPhoneLoginEnabled(env)).toBe(true)
+    const app = buildApp({ env })
     expect(app != null).toBe(true)
+    closeDb()
+  })
+
+  it('本地 SQLite（无 MYSQL_HOST）不受守卫影响，手机号登录保持可用', () => {
+    const env = loadEnv()
+    env.dbPath = ':memory:'
+    expect(isPhoneLoginEnabled(env)).toBe(true)
+    const app = buildApp({ env })
+    expect(app != null).toBe(true)
+    closeDb()
+  })
+})
+
+describe('手机号登录在云端被关闭时的行为', () => {
+  it('/auth/sms-code 与 /auth/login 返回不可用，/auth/wechat 仍可用', async () => {
+    const env = loadEnv()
+    env.mysqlHost = '10.0.0.1'
+    env.dbPath = ':memory:'
+    env.jwtSecret = 'a-strong-secret-for-cloud'
+    env.smsProvider = 'mock'
+    const app = buildApp({ env })
+    const sms = await app.inject({
+      method: 'POST',
+      url: '/auth/sms-code',
+      payload: { phone: '13800000000' }
+    })
+    expect(sms.statusCode).toBe(400)
+    expect(sms.json().message).toContain('手机号登录暂不可用')
+    const login = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { phone: '13800000000', code: '123456' }
+    })
+    expect(login.statusCode).toBe(400)
+    expect(login.json().message).toContain('手机号登录暂不可用')
     closeDb()
   })
 })

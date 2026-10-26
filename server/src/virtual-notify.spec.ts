@@ -9,7 +9,8 @@ import {
   parseXml,
   findText,
   buildXmlReply,
-  reconcileVirtualOrders
+  reconcileVirtualOrders,
+  startVirtualOrderReconciler
 } from './services/virtual-notify.js'
 
 function makeApp(env: Env) {
@@ -335,5 +336,13 @@ describe('查单兜底（W4）', () => {
     expect(await reconcileVirtualOrders(db, env)).toBe(0)
     expect(called).toBe(0)
     expect((await quota(app, token)).singleCreditsLeft).toBe(0)
+  })
+
+  it('间隔 <=0 时关闭查单兜底（不创建定时器）', () => {
+    const env = virtualEnv()
+    makeApp(env)
+    const db = getDb(env.dbPath)
+    expect(startVirtualOrderReconciler(db, env, 0)).toBeNull()
+    expect(startVirtualOrderReconciler(db, env, -1)).toBeNull()
   })
 })

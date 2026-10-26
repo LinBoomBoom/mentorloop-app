@@ -9,6 +9,7 @@ import {
   BIND_OPENID_MISMATCH
 } from '../services/auth.js'
 import { getQuota } from '../services/quota.js'
+import { isPhoneLoginEnabled } from '../config.js'
 import { ok, okData, fail } from '../util.js'
 
 // ---- 轻量内存限流（单实例足够；窗口外自动滑出，防止 Map 无界增长）----
@@ -40,6 +41,10 @@ export default async function (app: FastifyInstance): Promise<void> {
       }
     },
     async (request, reply) => {
+      // 云端未接入短信通道时关闭手机号登录（个人主体无法办理短信签名）
+      if (!isPhoneLoginEnabled(env)) {
+        return reply.code(400).send(fail(400, '手机号登录暂不可用，请使用微信登录'))
+      }
       const { phone } = request.body as { phone: string }
       const t = Date.now()
       const log = smsSendLog.get(phone) ?? []
@@ -54,7 +59,8 @@ export default async function (app: FastifyInstance): Promise<void> {
       log.push(t)
       smsSendLog.set(phone, log)
       const okSend = await sendSmsCode(db, env, phone)
-      return okSend ? ok() : fail(400, '手机号格式不正确')
+      if (!okSend) return reply.code(502).send(fail(502, '验证码发送失败，请稍后重试'))
+      return ok()
     }
   )
 
@@ -70,6 +76,9 @@ export default async function (app: FastifyInstance): Promise<void> {
       }
     },
     async (request, reply) => {
+      if (!isPhoneLoginEnabled(env)) {
+        return reply.code(400).send(fail(400, '手机号登录暂不可用，请使用微信登录'))
+      }
       const { phone, code } = request.body as { phone: string; code: string }
       // 验证码爆破防护：失败次数超限直接拒绝（成功不记录）
       const t = Date.now()

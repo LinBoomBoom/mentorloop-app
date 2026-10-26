@@ -166,16 +166,19 @@ pnpm shot:mp prep
 
 ```powershell
 cd server
-tcb cloudrun deploy -e prod-d6gaa83ds8accb61b -s mentorloop-mp-api --source . --port 8787 --min-num 1 --max-num 5 --open-access-types MINIAPP --wait --force
+tcb cloudrun deploy -e prod-d6gaa83ds8accb61b -s mentorloop-mp-api --source . --port 8787 --min-num 0 --max-num 2 --open-access-types MINIAPP --wait --force
 ```
+
+预上线降配（2026-10-26）：控制台需同步设置 **容器规格 0.5 核 1G**（CLI 不改 CPU/内存）；最小副本 **0** 表示无访问不计费，最大副本 **2** 封顶防异常流量。若冷启动不可接受，再临时把最小副本调回 1。
 
 注意事项：
 
 1. 云端环境变量共 **24 键**，必须在控制台版本配置中填写；`tcb cloudrun deploy` 不传 `EnvParams`；
-2. 部署后回读 `MP_PAY_MODE`（计划切 `virtual`）、`LLM_MODEL`（建议 `deepseek-v4-flash`）；
-3. 健康检查 `GET /healthz` 应返回 200；
-4. 小程序后台「消息推送」URL 指向 `https://<云托管域名>/membership/virtual/notify`，并点一次平台测试推送；
-5. 生产禁止 `MOCK_SMS_CODE=123456` 与 `ALLOW_WEAK_SMS_CODE=true` 同时存在。
+2. 预上线降配可选填 `VIRTUAL_RECONCILE_INTERVAL_MS=3600000`（默认即 60 分钟；`0`=关闭查单兜底，保留推送主链路）；
+3. 部署后回读 `MP_PAY_MODE`（计划切 `virtual`）、`LLM_MODEL`（建议 `deepseek-v4-flash`）；
+4. 健康检查 `GET /healthz` 应返回 200；
+5. 小程序后台「消息推送」URL 指向 `https://<云托管域名>/membership/virtual/notify`，并点一次平台测试推送；
+6. 手机号登录默认关闭（云端未接腾讯云 SMS 时 `/auth/sms-code`、`/auth/login` 返回不可用）；若显式置 `SMS_PROVIDER=tencent`，则必须配齐 `SMS_SDK_APP_ID` / `SMS_SIGN_NAME` / `SMS_TEMPLATE_ID`，且不得使用 `MOCK_SMS_CODE=123456`。
 
 ## 9. 不迁移清单
 

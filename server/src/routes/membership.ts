@@ -8,6 +8,7 @@ import { createOrder, payOrderMock, settleOrder } from '../services/payment.js'
 import { getSku } from '../data/skus.js'
 import { isVirtualPayReady, createVirtualPayParams } from '../services/virtual-pay.js'
 import { handleVirtualNotify } from '../services/virtual-notify.js'
+import { isAppPayEnabled } from '../config.js'
 import {
   createJsapiOrder,
   verifyNotifySignature,
@@ -47,11 +48,6 @@ export default async function (app: FastifyInstance): Promise<void> {
       const uid = (request.user as any).uid as string
       const user = await getUserByUid(db, uid)
       if (user == null) return reply.code(401).send(fail(401, '用户不存在'))
-      // 购买前必须绑定手机号（契约 2026-10-23-phone-binding §2）：
-      // 业务码 40902 与「会话过期 409」区分，客户端据此打开绑定层而非重登重试
-      if (user.phone == null || user.phone.length === 0) {
-        return reply.code(409).send(fail(40902, '请先绑定手机号后再购买'))
-      }
       const { skuId, platform } = request.body as { skuId: string; platform?: string }
       if (platform !== 'app' && platform !== 'mp-weixin') {
         return reply.code(400).send(fail(400, '平台参数不合法'))
@@ -76,6 +72,12 @@ export default async function (app: FastifyInstance): Promise<void> {
         } catch {
           return reply.code(500).send(fail(500, '下单失败'))
         }
+      }
+
+      // App 端本期不上线：云端未配置真实 JSAPI 商户凭据时拒绝下单，
+      // 避免走下面 mock 分支「下单即发放」造成免费白送（本地联调不受影响）
+      if (platform === 'app' && !isAppPayEnabled(env)) {
+        return reply.code(400).send(fail(400, 'App 端支付暂未开放，请在微信小程序内购买'))
       }
 
       if (platform === 'app' && env.payMode === 'wx') {

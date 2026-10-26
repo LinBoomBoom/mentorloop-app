@@ -144,22 +144,9 @@ describe('购买前手机号绑定 /me/phone', () => {
     expect(wxPhone.json().data.phone).toBe(null)
   })
 
-  it('未绑定手机号时下单返回 409/40902，绑定后可下单', async () => {
+  it('未绑定手机号也可下单（2026-10-26 移除购买门控）', async () => {
     const app = makeApp() // mpPayMode 默认 mock：下单即发放
     const wx = await loginWechat(app, 'order-gate')
-
-    const blocked = await app.inject({
-      method: 'POST',
-      url: '/membership/order',
-      headers: auth(wx.token),
-      payload: { skuId: 'single_pack_3', platform: 'mp-weixin' }
-    })
-    expect(blocked.statusCode).toBe(409)
-    expect(blocked.json().code).toBe(40902)
-
-    const phone = uniqPhone('138')
-    await sendCode(app, phone)
-    expect((await bind(app, wx.token, phone, '123456')).statusCode).toBe(200)
 
     const okOrder = await app.inject({
       method: 'POST',

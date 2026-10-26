@@ -15,6 +15,12 @@ export type Env = {
   desktopDbName: string // 桌面端库名（同实例跨库只读）；为空=关闭账号互通，零跨库查询
   mockSmsCode: string
   smsTtlMs: number
+  smsProvider: 'mock' | 'tencent'
+  smsRegion: string
+  smsSdkAppId: string
+  smsSignName: string
+  smsTemplateId: string
+  smsTimeoutMs: number
   llmEnabled: boolean
   llmBaseUrl: string
   llmApiKey: string
@@ -53,6 +59,8 @@ export type Env = {
   // 简历 AI 评审额度（2026-10-21）
   resumeMemberMonthlyQuota: number // 会员每自然月完整评审次数
   resumeFreePreviewDaily: number // 免费用户每日结构预览次数
+  // 虚拟支付查单兜底间隔（2026-10-26 预上线降配）：<=0 关闭；默认 60 分钟
+  virtualReconcileIntervalMs: number
 }
 
 const DEFAULT_ENV: Env = {
@@ -65,10 +73,16 @@ const DEFAULT_ENV: Env = {
   mysqlUser: '',
   mysqlPassword: '',
   mysqlDatabase: 'mentorloop_mp',
-  mysqlPoolSize: 10,
+  mysqlPoolSize: 5,
   desktopDbName: '', // 默认关闭：互通是增强项，零配置必须可跑
   mockSmsCode: '123456',
   smsTtlMs: 300000,
+  smsProvider: 'mock', // 本地默认 mock；云端默认不启用（个人主体无法办理签名），置 tencent 才开启手机号登录
+  smsRegion: 'ap-guangzhou',
+  smsSdkAppId: '',
+  smsSignName: '',
+  smsTemplateId: '',
+  smsTimeoutMs: 8000,
   llmEnabled: false, // P1.2：默认关闭，报告回退纯规则；开启后 LLM 仅生成解释与优秀示例
   llmBaseUrl: '',
   llmApiKey: '',
@@ -103,11 +117,13 @@ const DEFAULT_ENV: Env = {
   tencentTtsVoiceType: 101001, // 智瑜（基础女声，mp3 16k）
   wxCloudEnvId: 'prod-d6gaa83ds8accb61b',
   resumeMemberMonthlyQuota: 5,
-  resumeFreePreviewDaily: 3
+  resumeFreePreviewDaily: 3,
+  virtualReconcileIntervalMs: 60 * 60 * 1000
 }
 
 export function loadEnv(): Env {
   const e = process.env || {}
+  const reconcileRaw = parseInt(e.VIRTUAL_RECONCILE_INTERVAL_MS ?? '', 10)
   return {
     port: parseInt(e.PORT ?? '', 10) || DEFAULT_ENV.port,
     dbPath: e.DB_PATH ?? DEFAULT_ENV.dbPath,
@@ -122,6 +138,12 @@ export function loadEnv(): Env {
     desktopDbName: e.DESKTOP_DB_NAME ?? DEFAULT_ENV.desktopDbName,
     mockSmsCode: e.MOCK_SMS_CODE ?? DEFAULT_ENV.mockSmsCode,
     smsTtlMs: parseInt(e.SMS_TTL_MS ?? '', 10) || DEFAULT_ENV.smsTtlMs,
+    smsProvider: e.SMS_PROVIDER === 'tencent' ? 'tencent' : 'mock',
+    smsRegion: e.SMS_REGION ?? DEFAULT_ENV.smsRegion,
+    smsSdkAppId: e.SMS_SDK_APP_ID ?? DEFAULT_ENV.smsSdkAppId,
+    smsSignName: e.SMS_SIGN_NAME ?? DEFAULT_ENV.smsSignName,
+    smsTemplateId: e.SMS_TEMPLATE_ID ?? DEFAULT_ENV.smsTemplateId,
+    smsTimeoutMs: parseInt(e.SMS_TIMEOUT_MS ?? '', 10) || DEFAULT_ENV.smsTimeoutMs,
     llmEnabled: e.LLM_ENABLED === 'true',
     llmBaseUrl: e.LLM_BASE_URL ?? DEFAULT_ENV.llmBaseUrl,
     llmApiKey: e.LLM_API_KEY ?? DEFAULT_ENV.llmApiKey,
@@ -160,7 +182,10 @@ export function loadEnv(): Env {
     resumeMemberMonthlyQuota:
       parseInt(e.RESUME_MEMBER_MONTHLY_QUOTA ?? '', 10) || DEFAULT_ENV.resumeMemberMonthlyQuota,
     resumeFreePreviewDaily:
-      parseInt(e.RESUME_FREE_PREVIEW_DAILY ?? '', 10) || DEFAULT_ENV.resumeFreePreviewDaily
+      parseInt(e.RESUME_FREE_PREVIEW_DAILY ?? '', 10) || DEFAULT_ENV.resumeFreePreviewDaily,
+    virtualReconcileIntervalMs: Number.isFinite(reconcileRaw)
+      ? reconcileRaw
+      : DEFAULT_ENV.virtualReconcileIntervalMs
   }
 }
 
@@ -204,22 +229,50 @@ export const APPROVED_TTS_VOICE_TYPES: number[] = [101001]
 // 已弃用模型名（DeepSeek 于 2026-07-24 弃用，仍做兼容映射，但不保证能力与价格口径）
 export const DEPRECATED_LLM_MODELS: string[] = ['deepseek-chat', 'deepseek-reasoner']
 
+// 手机号验证码登录可用性：
+// - 本地/测试（无 MYSQL_HOST）：mock 码直接可用，便于开发与单测
+// - 云端：仅当短信通道（腾讯云 SMS）就绪时可用；个人主体无法办理签名，故默认关闭，
+//   避免「万能验证码可登录任意手机号」（SEC-1）
+export function isPhoneLoginEnabled(env: Env): boolean {
+  if (env.mysqlHost.length === 0) return true
+  return env.smsProvider === 'tencent'
+}
+
+// App 端支付可用性：
+// - 配置真实商户凭据（PAY_MODE=wx）：可用
+// - 本地/测试（无 MYSQL_HOST）：允许 mock 下单即发放，便于联调
+// - 云端未配置商户凭据：不可用，拒绝下单（避免 mock 分支免费发放；App 本期不上线）
+export function isAppPayEnabled(env: Env): boolean {
+  if (env.payMode === 'wx') return true
+  return env.mysqlHost.length === 0
+}
+
 export function assertCloudSafety(env: Env): void {
   if (env.mysqlHost.length === 0) return
   const problems: string[] = []
   if (env.jwtSecret === DEFAULT_ENV.jwtSecret) {
     problems.push('JWT_SECRET 仍为开发默认值 dev-only-change-me')
   }
-  if (env.mockSmsCode === DEFAULT_ENV.mockSmsCode && !env.allowWeakSmsCode) {
-    problems.push(
-      'MOCK_SMS_CODE 仍为万能验证码 123456（若确为上线前联调，需同时设 ALLOW_WEAK_SMS_CODE=true 显式放行）'
-    )
-  }
   if (env.wxMockLogin) {
     problems.push('WX_MOCK_LOGIN=true（假 openid 登录）禁止在云端开启')
   }
   if (env.mpPayMode === 'virtual' && (env.mpOfferId.length === 0 || env.mpAppKey.length === 0)) {
     problems.push('MP_PAY_MODE=virtual 但 MP_OFFER_ID / MP_APP_KEY 未配齐（签名必然失败）')
+  }
+  // 短信通道：仅当显式启用腾讯云 SMS 时校验凭据（个人主体无法办理签名，云端默认不启用）
+  if (env.smsProvider === 'tencent') {
+    if (env.tencentSecretId.length === 0 || env.tencentSecretKey.length === 0) {
+      problems.push('SMS_PROVIDER=tencent 但 TENCENTCLOUD_SECRET_ID/KEY 未配齐')
+    }
+    if (
+      env.smsSdkAppId.length === 0 ||
+      env.smsSignName.length === 0 ||
+      env.smsTemplateId.length === 0
+    ) {
+      problems.push(
+        'SMS_PROVIDER=tencent 但 SMS_SDK_APP_ID / SMS_SIGN_NAME / SMS_TEMPLATE_ID 未配齐'
+      )
+    }
   }
   if (
     env.ttsProvider === 'tencent' &&
@@ -240,6 +293,15 @@ export function assertCloudSafety(env: Env): void {
   if (env.mpPayMode === 'mock') {
     console.warn(
       '[config] MP_PAY_MODE=mock（云端）：mp-weixin 下单将直接发放权益，不产生支付；生产环境请置 virtual'
+    )
+  }
+  if (!isPhoneLoginEnabled(env)) {
+    console.warn(
+      '[config] 云端未启用腾讯云 SMS：手机号验证码登录已自动关闭（/auth/sms-code 与 /auth/login 返回不可用），仅保留微信登录'
+    )
+  } else if (env.mockSmsCode === DEFAULT_ENV.mockSmsCode || env.allowWeakSmsCode) {
+    console.warn(
+      '[config] 云端手机号登录启用中，但 MOCK_SMS_CODE=123456 或 ALLOW_WEAK_SMS_CODE=true 仍在生效，请尽快改为真实随机码'
     )
   }
   if (env.llmEnabled && DEPRECATED_LLM_MODELS.indexOf(env.llmModel) >= 0) {

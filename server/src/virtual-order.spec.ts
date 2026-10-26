@@ -1,7 +1,7 @@
 // 虚拟支付下单路由单测（W3）：platform 分流 / 409 会话校验 / signData 取值
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { buildApp } from './app.js'
-import { loadEnv } from './config.js'
+import { loadEnv, isAppPayEnabled } from './config.js'
 import type { Env } from './config.js'
 import { closeDb, getDb } from './db.js'
 
@@ -129,5 +129,17 @@ describe('虚拟支付下单（W3）', () => {
     const r = await order(app, token, { skuId: 'member_monthly', platform: 'mp-weixin' })
     expect(r.status).toBe(200)
     expect(r.json.data.payParams).toBeNull()
+  })
+
+  it('云端未配置 App 商户凭据时 App 端下单不可用（不免费发放）', () => {
+    const env = loadEnv() // payMode 默认 mock
+    // 本地/测试：允许 mock 下单
+    expect(isAppPayEnabled(env)).toBe(true)
+    // 云端：无 MYSQL_HOST 时不判定；显式置云端地址后应禁用
+    env.mysqlHost = '10.0.0.1'
+    expect(isAppPayEnabled(env)).toBe(false)
+    // 配置真实商户凭据后恢复可用
+    env.payMode = 'wx'
+    expect(isAppPayEnabled(env)).toBe(true)
   })
 })

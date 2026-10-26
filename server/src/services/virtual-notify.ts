@@ -236,9 +236,13 @@ export async function reconcileVirtualOrders(
 export function startVirtualOrderReconciler(
   db: Db,
   env: Env,
-  intervalMs: number = 5 * 60 * 1000
+  intervalMs: number = 60 * 60 * 1000
 ): NodeJS.Timeout | null {
   if (env.mpPayMode !== 'virtual' || !isVirtualPayReady(env)) return null
+  if (intervalMs <= 0) {
+    console.log('[virtual-notify] 查单兜底已关闭（VIRTUAL_RECONCILE_INTERVAL_MS<=0）')
+    return null
+  }
   console.log('[virtual-notify] 查单兜底已启动，间隔(ms)=' + String(intervalMs))
   const timer = setInterval(() => {
     void reconcileVirtualOrders(db, env)

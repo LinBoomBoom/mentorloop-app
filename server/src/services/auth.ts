@@ -4,6 +4,7 @@ import { Env, DEFAULT_FREE_QUOTA } from '../config.js'
 import { newId, now } from '../util.js'
 import { AuthResult } from '../types/domain.js'
 import { createDesktopGateway, syncDesktopLink } from './desktop-link.js'
+import { generateSmsCode, maskPhone, sendTencentSms } from './sms.js'
 import { wxApiFetch } from './wx-http.js'
 
 export type UserRow = {
@@ -33,13 +34,29 @@ function rowToUser(row: unknown): UserRow {
 
 export async function sendSmsCode(db: Db, env: Env, phone: string): Promise<boolean> {
   if (phone.length !== 11) return false
+  // mock：本地联调固定码；tencent：生成随机 6 位码并先发送，成功后才落库
+  const code = env.smsProvider === 'tencent' ? generateSmsCode() : env.mockSmsCode
+  if (env.smsProvider === 'tencent') {
+    const sent = await sendTencentSms(env, phone, code)
+    if (!sent.ok) {
+      console.warn(
+        '[sms] send failed phone=' +
+          maskPhone(phone) +
+          ' code=' +
+          (sent.code ?? 'UNKNOWN') +
+          ' message=' +
+          (sent.message ?? '')
+      )
+      return false
+    }
+  }
   const expiresAt = now() + env.smsTtlMs
   await db
     .prepare(
       `INSERT INTO sms_codes (phone, code, expires_at, consumed) VALUES (?, ?, ?, 0)
      ON CONFLICT(phone) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, consumed = 0`
     )
-    .run(phone, env.mockSmsCode, expiresAt)
+    .run(phone, code, expiresAt)
   return true
 }
 

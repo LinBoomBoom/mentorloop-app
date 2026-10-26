@@ -5,9 +5,12 @@
 //   - probe：内置探针音（440Hz 方波短音，仅链路验证），provider 明标 probe
 //   - tencent：腾讯云语音合成 TextToVoice（TC3-HMAC-SHA256 签名，mp3 16k）
 // 关键约束：本服务只写合成音频，绝不落任何用户录音；合成失败一律返回空 fileID。
-import { createHash, createHmac, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import type { Env } from '../config.js'
+import { tc3Headers } from './tc3.js'
 import { uploadToWxCloud } from './wx-storage.js'
+
+export { tc3Headers } from './tc3.js'
 
 // 题面/追问送入合成的长度上限（契约：超限截断，不报错）
 export const MAX_TTS_CHARS = 200
@@ -34,74 +37,6 @@ export type TtsDriver = {
 // 按契约截断（超 200 字不报错）
 export function clampTtsText(text: string): string {
   return text.length > MAX_TTS_CHARS ? text.substring(0, MAX_TTS_CHARS) : text
-}
-
-// ---------------- TC3-HMAC-SHA256 签名（腾讯云 API 通用） ----------------
-
-export type Tc3Params = {
-  secretId: string
-  secretKey: string
-  token?: string
-  host: string
-  service: string
-  action: string
-  version: string
-  region: string
-  payload: string
-  timestamp: number // 秒级，单测固定向量使用
-}
-
-const sha256Hex = (s: string): string => createHash('sha256').update(s).digest('hex')
-const hmac = (key: Buffer | string, s: string): Buffer =>
-  createHmac('sha256', key).update(s).digest()
-
-// 返回可直接拼进 fetch 的请求头（含 Authorization）；固定 timestamp 即可锁定向量
-export function tc3Headers(p: Tc3Params): { [k: string]: string } {
-  const date = new Date(p.timestamp * 1000).toISOString().slice(0, 10)
-  const canonicalHeaders =
-    'content-type:application/json; charset=utf-8\n' +
-    'host:' +
-    p.host +
-    '\n' +
-    'x-tc-action:' +
-    p.action.toLowerCase() +
-    '\n'
-  const signedHeaders = 'content-type;host;x-tc-action'
-  const canonicalRequest = [
-    'POST',
-    '/',
-    '',
-    canonicalHeaders,
-    signedHeaders,
-    sha256Hex(p.payload)
-  ].join('\n')
-  const scope = date + '/' + p.service + '/tc3_request'
-  const stringToSign = ['TC3-HMAC-SHA256', p.timestamp, scope, sha256Hex(canonicalRequest)].join(
-    '\n'
-  )
-  const kDate = hmac('TC3' + p.secretKey, date)
-  const kService = hmac(kDate, p.service)
-  const kSigning = hmac(kService, 'tc3_request')
-  const signature = createHmac('sha256', kSigning).update(stringToSign).digest('hex')
-  const headers: { [k: string]: string } = {
-    Authorization:
-      'TC3-HMAC-SHA256 Credential=' +
-      p.secretId +
-      '/' +
-      scope +
-      ', SignedHeaders=' +
-      signedHeaders +
-      ', Signature=' +
-      signature,
-    'Content-Type': 'application/json; charset=utf-8',
-    Host: p.host,
-    'X-TC-Action': p.action,
-    'X-TC-Version': p.version,
-    'X-TC-Timestamp': String(p.timestamp),
-    'X-TC-Region': p.region
-  }
-  if (p.token != null && p.token.length > 0) headers['X-TC-Token'] = p.token
-  return headers
 }
 
 // ---------------- stub（默认，明确降级） ----------------
