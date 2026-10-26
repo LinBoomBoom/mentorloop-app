@@ -15,7 +15,7 @@
           <view class="flex-col flex-1 ml-3 overflow-hidden">
             <text class="text-lg font-bold text-ink truncate block">{{ nickname }}</text>
             <text class="text-xs text-ink-soft mt-1 truncate block"
-              >{{ positionLabel }} · {{ experienceLabel }} · {{ phoneText }}</text
+              >{{ positionLabel }} · {{ experienceLabel }}</text
             >
           </view>
           <view
@@ -149,7 +149,6 @@ import mlCard from '../../components/ml-card.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore, positionDisplay, experienceDisplay } from '../../store/user-profile.uts'
-import { loginByWechat, applyAuth } from '../../api/auth.uts'
 import { quotaStore, FREE_QUOTA } from '../../store/quota.uts'
 import { fetchQuota } from '../../api/membership.uts'
 import { trackEvent } from '../../api/tracking.uts'
@@ -182,13 +181,6 @@ const quotaText = ref('')
 const avatarLetter = computed((): string =>
   nickname.value.length > 0 ? nickname.value.substring(0, 1) : '访'
 )
-
-// 手机号仅展示脱敏结果；未绑定明确标出，与账号与安全页一致
-const phoneText = computed((): string => {
-  const p = userStore.profile.phone
-  if (p.length !== 11) return '未绑定手机号'
-  return p.substring(0, 3) + '****' + p.substring(7)
-})
 
 const memberStyle = {
   backgroundColor: NAVY_DEEP,
@@ -238,7 +230,7 @@ const accountRows: SettingRow[] = [
     color: SMART,
     tint: CHIP_SMART,
     text: '账号与安全',
-    desc: '手机号绑定、注销账号',
+    desc: '注销账号、第三方绑定',
     onTap: security
   },
   {
@@ -308,27 +300,8 @@ function goLogin() {
   uni.navigateTo({ url: '/pages/login/login' })
   // #endif
   // #ifndef APP
-  uni.login({
-    provider: 'weixin',
-    success: (res: any) => {
-      const code = res.code as string
-      if (code == null || code.length === 0) {
-        showLogin.value = true
-        return
-      }
-      loginByWechat(code)
-        .then((r) => {
-          applyAuth(r, '')
-          onLoginSuccess()
-        })
-        .catch(() => {
-          showLogin.value = true
-        })
-    },
-    fail: () => {
-      showLogin.value = true
-    }
-  })
+  // 小程序端不再自动静默登录：由用户在登录层主动勾选协议并点「微信登录」
+  showLogin.value = true
   // #endif
 }
 

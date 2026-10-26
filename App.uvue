@@ -4,7 +4,6 @@ import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { userStore } from './store/user-profile.uts'
 import { reportHistory } from './store/report-history.uts'
 import { interviewSession } from './store/interview-session.uts'
-import { loginByWechat, applyAuth } from './api/auth.uts'
 import { trackEvent, flushTrackingQueue } from './api/tracking.uts'
 import { initCloud, useMock } from './api/client.uts'
 import { installIconFont } from './styles/icon-font.uts'
@@ -52,25 +51,7 @@ onLaunch(() => {
     }, 800)
   }
 
-  // #ifdef MP-WEIXIN
-  // 决策记录 D1：小程序端不开发登录页，直接用微信授权静默登录
-  if (!userStore.isLoggedIn()) {
-    uni.login({
-      provider: 'weixin',
-      success: (res: any) => {
-        const code = res.code as string
-        if (code == null || code.length === 0) return
-        loginByWechat(code)
-          .then((r) => {
-            applyAuth(r, '')
-          })
-          .catch(() => {
-            console.warn('[MentorLoop] wechat silent login failed')
-          })
-      }
-    })
-  }
-  // #endif
+  // 小程序端不再自动静默登录：等用户主动点击登录并勾选协议后，再走微信授权
 })
 
 onShow(() => {

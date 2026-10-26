@@ -1,13 +1,11 @@
-// 认证接口（决策记录 D1：App 端完整认证流程；小程序端静默登录）
-// 契约已冻结：接真后端时仅需实现 /auth/sms-code 与 /auth/login 两个端点。
+// 认证接口（决策记录 D1：App 端手机号验证码登录；小程序端用户主动微信授权登录）
+// 契约已冻结：接真后端时仅需实现 /auth/sms-code、/auth/login 与 /auth/wechat 三个端点。
 import { post, del, useMock, requestSilent, makeOptions } from './client.uts'
 import {
   mockSendSmsCode,
   mockLoginByPhone,
   mockLoginByWechat,
-  mockDeleteAccount,
-  mockBindPhone,
-  mockFetchMyPhone
+  mockDeleteAccount
 } from './mock/auth.mock.uts'
 import { AuthResult } from '../types/auth.uts'
 import { userStore, UserProfilePatch } from '../store/user-profile.uts'
@@ -34,24 +32,6 @@ export async function loginByWechat(code: string): Promise<AuthResult> {
   if (useMock()) return await mockLoginByWechat(code)
   const r = await post('/auth/wechat', { code: code })
   return r.data as AuthResult
-}
-
-// 购买前绑定手机号（契约：docs/contracts/2026-10-23-phone-binding.freeze.md）
-// 绑定到当前登录账号，不切换 uid、不签发新 token；静默请求，由调用方在绑定层内提示错误。
-// 冲突时服务端返回 409 + 业务码 40901，调用方据此展示「更换手机号 / 联系客服」。
-export async function bindPhone(phone: string, code: string): Promise<string> {
-  if (useMock()) return await mockBindPhone(phone, code)
-  const r = await requestSilent('/me/phone', makeOptions('POST', { phone: phone, code: code }))
-  const d = r.data as { phone: string | null } | null
-  return d != null && d.phone != null && d.phone.length > 0 ? d.phone : phone
-}
-
-// 查询当前账号绑定手机号（未绑定返回 null）
-export async function fetchMyPhone(): Promise<string | null> {
-  if (useMock()) return await mockFetchMyPhone()
-  const r = await requestSilent('/me/phone', makeOptions('GET', null))
-  const d = r.data as { phone: string | null } | null
-  return d != null && d.phone != null && d.phone.length > 0 ? d.phone : null
 }
 
 // 注销账号：删除服务端全部账号数据（幂等），成功后由调用方清本地状态

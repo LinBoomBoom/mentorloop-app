@@ -164,15 +164,6 @@
         >
       </view>
     </view>
-
-    <!-- 购买前绑定手机号（设计稿 2026-10-23-phone-binding-mockup；未绑定不下单，绑定成功后自动续接支付） -->
-    <ml-phone-bind-sheet
-      v-if="showPhoneBind"
-      mode="pay"
-      :amount-text="'¥' + formatPrice(selectedSku.priceCent)"
-      @success="onPhoneBound"
-      @exit="onPhoneBindExit"
-    ></ml-phone-bind-sheet>
   </view>
 </template>
 
@@ -194,10 +185,8 @@ import {
   PlanBenefit,
   formatPrice
 } from '../../data/membership.uts'
-import mlPhoneBindSheet from '../../components/ml-phone-bind-sheet.uvue'
-import { purchase, PHONE_REQUIRED } from '../../api/membership.uts'
+import { purchase } from '../../api/membership.uts'
 import { PAY_CANCELLED } from '../../api/virtual-pay.uts'
-import { userStore } from '../../store/user-profile.uts'
 import { trackEvent } from '../../api/tracking.uts'
 import { useMock } from '../../api/env.uts'
 import { themeValue } from '../../styles/theme.uts'
@@ -223,10 +212,6 @@ const from = ref('mine')
 const bottomPad = ref('24px')
 const selected = ref<SkuId>('member_monthly')
 const paying = ref(false)
-// 购买前绑定手机号半屏层（未绑定不下单；绑定成功后自动续接本次购买）
-const showPhoneBind = ref(false)
-// 弹出绑定层时用户点击的支付入口（main=立即开通/购买；test=联调支付），绑定成功后按原入口续接
-const pendingPayKind = ref('main')
 // 联调支付独立 loading：不得驱动「立即开通」按钮的禁用/支付中态（2026-10-22 真机反馈串扰）
 const testPaying = ref(false)
 // 简历页入口只展示简历评审单次包，避免把会员主套餐混入
@@ -318,12 +303,6 @@ async function doPay() {
   if (paying.value) return
   const s = selectedSku.value
   trackEvent('paywall_click', { sku: s.id, from: from.value })
-  // 购买前必须绑定手机号（契约 2026-10-23-phone-binding）：先弹绑定层，绑定成功后自动续接
-  if (!userStore.hasPhoneIdentity()) {
-    pendingPayKind.value = 'main'
-    showPhoneBind.value = true
-    return
-  }
   paying.value = true
   try {
     await purchase(s.id, s.kind)
@@ -335,30 +314,10 @@ async function doPay() {
     const msg = e != null && e.message != null ? String(e.message) : '支付未完成'
     // 用户主动取消：契约约定静默返回，不提示失败
     if (msg === PAY_CANCELLED) return
-    // 本地手机号态与服务端不一致（40902）：以绑定层兜底，不提示失败
-    if (msg === PHONE_REQUIRED) {
-      pendingPayKind.value = 'main'
-      showPhoneBind.value = true
-      return
-    }
     uni.showToast({ title: msg, icon: 'none' })
   } finally {
     paying.value = false
   }
-}
-
-// 绑定成功：组件已写入用户态，这里按原支付入口直接续接（用户无需再点一次）
-function onPhoneBound(_phone: string) {
-  showPhoneBind.value = false
-  if (pendingPayKind.value === 'test') {
-    doTestPay()
-    return
-  }
-  doPay()
-}
-
-function onPhoneBindExit() {
-  showPhoneBind.value = false
 }
 
 // 会员协议全文内置在应用内（pages/legal/legal），不依赖备案域名与外链
@@ -369,12 +328,6 @@ function showAgreement() {
 // 小额联调：走同一条真实支付链路（下单 → 拉起 → 推送发货），支付后停留本页便于复测
 async function doTestPay() {
   if (testPaying.value) return
-  // 联调支付同样会真实下单：未绑定手机号必须先进绑定层（2026-10-24 Android 真机反馈：只弹错误提示）
-  if (!userStore.hasPhoneIdentity()) {
-    pendingPayKind.value = 'test'
-    showPhoneBind.value = true
-    return
-  }
   testPaying.value = true
   try {
     await purchase(testSkuId.value, 'single')
@@ -382,12 +335,6 @@ async function doTestPay() {
   } catch (e: any) {
     const msg = e != null && e.message != null ? String(e.message) : '支付未完成'
     if (msg === PAY_CANCELLED) return
-    // 本地手机号态与服务端不一致（40902）：与主支付一致，打开绑定层而不是提示失败
-    if (msg === PHONE_REQUIRED) {
-      pendingPayKind.value = 'test'
-      showPhoneBind.value = true
-      return
-    }
     uni.showToast({ title: msg, icon: 'none' })
   } finally {
     testPaying.value = false

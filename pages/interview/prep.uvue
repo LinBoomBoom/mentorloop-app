@@ -120,7 +120,6 @@ import mlChip from '../../components/ml-chip.uvue'
 import mlIcon from '../../components/ml-icon.uvue'
 import mlLoginSheet from '../../components/ml-login-sheet.uvue'
 import { userStore } from '../../store/user-profile.uts'
-import { loginByWechat, applyAuth } from '../../api/auth.uts'
 import { POSITION_OPTIONS, EXPERIENCE_OPTIONS, PositionOption } from '../../data/position-options.uts'
 import { PositionId, ExperienceLevel } from '../../types/interview.uts'
 import { devicePlugin } from '../../utssdk/interviewer-device/index.uts'
@@ -192,9 +191,9 @@ onShow(() => {
   // 从用户 profile 恢复默认选择
   positionId.value = userStore.profile.positionId
   experienceLevel.value = userStore.profile.experienceLevel
-  // 登录门控：已登录（openid）即放行；未登录先静默登录一次，失败才弹兜底层
+  // 登录门控：已登录（openid）即放行；未登录时由用户主动在登录层点击微信登录，不再静默拉起
   loggedIn.value = userStore.isLoggedIn()
-  if (!loggedIn.value) ensureLogin()
+  if (!loggedIn.value) showLogin.value = true
   // P2-12：插件快速预检（只读，不弹窗）——已授权/联网时直接点亮对应项
   quickPrelight()
   // P2-12：网络断连监听（面试前断网即时提示，给出解决路径）
@@ -208,39 +207,6 @@ onShow(() => {
     }
   })
 })
-
-// 静默登录（openid）：成功即放行；失败才落到登录层兜底
-function ensureLogin() {
-  // #ifdef MP-WEIXIN
-  uni.login({
-    provider: 'weixin',
-    success: (res: any) => {
-      const code = res.code as string
-      if (code == null || code.length === 0) {
-        showLogin.value = true
-        return
-      }
-      loginByWechat(code)
-        .then((r) => {
-          applyAuth(r, '')
-          loggedIn.value = true
-          showLogin.value = false
-        })
-        .catch(() => {
-          console.warn('[prep] silent login failed')
-          showLogin.value = true
-        })
-    },
-    fail: () => {
-      showLogin.value = true
-    }
-  })
-  // #endif
-  // #ifndef MP-WEIXIN
-  // App/H5：无微信静默登录，直接走登录页/登录层
-  showLogin.value = true
-  // #endif
-}
 
 // 登录层回调：成功放行；「暂不登录」退出本页返回上一页（不放行面试）
 function onLoginSuccess() {

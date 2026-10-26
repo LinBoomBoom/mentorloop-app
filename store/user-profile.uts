@@ -15,7 +15,7 @@ export type UserProfile = {
   defaultMode: InterviewMode // 面试偏好：默认模式（快练/标准/深度）
   onboarded: boolean // 是否已完成首启画像引导（显式跳过一次也算完成，避免每次启动重复弹）
   token: string // 会话凭证；空串表示未登录
-  phone: string // 绑定手机号；空串表示匿名身份（静默登录）——面试入口门控依据
+  phone: string // 可选手机号（历史绑定保留）；空串表示未绑定，不再作为面试/购买门控
 }
 
 // 便捷展示文本
@@ -71,11 +71,7 @@ class UserStore {
     return this.profile.token.length > 0
   }
 
-  // 面试入口门控：仅有手机号绑定身份（验证码登录）才可进入面试
-  hasPhoneIdentity(): boolean {
-    return this.profile.phone.length > 0
-  }
-
+  // 手机号为可选资料（历史绑定保留）；小程序购买不再要求绑定手机号
   // mock 时代遗留的本地会话（真 JWT 不可能含 'mock-token-' 子串）
   isMockSession(): boolean {
     return this.profile.token.indexOf('mock-token-') >= 0

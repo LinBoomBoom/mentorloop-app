@@ -31,16 +31,3 @@ export function mockLoginByWechat(code: string): Promise<AuthResult> {
 export function mockDeleteAccount(): Promise<boolean> {
   return Promise.resolve(true)
 }
-
-// 绑定手机号（mock）：沿用固定验证码；冲突场景需真后端才能触发
-export function mockBindPhone(phone: string, code: string): Promise<string> {
-  if (code !== MOCK_SMS_CODE) {
-    return Promise.reject(new Error('验证码不正确'))
-  }
-  return Promise.resolve(phone)
-}
-
-// 查询绑定手机号（mock）：本地未知，返回 null 由调用方回退到本地状态
-export function mockFetchMyPhone(): Promise<string | null> {
-  return Promise.resolve(null)
-}
