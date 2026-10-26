@@ -216,22 +216,25 @@ describe('POST /resume/parse（免费预览 / AI 不可用）', () => {
     const uid = await uidOf(app, phone)
     const fileUrl = 'cloud://prod-test.bucket/resumes/' + uid + '/r.pdf'
 
+    // 逐次换岗位以避开预览缓存（同 user + 同文件 + 同岗位才命中缓存不计次）
     for (let i = 0; i < 3; i++) {
       const r = await app.inject({
         method: 'POST',
         url: '/resume/parse',
         headers: auth(token),
-        payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+        payload: { fileUrl, fileName: 'r.pdf', position: '后端' + i }
       })
       expect(r.json().code).toBe(0)
       expect(r.json().data.mode).toBe('preview')
       expect(r.json().data.issues.length).toBe(0)
+      // LLM 未配置 → 回退结构预览
+      expect(r.json().data.previewIssues.length).toBe(0)
     }
     const blocked = await app.inject({
       method: 'POST',
       url: '/resume/parse',
       headers: auth(token),
-      payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+      payload: { fileUrl, fileName: 'r.pdf', position: '后端-blocked' }
     })
     expect(blocked.statusCode).toBe(403)
     expect(blocked.json().message).toContain('预览')
@@ -258,6 +261,175 @@ describe('POST /resume/parse（免费预览 / AI 不可用）', () => {
     expect(r.statusCode).toBe(503)
     const q = await app.inject({ method: 'GET', url: '/resume/quota', headers: auth(token) })
     expect(q.json().data.singleLeft).toBe(1)
+    closeDb()
+  })
+})
+
+describe('POST /resume/parse（免费预览 teaser）', () => {
+  // quote 均取自 makePdf 生成的原文，确保 validateIssues 命中
+  const previewJson = JSON.stringify({
+    issues: [
+      {
+        unit: 'P1',
+        severity: 'high',
+        category: 'quantification',
+        quote: 'reduced latency',
+        original: 'reduced latency',
+        suggested: '补充 QPS 与影响用户规模（请补充真实数据）',
+        reason: '量化结果能体现影响范围',
+        needsUserEvidence: true
+      },
+      {
+        unit: 'P1',
+        severity: 'low',
+        category: 'language',
+        quote: 'Backend engineer',
+        original: 'Backend engineer',
+        suggested: '前置核心职责与成果',
+        reason: '表达更聚焦',
+        needsUserEvidence: false
+      },
+      {
+        unit: 'P1',
+        severity: 'medium',
+        category: 'ownership',
+        quote: '5000 QPS',
+        original: '5000 QPS',
+        suggested: '说明个人在其中的职责边界',
+        reason: '职责边界模糊',
+        needsUserEvidence: false
+      }
+    ]
+  })
+
+  function stubLlmThreeIssues() {
+    vi.stubGlobal('fetch', async (url: any, init: any) => {
+      const u = String(url)
+      if (u.indexOf('/cgi-bin/token') >= 0) return mkRes({ access_token: 'TK', expires_in: 7200 })
+      if (u.indexOf('/tcb/batchdownloadfile') >= 0) {
+        return mkRes({
+          errcode: 0,
+          errmsg: 'ok',
+          file_list: [
+            {
+              fileid: 'cloud://prod-test.bucket/resumes/r.pdf',
+              download_url: 'https://cdn.example.com/r.pdf',
+              status: 0
+            }
+          ]
+        })
+      }
+      if (u.indexOf('cdn.example.com') >= 0) {
+        return { ok: true, status: 200, arrayBuffer: async () => Buffer.from(pdf) } as any
+      }
+      if (u.indexOf('/tcb/batchdeletefile') >= 0) return mkRes({ errcode: 0, errmsg: 'ok' })
+      if (u.indexOf('llm.test') >= 0) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ choices: [{ message: { content: previewJson } }] })
+        } as any
+      }
+      void init
+      throw new Error('unexpected ' + u)
+    })
+  }
+
+  async function previewUsageCount(app: any, phone: string): Promise<number> {
+    const row = (await (app as any).db
+      .prepare(
+        "SELECT COUNT(*) AS c FROM resume_usages WHERE user_id = (SELECT id FROM users WHERE phone = ?) AND mode = 'preview'"
+      )
+      .get(phone)) as any
+    return Number(row != null ? (row.c ?? 0) : 0)
+  }
+
+  it('LLM 可用 → 首条完整、其余 locked 且不下发 suggested；二次预览命中缓存不扣次数', async () => {
+    const app = makeApp((env) => {
+      env.llmEnabled = true
+      env.llmBaseUrl = 'https://llm.test/v1'
+      env.llmModel = 'm'
+      env.llmApiKey = 'sk-test'
+    })
+    stubLlmThreeIssues()
+    const phone = '13922220005'
+    const token = await login(app, phone)
+    const uid = await uidOf(app, phone)
+    const fileUrl = 'cloud://prod-test.bucket/resumes/' + uid + '/r.pdf'
+
+    const r1 = await app.inject({
+      method: 'POST',
+      url: '/resume/parse',
+      headers: auth(token),
+      payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+    })
+    const d1 = r1.json().data
+    expect(d1.mode).toBe('preview')
+    expect(d1.cached).toBe(false)
+    expect(d1.issues.length).toBe(0)
+    expect(d1.previewIssues.length).toBe(3)
+    expect(d1.previewIssues[0].locked).toBe(false)
+    expect(d1.previewIssues[0].severity).toBe('high')
+    expect(d1.previewIssues[0].suggested.length).toBeGreaterThan(0)
+    for (let i = 1; i < 3; i++) {
+      expect(d1.previewIssues[i].locked).toBe(true)
+      expect(d1.previewIssues[i].suggested).toBe('')
+      expect(d1.previewIssues[i].quote.length).toBeGreaterThan(0)
+    }
+    expect(await previewUsageCount(app, phone)).toBe(1)
+
+    // 同 user + 同文件 + 同岗位二次预览：命中缓存，不扣次数
+    const r2 = await app.inject({
+      method: 'POST',
+      url: '/resume/parse',
+      headers: auth(token),
+      payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+    })
+    expect(r2.json().data.cached).toBe(true)
+    expect(r2.json().data.previewIssues.length).toBe(3)
+    expect(await previewUsageCount(app, phone)).toBe(1)
+    closeDb()
+  })
+
+  it('preview → full 更新同一行：resumeId 不变、历史仅一条', async () => {
+    const app = makeApp((env) => {
+      env.llmEnabled = true
+      env.llmBaseUrl = 'https://llm.test/v1'
+      env.llmModel = 'm'
+      env.llmApiKey = 'sk-test'
+    })
+    stubLlmThreeIssues()
+    const phone = '13922220006'
+    const token = await login(app, phone)
+    const uid = await uidOf(app, phone)
+    const fileUrl = 'cloud://prod-test.bucket/resumes/' + uid + '/r.pdf'
+
+    const r1 = await app.inject({
+      method: 'POST',
+      url: '/resume/parse',
+      headers: auth(token),
+      payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+    })
+    const previewId = r1.json().data.resumeId
+    expect(r1.json().data.mode).toBe('preview')
+
+    await grantResumeCredits(app, phone, 1)
+
+    const r2 = await app.inject({
+      method: 'POST',
+      url: '/resume/parse',
+      headers: auth(token),
+      payload: { fileUrl, fileName: 'r.pdf', position: '后端' }
+    })
+    const d2 = r2.json().data
+    expect(d2.mode).toBe('full')
+    expect(d2.resumeId).toBe(previewId)
+    expect(d2.previewIssues.length).toBe(0)
+    expect(d2.issues.length).toBeGreaterThan(0)
+    for (const it of d2.issues) expect(it.locked).toBe(false)
+
+    const h = await app.inject({ method: 'GET', url: '/resume/history', headers: auth(token) })
+    expect(h.json().data.items.length).toBe(1)
     closeDb()
   })
 })

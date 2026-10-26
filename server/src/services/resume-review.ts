@@ -10,6 +10,8 @@ import { newId } from '../util.js'
 
 export const RESUME_PROMPT_VERSION = 'resume-review-v1'
 export const MAX_ISSUES = 8
+// 免费预览：只展示最严重的 3 条；首条给完整改写，其余锁定（不下发 suggested）
+export const MAX_PREVIEW_ISSUES = 3
 
 export type ResumeStats = {
   contact: boolean
@@ -139,7 +141,11 @@ function unitLabel(u: ExtractedUnit): string {
   return u.page > 0 ? 'P' + u.page : 'D' + u.paragraph
 }
 
-function buildPrompt(position: string, maskedUnits: ExtractedUnit[]): ChatMessage[] {
+function buildPrompt(
+  position: string,
+  maskedUnits: ExtractedUnit[],
+  maxIssues: number = MAX_ISSUES
+): ChatMessage[] {
   const body = maskedUnits.map((u) => '[' + unitLabel(u) + '] ' + u.text).join('\n')
   const system =
     '你是 MentorLoop 的资深简历顾问。你只能基于用户提供的简历原文提出修改建议，' +
@@ -150,7 +156,7 @@ function buildPrompt(position: string, maskedUnits: ExtractedUnit[]): ChatMessag
 简历原文（已脱敏；[P数字] 为 PDF 页码，[D数字] 为 DOCX 段落）：
 ${body}
 
-请输出最多 ${MAX_ISSUES} 条建议，按严重度从高到低：
+请输出最多 ${maxIssues} 条建议，按严重度从高到低：
 {"issues":[{"unit":"P1","severity":"high|medium|low","category":"quantification|ownership|techMatch|format|language|completeness","quote":"原文逐字片段","original":"原句","suggested":"改后的句子（中文，具体可执行）","reason":"为什么改、改完收益（1-2 句）","needsUserEvidence":true|false}]}
 
 要求：
@@ -228,7 +234,8 @@ export function validateIssues(raw: any[], maskedUnits: ExtractedUnit[]): Resume
         original.length >= quote.length && hit.text.indexOf(original) >= 0 ? original : quote,
       suggested: suggested,
       reason: reason,
-      needsUserEvidence: r.needsUserEvidence === true
+      needsUserEvidence: r.needsUserEvidence === true,
+      locked: false
     } as ResumeIssue)
     seen.push(quote)
   }
@@ -238,28 +245,83 @@ export function validateIssues(raw: any[], maskedUnits: ExtractedUnit[]): Resume
 }
 
 // 调用 LLM 生成建议；未配置/失败返回 null（调用方不得扣额度、不得返回假数据）
-export async function reviewResumeWithLlm(
+async function callReviewLlm(
   env: Env,
   extracted: ExtractedResume,
-  position: string
+  position: string,
+  maxIssues: number,
+  maxTokens: number,
+  timeoutMs: number
 ): Promise<ResumeIssue[] | null> {
   if (!isResumeLlmReady(env)) return null
   const maskedUnits: ExtractedUnit[] = extracted.units.map(
     (u) => ({ page: u.page, paragraph: u.paragraph, text: maskPii(u.text) }) as ExtractedUnit
   )
-  const messages = buildPrompt(position, maskedUnits)
+  const messages = buildPrompt(position, maskedUnits, maxIssues)
   const r = await chatComplete(
     {
       baseUrl: env.llmBaseUrl,
       apiKey: env.llmApiKey,
       model: env.llmModel,
-      timeoutMs: env.llmTimeoutMs
+      timeoutMs: timeoutMs
     },
     messages,
-    { maxTokens: 2000, temperature: 0.2 }
+    { maxTokens: maxTokens, temperature: 0.2 }
   )
   if (r == null) return null
   const parsed = extractJson(r.content)
   if (parsed == null || !Array.isArray(parsed.issues)) return null
   return validateIssues(parsed.issues, maskedUnits)
+}
+
+// 付费完整评审批注（最多 8 条）
+export async function reviewResumeWithLlm(
+  env: Env,
+  extracted: ExtractedResume,
+  position: string
+): Promise<ResumeIssue[] | null> {
+  return callReviewLlm(env, extracted, position, MAX_ISSUES, 2000, env.llmTimeoutMs)
+}
+
+// 裁剪为免费预览诊断：最多 3 条；[0] 完整改写，[1..] 锁定且不下发 suggested
+export function toPreviewIssues(issues: ResumeIssue[]): ResumeIssue[] {
+  const out: ResumeIssue[] = []
+  for (let i = 0; i < issues.length && out.length < MAX_PREVIEW_ISSUES; i++) {
+    const it = issues[i]
+    const locked = out.length > 0
+    out.push({
+      issueId: it.issueId,
+      severity: it.severity,
+      category: it.category,
+      page: it.page,
+      paragraph: it.paragraph,
+      quote: it.quote,
+      original: it.original,
+      suggested: locked ? '' : it.suggested,
+      reason: it.reason,
+      needsUserEvidence: it.needsUserEvidence,
+      locked: locked
+    } as ResumeIssue)
+  }
+  return out
+}
+
+// 免费预览 LLM：轻量（最多 3 条、maxTokens≈700、超时≤8s）
+// 未配置 / 超时 / 失败 → 返回 []（调用方回退结构预览，不报错、不扣额度）
+export async function reviewResumePreviewWithLlm(
+  env: Env,
+  extracted: ExtractedResume,
+  position: string
+): Promise<ResumeIssue[]> {
+  const previewTimeout = Math.min(env.llmTimeoutMs, 8000)
+  const issues = await callReviewLlm(
+    env,
+    extracted,
+    position,
+    MAX_PREVIEW_ISSUES,
+    700,
+    previewTimeout
+  )
+  if (issues == null) return []
+  return toPreviewIssues(issues)
 }

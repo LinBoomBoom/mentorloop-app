@@ -1,348 +1,446 @@
 <template>
-  <scroll-view class="h-screen bg-bg-light" scroll-y="true">
-    <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
-    <view class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between">
-      <view class="flex-col">
-        <text class="text-[22px] font-bold text-white">简历优化</text>
-        <text class="text-xs text-mist mt-1">AI 解析 · 改写建议 · 投递版本</text>
-      </view>
-      <ml-icon name="file-text" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
-    </view>
-    <view class="px-4 pb-6 -mt-5">
-      <!-- 步骤流：上传 → 解析 → 建议 -->
-      <ml-card>
-        <view class="flex-row items-center">
-          <template v-for="(s, i) in steps" :key="s">
-            <view class="flex-col items-center">
-              <view
-                class="w-6 h-6 rounded-full flex-row items-center justify-center"
-                :style="stepStyle(i)"
-              >
-                <ml-icon v-if="i < currentStep" name="check" :size="12" :color="SURFACE"></ml-icon>
-                <text v-else class="text-xs font-semibold" :style="{ color: stepTextColor(i) }">
-                  {{ i + 1 }}
-                </text>
-              </view>
-              <text class="text-xs mt-1" :class="i <= currentStep ? 'text-ink' : 'text-ink-soft'">
-                {{ s }}
-              </text>
-            </view>
-            <view
-              v-if="i < steps.length - 1"
-              class="flex-1 h-px mx-2 mb-4"
-              :style="{ backgroundColor: i < currentStep ? RELIABLE : LINE }"
-            ></view>
-          </template>
+  <view class="h-screen bg-bg-light">
+    <scroll-view
+      class="h-screen"
+      scroll-y="true"
+      :scroll-into-view="scrollTarget"
+      :scroll-with-animation="true"
+    >
+      <!-- 品牌头部带（MASTER.md §A1 品牌锚点，静态无 blur） -->
+      <view class="ml-brand-band px-5 pt-4 pb-9 flex-row items-center justify-between">
+        <view class="flex-col">
+          <text class="text-[22px] font-bold text-white">简历优化</text>
+          <text class="text-xs text-mist mt-1">AI 解析 · 改写建议 · 投递版本</text>
         </view>
-      </ml-card>
-
-      <!-- 恢复上次草稿（重进页面仍在） -->
-      <view v-if="draftReady" class="mt-3">
-        <ml-card>
-          <view class="flex-row items-center justify-between">
-            <view class="flex-col flex-1">
-              <text class="text-sm text-ink truncate block">{{ draftFileName }}</text>
-              <text class="text-xs text-ink-soft mt-0.5">{{ draftHint }}</text>
-            </view>
-            <view class="ml-2">
-              <ml-button text="恢复草稿" type="primary" @tap="restoreDraft"></ml-button>
-            </view>
-          </view>
-        </ml-card>
+        <ml-icon name="file-text" :size="22" :color="RELIABLE_LIGHT"></ml-icon>
       </view>
-
-      <!-- 上传区 -->
-      <view class="mt-3">
+      <view class="px-4 pb-28 -mt-5">
+        <!-- 付费返回自动续跑状态条 -->
         <view
-          class="bg-surface rounded-card border-2 border-dashed pressable relative overflow-hidden"
-          :style="{ borderColor: fileName.length > 0 ? SMART : LINE }"
-          hover-class="pressed-card"
-          :hover-start-time="0"
-          @click="pick"
+          v-if="rerunning || rerunFailed"
+          class="mb-3 rounded-control px-3 py-2.5 flex-row items-center justify-between"
+          :style="{ backgroundColor: rerunFailed ? CHIP_DANGER : CHIP_SMART }"
         >
-          <view class="flex-col items-center py-8">
-            <view class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center">
-              <ml-icon
-                :name="parsing ? 'refresh-cw' : 'cloud-upload'"
-                :size="26"
-                :color="SMART"
-              ></ml-icon>
-            </view>
-            <text class="text-base font-semibold text-ink mt-3">
-              {{ parsing ? 'AI 解析中…' : fileName.length > 0 ? '重新上传简历' : '点击上传简历' }}
+          <view class="flex-row items-center flex-1">
+            <ml-icon
+              :name="rerunFailed ? 'triangle-alert' : 'sparkles'"
+              :size="13"
+              :color="rerunFailed ? DANGER : SMART"
+            ></ml-icon>
+            <text class="text-xs ml-1.5 flex-1" :class="rerunFailed ? 'text-danger' : 'text-ink'">
+              {{ rerunFailed ? '逐条批注生成失败，可重试' : '已解锁，正在生成逐条批注…' }}
             </text>
-            <text class="text-xs text-ink-soft mt-1">支持 PDF / DOCX，最大 10MB</text>
-
-            <!-- 已选文件 -->
-            <view v-if="fileName.length > 0" class="flex-row justify-center mt-3 px-6">
-              <ml-tag
-                class="max-w-[85%]"
-                icon="file-check"
-                :label="fileName"
-                :bg="CHIP_SMART"
-                :color="SMART"
-                truncate
-              ></ml-tag>
-            </view>
-
-            <!-- 操作区：stop 阻断冒泡，避免内层按钮同时触发外层「选择文件」造成双弹窗 -->
-            <view v-if="!parsing" class="mt-4" @click.stop>
-              <ml-button
-                :text="fileName.length > 0 ? '重新选择' : '选择文件'"
-                type="primary"
-                :disabled="parsing"
-                @tap="pick"
-              ></ml-button>
-              <!-- 小程序无系统文件浏览器：唯一文档入口是「从微信聊天中选择」，
-                   必须明说来源，否则会被误认为在分享给好友（2026-10-21 用户反馈） -->
-              <text class="text-xs text-ink-soft mt-2 text-center"
-                >从微信聊天中选择；可先发给「文件传输助手」</text
-              >
-            </view>
-            <view v-else class="mt-4 flex-row items-center">
-              <ml-icon name="refresh-cw" :size="14" :color="SMART"></ml-icon>
-              <text class="text-xs text-ink-soft ml-1.5">正在解析文件内容，请稍候…</text>
-            </view>
           </view>
-        </view>
-
-        <!-- 隐私说明 -->
-        <view class="flex-row items-start justify-center mt-2.5 px-1">
-          <ml-icon name="lock" :size="11" :color="MIST"></ml-icon>
-          <text class="text-xs text-ink-soft ml-1 flex-1 leading-4"
-            >简历仅用于本次分析；AI 评审脱敏调用，记录可随时删除</text
-          >
-        </view>
-
-        <!-- 额度与付费入口 -->
-        <view class="flex-row items-center justify-between mt-2.5">
-          <text class="text-xs text-ink-soft">{{ quotaText }}</text>
           <ml-chip
-            v-if="quota != null && !quota.canFull"
+            v-if="rerunFailed"
             variant="action"
             tone="smart"
-            icon="sparkles"
-            label="开通会员"
-            @tap="goPaywall"
+            icon="refresh-cw"
+            label="重试"
+            @tap="retryFull"
           ></ml-chip>
         </view>
 
-        <!-- 解析历史（服务端记录，仅本人可见） -->
-        <view v-if="history.length > 0" class="mt-5">
-          <ml-section-header title="解析历史" caption="仅本人可见 · 点击回看"></ml-section-header>
-          <ml-card :padded="false">
-            <view
-              v-for="(h, i) in history"
-              :key="h.resumeId"
-              class="flex-row items-center px-4 py-3"
-              :class="i < history.length - 1 ? 'border-b border-line' : ''"
-            >
-              <view class="flex-col flex-1 overflow-hidden" @click="openHistory(h)">
-                <text class="text-sm text-ink truncate block">{{ h.fileName }}</text>
-                <text class="text-xs text-ink-soft mt-0.5">{{ historySubtitle(h) }}</text>
-              </view>
-              <ml-chip
-                variant="action"
-                tone="soft"
-                icon="trash-2"
-                label="删除"
-                @tap="removeHistory(h)"
-              ></ml-chip>
-            </view>
-          </ml-card>
-        </view>
-      </view>
-
-      <!-- 解析结果 -->
-      <view v-if="parsed != null" class="mt-5">
-        <ml-section-header title="解析结果" caption="结构化提取关键信息"></ml-section-header>
+        <!-- 步骤流：上传 → 解析 → 建议 -->
         <ml-card>
-          <!-- 状态标签组 -->
-          <view class="flex-row flex-wrap">
-            <ml-tag
-              :label="parsed.contact ? '联系方式已填' : '联系方式缺失'"
-              :bg="parsed.contact ? CHIP_RELIABLE : CHIP_DANGER"
-              :color="parsed.contact ? RELIABLE : DANGER"
-            ></ml-tag>
-            <view class="w-1.5"></view>
-            <ml-tag
-              :label="'项目经历 ' + parsed.projects + ' 段'"
-              :bg="CHIP_SMART"
-              :color="SMART"
-            ></ml-tag>
-            <view class="w-1.5"></view>
-            <ml-tag
-              :label="parsed.quantified ? '成果已量化' : '成果未量化'"
-              :bg="parsed.quantified ? CHIP_RELIABLE : CHIP_WARN"
-              :color="parsed.quantified ? RELIABLE : WARN"
-            ></ml-tag>
-          </view>
-
-          <!-- 技术栈 -->
-          <template v-if="parsed.techStack.length > 0">
-            <view class="flex-row items-center mt-4">
-              <ml-icon name="layers" :size="13" :color="SMART"></ml-icon>
-              <text class="text-xs font-semibold text-ink ml-1">技术栈</text>
-            </view>
-            <view class="flex-row flex-wrap mt-2">
-              <ml-tag
-                v-for="(t, i) in parsed.techStack"
-                :key="'t' + i"
-                class="mr-1.5 mb-1.5"
-                :label="t"
-                :bg="BG_MUTED"
-                :color="INK_SOFT"
-              ></ml-tag>
-            </view>
-          </template>
-
-          <!-- 待补充 -->
-          <view v-if="parsed.gaps.length > 0" class="mt-3">
-            <view class="flex-row items-center">
-              <ml-icon name="circle-help" :size="13" :color="WARN"></ml-icon>
-              <text class="text-xs font-semibold text-warn ml-1">待补充</text>
-            </view>
-            <text
-              v-for="(g, i) in parsed.gaps"
-              :key="'g' + i"
-              class="text-xs text-ink-soft mt-1.5 leading-5"
-            >
-              · {{ g }}
-            </text>
-          </view>
-
-          <!-- 格式风险 -->
-          <view v-if="parsed.formatRisks.length > 0" class="mt-3">
-            <view class="flex-row items-center">
-              <ml-icon name="triangle-alert" :size="13" :color="DANGER"></ml-icon>
-              <text class="text-xs font-semibold text-danger ml-1">格式风险</text>
-            </view>
-            <text
-              v-for="(r, i) in parsed.formatRisks"
-              :key="'r' + i"
-              class="text-xs text-ink-soft mt-1.5 leading-5"
-            >
-              · {{ r }}
-            </text>
-          </view>
-          <!-- 免费预览解锁提示 -->
-          <view v-if="parsed.mode === 'preview'" class="mt-3 rounded-control p-3 bg-bg-muted">
-            <text class="text-sm font-semibold text-ink">当前为免费预览</text>
-            <text class="text-xs text-ink-soft mt-1 leading-5"
-              >已提取结构与风险项；开通会员或单次包可解锁逐条 AI 批注与改写建议。</text
-            >
-            <view class="mt-3">
-              <ml-button text="解锁深度评审" type="primary" block @tap="goPaywall"></ml-button>
-            </view>
+          <view class="flex-row items-center">
+            <template v-for="(s, i) in steps" :key="s">
+              <view class="flex-col items-center">
+                <view
+                  class="w-6 h-6 rounded-full flex-row items-center justify-center"
+                  :style="stepStyle(i)"
+                >
+                  <ml-icon
+                    v-if="i < currentStep"
+                    name="check"
+                    :size="12"
+                    :color="SURFACE"
+                  ></ml-icon>
+                  <text v-else class="text-xs font-semibold" :style="{ color: stepTextColor(i) }">
+                    {{ i + 1 }}
+                  </text>
+                </view>
+                <text class="text-xs mt-1" :class="i <= currentStep ? 'text-ink' : 'text-ink-soft'">
+                  {{ s }}
+                </text>
+              </view>
+              <view
+                v-if="i < steps.length - 1"
+                class="flex-1 h-px mx-2 mb-4"
+                :style="{ backgroundColor: i < currentStep ? RELIABLE : LINE }"
+              ></view>
+            </template>
           </view>
         </ml-card>
-      </view>
 
-      <!-- 改写建议 -->
-      <view v-if="suggestions.length > 0" class="mt-5">
-        <ml-section-header
-          title="AI 逐条批注"
-          caption="每条均锚定原文，采用后写入草稿"
-          action-text="全部采用"
-          @action="adoptAll"
-        ></ml-section-header>
-        <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+        <!-- 恢复上次草稿（重进页面仍在） -->
+        <view v-if="draftReady" class="mt-3">
           <ml-card>
-            <!-- 严重度 -->
-            <view v-if="issueSeverityLabel(i).length > 0" class="flex-row items-center mb-2">
-              <ml-tag :label="issueSeverityLabel(i)" :bg="CHIP_WARN" :color="WARN"></ml-tag>
-            </view>
-            <!-- 原句 -->
-            <view class="rounded-control p-3 bg-bg-muted">
-              <view class="flex-row items-center">
-                <ml-icon name="quote" :size="12" :color="MIST"></ml-icon>
-                <text class="text-xs text-ink-soft ml-1">原文</text>
+            <view class="flex-row items-center justify-between">
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink truncate block">{{ draftFileName }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">{{ draftHint }}</text>
               </view>
-              <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ s.original }}</text>
-            </view>
-            <!-- 建议稿 -->
-            <view class="mt-3 rounded-control p-3 bg-chip-reliable">
-              <view class="flex-row items-center">
-                <ml-icon name="wand-2" :size="12" :color="RELIABLE"></ml-icon>
-                <text class="text-xs font-semibold text-reliable ml-1">建议稿</text>
+              <view class="ml-2">
+                <ml-button text="恢复草稿" type="primary" @tap="restoreDraft"></ml-button>
               </view>
-              <text class="text-sm text-ink mt-1.5 leading-5">{{ s.suggested }}</text>
-            </view>
-            <!-- 原因 -->
-            <text class="text-xs text-ink-soft mt-2.5 leading-5">{{ s.reason }}</text>
-            <view class="mt-2" v-if="s.needsUserEvidence">
-              <ml-tag label="需补充真实证据" :bg="CHIP_WARN" :color="WARN"></ml-tag>
-            </view>
-            <!-- 操作 -->
-            <view class="flex-row mt-3">
-              <ml-chip
-                variant="action"
-                :tone="isAdopted(i) ? 'soft' : 'smart'"
-                :icon="isAdopted(i) ? 'check-check' : 'check'"
-                :label="isAdopted(i) ? '已采用' : '采用'"
-                @tap="toggleAdopt(i)"
-              ></ml-chip>
-              <view class="w-2"></view>
-              <ml-chip
-                variant="action"
-                tone="soft"
-                icon="x"
-                label="忽略"
-                @tap="dismissOne(i)"
-              ></ml-chip>
             </view>
           </ml-card>
         </view>
-      </view>
 
-      <!-- 完成操作 -->
-      <view v-if="suggestions.length > 0" class="mt-4">
-        <ml-button
-          :text="'保存 ' + adoptedCount + ' 条改写'"
-          type="primary"
-          block
-          :disabled="adoptedCount === 0"
-          @tap="saveAll"
-        ></ml-button>
-        <view class="h-2"></view>
-        <ml-button text="放弃全部修改" type="ghost" block @tap="resetAll"></ml-button>
-      </view>
-
-      <!-- 多版本导出（文档 2.4：生成不同投递版本） -->
-      <view v-if="parsed != null" class="mt-5">
-        <ml-section-header
-          title="投递版本"
-          caption="按目标岗位生成不同侧重版本"
-        ></ml-section-header>
-        <ml-card :padded="false">
+        <!-- 上传区 -->
+        <view class="mt-3">
           <view
-            v-for="(v, i) in resumeVersions"
-            :key="'v_' + v.id"
-            class="flex-row items-center px-4 py-3"
-            :class="i < resumeVersions.length - 1 ? 'border-b border-line' : ''"
+            class="bg-surface rounded-card border-2 border-dashed pressable relative overflow-hidden"
+            :style="{ borderColor: fileName.length > 0 ? SMART : LINE }"
+            hover-class="pressed-card"
+            :hover-start-time="0"
+            @click="pick"
           >
-            <view
-              class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
-              :style="{ backgroundColor: v.tint }"
+            <view class="flex-col items-center py-8">
+              <view
+                class="w-14 h-14 rounded-full bg-chip-smart flex-row items-center justify-center"
+              >
+                <ml-icon
+                  :name="parsing ? 'refresh-cw' : 'cloud-upload'"
+                  :size="26"
+                  :color="SMART"
+                ></ml-icon>
+              </view>
+              <text class="text-base font-semibold text-ink mt-3">
+                {{ parsing ? 'AI 解析中…' : fileName.length > 0 ? '重新上传简历' : '点击上传简历' }}
+              </text>
+              <text class="text-xs text-ink-soft mt-1">支持 PDF / DOCX，最大 10MB</text>
+
+              <!-- 已选文件 -->
+              <view v-if="fileName.length > 0" class="flex-row justify-center mt-3 px-6">
+                <ml-tag
+                  class="max-w-[85%]"
+                  icon="file-check"
+                  :label="fileName"
+                  :bg="CHIP_SMART"
+                  :color="SMART"
+                  truncate
+                ></ml-tag>
+              </view>
+
+              <!-- 操作区：stop 阻断冒泡，避免内层按钮同时触发外层「选择文件」造成双弹窗 -->
+              <view v-if="!parsing" class="mt-4" @click.stop>
+                <ml-button
+                  :text="fileName.length > 0 ? '重新选择' : '选择文件'"
+                  type="primary"
+                  :disabled="parsing"
+                  @tap="pick"
+                ></ml-button>
+                <!-- 小程序无系统文件浏览器：唯一文档入口是「从微信聊天中选择」，
+                   必须明说来源，否则会被误认为在分享给好友（2026-10-21 用户反馈） -->
+                <text class="text-xs text-ink-soft mt-2 text-center"
+                  >从微信聊天中选择；可先发给「文件传输助手」</text
+                >
+              </view>
+              <view v-else class="mt-4 flex-row items-center">
+                <ml-icon name="refresh-cw" :size="14" :color="SMART"></ml-icon>
+                <text class="text-xs text-ink-soft ml-1.5">正在解析文件内容，请稍候…</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 隐私说明 -->
+          <view class="flex-row items-start justify-center mt-2.5 px-1">
+            <ml-icon name="lock" :size="11" :color="MIST"></ml-icon>
+            <text class="text-xs text-ink-soft ml-1 flex-1 leading-4"
+              >简历仅用于本次分析；AI 评审脱敏调用，记录可随时删除</text
             >
-              <ml-icon name="file-text" :size="16" :color="v.color"></ml-icon>
-            </view>
-            <view class="flex-col flex-1">
-              <text class="text-sm text-ink">{{ v.name }}</text>
-              <text class="text-xs text-ink-soft mt-0.5">{{ v.desc }}</text>
-            </view>
+          </view>
+
+          <!-- 额度与付费入口 -->
+          <view class="flex-row items-center justify-between mt-2.5">
+            <text class="text-xs text-ink-soft">{{ quotaText }}</text>
             <ml-chip
+              v-if="quota != null && !quota.canFull"
               variant="action"
-              tone="outline"
-              icon="share"
-              label="导出"
-              @tap="exportVersion(v)"
+              tone="smart"
+              icon="sparkles"
+              label="开通会员"
+              @tap="goPaywall"
             ></ml-chip>
           </view>
-        </ml-card>
+
+          <!-- 解析历史（服务端记录，仅本人可见） -->
+          <view v-if="history.length > 0" class="mt-5">
+            <ml-section-header title="解析历史" caption="仅本人可见 · 点击回看"></ml-section-header>
+            <ml-card :padded="false">
+              <view
+                v-for="(h, i) in history"
+                :key="h.resumeId"
+                class="flex-row items-center px-4 py-3"
+                :class="i < history.length - 1 ? 'border-b border-line' : ''"
+              >
+                <view class="flex-col flex-1 overflow-hidden" @click="openHistory(h)">
+                  <text class="text-sm text-ink truncate block">{{ h.fileName }}</text>
+                  <text class="text-xs text-ink-soft mt-0.5">{{ historySubtitle(h) }}</text>
+                </view>
+                <ml-chip
+                  variant="action"
+                  tone="soft"
+                  icon="trash-2"
+                  label="删除"
+                  @tap="removeHistory(h)"
+                ></ml-chip>
+              </view>
+            </ml-card>
+          </view>
+        </view>
+
+        <!-- 解析结果 -->
+        <view v-if="parsed != null" id="resume-result" class="mt-5">
+          <ml-section-header title="解析结果" caption="结构化提取关键信息"></ml-section-header>
+          <ml-card>
+            <!-- 状态标签组 -->
+            <view class="flex-row flex-wrap">
+              <ml-tag
+                :label="parsed.contact ? '联系方式已填' : '联系方式缺失'"
+                :bg="parsed.contact ? CHIP_RELIABLE : CHIP_DANGER"
+                :color="parsed.contact ? RELIABLE : DANGER"
+              ></ml-tag>
+              <view class="w-1.5"></view>
+              <ml-tag
+                :label="'项目经历 ' + parsed.projects + ' 段'"
+                :bg="CHIP_SMART"
+                :color="SMART"
+              ></ml-tag>
+              <view class="w-1.5"></view>
+              <ml-tag
+                :label="parsed.quantified ? '成果已量化' : '成果未量化'"
+                :bg="parsed.quantified ? CHIP_RELIABLE : CHIP_WARN"
+                :color="parsed.quantified ? RELIABLE : WARN"
+              ></ml-tag>
+            </view>
+
+            <!-- 技术栈 -->
+            <template v-if="parsed.techStack.length > 0">
+              <view class="flex-row items-center mt-4">
+                <ml-icon name="layers" :size="13" :color="SMART"></ml-icon>
+                <text class="text-xs font-semibold text-ink ml-1">技术栈</text>
+              </view>
+              <view class="flex-row flex-wrap mt-2">
+                <ml-tag
+                  v-for="(t, i) in parsed.techStack"
+                  :key="'t' + i"
+                  class="mr-1.5 mb-1.5"
+                  :label="t"
+                  :bg="BG_MUTED"
+                  :color="INK_SOFT"
+                ></ml-tag>
+              </view>
+            </template>
+
+            <!-- 待补充 -->
+            <view v-if="parsed.gaps.length > 0" class="mt-3">
+              <view class="flex-row items-center">
+                <ml-icon name="circle-help" :size="13" :color="WARN"></ml-icon>
+                <text class="text-xs font-semibold text-warn ml-1">待补充</text>
+              </view>
+              <text
+                v-for="(g, i) in parsed.gaps"
+                :key="'g' + i"
+                class="text-xs text-ink-soft mt-1.5 leading-5"
+              >
+                · {{ g }}
+              </text>
+            </view>
+
+            <!-- 格式风险 -->
+            <view v-if="parsed.formatRisks.length > 0" class="mt-3">
+              <view class="flex-row items-center">
+                <ml-icon name="triangle-alert" :size="13" :color="DANGER"></ml-icon>
+                <text class="text-xs font-semibold text-danger ml-1">格式风险</text>
+              </view>
+              <text
+                v-for="(r, i) in parsed.formatRisks"
+                :key="'r' + i"
+                class="text-xs text-ink-soft mt-1.5 leading-5"
+              >
+                · {{ r }}
+              </text>
+            </view>
+            <!-- 诊断摘要（免费预览）：N 条问题 + 严重度分布 -->
+            <view v-if="parsed.mode === 'preview'" class="mt-3 rounded-control p-3 bg-bg-muted">
+              <text class="text-sm font-semibold text-ink">诊断完成</text>
+              <text class="text-xs text-ink-soft mt-1 leading-5">{{ previewSubline }}</text>
+              <view v-if="previewTotal > 0" class="flex-row flex-wrap mt-2">
+                <ml-tag :label="'高 ' + previewHigh" :bg="CHIP_DANGER" :color="DANGER"></ml-tag>
+                <view class="w-1.5"></view>
+                <ml-tag :label="'中 ' + previewMedium" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+                <view class="w-1.5"></view>
+                <ml-tag :label="'低 ' + previewLow" :bg="BG_MUTED" :color="INK_SOFT"></ml-tag>
+              </view>
+            </view>
+          </ml-card>
+        </view>
+
+        <!-- 免费诊断明细：首条完整改写，其余锁定占位（网络响应中无 suggested） -->
+        <view
+          v-if="parsed != null && parsed.mode === 'preview' && parsed.previewIssues.length > 0"
+          class="mt-5"
+        >
+          <ml-section-header
+            title="免费诊断"
+            caption="每条均锚定原文 · 解锁查看完整改写"
+          ></ml-section-header>
+          <view v-for="s in parsed.previewIssues" :key="s.issueId" class="mb-2.5">
+            <ml-card>
+              <view class="flex-row items-center mb-2">
+                <ml-tag :label="severityLabelOf(s.severity)" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+                <view class="w-1.5"></view>
+                <ml-tag v-if="s.locked" label="锁定" :bg="BG_MUTED" :color="INK_SOFT"></ml-tag>
+              </view>
+              <view class="rounded-control p-3 bg-bg-muted">
+                <view class="flex-row items-center">
+                  <ml-icon name="quote" :size="12" :color="MIST"></ml-icon>
+                  <text class="text-xs text-ink-soft ml-1">原文</text>
+                </view>
+                <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ s.original }}</text>
+              </view>
+              <view v-if="!s.locked" class="mt-3 rounded-control p-3 bg-chip-reliable">
+                <view class="flex-row items-center">
+                  <ml-icon name="wand-2" :size="12" :color="RELIABLE"></ml-icon>
+                  <text class="text-xs font-semibold text-reliable ml-1">建议稿</text>
+                </view>
+                <text class="text-sm text-ink mt-1.5 leading-5">{{ s.suggested }}</text>
+              </view>
+              <view v-else class="mt-3 rounded-control p-3 bg-bg-muted flex-row items-center">
+                <ml-icon name="lock" :size="13" :color="MIST"></ml-icon>
+                <text class="text-xs text-ink-soft ml-1.5">解锁完整评审后查看改写</text>
+              </view>
+              <text class="text-xs text-ink-soft mt-2.5 leading-5">{{ s.reason }}</text>
+              <view v-if="s.needsUserEvidence" class="mt-2">
+                <ml-tag label="需补充真实证据" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+              </view>
+            </ml-card>
+          </view>
+        </view>
+
+        <!-- 改写建议 -->
+        <view v-if="suggestions.length > 0" class="mt-5">
+          <ml-section-header
+            title="AI 逐条批注"
+            caption="每条均锚定原文，采用后写入草稿"
+            action-text="全部采用"
+            @action="adoptAll"
+          ></ml-section-header>
+          <view class="mb-2.5" v-for="(s, i) in suggestions" :key="i">
+            <ml-card>
+              <!-- 严重度 -->
+              <view v-if="issueSeverityLabel(i).length > 0" class="flex-row items-center mb-2">
+                <ml-tag :label="issueSeverityLabel(i)" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+              </view>
+              <!-- 原句 -->
+              <view class="rounded-control p-3 bg-bg-muted">
+                <view class="flex-row items-center">
+                  <ml-icon name="quote" :size="12" :color="MIST"></ml-icon>
+                  <text class="text-xs text-ink-soft ml-1">原文</text>
+                </view>
+                <text class="text-xs text-ink-soft mt-1.5 leading-5">{{ s.original }}</text>
+              </view>
+              <!-- 建议稿 -->
+              <view class="mt-3 rounded-control p-3 bg-chip-reliable">
+                <view class="flex-row items-center">
+                  <ml-icon name="wand-2" :size="12" :color="RELIABLE"></ml-icon>
+                  <text class="text-xs font-semibold text-reliable ml-1">建议稿</text>
+                </view>
+                <text class="text-sm text-ink mt-1.5 leading-5">{{ s.suggested }}</text>
+              </view>
+              <!-- 原因 -->
+              <text class="text-xs text-ink-soft mt-2.5 leading-5">{{ s.reason }}</text>
+              <view class="mt-2" v-if="s.needsUserEvidence">
+                <ml-tag label="需补充真实证据" :bg="CHIP_WARN" :color="WARN"></ml-tag>
+              </view>
+              <!-- 操作 -->
+              <view class="flex-row mt-3">
+                <ml-chip
+                  variant="action"
+                  :tone="isAdopted(i) ? 'soft' : 'smart'"
+                  :icon="isAdopted(i) ? 'check-check' : 'check'"
+                  :label="isAdopted(i) ? '已采用' : '采用'"
+                  @tap="toggleAdopt(i)"
+                ></ml-chip>
+                <view class="w-2"></view>
+                <ml-chip
+                  variant="action"
+                  tone="soft"
+                  icon="x"
+                  label="忽略"
+                  @tap="dismissOne(i)"
+                ></ml-chip>
+              </view>
+            </ml-card>
+          </view>
+        </view>
+
+        <!-- 完成操作 -->
+        <view v-if="suggestions.length > 0" class="mt-4">
+          <ml-button
+            :text="'保存 ' + adoptedCount + ' 条改写'"
+            type="primary"
+            block
+            :disabled="adoptedCount === 0"
+            @tap="saveAll"
+          ></ml-button>
+          <view class="h-2"></view>
+          <ml-button text="放弃全部修改" type="ghost" block @tap="resetAll"></ml-button>
+        </view>
+
+        <!-- 多版本导出（文档 2.4：生成不同投递版本） -->
+        <view v-if="parsed != null" class="mt-5">
+          <ml-section-header
+            title="投递版本"
+            caption="按目标岗位生成不同侧重版本"
+          ></ml-section-header>
+          <ml-card :padded="false">
+            <view
+              v-for="(v, i) in resumeVersions"
+              :key="'v_' + v.id"
+              class="flex-row items-center px-4 py-3"
+              :class="i < resumeVersions.length - 1 ? 'border-b border-line' : ''"
+            >
+              <view
+                class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
+                :style="{ backgroundColor: v.tint }"
+              >
+                <ml-icon name="file-text" :size="16" :color="v.color"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm text-ink">{{ v.name }}</text>
+                <text class="text-xs text-ink-soft mt-0.5">{{ v.desc }}</text>
+              </view>
+              <ml-chip
+                variant="action"
+                tone="outline"
+                icon="share"
+                label="导出"
+                @tap="exportVersion(v)"
+              ></ml-chip>
+            </view>
+          </ml-card>
+        </view>
       </view>
+    </scroll-view>
+
+    <!-- 免费态底部固定 CTA（拇指热区；滚动内容已留出底部空间） -->
+    <view
+      v-if="unlockBarVisible"
+      class="absolute left-0 right-0 bottom-0 bg-surface border-t border-line px-5 pt-3 pb-5"
+    >
+      <ml-button
+        text="解锁完整批注与改写"
+        type="primary"
+        size="lg"
+        block
+        @tap="goPaywall"
+      ></ml-button>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <script setup lang="uts">
@@ -362,6 +460,8 @@ import {
   uploadResumeFile
 } from '../../api/resume.uts'
 import {
+  ResumeIssue,
+  ResumeIssueSeverity,
   ResumeParseResult,
   ResumeParseResponse,
   ResumeQuota,
@@ -441,6 +541,51 @@ const quota = ref<ResumeQuota | null>(null)
 const history = ref<ResumeHistoryItem[]>([])
 const loadingHistory = ref(false)
 
+// 免费预览诊断 / 付费后自动续跑
+const scrollTarget = ref('')
+const lastFileUrl = ref('')
+const rerunning = ref(false)
+const rerunFailed = ref(false)
+
+// 免费态底部固定 CTA
+const unlockBarVisible = computed((): boolean => {
+  const p = parsed.value
+  return p != null && p.mode === 'preview'
+})
+
+const previewIssues = computed((): ResumeIssue[] => {
+  const p = parsed.value
+  return p != null ? p.previewIssues : ([] as ResumeIssue[])
+})
+
+const previewTotal = computed((): number => previewIssues.value.length)
+
+function countPreviewSeverity(sev: string): number {
+  let n = 0
+  for (let i = 0; i < previewIssues.value.length; i++) {
+    if (previewIssues.value[i].severity === sev) n += 1
+  }
+  return n
+}
+
+const previewHigh = computed((): number => countPreviewSeverity('high'))
+const previewMedium = computed((): number => countPreviewSeverity('medium'))
+const previewLow = computed((): number => countPreviewSeverity('low'))
+
+// 首屏文案：必须包含「发现 N 条问题 · 免费可看 1 条完整改写」
+const previewSubline = computed((): string => {
+  const n = previewTotal.value
+  if (n === 0) return '本次未发现明显问题；可开通会员或单次包获取逐条 AI 批注'
+  return '发现 ' + n + ' 条问题 · 免费可看 1 条完整改写，其余解锁后查看'
+})
+
+function severityLabelOf(s: ResumeIssueSeverity): string {
+  if (s === 'high') return '高优先级'
+  if (s === 'medium') return '中优先级'
+  if (s === 'low') return '低优先级'
+  return ''
+}
+
 const quotaText = computed((): string => {
   const q = quota.value
   if (q == null) return ''
@@ -500,6 +645,7 @@ function resetAll() {
   parsed.value = null
   suggestions.value = []
   adopted.value = []
+  lastFileUrl.value = ''
 }
 
 // ---------- 解析结果 / 历史 / 额度 ----------
@@ -532,6 +678,7 @@ function applyParse(r: ResumeParseResponse) {
     gaps: r.gaps,
     formatRisks: r.formatRisks,
     issues: r.issues,
+    previewIssues: r.previewIssues,
     mode: r.mode,
     cached: r.cached
   } as ResumeParseResult
@@ -590,13 +737,40 @@ async function loadQuota() {
   }
 }
 
-function loadAccountData() {
-  loadQuota()
-  loadHistory()
-}
-
 function goPaywall() {
   uni.navigateTo({ url: '/pages/membership/paywall?from=resume' })
+}
+
+// 付费成功返回本页：canFull 且当前为 preview → 用上次 cloud fileID 自动重跑完整评审（无需重新上传）
+async function maybeRerunFull() {
+  const p = parsed.value
+  const q = quota.value
+  if (p == null || p.mode !== 'preview') return
+  if (q == null || !q.canFull) return
+  if (lastFileUrl.value.length === 0 || fileName.value.length === 0) return
+  if (rerunning.value) return
+  rerunning.value = true
+  rerunFailed.value = false
+  trackEvent('resume_full_rerun', { resumeId: p.resumeId })
+  try {
+    const r = await parseResume(
+      lastFileUrl.value,
+      fileName.value,
+      positionDisplay(userStore.profile)
+    )
+    applyParse(r)
+    loadHistory()
+  } catch (e: any) {
+    console.warn('[resume] full rerun failed', e)
+    rerunFailed.value = true
+  } finally {
+    rerunning.value = false
+  }
+}
+
+function retryFull() {
+  rerunFailed.value = false
+  maybeRerunFull()
 }
 
 // 历史记录回放：跳独立详情页，不覆盖当前「解析 / 优化」工作区（2026-10-23 用户反馈）
@@ -779,9 +953,12 @@ function restoreDraft() {
   uni.showToast({ title: '已恢复草稿', icon: 'none' })
 }
 
-onShow(() => {
+onShow(async () => {
   refreshDraftHint()
-  loadAccountData()
+  await loadQuota()
+  loadHistory()
+  // 支付成功返回（canFull 变 true）时自动续跑完整评审
+  maybeRerunFull()
 })
 
 function pick() {
@@ -845,6 +1022,8 @@ async function doParse(path: string, name: string) {
   parsed.value = null
   suggestions.value = []
   adopted.value = []
+  scrollTarget.value = ''
+  rerunFailed.value = false
   // 埋点：上传简历（fileType 取扩展名）
   const dot = name.lastIndexOf('.')
   const ext = dot >= 0 ? name.substring(dot + 1) : 'bin'
@@ -858,8 +1037,11 @@ async function doParse(path: string, name: string) {
       name,
       positionDisplay(userStore.profile)
     )
+    lastFileUrl.value = fileUrl
     applyParse(r)
     loadHistory()
+    // 解析完成自动滚到诊断摘要（仅本次解析后触发一次）
+    scrollTarget.value = 'resume-result'
   } catch (e: any) {
     const msg = e != null && e.message != null ? String(e.message) : ''
     if (msg.indexOf('会员') >= 0 || msg.indexOf('单次包') >= 0 || msg.indexOf('预览') >= 0) {

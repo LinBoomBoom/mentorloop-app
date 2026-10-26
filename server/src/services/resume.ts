@@ -12,6 +12,7 @@ import type { Env } from '../config.js'
 import { now } from '../util.js'
 import type {
   ResumeHistoryItem,
+  ResumeIssue,
   ResumeParseResult,
   ResumeQuota,
   ResumeSuggestion
@@ -22,7 +23,11 @@ import {
   safeFileName,
   type ResumeFileType
 } from './resume-extract.js'
-import { collectResumeStats, reviewResumeWithLlm } from './resume-review.js'
+import {
+  collectResumeStats,
+  reviewResumePreviewWithLlm,
+  reviewResumeWithLlm
+} from './resume-review.js'
 import {
   getResumeQuota,
   refundResumeQuota,
@@ -66,6 +71,16 @@ function rowToResult(row: ResumeRow): ResumeParseResult | null {
     r.gaps = Array.isArray(r.gaps) ? r.gaps : []
     r.formatRisks = Array.isArray(r.formatRisks) ? r.formatRisks : []
     r.issues = Array.isArray(r.issues) ? r.issues : []
+    // 2026-10-24 免费预览 teaser 上线前的旧记录：无 previewIssues / locked，读取时补齐
+    r.previewIssues = Array.isArray(r.previewIssues) ? r.previewIssues : []
+    for (let i = 0; i < r.issues.length; i++) {
+      const it = r.issues[i]
+      if (it != null && typeof it === 'object') it.locked = it.locked === true
+    }
+    for (let i = 0; i < r.previewIssues.length; i++) {
+      const it = r.previewIssues[i]
+      if (it != null && typeof it === 'object') it.locked = it.locked === true
+    }
     return r as ResumeParseResult
   } catch {
     return null
@@ -88,6 +103,41 @@ async function findCachedFull(
     )
     .get(uid, hash, position)) as any
   return row != null ? rowToResult(row as ResumeRow) : null
+}
+
+// 免费预览缓存：同用户 + 同 hash + 同岗位 + preview（命中不调 LLM、不扣每日次数）
+async function findCachedPreview(
+  db: Db,
+  uid: string,
+  hash: string,
+  position: string
+): Promise<ResumeParseResult | null> {
+  const row = (await db
+    .prepare(
+      `SELECT r.* FROM resumes r JOIN users u ON u.id = r.user_id
+       WHERE u.uid = ? AND r.content_hash = ? AND r.target_position = ?
+         AND r.mode = 'preview' AND r.parse_payload IS NOT NULL
+       ORDER BY r.id DESC LIMIT 1`
+    )
+    .get(uid, hash, position)) as any
+  return row != null ? rowToResult(row as ResumeRow) : null
+}
+
+// 同 user + hash + 岗位的预览行 id（用于 preview → full 同行更新，避免历史重复）
+async function findPreviewRowId(
+  db: Db,
+  uid: string,
+  hash: string,
+  position: string
+): Promise<number | null> {
+  const row = (await db
+    .prepare(
+      `SELECT r.id FROM resumes r JOIN users u ON u.id = r.user_id
+       WHERE u.uid = ? AND r.content_hash = ? AND r.target_position = ? AND r.mode = 'preview'
+       ORDER BY r.id DESC LIMIT 1`
+    )
+    .get(uid, hash, position)) as any
+  return row != null ? Number(row.id) : null
 }
 
 async function insertResumeRow(
@@ -145,18 +195,27 @@ export async function parseResumeFile(
   const pos = position.trim()
   const name = safeFileName(fileName.length > 0 ? fileName : basename(fileUrl))
 
-  // 缓存命中：不消耗额度、不调用 LLM
-  const cached = await findCachedFull(db, uid, hash, pos)
-  if (cached != null) {
+  // 完整评审缓存命中：不消耗额度、不调用 LLM
+  const cachedFull = await findCachedFull(db, uid, hash, pos)
+  if (cachedFull != null) {
     return {
-      result: cached,
+      result: cachedFull,
       quota: await getResumeQuota(db, env, uid)
     } as ParseResumeOutput
   }
 
+  const quota = await getResumeQuota(db, env, uid)
+
+  // 免费预览缓存命中：不调 LLM、不扣每日预览次数（仅免费态适用；会员态应走完整评审）
+  if (!quota.canFull) {
+    const cachedPreview = await findCachedPreview(db, uid, hash, pos)
+    if (cachedPreview != null) {
+      return { result: cachedPreview, quota: quota } as ParseResumeOutput
+    }
+  }
+
   const extracted = await extractResume(bytes)
   const stats = collectResumeStats(extracted)
-  const quota = await getResumeQuota(db, env, uid)
 
   if (quota.canFull) {
     const token = await reserveFullReview(db, env, uid)
@@ -184,16 +243,35 @@ export async function parseResumeFile(
       gaps: stats.gaps,
       formatRisks: stats.formatRisks,
       issues: issues,
+      previewIssues: [],
       mode: 'full',
       cached: false
     } as ResumeParseResult
-    await insertResumeRow(db, uid, fileUrl, name, extracted.fileType, hash, pos, 'full', result)
+    // preview → full 去重：同 user + hash + 岗位已有预览行则更新该行（resumeId 不变）
+    const previewId = await findPreviewRowId(db, uid, hash, pos)
+    if (previewId != null) {
+      result.resumeId = String(previewId)
+      await db
+        .prepare(
+          `UPDATE resumes SET mode = 'full', parse_payload = ?, optimize_payload = ? WHERE id = ?`
+        )
+        .run(JSON.stringify(result), JSON.stringify(result.issues), previewId)
+    } else {
+      await insertResumeRow(db, uid, fileUrl, name, extracted.fileType, hash, pos, 'full', result)
+    }
     return { result, quota: await getResumeQuota(db, env, uid) } as ParseResumeOutput
   }
 
-  // 免费预览：只做确定性结构提取，不调用 LLM
+  // 免费预览：轻量 LLM 产出最多 3 条有证据诊断（首条完整改写，其余锁定）
   const token = await reservePreview(db, env, uid)
   if (token == null) throw new Error('RESUME_PREVIEW_EXHAUSTED')
+  // LLM 未配置 / 超时 / 失败 → 回退结构预览（previewIssues=[]），不报错、不扣额度
+  let previewIssues: ResumeIssue[] = []
+  try {
+    previewIssues = await reviewResumePreviewWithLlm(env, extracted, pos)
+  } catch {
+    previewIssues = []
+  }
   const result = {
     resumeId: '',
     fileName: name,
@@ -206,6 +284,7 @@ export async function parseResumeFile(
     gaps: stats.gaps,
     formatRisks: stats.formatRisks,
     issues: [],
+    previewIssues: previewIssues,
     mode: 'preview',
     cached: false
   } as ResumeParseResult

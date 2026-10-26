@@ -3,7 +3,7 @@
 - 日期：2026-10-24
 - 关联任务卡：[2026-10-24-resume-free-value-funnel.md](../tasks/2026-10-24-resume-free-value-funnel.md)
 - 类型：出参新增字段（`types/` 与服务端出参变更，无新增端点）
-- 状态：**草案（待 PO 评审后 FE / BE 双签）**
+- 状态：**已冻结（FE / BE 双签，2026-10-26）**
 
 ## 0. 随方案落定的决策
 
@@ -106,11 +106,32 @@ GET /resume/detail?resumeId=...    （requireAuth）
 - 成本：新增免费预览 LLM 调用点，需在 [成本与定价决策](../tasks/2026-10-22-cost-and-pricing-decision.md) §11 补行
 - 支付 / 会员：不变
 
-## 6. 双签
+## 6. 双向核对矩阵
 
-| 角色 | 签署 | 结论 |
-| ---- | ---- | ---- |
-| FE   | 待签 | —    |
-| BE   | 待签 | —    |
+| 项                                | 客户端（`types/resume.uts`）    | 服务端（`types/domain.ts`） | 一致 |
+| --------------------------------- | ------------------------------- | --------------------------- | ---- |
+| `ResumeIssue.locked`              | `boolean`，必填                 | `boolean`，必填             | ✅   |
+| `ResumeParseResult.previewIssues` | `ResumeIssue[]`，必填           | `ResumeIssue[]`，必填       | ✅   |
+| preview `issues`                  | `[]`                            | `[]`                        | ✅   |
+| preview `cached`                  | `boolean`（缓存命中 `true`）    | `boolean`                   | ✅   |
+| `locked` 条目                     | 只做占位，不渲染 `suggested`    | 不下发 `suggested`（空串）  | ✅   |
+| 出参形状                          | `ResumeParseResult & { quota }` | `okData(result + quota)`    | ✅   |
 
-> 双签完成前不得进入编码；G2 阶段按本单逐字核对出参字段。
+## 7. 回归验证清单（G2 依据）
+
+- [ ] `previewIssues` 长度 1–3；`[0].locked=false` 且 `suggested` 非空；其余 `locked=true` 且 `suggested=''`。
+- [ ] 每条 `previewIssues[].quote` 均命中原文（复用 `validateIssues`）。
+- [ ] preview 态 `issues=[]`；full 态 `previewIssues=[]`。
+- [ ] LLM 未配置 / 超时 / 失败 → `previewIssues=[]`、HTTP 200、不扣额度。
+- [ ] 同 user + hash + 岗位二次预览 → `cached=true`，不调 LLM、不新增 `resume_usages` preview 行。
+- [ ] 同 user + hash + 岗位 preview→full 更新同一行，`resumeId` 不变，历史仅一条。
+- [ ] 旧记录（2026-10-24 前）读 `detail` → `previewIssues=[]` 且 `issues[].locked=false` 补齐。
+
+## 8. 双签
+
+| 角色 | 签署       | 结论 |
+| ---- | ---------- | ---- |
+| FE   | 2026-10-26 | 同意 |
+| BE   | 2026-10-26 | 同意 |
+
+> 双签完成，可进入编码；G2 阶段按本单逐字核对出参字段。

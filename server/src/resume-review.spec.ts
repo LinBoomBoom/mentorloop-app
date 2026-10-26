@@ -4,11 +4,13 @@ import {
   collectResumeStats,
   maskPii,
   validateIssues,
+  toPreviewIssues,
   reviewResumeWithLlm
 } from './services/resume-review.js'
 import { resetFetchForTest, setFetchForTest } from './llm/client.js'
 import type { Env } from './config.js'
 import type { ExtractedResume, ExtractedUnit } from './services/resume-extract.js'
+import type { ResumeIssue } from './types/domain.js'
 
 const extracted: ExtractedResume = {
   fileType: 'pdf',
@@ -124,6 +126,7 @@ describe('validateIssues', () => {
     expect(out[0].severity).toBe('high')
     expect(out[0].needsUserEvidence).toBe(true)
     expect(out[0].issueId.indexOf('ri_')).toBe(0)
+    expect(out[0].locked).toBe(false)
   })
 
   it('严密度排序 high → low', () => {
@@ -150,6 +153,39 @@ describe('validateIssues', () => {
     )
     expect(out[0].severity).toBe('high')
     expect(out[1].severity).toBe('low')
+  })
+})
+
+describe('toPreviewIssues', () => {
+  function mk(i: number, severity: ResumeIssue['severity']): ResumeIssue {
+    return {
+      issueId: 'ri_' + i,
+      severity: severity,
+      category: 'quantification',
+      page: 1,
+      paragraph: -1,
+      quote: 'quote' + i,
+      original: 'original' + i,
+      suggested: 'suggested' + i,
+      reason: 'reason' + i,
+      needsUserEvidence: false,
+      locked: false
+    } as ResumeIssue
+  }
+
+  it('最多 3 条；[0] 完整改写，[1..] 锁定且 suggested 置空', () => {
+    const out = toPreviewIssues([mk(1, 'high'), mk(2, 'medium'), mk(3, 'low'), mk(4, 'low')])
+    expect(out.length).toBe(3)
+    expect(out[0].locked).toBe(false)
+    expect(out[0].suggested).toBe('suggested1')
+    expect(out[1].locked).toBe(true)
+    expect(out[1].suggested).toBe('')
+    expect(out[2].locked).toBe(true)
+    expect(out[2].suggested).toBe('')
+  })
+
+  it('空输入返回空数组（结构预览回退）', () => {
+    expect(toPreviewIssues([]).length).toBe(0)
   })
 })
 

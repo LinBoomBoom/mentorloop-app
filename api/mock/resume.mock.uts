@@ -1,11 +1,91 @@
-// 简历 mock 数据（与 2026-10-21 契约字段一致）
-import { ResumeParseResponse, ResumeSuggestion } from '../../types/resume.uts'
+// 简历 mock 数据（与 2026-10-24 免费预览 teaser 契约字段一致）
+// 会员 / 单次包 → full（issues）；免费用户 → preview（1 条完整 + 2 条锁定 diagnosis）
+import { ResumeParseResponse, ResumeIssue, ResumeSuggestion } from '../../types/resume.uts'
+import { quotaStore } from '../../store/quota.uts'
 
 export function mockParseResume(
   _fileUrl: string,
   fileName: string,
   _position: string
 ): Promise<ResumeParseResponse> {
+  const member = quotaStore.isMember()
+  const singleLeft = quotaStore.state.resumeCreditsLeft
+  const memberLeft = member ? 5 : 0
+  const canFull = memberLeft > 0 || singleLeft > 0
+
+  // 完整评审结果（全部可读改写）
+  const fullIssues: ResumeIssue[] = [
+    {
+      issueId: 'mock-issue-1',
+      severity: 'high',
+      category: 'quantification',
+      page: 1,
+      paragraph: -1,
+      quote: '负责系统开发与维护',
+      original: '负责系统开发与维护',
+      suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（请补充真实数据）',
+      reason: '职责描述没有量化结果，面试官难以判断你的实际贡献与影响范围',
+      needsUserEvidence: true,
+      locked: false
+    } as ResumeIssue,
+    {
+      issueId: 'mock-issue-2',
+      severity: 'medium',
+      category: 'ownership',
+      page: 1,
+      paragraph: -1,
+      quote: '参与团队项目开发',
+      original: '参与团队项目开发',
+      suggested: '负责订单模块的接口设计与实现，独立完成 3 个核心接口',
+      reason: '「参与」弱化了个人贡献，改成明确的负责范围更容易被追问时展开',
+      needsUserEvidence: false,
+      locked: false
+    } as ResumeIssue
+  ]
+
+  // 免费预览诊断：首条完整改写，其余锁定（suggested 为空，服务端不下发）
+  const previewIssues: ResumeIssue[] = [
+    {
+      issueId: 'mock-preview-1',
+      severity: 'high',
+      category: 'quantification',
+      page: 1,
+      paragraph: -1,
+      quote: '负责系统开发与维护',
+      original: '负责系统开发与维护',
+      suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（请补充真实数据）',
+      reason: '职责描述没有量化结果，面试官难以判断你的实际贡献与影响范围',
+      needsUserEvidence: true,
+      locked: false
+    } as ResumeIssue,
+    {
+      issueId: 'mock-preview-2',
+      severity: 'medium',
+      category: 'ownership',
+      page: 1,
+      paragraph: -1,
+      quote: '参与团队项目开发',
+      original: '参与团队项目开发',
+      suggested: '',
+      reason: '「参与」弱化了个人贡献，需要改成明确的负责范围',
+      needsUserEvidence: false,
+      locked: true
+    } as ResumeIssue,
+    {
+      issueId: 'mock-preview-3',
+      severity: 'low',
+      category: 'language',
+      page: 1,
+      paragraph: -1,
+      quote: '熟悉常用开发工具',
+      original: '熟悉常用开发工具',
+      suggested: '',
+      reason: '技术栈描述过于笼统，建议写明具体工具与熟练度',
+      needsUserEvidence: false,
+      locked: true
+    } as ResumeIssue
+  ]
+
   return Promise.resolve({
     resumeId: 'mock-resume-1',
     fileName: fileName.length > 0 ? fileName : 'demo-resume.pdf',
@@ -17,40 +97,16 @@ export function mockParseResume(
     quantified: false,
     gaps: ['缺少量化成果', '空档期未说明'],
     formatRisks: ['一页超过 2 屏'],
-    issues: [
-      {
-        issueId: 'mock-issue-1',
-        severity: 'high',
-        category: 'quantification',
-        page: 1,
-        paragraph: -1,
-        quote: '负责系统开发与维护',
-        original: '负责系统开发与维护',
-        suggested: '主导订单系统重构，将平均响应时间从 800ms 降至 220ms（请补充真实数据）',
-        reason: '职责描述没有量化结果，面试官难以判断你的实际贡献与影响范围',
-        needsUserEvidence: true
-      },
-      {
-        issueId: 'mock-issue-2',
-        severity: 'medium',
-        category: 'ownership',
-        page: 1,
-        paragraph: -1,
-        quote: '参与团队项目开发',
-        original: '参与团队项目开发',
-        suggested: '负责订单模块的接口设计与实现，独立完成 3 个核心接口',
-        reason: '「参与」弱化了个人贡献，改成明确的负责范围更容易被追问时展开',
-        needsUserEvidence: false
-      }
-    ],
-    mode: 'full',
+    issues: canFull ? fullIssues : [],
+    previewIssues: canFull ? [] : previewIssues,
+    mode: canFull ? 'full' : 'preview',
     cached: false,
     quota: {
       memberMonthlyTotal: 5,
-      memberMonthlyLeft: 5,
-      singleLeft: 0,
+      memberMonthlyLeft: memberLeft,
+      singleLeft: singleLeft,
       freePreviewLeftToday: 3,
-      canFull: true
+      canFull: canFull
     }
   } as ResumeParseResponse)
 }
