@@ -10,6 +10,7 @@ import {
   deleteResumeRecord
 } from '../services/resume.js'
 import { getResumeQuota } from '../services/resume-quota.js'
+import { annotateResumePdf, annotateFontStatus } from '../services/resume-annotate.js'
 import { isCloudFileID, isOwnedCloudFileID } from '../services/cloud-file.js'
 import { ingestEvents } from '../services/track.js'
 import { ok, okData, fail } from '../util.js'
@@ -19,10 +20,12 @@ export default async function (app: FastifyInstance): Promise<void> {
   const env = (app as any).env as import('../config.js').Env
 
   // 健康检查（云托管探活/发布验证）
+  // annotateFont：批注版 PDF 的 CJK 字体是否随镜像就位（发布后一次 GET 即可确认资产齐全）
   app.get('/healthz', async () =>
     okData({
       ok: true,
       driver: db.driver,
+      annotateFont: annotateFontStatus().ready,
       ts: Date.now()
     })
   )
@@ -188,6 +191,47 @@ export default async function (app: FastifyInstance): Promise<void> {
     const uid = (request.user as any).uid as string
     return okData(await getResumeQuota(db, env, uid))
   })
+
+  // 批注版 PDF 导出（批次 2）：仅完整评审可导出；零 LLM、不扣额度
+  app.post(
+    '/resume/annotate',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['resumeId'],
+          properties: { resumeId: { type: 'string' } }
+        }
+      }
+    },
+    async (request, reply) => {
+      const uid = (request.user as any).uid as string
+      const { resumeId } = request.body as { resumeId: string }
+      if (!/^\d+$/.test(resumeId)) return reply.code(400).send(fail(400, '参数不合法'))
+      try {
+        return okData(await annotateResumePdf(db, env, uid, resumeId))
+      } catch (e: any) {
+        const msg = e != null && e.message != null ? String(e.message) : 'RESUME_ANNOTATE_ERROR'
+        if (msg === 'RESUME_NOT_FOUND') return reply.code(404).send(fail(404, '简历不存在'))
+        if (msg === 'RESUME_ANNOTATE_PREVIEW') {
+          return reply.code(400).send(fail(400, '完整评审后才能导出批注 PDF'))
+        }
+        if (msg === 'RESUME_ANNOTATE_NO_ISSUES') {
+          return reply.code(400).send(fail(400, '该记录暂无可导出的批注'))
+        }
+        if (
+          msg === 'RESUME_STORAGE_UNAVAILABLE' ||
+          msg.indexOf('RESUME_DOWNLOAD_') === 0 ||
+          msg.indexOf('WX_STORAGE_') === 0
+        ) {
+          return reply.code(503).send(fail(503, '文件服务暂不可用，请稍后重试'))
+        }
+        console.warn('[resume] annotate failed', msg)
+        return reply.code(500).send(fail(500, '批注文件生成失败，请重试'))
+      }
+    }
+  )
 
   app.post(
     '/resume/optimize',

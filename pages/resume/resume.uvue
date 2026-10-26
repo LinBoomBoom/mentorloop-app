@@ -391,6 +391,45 @@
           <ml-button text="放弃全部修改" type="ghost" block @tap="resetAll"></ml-button>
         </view>
 
+        <!-- 批注版 PDF 导出（仅完整评审；免费、不扣次数） -->
+        <view v-if="parsed != null && parsed.mode === 'full'" class="mt-5" id="resume-annotate">
+          <ml-section-header
+            title="批注版 PDF"
+            caption="原文件高亮 + 逐条批注，可直接保存转发"
+          ></ml-section-header>
+          <ml-card>
+            <view class="flex-row items-center">
+              <view
+                class="w-9 h-9 rounded-control flex-row items-center justify-center mr-3"
+                :style="{ backgroundColor: CHIP_SMART }"
+              >
+                <ml-icon name="file-check" :size="17" :color="SMART"></ml-icon>
+              </view>
+              <view class="flex-col flex-1">
+                <text class="text-sm font-semibold text-ink">{{
+                  annotated ? '批注文件已生成' : '导出批注版 PDF'
+                }}</text>
+                <text class="text-xs text-ink-soft mt-0.5 leading-4">{{ annotateHint }}</text>
+              </view>
+            </view>
+            <view class="mt-3">
+              <ml-button
+                :text="annotating ? '正在生成…' : annotated ? '重新生成' : '生成批注 PDF'"
+                type="primary"
+                block
+                :disabled="annotating"
+                @tap="exportAnnotated"
+              ></ml-button>
+            </view>
+            <view v-if="annotated" class="mt-2">
+              <ml-button text="打开 / 保存" type="secondary" block @tap="openAnnotated"></ml-button>
+            </view>
+            <view v-if="annotateError.length > 0" class="mt-2">
+              <ml-button text="重试" type="secondary" block @tap="exportAnnotated"></ml-button>
+            </view>
+          </ml-card>
+        </view>
+
         <!-- 多版本导出（文档 2.4：生成不同投递版本） -->
         <view v-if="parsed != null" class="mt-5">
           <ml-section-header
@@ -457,7 +496,9 @@ import {
   fetchResumeHistory,
   deleteResumeRecord,
   fetchResumeQuota,
-  uploadResumeFile
+  uploadResumeFile,
+  annotateResume,
+  openAnnotatedPdf
 } from '../../api/resume.uts'
 import {
   ResumeIssue,
@@ -553,6 +594,19 @@ const unlockBarVisible = computed((): boolean => {
   return p != null && p.mode === 'preview'
 })
 
+// 批注版 PDF 导出（批次 2）：仅完整评审可导出，免费不扣次数
+const annotating = ref(false)
+const annotated = ref(false)
+const annotateError = ref('')
+const annotatedFileID = ref('')
+
+const annotateHint = computed((): string => {
+  if (annotateError.value.length > 0) return annotateError.value
+  if (annotating.value) return '正在排版原文件与批注，约需数秒'
+  if (annotated.value) return '已生成，可打开或转发；重复生成会覆盖同一份文件'
+  return 'PDF 会在原文上高亮问题并追加批注页；DOCX 输出评审版 PDF'
+})
+
 const previewIssues = computed((): ResumeIssue[] => {
   const p = parsed.value
   return p != null ? p.previewIssues : ([] as ResumeIssue[])
@@ -646,6 +700,49 @@ function resetAll() {
   suggestions.value = []
   adopted.value = []
   lastFileUrl.value = ''
+  resetAnnotate()
+}
+
+// ---------- 批注版 PDF（批次 2） ----------
+
+function resetAnnotate() {
+  annotating.value = false
+  annotated.value = false
+  annotateError.value = ''
+  annotatedFileID.value = ''
+}
+
+async function exportAnnotated() {
+  const p = parsed.value
+  if (p == null) return
+  if (p.mode !== 'full') {
+    uni.showToast({ title: '完整评审后才能导出批注 PDF', icon: 'none' })
+    return
+  }
+  if (p.resumeId.length === 0) {
+    uni.showToast({ title: '记录尚未保存，请重新解析', icon: 'none' })
+    return
+  }
+  annotating.value = true
+  annotateError.value = ''
+  try {
+    const r = await annotateResume(p.resumeId)
+    annotatedFileID.value = r.fileID
+    annotated.value = true
+    trackEvent('resume_annotate_export', { issueCount: r.issueCount, pages: r.pages })
+    uni.showToast({ title: '批注 PDF 已生成', icon: 'none' })
+  } catch (e: any) {
+    annotateError.value = e != null && e.message != null ? String(e.message) : '生成失败，请重试'
+    annotated.value = false
+  } finally {
+    annotating.value = false
+  }
+}
+
+async function openAnnotated() {
+  if (annotatedFileID.value.length === 0) return
+  const ok = await openAnnotatedPdf(annotatedFileID.value)
+  if (!ok) uni.showToast({ title: '打开失败，请重新生成', icon: 'none' })
 }
 
 // ---------- 解析结果 / 历史 / 额度 ----------
@@ -683,6 +780,8 @@ function applyParse(r: ResumeParseResponse) {
     cached: r.cached
   } as ResumeParseResult
   quota.value = r.quota
+  // 每次落新结果都重置批注导出态，避免沿用上一条记录的 fileID
+  resetAnnotate()
   const sugg = issuesToSuggestions(r)
   suggestions.value = sugg
   const init: boolean[] = []

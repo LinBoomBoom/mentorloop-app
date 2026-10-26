@@ -56,6 +56,14 @@ export type ResumeHistoryItem = {
   quantified: boolean
 }
 
+// 批注版 PDF 导出出参（契约 2026-10-26-resume-annotated-pdf）
+export type ResumeAnnotateResult = {
+  fileID: string
+  expiresAt: number
+  issueCount: number
+  pages: number
+}
+
 // 旧投递版本入口保留（/resume/optimize 出参零变更）
 export type ResumeSuggestion = {
   original: string

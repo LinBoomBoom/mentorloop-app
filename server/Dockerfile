@@ -10,6 +10,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
+# CJK 字体子集（批注版 PDF 渲染用）：运行时按 dist 相对路径读取 assets/fonts
+COPY assets ./assets
 # tsc 不搬运 .sql：db.ts 运行时从 dist 读 schema.sql（本地 SQLite 路径用）
 RUN npm run build && cp src/schema.sql dist/schema.sql
 
@@ -21,5 +23,7 @@ ENV PORT=8787
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY --from=build /app/dist ./dist
+# CJK 字体子集：运行时按 dist/services/../../assets 解析，必须随运行镜像分发
+COPY --from=build /app/assets ./assets
 EXPOSE 8787
 CMD ["node", "dist/server.js"]

@@ -3,6 +3,7 @@ import { buildApp } from './app.js'
 import { loadEnv } from './config.js'
 import { runContentSync } from './scripts/sync-content-questions.js'
 import { startVirtualOrderReconciler } from './services/virtual-notify.js'
+import { annotateFontStatus } from './services/resume-annotate.js'
 import type { Db } from './db.js'
 
 async function main(): Promise<void> {
@@ -15,6 +16,10 @@ async function main(): Promise<void> {
 
   const addr = await app.listen({ port: env.port, host: '0.0.0.0' })
   console.log('[mentorloop-server] listening on', addr)
+
+  // 批注 PDF 的 CJK 字体自检（发布后回读运行日志可确认镜像内资产是否齐全）
+  const font = annotateFontStatus()
+  console.log('[resume-annotate] font ready=' + font.ready + ' path=' + font.path)
 
   // 虚拟支付查单兜底（仅 MP_PAY_MODE=virtual 且密钥齐全时启动；
   // 间隔由 VIRTUAL_RECONCILE_INTERVAL_MS 控制，默认 60 分钟，<=0 关闭）

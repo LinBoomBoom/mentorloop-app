@@ -38,7 +38,7 @@ import { deleteCloudFiles } from './wx-storage.js'
 
 export type ParseResumeOutput = { result: ResumeParseResult; quota: ResumeQuota }
 
-type ResumeRow = {
+export type ResumeRow = {
   id: number
   original_url: string | null
   file_name: string | null
@@ -50,7 +50,7 @@ type ResumeRow = {
   created_at: number
 }
 
-function rowToResult(row: ResumeRow): ResumeParseResult | null {
+export function rowToResult(row: ResumeRow): ResumeParseResult | null {
   if (row.parse_payload == null) return null
   try {
     const r = JSON.parse(row.parse_payload) as any
@@ -335,7 +335,11 @@ export async function listResumeHistory(
   return items
 }
 
-async function findOwnedRow(db: Db, uid: string, resumeId: string): Promise<ResumeRow | null> {
+export async function findOwnedRow(
+  db: Db,
+  uid: string,
+  resumeId: string
+): Promise<ResumeRow | null> {
   if (!/^\d+$/.test(resumeId)) return null
   const row = (await db
     .prepare(
@@ -370,13 +374,20 @@ export async function deleteResumeRecord(
   if (row == null) return false
   await db.prepare('DELETE FROM resumes WHERE id = ?').run(row.id)
   const url = row.original_url
+  // 批注版 PDF（批次 2）固定路径 resumes/<uid>/annotated-<resumeId>.pdf，随记录一并清理
+  const ids: string[] = []
   if (url != null && url.indexOf('cloud://') === 0) {
+    ids.push(url)
+    const head = url.substring(0, url.lastIndexOf('/') + 1)
+    ids.push(head + 'annotated-' + row.id + '.pdf')
+  }
+  if (ids.length > 0) {
     try {
       await deleteCloudFiles({
         appId: env.wxAppId,
         secret: env.wxSecret,
         envId: env.wxCloudEnvId,
-        fileIDs: [url],
+        fileIDs: ids,
         timeoutMs: 5000
       })
     } catch (e: any) {

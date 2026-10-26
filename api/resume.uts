@@ -5,6 +5,7 @@ import { userStore } from '../store/user-profile.uts'
 import { quotaStore } from '../store/quota.uts'
 import { mockParseResume, mockOptimizeResume } from './mock/resume.mock.uts'
 import {
+  ResumeAnnotateResult,
   ResumeHistoryItem,
   ResumeParseResponse,
   ResumeQuota,
@@ -114,4 +115,54 @@ export async function optimizeResume(text: string, position: string): Promise<Re
   if (useMock()) return await mockOptimizeResume(text, position)
   const r = await post('/resume/optimize', { text: text, position: position })
   return r.data as ResumeSuggestion[]
+}
+
+// 批注版 PDF 导出（批次 2）：仅完整评审可导出；服务端生成并返回 cloud:// fileID
+export async function annotateResume(resumeId: string): Promise<ResumeAnnotateResult> {
+  if (useMock()) {
+    return {
+      fileID: 'mock://annotated-' + resumeId + '.pdf',
+      expiresAt: Date.now() + 24 * 3600 * 1000,
+      issueCount: 2,
+      pages: 2
+    } as ResumeAnnotateResult
+  }
+  const r = await post('/resume/annotate', { resumeId: resumeId })
+  return r.data as ResumeAnnotateResult
+}
+
+// 打开/保存已生成的批注 PDF：MP 走 wx.cloud 下载后 openDocument；其它端尽力而为
+export function openAnnotatedPdf(fileID: string): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const g = globalThis as any
+    if (fileID.indexOf('cloud://') === 0 && g.wx != null && g.wx.cloud != null) {
+      g.wx.cloud.downloadFile({
+        fileID: fileID,
+        success: (res: any) => {
+          const path = res != null && res.tempFilePath != null ? String(res.tempFilePath) : ''
+          if (path.length === 0) {
+            resolve(false)
+            return
+          }
+          g.wx.openDocument({
+            filePath: path,
+            fileType: 'pdf',
+            showMenu: true,
+            success: () => resolve(true),
+            fail: () => resolve(false)
+          })
+        },
+        fail: () => resolve(false)
+      } as any)
+      return
+    }
+    // 非小程序端：交给平台打开（App 由系统接管；失败由调用方提示）
+    uni.openDocument({
+      filePath: fileID,
+      fileType: 'pdf',
+      showMenu: true,
+      success: () => resolve(true),
+      fail: () => resolve(false)
+    })
+  })
 }
