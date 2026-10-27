@@ -41,7 +41,7 @@
 - [x] 生成失败（云存储不可用 / 记录损坏）返回明确业务错误，客户端展示可重试态。
 - [x] 导出不消耗任何额度：连续导出后 `/resume/quota` 与导出前完全一致（单测断言）。
 - [x] 客户端导出成功后可打开/预览，下载文件名为 `<原名>-批注.pdf`。
-- [x] G2 全绿 + 云端部署 smoke 通过（`mentorloop-mp-api-045`，`/healthz` 返回 `annotateFont=true`）；真机走查与一次真实生成待补，见 [.gate.md](./2026-10-26-resume-annotated-pdf.gate.md)。
+- [x] G2 全绿 + 云端部署 + 真机走查 + 真实生成全链路通过（`mentorloop-mp-api-046`，`/healthz` 返回 `annotateFont=true`；生成 3 页 / 6 条批注 / 导出不扣额度）。剩余 DOCX 与 20 页极值待真机复验，见 [.gate.md](./2026-10-26-resume-annotated-pdf.gate.md)。
 
 > 实现偏差说明：标准要求「重复导出不覆盖同一文件」；实现改为**固定路径覆盖**（`resumes/<uid>/annotated-<resumeId>.pdf`），理由是同一记录的批注内容一致，覆盖可避免云存储堆积，且删除记录时能凭路径确定性清理。已在契约单 §4 与门禁记录 §4 同步该口径。
 
