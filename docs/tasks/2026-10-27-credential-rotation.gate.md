@@ -64,18 +64,25 @@
 
 ### 5.1 逐项功能验证（部署后实测）
 
-| #   | 凭据                | 验证手段                                                  | 结果                                         |
-| --- | ------------------- | --------------------------------------------------------- | -------------------------------------------- |
-| 1   | `MYSQL_PASSWORD`    | 新容器冷启动后 `GET /healthz`                             | 200，`driver=mysql`（新密码可连库）          |
-| 2   | `WX_SECRET`         | `POST /auth/wechat` 走 code2session 换 token              | 登录成功，token 136 位                       |
-| 3   | `WX_SECRET`（存储） | `wx.cloud.uploadFile` → 服务端 `batchdownloadfile` → 抽取 | 上传成功，`parse` 200 且技术栈识别 5 项      |
-| 4   | 腾讯云密钥          | `POST /interview/tts`                                     | 200，2.0s，返回 `cloud://` fileID            |
-| 5   | `LLM_API_KEY`       | 同一份简历预览解析                                        | 200，4.3s，`mode=preview`，`previewIssues=3` |
-| 6   | `MP_APP_KEY`        | `POST /membership/order {platform:'mp-weixin'}`           | 200，返回 `orderId` 且 `payParams` 非空      |
+| #   | 凭据                | 验证手段                                                  | 结果                                               |
+| --- | ------------------- | --------------------------------------------------------- | -------------------------------------------------- |
+| 1   | `MYSQL_PASSWORD`    | 新容器冷启动后 `GET /healthz`                             | 200，`driver=mysql`（新密码可连库）                |
+| 2   | `WX_SECRET`         | `POST /auth/wechat` 走 code2session 换 token              | 登录成功，token 136 位                             |
+| 3   | `WX_SECRET`（存储） | `wx.cloud.uploadFile` → 服务端 `batchdownloadfile` → 抽取 | 上传成功，`parse` 200 且技术栈识别 5 项            |
+| 4   | 腾讯云密钥          | `POST /interview/tts`                                     | 200，2.0s，返回 `cloud://` fileID                  |
+| 5   | `LLM_API_KEY`       | 同一份简历预览解析                                        | 200，4.3s，`mode=preview`，`previewIssues=3`       |
+| 6   | `MP_APP_KEY`        | 微信 `xpay/query_order` 差分探针（见 §5.2）               | 真 key `268490001` vs 错 key `268490003`，验签通过 |
 
 ### 5.2 观察到的两点
 
-1. **`MP_APP_KEY` 长度为 18 位**（旧值 32 位），但下单接口能正常生成 `payParams`，说明当前签名链路可走通。是否被微信侧接受，仍需一次真机拉起支付确认——本地只能验证「不报错」。
+1. **`MP_APP_KEY` 首轮填错（18 位），已修正为 32 位并验证通过。**
+   - 首轮：18 位值能生成 `payParams`（纯本地 HMAC，必然成功），但不能证明微信侧接受，属误判为通过。
+   - 修正：回写 32 位值（`UpdateCloudRunServerConfig` 传全量 `ServerBaseConfig`，规格仍 0.5C/1G、副本 0-2、端口 8787、EnvParams 23 键），部署 `mentorloop-mp-api-052`；`/healthz` 200（`driver=mysql`、`annotateFont=true`）。
+   - 判定证据（差分探针，同订单号 + 同假 openid，只换 AppKey）：
+     - 现网 32 位 key → `errcode=268490001 openid错误`（**验签已通过**，仅 openid 不匹配）
+     - 故意错误 key → `errcode=268490003 支付签名(pay_sig)校验失败`
+     - 两者返回不同 ⇒ 微信虚拟支付侧已接受现网 AppKey；无需真机拉起支付即可判定。
+   - 说明：线上 `POST /membership/virtual/notify` 用历史订单复测返回 `ErrCode=1 query failed`，原因是该订单仅本地 `CREATED`（未在客户端拉起过 `requestVirtualPayment`，微信侧不存在该单），与 AppKey 无关。
 2. **开发者工具登录后的 `uid` 从 `u_7b35ed5346ad` 变为 `u_aae43c056d72`**：`/auth/wechat` 用 `wx.login` 的 code 换 openid，IDE 账号不同即得到不同用户。此前那 3 次简历额度与测试记录属于旧 uid，新 uid 下不可见——属正常现象，不是数据丢失。
 
 ### 5.3 待用户在控制台收尾
