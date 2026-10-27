@@ -17,6 +17,14 @@ export type ChatCompleteResult = {
   content: string
 }
 
+export type ChatCompleteOpts = {
+  maxTokens?: number
+  temperature?: number
+  // DeepSeek v4 默认开启思考模式，思维链与正文共享 max_tokens。
+  // 本项目调用均为结构化抽取/短文本生成，默认关闭；需要深度推理时显式传 'enabled'。
+  thinking?: 'enabled' | 'disabled'
+}
+
 export type FetchLike = (url: string, init: any) => Promise<any>
 
 let injectedFetch: FetchLike | null = null
@@ -39,12 +47,23 @@ function doFetch(url: string, init: any): Promise<any> {
 export async function chatComplete(
   envs: LmEnvs,
   messages: ChatMessage[],
-  opts: { maxTokens?: number; temperature?: number } = {}
+  opts: ChatCompleteOpts = {}
 ): Promise<ChatCompleteResult | null> {
   if (envs.baseUrl.length === 0 || envs.model.length === 0) return null
   const url = envs.baseUrl.replace(/\/$/, '') + '/chat/completions'
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), envs.timeoutMs)
+  const payload: any = {
+    model: envs.model,
+    messages,
+    temperature: opts.temperature != null ? opts.temperature : 0.4,
+    max_tokens: opts.maxTokens != null ? opts.maxTokens : 900
+  }
+  // 仅对 DeepSeek 注入 thinking：思考模式下 reasoning_content 与 content 共享 max_tokens，
+  // 小配额（如免费预览 700）会被推理占满导致 content 为空、JSON 解析失败（2026-10-27 线上实测）。
+  if (envs.model.indexOf('deepseek') >= 0) {
+    payload.thinking = { type: opts.thinking != null ? opts.thinking : 'disabled' }
+  }
   try {
     const res = await doFetch(url, {
       method: 'POST',
@@ -52,12 +71,7 @@ export async function chatComplete(
         'Content-Type': 'application/json',
         ...(envs.apiKey.length > 0 ? { Authorization: 'Bearer ' + envs.apiKey } : {})
       },
-      body: JSON.stringify({
-        model: envs.model,
-        messages,
-        temperature: opts.temperature != null ? opts.temperature : 0.4,
-        max_tokens: opts.maxTokens != null ? opts.maxTokens : 900
-      }),
+      body: JSON.stringify(payload),
       signal: controller.signal
     })
     if (res == null || typeof res.ok !== 'boolean' || !res.ok) return null
