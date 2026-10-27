@@ -1,8 +1,8 @@
-# 门禁与执行记录：SEC-3 凭据轮换（第一波）
+# 门禁与执行记录：SEC-3 凭据轮换
 
 - 日期：2026-10-27
 - 任务卡：[2026-10-27-credential-rotation.md](./2026-10-27-credential-rotation.md)
-- 结论：**第一波完成**（JWT 轮换 + 弱码清理 + 规格回正）；6 项外部凭据待用户生成后执行第二波。
+- 结论：**两波均已完成，7 项凭据全部替换并验证**（第一波 JWT + 弱码 + 规格；第二波 6 项外部凭据），线上版本 `mentorloop-mp-api-051`。
 
 ## 1. 第一波变更
 
@@ -50,19 +50,45 @@
 
 > 结论：**任何** `UpdateCloudRunServerConfig` 调用都必须传全量 `ServerBaseConfig`，否则会静默重置规格。此条已写入任务卡 §3 警示。
 
-## 5. 第二波待办（需用户生成新值）
+## 5. 第二波：6 项外部凭据（已完成）
 
-| 变量                                    | 生成位置                           | 状态 |
-| --------------------------------------- | ---------------------------------- | ---- |
-| `MYSQL_PASSWORD`                        | 腾讯云 TDSQL-C → 账号管理          | 待填 |
-| `WX_SECRET`                             | 微信公众平台 → 开发设置            | 待填 |
-| `TENCENTCLOUD_SECRET_ID` / `SECRET_KEY` | 腾讯云 CAM → 用户 → API 密钥       | 待填 |
-| `LLM_API_KEY`                           | DeepSeek 控制台 → API Keys         | 待填 |
-| `MP_APP_KEY`                            | 微信公众平台 → 虚拟支付 → 基本配置 | 待填 |
+用户在对应控制台生成新值并写入 `D:\mentorloop-secrets\rotation-2026-10-27.txt`；脚本一次性合并回写（`requestId=42408ad0-3c29-4146-9f93-5de528b719e7`），部署 `mentorloop-mp-api-051`。
 
-填写位置：`D:\mentorloop-secrets\rotation-2026-10-27.txt`（一行一个 `KEY=value`）。填好后执行 `node rotate.mjs dry` 预览，再 `apply` 并部署。
+| 变量                                    | 生成位置                                        | 状态 |
+| --------------------------------------- | ----------------------------------------------- | ---- |
+| `MYSQL_PASSWORD`                        | 微信云托管控制台 → MySQL 数据库 → root 重置密码 | ✅   |
+| `WX_SECRET`                             | 微信公众平台 → 开发设置 → 重置 AppSecret        | ✅   |
+| `TENCENTCLOUD_SECRET_ID` / `SECRET_KEY` | 腾讯云 CAM → 原子用户下新建密钥（子用户不变）   | ✅   |
+| `LLM_API_KEY`                           | DeepSeek 控制台 → API Keys                      | ✅   |
+| `MP_APP_KEY`                            | 微信公众平台 → 虚拟支付 → 基本配置              | ✅   |
+
+### 5.1 逐项功能验证（部署后实测）
+
+| #   | 凭据                | 验证手段                                                  | 结果                                         |
+| --- | ------------------- | --------------------------------------------------------- | -------------------------------------------- |
+| 1   | `MYSQL_PASSWORD`    | 新容器冷启动后 `GET /healthz`                             | 200，`driver=mysql`（新密码可连库）          |
+| 2   | `WX_SECRET`         | `POST /auth/wechat` 走 code2session 换 token              | 登录成功，token 136 位                       |
+| 3   | `WX_SECRET`（存储） | `wx.cloud.uploadFile` → 服务端 `batchdownloadfile` → 抽取 | 上传成功，`parse` 200 且技术栈识别 5 项      |
+| 4   | 腾讯云密钥          | `POST /interview/tts`                                     | 200，2.0s，返回 `cloud://` fileID            |
+| 5   | `LLM_API_KEY`       | 同一份简历预览解析                                        | 200，4.3s，`mode=preview`，`previewIssues=3` |
+| 6   | `MP_APP_KEY`        | `POST /membership/order {platform:'mp-weixin'}`           | 200，返回 `orderId` 且 `payParams` 非空      |
+
+### 5.2 观察到的两点
+
+1. **`MP_APP_KEY` 长度为 18 位**（旧值 32 位），但下单接口能正常生成 `payParams`，说明当前签名链路可走通。是否被微信侧接受，仍需一次真机拉起支付确认——本地只能验证「不报错」。
+2. **开发者工具登录后的 `uid` 从 `u_7b35ed5346ad` 变为 `u_aae43c056d72`**：`/auth/wechat` 用 `wx.login` 的 code 换 openid，IDE 账号不同即得到不同用户。此前那 3 次简历额度与测试记录属于旧 uid，新 uid 下不可见——属正常现象，不是数据丢失。
+
+### 5.3 待用户在控制台收尾
+
+| 项                                            | 动作                                       |
+| --------------------------------------------- | ------------------------------------------ |
+| 旧腾讯云密钥                                  | 已由用户**禁用**（新密钥验证通过后可删除） |
+| 旧 `LLM_API_KEY`                              | 建议在 DeepSeek 控制台**删除**旧 Key       |
+| 旧 `WX_SECRET` / `MP_APP_KEY`                 | 重置后已自动失效，无需额外操作             |
+| 旧 `MYSQL_PASSWORD`                           | 改密后已自动失效                           |
+| `D:\mentorloop-secrets\rotate.mjs` 与轮换文件 | 建议删除，避免长期留存凭据副本             |
 
 ## 6. 风险提示
 
-- 第二波中 `MYSQL_PASSWORD` 与 `WX_SECRET` 属于**破坏性窗口**：库密码改完到注入之间服务会连库失败；微信 Secret 重置后旧值不可逆。建议在低峰期一次完成。
-- 上一个版本（`-050`）仍持有当前值，可作为回滚点；确认稳定后再废弃旧凭据。
+- 上一版本（`-050`）已持有第一波值，更早版本持有原始值；确认稳定后旧凭据务必彻底删除，不要只禁用。
+- 本次轮换产生了一笔未支付的虚拟支付订单（`o_8213700fb6e3`，`platform=mp-weixin`），状态停留在 `CREATED`，不会发货；如需清理可忽略，60 分钟对账只会查单不会发放。
